@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Xem Tim Mỗi Ngày (Daily Learning Heart)</title>
-  <meta name="description" content="Xem Tim Mỗi Ngày (Daily Learning Heart) — Bản tin Chứng cứ Tim mạch 7:00 AM theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
+  <title>Xem Tim Mỗi Ngày</title>
+  <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 7:00 AM theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
@@ -3263,16 +3263,13 @@
               <path d="M13.2 2L3 14.4h8.4L9.6 22 21 9.6h-8.4L13.2 2z" fill="#3ecf8e" />
             </svg>
           </div>
-          <span class="brand-text">
-            Xem Tim Mỗi Ngày
-            <span class="brand-tag-briefing">Daily Learning Heart</span>
-          </span>
+          <span class="brand-text" id="authBrandTitle">Xem Tim Mỗi Ngày</span>
         </div>
       </div>
 
       <div>
         <h2 class="auth-card-title" id="authGateTitle">Cổng Lâm sàng Cá nhân hóa</h2>
-        <p class="auth-card-subtitle">
+        <p class="auth-card-subtitle" id="authGateSubtitle">
           Đăng nhập để đồng bộ lịch sử đọc, danh sách bản tin đã lưu và phản hồi đóng góp cải tiến sản phẩm.
         </p>
       </div>
@@ -3385,10 +3382,7 @@
               <path d="M13.2 2L3 14.4h8.4L9.6 22 21 9.6h-8.4L13.2 2z" fill="#3ecf8e" />
             </svg>
           </div>
-          <span class="brand-text">
-            Xem Tim Mỗi Ngày
-            <span class="brand-tag-briefing">Daily Learning Heart</span>
-          </span>
+          <span class="brand-text" id="navBrandTitle">Xem Tim Mỗi Ngày</span>
         </a>
 
         <div class="nav-center-status" id="navRotationStatus">
@@ -3398,6 +3392,11 @@
       </div>
 
       <div class="nav-right">
+        <div class="segmented-control" style="padding: 2px;" role="group" aria-label="Language Mode">
+          <button type="button" class="segmented-btn active" id="btnNavLangVi" style="padding: 5px 10px; font-size: 12px;">Tiếng Việt</button>
+          <button type="button" class="segmented-btn" id="btnNavLangEn" style="padding: 5px 10px; font-size: 12px;">English</button>
+        </div>
+
         <!-- Authenticated User Workspace Controls -->
         <div class="user-workspace-controls" id="userWorkspaceControls">
           <button type="button" class="user-profile-pill" id="userProfilePill" title="Xem &amp; Quản lý Tài khoản của tôi" aria-label="Tài khoản của tôi">
@@ -3454,7 +3453,7 @@
   <section class="hero-strip">
     <div class="hero-top-flex">
       <div>
-        <h1 class="hero-headline" id="heroHeadlineText">Xem Tim Mỗi Ngày (Daily Learning Heart)</h1>
+        <h1 class="hero-headline" id="heroHeadlineText">Xem Tim Mỗi Ngày</h1>
         <p class="hero-lead" id="heroLeadText">
           Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.
         </p>
@@ -3646,11 +3645,11 @@
         </div>
       </div>
 
-      <!-- Segmented Bar (Dual-Language & Typography Scale) -->
+      <!-- Segmented Bar (Language Mode & Typography Scale) -->
       <div class="lang-segmented-bar">
-        <div class="segmented-control">
-          <button type="button" class="segmented-btn active" id="btnLangVi">Phần 1: Tiếng Việt (Chuyên Sâu)</button>
-          <button type="button" class="segmented-btn" id="btnLangEn">Part 2: English (Academic Style)</button>
+        <div class="segmented-control" role="group" aria-label="Language Mode">
+          <button type="button" class="segmented-btn active" id="btnLangVi">Tiếng Việt</button>
+          <button type="button" class="segmented-btn" id="btnLangEn">English</button>
         </div>
 
         <div class="reading-scale-controls">
@@ -4013,7 +4012,7 @@
   <footer class="footer-light">
     <div style="max-width: 800px; margin: 0 auto;">
       <p style="color: var(--color-ink); font-weight: 500; margin-bottom: 6px;" id="footerTitleText">
-        Xem Tim Mỗi Ngày (Daily Learning Heart)
+        Xem Tim Mỗi Ngày
       </p>
       <p style="margin-bottom: 10px;" id="footerDescText">
         Thiết kế chuẩn mực rõ ràng Supabase: Luân phiên 1 Trụ cột mỗi ngày theo số tiến, đối chiếu tiến hóa Guideline qua từng thế hệ và xác thực nguồn NCBI PubMed Step-0.
@@ -4035,6 +4034,7 @@
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
     const CHAT_SESSIONS_KEY = "soaica_chat_sessions_v1";
+    const UI_LANG_KEY = "ebm_ui_lang";
     const ANCHOR_DATE_STR = "2026-11-16";
 
     const DEFAULT_PILLARS_CATALOG = [
@@ -4052,7 +4052,7 @@
 
     const I18N = {
       vi: {
-        heroHeadline: "Xem Tim Mỗi Ngày (Daily Learning Heart)",
+        heroHeadline: "Xem Tim Mỗi Ngày",
         heroLead: "Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
         modeToday: "Bản tin Hôm nay (1 Trụ cột)",
         modeHistory: "Lịch sử & Sơ đồ Trụ cột",
@@ -4093,18 +4093,17 @@
         savedNavBtn: "Đã lưu",
         readPrefix: "Đã đọc",
         wordsUnit: "từ",
-        footerTitle: "Xem Tim Mỗi Ngày (Daily Learning Heart)",
+        footerTitle: "Xem Tim Mỗi Ngày",
         footerDesc: "Thiết kế chuẩn mực rõ ràng Supabase: Luân phiên 1 Trụ cột mỗi ngày theo số tiến, đối chiếu tiến hóa Guideline qua từng thế hệ và xác thực nguồn NCBI PubMed Step-0.",
         footerSub: "Phục vụ đào tạo sau đại học, giao ban sáng và thực hành y khoa dựa trên chứng cứ.",
         scopeRuleSuffix: "Không trộn trụ cột khác",
         diagramTitlePrefix: "Sơ đồ Lịch sử Phát triển",
         noAnchors: "Chưa có dữ liệu nguồn tham chiếu.",
         noBriefingsMatch: "Chưa có bản tin phù hợp trong phạm vi lọc hiện tại.",
-        savedGlobalHeading: "Danh sách Bản tin Đã lưu (Tất cả Trụ cột)",
-        switchPart2Hint: "Chuyển sang Phần 2 (English)"
+        savedGlobalHeading: "Danh sách Bản tin Đã lưu (Tất cả Trụ cột)"
       },
       en: {
-        heroHeadline: "Daily Learning Heart (Xem Tim Mỗi Ngày)",
+        heroHeadline: "Daily Learning Heart",
         heroLead: "Updated daily at 07:00 AM on a 1-pillar-per-day ascending rotation. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
         modeToday: "Today's Briefing (1 Pillar)",
         modeHistory: "History & Pillar Roadmap",
@@ -4145,15 +4144,14 @@
         savedNavBtn: "Saved",
         readPrefix: "Read",
         wordsUnit: "words",
-        footerTitle: "Daily Learning Heart — Xem Tim Mỗi Ngày",
+        footerTitle: "Daily Learning Heart",
         footerDesc: "Engineered with Supabase clarity: 1-pillar-per-day ascending rotation, generational guideline evolution, and Step-0 NCBI PubMed verification.",
         footerSub: "Built for postgraduate cardiology rounds and evidence-based clinical practice.",
         scopeRuleSuffix: "Strictly single-pillar scope",
         diagramTitlePrefix: "Historical Evolution Diagram",
         noAnchors: "No PubMed anchor metadata recorded.",
         noBriefingsMatch: "No briefings match the current filter.",
-        savedGlobalHeading: "Saved Bookmarks (All Pillars)",
-        switchPart2Hint: "View Part 1 (Vietnamese)"
+        savedGlobalHeading: "Saved Bookmarks (All Pillars)"
       }
     };
 
@@ -4244,6 +4242,8 @@
       btnToggleBookmark: document.getElementById("btnToggleBookmark"),
       btnLangVi: document.getElementById("btnLangVi"),
       btnLangEn: document.getElementById("btnLangEn"),
+      btnNavLangVi: document.getElementById("btnNavLangVi"),
+      btnNavLangEn: document.getElementById("btnNavLangEn"),
 
       guidelineComparisonBanner: document.getElementById("guidelineComparisonBanner"),
       evolutionPipelineRow: document.getElementById("evolutionPipelineRow"),
@@ -4422,9 +4422,12 @@
        INITIALIZATION & AUTHENTICATION GATE
        ======================================================================== */
     document.addEventListener("DOMContentLoaded", () => {
+      const savedLang = safeStorageGet(UI_LANG_KEY);
+      App.currentLang = savedLang === "en" ? "en" : "vi";
       loadSeedData();
       populatePillarSelect();
       bindAppEvents();
+      setLanguage(App.currentLang, { rerender: false, persist: false });
       bootstrapSessionAndStatus();
       schedule7AmAutoRefresh();
     });
@@ -5344,8 +5347,85 @@
       return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     }
 
+    function setLanguage(lang, opts = {}) {
+      const nextLang = lang === "en" ? "en" : "vi";
+      const { rerender = true, persist = true } = opts;
+      App.currentLang = nextLang;
+      if (persist) {
+        safeStorageSet(UI_LANG_KEY, nextLang);
+      }
+      document.documentElement.lang = nextLang;
+      document.title = nextLang === "vi" ? "Xem Tim Mỗi Ngày" : "Daily Learning Heart";
+
+      const isVi = nextLang === "vi";
+      [Dom.btnLangVi, Dom.btnNavLangVi].forEach(el => { if (el) el.classList.toggle("active", isVi); });
+      [Dom.btnLangEn, Dom.btnNavLangEn].forEach(el => { if (el) el.classList.toggle("active", !isVi); });
+
+      applyLocalizationChrome();
+      if (!rerender) {
+        if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
+          window.EbmChat.onLanguageChanged();
+        }
+        return;
+      }
+      renderDailyRotationBanner();
+      renderPillarsTiles();
+      if (App.mode === "history") renderPerPillarHistoryDiagram();
+      renderBriefingsList();
+      if (App.selected) displayCurrentBriefing();
+      if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
+        window.EbmChat.onLanguageChanged();
+      }
+    }
+
     function applyLocalizationChrome() {
       const isVi = App.currentLang === "vi";
+      const brandName = isVi ? "Xem Tim Mỗi Ngày" : "Daily Learning Heart";
+      document.title = brandName;
+
+      const navBrandEl = document.getElementById("navBrandTitle");
+      if (navBrandEl) navBrandEl.textContent = brandName;
+      const authBrandEl = document.getElementById("authBrandTitle");
+      if (authBrandEl) authBrandEl.textContent = brandName;
+
+      // Auth Gate Localization
+      const setTxt = (sel, txt) => {
+        const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+        if (el) el.textContent = txt;
+      };
+      const setPh = (sel, txt) => {
+        const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+        if (el) el.placeholder = txt;
+      };
+      setTxt("#authGateTitle", isVi ? "Cổng Lâm sàng Cá nhân hóa" : "Personalized Clinical Portal");
+      setTxt("#authGateSubtitle", isVi
+        ? "Đăng nhập để đồng bộ lịch sử đọc, danh sách bản tin đã lưu và phản hồi đóng góp cải tiến sản phẩm."
+        : "Sign in to sync your reading history, saved briefings, and clinical feedback.");
+      setTxt("#authTabLogin", isVi ? "Đăng nhập" : "Sign In");
+      setTxt("#authTabRegister", isVi ? "Đăng ký" : "Register");
+      setTxt("#loginForm label[for='loginUsername']", isVi ? "Tên đăng nhập" : "Username");
+      setPh("#loginUsername", isVi ? "VD: bs.timmach" : "e.g., bs.timmach");
+      setTxt("#loginForm label[for='loginPassword']", isVi ? "Mật khẩu" : "Password");
+      setPh("#loginPassword", isVi ? "Nhập mật khẩu" : "Enter password");
+      setTxt("#btnShowForgotPassword", isVi ? "Quên mật khẩu?" : "Forgot password?");
+      setTxt("#btnLoginSubmit span", isVi ? "Đăng nhập" : "Sign In");
+      setTxt(".auth-divider-row", isVi ? "hoặc trải nghiệm nhanh" : "or quick access");
+      setTxt("#btnDemoLogin span", isVi ? "Đăng nhập nhanh: Bác sĩ Đặng Quốc Tình (bs.timmach)" : "Quick Sign-In: Dr. Dang Quoc Tinh (bs.timmach)");
+      setTxt("#forgotPasswordForm label[for='forgotUsername']", isVi ? "Tên đăng nhập hoặc Email" : "Username or Email");
+      setTxt("#forgotPasswordForm label[for='forgotNewPassword']", isVi ? "Mật khẩu mới" : "New password");
+      setTxt("#forgotPasswordForm label[for='forgotConfirmPassword']", isVi ? "Xác nhận mật khẩu mới" : "Confirm new password");
+      setTxt("#btnForgotSubmit span", isVi ? "Đặt lại Mật khẩu & Đăng nhập" : "Reset Password & Sign In");
+      setTxt("#btnBackToLogin span", isVi ? "Quay lại Đăng nhập" : "Back to Sign In");
+      setTxt("#registerForm label[for='regUsername']", isVi ? "Tên đăng nhập" : "Username");
+      setTxt("#registerForm label[for='regFullName']", isVi ? "Họ tên Bác sĩ" : "Physician Name");
+      setTxt("#registerForm label[for='regSpecialty']", isVi ? "Chuyên khoa" : "Specialty");
+      setTxt("#registerForm label[for='regPassword']", isVi ? "Mật khẩu" : "Password");
+      setTxt("#btnRegisterSubmit span", isVi ? "Đăng ký & Vào Workspace" : "Register & Enter Workspace");
+      setTxt("#authOfflineNoteText", isVi
+        ? "Đang chạy ở chế độ Độc lập 24/7 — tài khoản, lịch sử đọc và phản hồi được lưu ngay trên thiết bị của bạn."
+        : "Running 24/7 Standalone Mode — your account, reading history, and feedback are saved on this device.");
+
+      // Main Workspace & Navbar Chrome
       document.getElementById("heroHeadlineText").textContent = t("heroHeadline");
       document.getElementById("heroLeadText").textContent = t("heroLead");
       document.getElementById("labelModeToday").textContent = t("modeToday");
@@ -5365,6 +5445,45 @@
       if (!Dom.btnRefreshToday.disabled) {
         Dom.labelRefreshToday.textContent = t("refreshBtn");
       }
+      if (Dom.btnLogout) {
+        const lgLbl = isVi ? "Đăng xuất" : "Sign out";
+        Dom.btnLogout.title = lgLbl;
+        Dom.btnLogout.setAttribute("aria-label", lgLbl);
+      }
+      if (Dom.btnNavBookmarks) {
+        Dom.btnNavBookmarks.title = isVi ? "Lọc danh sách bản tin đã lưu" : "Filter saved briefings";
+      }
+      if (Dom.btnOpenChatHeader) {
+        Dom.btnOpenChatHeader.title = isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Soái ca Y khoa";
+      }
+      if (Dom.btnCopyArticle) {
+        Dom.btnCopyArticle.title = isVi ? "Sao chép nội dung Markdown" : "Copy Markdown content";
+      }
+      if (Dom.btnPrintArticle) {
+        Dom.btnPrintArticle.title = isVi ? "In hoặc Xuất PDF" : "Print or Export PDF";
+      }
+      if (Dom.btnFontDec) Dom.btnFontDec.title = isVi ? "Giảm cỡ chữ" : "Decrease font size";
+      if (Dom.btnFontReset) Dom.btnFontReset.title = isVi ? "Cỡ chữ mặc định" : "Default font size";
+      if (Dom.btnFontInc) Dom.btnFontInc.title = isVi ? "Tăng cỡ chữ" : "Increase font size";
+      const btnTop = document.getElementById("btnBackToTop");
+      if (btnTop) {
+        btnTop.title = isVi ? "Về đầu trang" : "Back to top";
+        btnTop.setAttribute("aria-label", btnTop.title);
+        const topSpan = btnTop.querySelector("span");
+        if (topSpan) topSpan.textContent = isVi ? "Đầu trang" : "Top";
+      }
+
+      // Modals Localization
+      setTxt("#pubMedModalTitle span", isVi ? "Tra Cứu Đối Chiếu NCBI PubMed E-Utilities" : "NCBI PubMed E-Utilities Live Lookup");
+      setPh("#pubMedQueryInput", isVi ? "Nhập tên guideline hoặc thử nghiệm (VD: 2026 ISH hypertension, SPRINT, BPROAD)..." : "Enter guideline or trial (e.g., 2026 ISH hypertension, SPRINT, BPROAD)...");
+      setTxt("#btnExecutePubMedQuery span", isVi ? "Tra Cứu" : "Search");
+      setTxt("#myAccountModalTitle span", isVi ? "Tài khoản của tôi & Bảo mật" : "My Account & Security");
+      setTxt("#myAccountModal .account-section-title span", isVi ? "Thông tin Bác sĩ" : "Physician Profile");
+      setTxt("#myAccountModal label[for='accFullName']", isVi ? "Họ tên hiển thị" : "Display Name");
+      setTxt("#myAccountModal label[for='accSpecialty']", isVi ? "Chuyên khoa" : "Specialty");
+      setTxt("#btnSaveProfile span", isVi ? "Lưu thông tin hồ sơ" : "Save Profile");
+      setTxt("#btnAccResetPassword span", isVi ? "Cập nhật Mật khẩu mới" : "Update Password");
+      setTxt("#btnAccResetDefaultPw", isVi ? "Reset về mặc định (123456)" : "Reset to default (123456)");
 
       document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
       document.getElementById("todaySidebarDesc").textContent = t("todaySidebarDesc");
@@ -5414,8 +5533,19 @@
       document.getElementById("labelReportCommentPrompt").textContent = isVi
         ? "Nội dung chi tiết gửi Nhà làm sản phẩm:"
         : "Details for the product team:";
+      setPh("#feedbackReportComment", isVi
+        ? "Mô tả số liệu cần kiểm chứng, đề xuất bổ sung RCT hoặc góp ý trải nghiệm..."
+        : "Describe figures to verify, RCTs to add, or UX suggestions...");
       document.getElementById("labelReportSubmitBtn").textContent = isVi ? "Gửi Phản hồi" : "Submit Feedback";
       Dom.btnCancelFeedbackReport.textContent = isVi ? "Hủy" : "Cancel";
+
+      const reasonMap = [
+        { sel: '[data-reason="Sai lệch số liệu / Guideline"] span', vi: "Sai lệch số liệu / Guideline", en: "Data / Guideline discrepancy" },
+        { sel: '[data-reason="Thiếu phiên bản đối chiếu"] span', vi: "Thiếu phiên bản đối chiếu", en: "Missing comparison edition" },
+        { sel: '[data-reason="Lỗi hiển thị / Dịch thuật"] span', vi: "Lỗi hiển thị / Dịch thuật", en: "Display / Translation issue" },
+        { sel: '[data-reason="Đề xuất cải tiến sản phẩm"] span', vi: "Đề xuất cải tiến sản phẩm", en: "Feature suggestion" }
+      ];
+      reasonMap.forEach((r) => setTxt(`#feedbackReasonGroup ${r.sel}`, isVi ? r.vi : r.en));
 
       populatePillarSelect();
       renderUserWorkspace();
@@ -5753,7 +5883,7 @@
                 ${isRead ? `<span class="badge-read-tiny">&bull; ${t("filterRead")}</span>` : ""}
                 ${isBookmarked ? `<i class="fa-solid fa-bookmark" style="color: var(--color-primary-deep);"></i>` : ""}
               </div>
-              <div>${b.word_count_vi || "~1400"} ${t("wordsUnit")}</div>
+              <div>${(isVi ? b.word_count_vi : (b.word_count_en || b.word_count_vi)) || "~1400"} ${t("wordsUnit")}</div>
             </div>
           </div>
         `;
@@ -5802,12 +5932,16 @@
       const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
       const title = cleanHeadline(rawTitle);
       const markdownRaw = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || b.part1_vi_markdown || "");
-      const markdownClean = markdownRaw.replace(/\[END OF PART [12][\s\S]*?\]\s*$/i, "").trim();
+      const markdownClean = markdownRaw
+        .replace(/\n*(?:\[?\s*END OF PART\s*[12][\s\S]*$|PART\s*1\.\s*Enter\s*"Continue to Part 2"[\s\S]*$)/i, "")
+        .replace(/^(#{1,3}\s*)(?:PHẦN|PART)\s*[12]\s*[:—\-–]\s*/gim, "$1")
+        .trim();
 
       const pName = getPillarDisplayName(b.pillar_id, isVi);
       Dom.articleTitleDisplay.textContent = title;
       Dom.articlePillarBadge.textContent = `${t("pillarWord")} #${b.pillar_id}: ${pName}`;
-      Dom.articleWeekBadge.textContent = b.week_label || `${formatFullDdMmYyyy(b.date)}`;
+      const wkLabel = b.week_label || `${formatFullDdMmYyyy(b.date)}`;
+      Dom.articleWeekBadge.textContent = isVi ? wkLabel : String(wkLabel).replace(/^Tuần\s+/i, "Week ");
       Dom.articleDateDisplay.textContent = `${formatFullDdMmYyyy(b.date)} • ${b.time || "07:00 AM"}`;
       document.getElementById("articleVerifiedBadge").innerHTML = `<i class="fa-solid fa-check"></i> ${t("verifiedPubMed")}`;
 
@@ -6732,31 +6866,12 @@
         refreshTodayData(true, false);
       });
 
-      // Language Toggle
-      Dom.btnLangVi.addEventListener("click", () => {
-        App.currentLang = "vi";
-        Dom.btnLangVi.classList.add("active");
-        Dom.btnLangEn.classList.remove("active");
-        applyLocalizationChrome();
-        renderDailyRotationBanner();
-        renderPillarsTiles();
-        if (App.mode === "history") renderPerPillarHistoryDiagram();
-        renderBriefingsList();
-        displayCurrentBriefing();
-        if (window.EbmChat) window.EbmChat.updateContext();
+      // Language Mode Toggle (Navbar & Article Toolbar synchronized across entire page)
+      [Dom.btnLangVi, Dom.btnNavLangVi].forEach(btn => {
+        if (btn) btn.addEventListener("click", () => setLanguage("vi"));
       });
-
-      Dom.btnLangEn.addEventListener("click", () => {
-        App.currentLang = "en";
-        Dom.btnLangEn.classList.add("active");
-        Dom.btnLangVi.classList.remove("active");
-        applyLocalizationChrome();
-        renderDailyRotationBanner();
-        renderPillarsTiles();
-        if (App.mode === "history") renderPerPillarHistoryDiagram();
-        renderBriefingsList();
-        displayCurrentBriefing();
-        if (window.EbmChat) window.EbmChat.updateContext();
+      [Dom.btnLangEn, Dom.btnNavLangEn].forEach(btn => {
+        if (btn) btn.addEventListener("click", () => setLanguage("en"));
       });
 
       // Bookmark Toggle
@@ -6766,8 +6881,11 @@
       Dom.btnCopyArticle.addEventListener("click", () => {
         const b = App.selected;
         if (!b) return;
-        const txt = App.currentLang === "vi" ? b.part1_vi_markdown : (b.part2_en_markdown || b.part1_vi_markdown);
-        navigator.clipboard.writeText(txt || "").then(() => {
+        const txtRaw = App.currentLang === "vi" ? b.part1_vi_markdown : (b.part2_en_markdown || b.part1_vi_markdown);
+        const txt = String(txtRaw || "")
+          .replace(/\n*(?:\[?\s*END OF PART\s*[12][\s\S]*$|PART\s*1\.\s*Enter\s*"Continue to Part 2"[\s\S]*$)/i, "")
+          .trim();
+        navigator.clipboard.writeText(txt).then(() => {
           showToast(App.currentLang === "vi" ? "Đã sao chép nội dung Markdown." : "Copied Markdown to clipboard.");
         });
       });
@@ -7062,13 +7180,14 @@
 
       renderQuotaBadge() {
         if (!Dom.chatModeBadge) return;
+        const isVi = App.currentLang === "vi";
         const rem = Math.max(0, (this.quota.limit || 500) - (this.quota.used || 0));
         if (this.quota.exhausted || rem <= 0) {
-          Dom.chatModeBadge.textContent = "Đã ngắt AI hôm nay";
+          Dom.chatModeBadge.textContent = isVi ? "Đã ngắt AI hôm nay" : "AI paused today";
           Dom.chatModeBadge.style.background = "var(--color-danger-soft)";
           Dom.chatModeBadge.style.color = "#b91c1c";
         } else {
-          Dom.chatModeBadge.textContent = `Còn ${rem}/${this.quota.limit} lượt`;
+          Dom.chatModeBadge.textContent = isVi ? `Còn ${rem}/${this.quota.limit} lượt` : `${rem}/${this.quota.limit} left`;
           Dom.chatModeBadge.style.background = "";
           Dom.chatModeBadge.style.color = "";
         }
@@ -7168,17 +7287,20 @@
       },
 
       toggleExpand(forceState) {
+        const isVi = App.currentLang === "vi";
         this.isExpanded = typeof forceState === "boolean" ? forceState : !this.isExpanded;
         Dom.ebmChatPanel.classList.toggle("expanded", this.isExpanded);
         if (this.isExpanded) {
+          const shrinkLbl = isVi ? "Thu nhỏ khung chat" : "Collapse chat window";
           Dom.btnExpandChat.innerHTML = '<i class="fa-solid fa-down-left-and-up-right-to-center"></i>';
-          Dom.btnExpandChat.title = "Thu nhỏ khung chat";
-          Dom.btnExpandChat.setAttribute("aria-label", "Thu nhỏ khung chat");
+          Dom.btnExpandChat.title = shrinkLbl;
+          Dom.btnExpandChat.setAttribute("aria-label", shrinkLbl);
           Dom.btnExpandChat.classList.add("active-btn");
         } else {
+          const expandLbl = isVi ? "Phóng toàn trang" : "Expand full page";
           Dom.btnExpandChat.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
-          Dom.btnExpandChat.title = "Phóng toàn trang";
-          Dom.btnExpandChat.setAttribute("aria-label", "Phóng toàn trang");
+          Dom.btnExpandChat.title = expandLbl;
+          Dom.btnExpandChat.setAttribute("aria-label", expandLbl);
           Dom.btnExpandChat.classList.remove("active-btn");
         }
       },
@@ -7319,9 +7441,10 @@
 
       renderHistoryDrawer() {
         if (!Dom.chatHistoryList) return;
+        const isVi = App.currentLang === "vi";
         const list = this.sessions || [];
         if (list.length === 0) {
-          Dom.chatHistoryList.innerHTML = `<div style="font-size: 12px; color: var(--color-ink-mute); padding: 8px 4px;">Chưa có lịch sử cuộc trò chuyện nào.</div>`;
+          Dom.chatHistoryList.innerHTML = `<div style="font-size: 12px; color: var(--color-ink-mute); padding: 8px 4px;">${isVi ? "Chưa có lịch sử cuộc trò chuyện nào." : "No conversation history yet."}</div>`;
           return;
         }
         Dom.chatHistoryList.innerHTML = list.map((s) => {
@@ -7338,22 +7461,62 @@
               timeStr = `${hh}:${mm} • ${dd}/${mo}`;
             }
           } catch (_) {}
+          const fallbackTitle = isVi ? "Cuộc trò chuyện mới" : "New Conversation";
+          const displayTitle = (s.title === "Cuộc trò chuyện mới" || s.title === "New Conversation") ? fallbackTitle : (s.title || fallbackTitle);
           return `<div class="chat-history-item${isCur ? " active" : ""}" data-sid="${escapeHtml(s.id)}">
             <div class="chat-history-main">
-              <div class="chat-history-title">${escapeHtml(s.title || "Cuộc trò chuyện mới")}</div>
+              <div class="chat-history-title">${escapeHtml(displayTitle)}</div>
               <div class="chat-history-meta">
-                <span>Trụ cột #${escapeHtml(String(s.pillarId || 1))}</span>
+                <span>${t("pillarWord")} #${escapeHtml(String(s.pillarId || 1))}</span>
                 <span>•</span>
-                <span>${qCount} câu hỏi</span>
+                <span>${isVi ? `${qCount} câu hỏi` : `${qCount} questions`}</span>
                 ${timeStr ? `<span>•</span><span>${escapeHtml(timeStr)}</span>` : ""}
-                ${isCur ? `<span style="color: var(--color-primary-deep); font-weight: 600;">• Đang mở</span>` : ""}
+                ${isCur ? `<span style="color: var(--color-primary-deep); font-weight: 600;">• ${isVi ? "Đang mở" : "Active"}</span>` : ""}
               </div>
             </div>
-            <button type="button" class="chat-history-del-btn" data-del-sid="${escapeHtml(s.id)}" title="Xóa cuộc trò chuyện" aria-label="Xóa cuộc trò chuyện">
+            <button type="button" class="chat-history-del-btn" data-del-sid="${escapeHtml(s.id)}" title="${isVi ? "Xóa cuộc trò chuyện" : "Delete conversation"}" aria-label="${isVi ? "Xóa cuộc trò chuyện" : "Delete conversation"}">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>`;
         }).join("");
+      },
+
+      onLanguageChanged() {
+        const isVi = App.currentLang === "vi";
+        if (Dom.chatEngineSubtitle) {
+          Dom.chatEngineSubtitle.textContent = isVi
+            ? "Trợ lý Lâm sàng Tim mạch • Thực chứng EBM & PubMed"
+            : "Cardiology Clinical Assistant • EBM & PubMed";
+        }
+        if (Dom.chatInputField) {
+          Dom.chatInputField.placeholder = isVi
+            ? "Hỏi về Guideline 08–11/2026, RCT, liều thuốc, chống chỉ định..."
+            : "Ask about 08–11/2026 Guidelines, RCTs, dosing, safety...";
+        }
+        if (Dom.btnNewChat) Dom.btnNewChat.title = isVi ? "Cuộc trò chuyện mới" : "New conversation";
+        if (Dom.btnToggleChatHistory) Dom.btnToggleChatHistory.title = isVi ? "Lịch sử các cuộc trò chuyện" : "Conversation history";
+        if (Dom.btnClearChat) Dom.btnClearChat.title = isVi ? "Xóa cuộc trò chuyện hiện tại" : "Clear current conversation";
+        if (Dom.btnCloseChat) Dom.btnCloseChat.title = isVi ? "Đóng" : "Close";
+        if (Dom.btnExpandChat) {
+          Dom.btnExpandChat.title = this.isExpanded
+            ? (isVi ? "Thu nhỏ khung chat" : "Collapse chat window")
+            : (isVi ? "Phóng toàn trang" : "Expand full page");
+        }
+        const histHdrSpan = Dom.chatHistoryDrawer?.querySelector(".chat-history-header span");
+        if (histHdrSpan) {
+          histHdrSpan.innerHTML = `<i class="fa-solid fa-clock-rotate-left" style="color: var(--color-primary-deep); margin-right: 5px;"></i> ${isVi ? "Lịch sử các cuộc trò chuyện" : "Conversation History"}`;
+        }
+        if (Dom.btnNewChatFromDrawer) {
+          Dom.btnNewChatFromDrawer.innerHTML = `<i class="fa-solid fa-plus"></i> ${isVi ? "Trò chuyện mới" : "New Chat"}`;
+        }
+        this.renderQuotaBadge();
+        this.renderHistoryDrawer();
+        this.updateContext();
+        if (!this.isBusy && Array.isArray(this.messages) && !this.messages.some((m) => m && m.role === "user")) {
+          this.messages = [];
+          if (Dom.chatMessagesList) Dom.chatMessagesList.innerHTML = "";
+          this.pushWelcomeMessage();
+        }
       },
 
       togglePanel(forceState) {
