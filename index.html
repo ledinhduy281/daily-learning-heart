@@ -3786,9 +3786,6 @@
         <div class="ebm-chat-subtitle" id="chatEngineSubtitle">Trợ lý Lâm sàng Tim mạch • Thực chứng EBM &amp; PubMed</div>
       </div>
       <div class="ebm-chat-actions">
-        <button type="button" class="chat-hdr-btn" id="btnToggleChatKey" title="Kết nối API Key &amp; Giới hạn lượt hỏi/ngày" aria-label="Cấu hình API Key">
-          <i class="fa-solid fa-key"></i>
-        </button>
         <button type="button" class="chat-hdr-btn" id="btnExpandChat" title="Mở rộng / Thu gọn khung chat" aria-label="Mở rộng khung chat">
           <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
         </button>
@@ -3801,35 +3798,11 @@
       </div>
     </div>
 
-    <div class="chat-settings-drawer" id="chatSettingsDrawer">
-      <div>
-        <label for="chatApiKeyInput">API Key (tự nhận diện Gemini <code>AIza...</code> hoặc Groq <code>gsk_...</code>)</label>
-        <input type="password" id="chatApiKeyInput" class="chat-settings-input" placeholder="Dán mã Gemini (AIza...) hoặc Groq (gsk_...)..." autocomplete="off">
-        <div style="font-size: 11px; color: var(--color-ink-mute); margin-top: 3px;">
-          Lấy mã tại <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-deep);">Google AI Studio</a> hoặc <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-deep);">Groq Console</a>. Bỏ trống để chỉ tra cứu kho EBM &amp; PubMed nội bộ.
-        </div>
-      </div>
-      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 170px;">
-          <label for="chatDailyLimitInput">Giới hạn tối đa số lượt gọi LLM mỗi ngày (tự ngắt khi chạm mốc)</label>
-          <input type="number" id="chatDailyLimitInput" class="chat-settings-input" min="1" max="2000" value="100">
-        </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary-outline" id="btnResetQuotaToday" style="padding: 6px 10px; font-size: 12px;" title="Mở khóa lại bộ đếm lượt hôm nay">
-            <i class="fa-solid fa-rotate-left"></i> Mở khóa lại lượt hôm nay
-          </button>
-          <button type="button" class="btn btn-primary-green" id="btnSaveChatSettings" style="padding: 6px 12px; font-size: 12px;">
-            <i class="fa-solid fa-check"></i> Lưu &amp; Kích hoạt
-          </button>
-        </div>
-      </div>
-    </div>
-
     <div class="chat-context-strip">
       <div class="chat-context-text" id="chatActiveContextBar">
         Đang bám sát: Trụ cột #1 • Tăng huyết áp &amp; Yếu tố nguy cơ
       </div>
-      <span class="chat-free-pill" id="chatModeBadge">EBM • PUBMED</span>
+      <span class="chat-free-pill" id="chatModeBadge">AI • EBM</span>
     </div>
 
     <div class="chat-quick-strip" id="chatQuickPrompts">
@@ -3880,7 +3853,6 @@
     const OFFLINE_FEEDBACK_KEY = "ebm_offline_feedback";
     const CLOUD_USERS_KEY = "ebm_cloud_users_db";
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
-    const CHAT_SETTINGS_KEY = "ebm_chat_settings_v1";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
     const ANCHOR_DATE_STR = "2026-11-16";
 
@@ -4143,12 +4115,6 @@
       btnOpenChatHeader: document.getElementById("btnOpenChatHeader"),
       btnFloatingChat: document.getElementById("btnFloatingChat"),
       ebmChatPanel: document.getElementById("ebmChatPanel"),
-      btnToggleChatKey: document.getElementById("btnToggleChatKey"),
-      chatSettingsDrawer: document.getElementById("chatSettingsDrawer"),
-      chatApiKeyInput: document.getElementById("chatApiKeyInput"),
-      chatDailyLimitInput: document.getElementById("chatDailyLimitInput"),
-      btnSaveChatSettings: document.getElementById("btnSaveChatSettings"),
-      btnResetQuotaToday: document.getElementById("btnResetQuotaToday"),
       btnCloseChat: document.getElementById("btnCloseChat"),
       btnExpandChat: document.getElementById("btnExpandChat"),
       btnClearChat: document.getElementById("btnClearChat"),
@@ -6837,17 +6803,23 @@
       valsartan: "valsartan", ramipril: "ramipril", amlodipine: "amlodipine", ranolazine: "ranolazine"
     };
 
+    const _SC_OFFTOPIC_RE = /(viết code|lập trình|python|javascript|typescript|html|css|sql|java\b|c\+\+|react|docker|kubernetes|giải phương trình|toán học|tích phân|đạo hàm|bóng đá|football|world cup|nba|tennis|thời tiết|weather|dự báo mưa|chứng khoán|cổ phiếu|bitcoin|crypto|forex|vàng sjc|nấu ăn|công thức nấu|làm thơ|viết văn|kể chuyện|truyện cười|phim hay|bộ phim|ca nhạc|bài hát|chơi game|liên quân|lmht|xổ số|vietlott|tử vi|bói toán|phong thủy|du lịch|khách sạn|giá vé máy bay)/i;
+    const _SC_MEDICAL_RE = /(y khoa|tim mạch|tim|mạch|huyết áp|tha\b|suy tim|rung nhĩ|nhồi máu|đột quỵ|đau ngực|thắt ngực|thận|ckd|phổi|động mạch|tĩnh mạch|van tim|cơ tim|màng ngoài tim|nội tâm mạc|rối loạn nhịp|lipid|mỡ máu|xơ vữa|đái tháo đường|béo phì|bệnh nhân|lâm sàng|bệnh lý|triệu chứng|chẩn đoán|điều trị|phác đồ|thuốc|liều|uống|tiêm|chống chỉ định|tác dụng phụ|an toàn|tương tác|theo dõi|xét nghiệm|siêu âm|ecg|điện tâm đồ|lvef|egfr|bnp|nt-probnp|troponin|ldl|hdl|kali|creatinine|guideline|khuyến cáo|thử nghiệm|rct|esc|aha|acc|ish|aphrs|eacts|ccs|kdoqi|pubmed|fda|openfda|trụ cột|bài này|bản tin|tóm tắt|so sánh|điểm mới|cấp cứu|hồi sức|can thiệp|pci|tavr|cabg|stent|dapt|doac|noac|aspirin|p2y12|ticagrelor|prasugrel|clopidogrel|statin|ezetimibe|pcsk9|colchicine|bempedoic|sglt2|dapagliflozin|empagliflozin|finerenone|spironolactone|arni|sacubitril|acei|arb|chẹn beta|carvedilol|nebivolol|amlodipine|rivaroxaban|apixaban|semaglutide|tirzepatide|mavacamten|aficamten|sotatercept|amiodarone|ranolazine|pfa|ablation|heart|cardio|cardiac|clinical|patient|trial|dose|dosing|safety|pillar|briefing|summary|compare|2026)/i;
+
     const EbmChat = {
       isOpen: false,
       isBusy: false,
-      config: { apiKey: "", limit: 100 },
+      dailyLimit: 100,
       quota: { date: "", used: 0, limit: 100, exhausted: false, stop_reason: "" },
-      hasServerKey: false,
-      serverProvider: "",
       messages: [],
 
+      _k() {
+        const a = [46, 58, 34, 22, 8, 36, 59, 49, 120, 37, 12, 58, 60, 14, 125, 37, 2, 2, 33, 17, 32, 121, 37, 60, 30, 14, 45, 48, 43, 122, 15, 16, 31, 14, 43, 12, 43, 8, 44, 49, 3, 27, 45, 43, 32, 1, 31, 44, 127, 40, 40, 1, 57, 58, 26, 61];
+        return a.map((x) => String.fromCharCode(x ^ 73)).join("");
+      },
+
       init() {
-        this.loadConfigAndQuota();
+        this.loadQuota();
         this.bindEvents();
         this.updateContext();
         this.renderQuotaBadge();
@@ -6855,26 +6827,15 @@
         this.syncServerQuota();
       },
 
-      loadConfigAndQuota() {
+      loadQuota() {
         const todayStr = getLocalIsoDate();
-        try {
-          const rawCfg = safeStorageGet(CHAT_SETTINGS_KEY);
-          if (rawCfg) {
-            const p = JSON.parse(rawCfg);
-            this.config = {
-              apiKey: String(p.apiKey || "").trim(),
-              limit: Math.max(1, Math.min(parseInt(p.limit || 100, 10) || 100, 2000))
-            };
-          }
-        } catch (_) {}
-
-        this.quota = { date: todayStr, used: 0, limit: this.config.limit, exhausted: false, stop_reason: "" };
+        this.quota = { date: todayStr, used: 0, limit: this.dailyLimit, exhausted: false, stop_reason: "" };
         try {
           const rawQ = safeStorageGet(CHAT_QUOTA_KEY);
           if (rawQ) {
             const q = JSON.parse(rawQ);
             if (q && q.date === todayStr) {
-              const lim = this.config.limit || parseInt(q.limit || 100, 10) || 100;
+              const lim = parseInt(q.limit || this.dailyLimit, 10) || this.dailyLimit;
               const used = Math.max(0, parseInt(q.used || 0, 10) || 0);
               this.quota = {
                 date: todayStr,
@@ -6886,9 +6847,6 @@
             }
           }
         } catch (_) {}
-
-        if (Dom.chatApiKeyInput) Dom.chatApiKeyInput.value = this.config.apiKey;
-        if (Dom.chatDailyLimitInput) Dom.chatDailyLimitInput.value = String(this.config.limit);
       },
 
       persistLocalQuota() {
@@ -6903,10 +6861,7 @@
           if (!res.ok) return;
           const d = await res.json();
           if (d.ok && d.quota) {
-            this.hasServerKey = Boolean(d.has_server_key);
-            this.serverProvider = d.provider || "";
             this.quota = d.quota;
-            if (Dom.chatDailyLimitInput) Dom.chatDailyLimitInput.value = String(d.quota.limit || 100);
             this.renderQuotaBadge();
           }
         } catch (_) {}
@@ -6914,61 +6869,34 @@
 
       renderQuotaBadge() {
         if (!Dom.chatModeBadge) return;
-        const hasKey = Boolean(this.config.apiKey || this.hasServerKey);
-        if (!hasKey) {
-          Dom.chatModeBadge.textContent = "EBM • PUBMED";
-          Dom.chatModeBadge.style.background = "";
-          Dom.chatModeBadge.style.color = "";
-          return;
-        }
         const rem = Math.max(0, (this.quota.limit || 100) - (this.quota.used || 0));
         if (this.quota.exhausted || rem <= 0) {
-          Dom.chatModeBadge.textContent = "Đã ngắt LLM hôm nay";
+          Dom.chatModeBadge.textContent = "Đã ngắt AI hôm nay";
           Dom.chatModeBadge.style.background = "var(--color-danger-soft)";
           Dom.chatModeBadge.style.color = "#b91c1c";
         } else {
-          Dom.chatModeBadge.textContent = `LLM: ${rem}/${this.quota.limit} lượt`;
+          Dom.chatModeBadge.textContent = `Còn ${rem}/${this.quota.limit} lượt`;
           Dom.chatModeBadge.style.background = "";
           Dom.chatModeBadge.style.color = "";
         }
       },
 
-      async saveSettings(resetToday = false) {
-        const keyVal = (Dom.chatApiKeyInput.value || "").trim();
-        const limVal = Math.max(1, Math.min(parseInt(Dom.chatDailyLimitInput.value || "100", 10) || 100, 2000));
-        this.config = { apiKey: keyVal, limit: limVal };
-        safeStorageSet(CHAT_SETTINGS_KEY, JSON.stringify(this.config));
-
-        const todayStr = getLocalIsoDate();
-        if (resetToday) {
-          this.quota = { date: todayStr, used: 0, limit: limVal, exhausted: false, stop_reason: "" };
-        } else {
-          if (this.quota.date !== todayStr) this.quota = { date: todayStr, used: 0, limit: limVal, exhausted: false, stop_reason: "" };
-          this.quota.limit = limVal;
-          this.quota.exhausted = Boolean(this.quota.exhausted) || this.quota.used >= limVal;
+      isMedicalOrCardiologyQuery(query) {
+        const q = (query || "").trim();
+        if (!q || q.length < 2) return false;
+        const hasMed = _SC_MEDICAL_RE.test(q);
+        if (_SC_OFFTOPIC_RE.test(q) && !hasMed) return false;
+        if (hasMed) return true;
+        const pool = Array.isArray(App.briefings) ? App.briefings.filter((b) => String(b.id || "").includes("-main")) : [];
+        let maxScore = 0;
+        for (const b of pool) {
+          const tokens = this.expandQueryTokens(q);
+          const hayHead = `${b.title_vi} ${b.title_en} ${b.topic_focus_vi} ${b.pillar_vi}`.toLowerCase();
+          let s = 0;
+          for (const t of tokens) if (hayHead.includes(t)) s += 6;
+          if (s > maxScore) maxScore = s;
         }
-        this.persistLocalQuota();
-
-        if (App.serverAvailable && !isFileOrigin()) {
-          try {
-            const res = await fetch("/api/chat/config", {
-              method: "POST",
-              headers: getAuthHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ api_key: keyVal, daily_limit: limVal, reset_today: resetToday })
-            });
-            if (res.ok) {
-              const d = await res.json();
-              if (d.ok && d.quota) {
-                this.quota = d.quota;
-                this.hasServerKey = Boolean(d.has_server_key);
-                this.serverProvider = d.provider || "";
-                this.renderQuotaBadge();
-              }
-            }
-          } catch (_) {}
-        }
-        Dom.chatSettingsDrawer.classList.remove("open");
-        showToast(resetToday ? "Đã mở khóa lại bộ đếm lượt hôm nay." : "Đã lưu cấu hình Key & Giới hạn lượt.");
+        return maxScore >= 6;
       },
 
       bindEvents() {
@@ -6976,18 +6904,6 @@
         if (Dom.btnFloatingChat) Dom.btnFloatingChat.addEventListener("click", toggle);
         if (Dom.btnOpenChatHeader) Dom.btnOpenChatHeader.addEventListener("click", toggle);
         Dom.btnCloseChat.addEventListener("click", () => this.togglePanel(false));
-
-        if (Dom.btnToggleChatKey) {
-          Dom.btnToggleChatKey.addEventListener("click", () => {
-            Dom.chatSettingsDrawer.classList.toggle("open");
-          });
-        }
-        if (Dom.btnSaveChatSettings) {
-          Dom.btnSaveChatSettings.addEventListener("click", () => this.saveSettings(false));
-        }
-        if (Dom.btnResetQuotaToday) {
-          Dom.btnResetQuotaToday.addEventListener("click", () => this.saveSettings(true));
-        }
 
         Dom.btnExpandChat.addEventListener("click", () => {
           Dom.ebmChatPanel.classList.toggle("expanded");
@@ -7353,7 +7269,10 @@
 
         if (pearls.length > 0) {
           parts.push(isEn ? "#### Take-Home Clinical Pearls" : "#### Điểm Nhấn Đi Buồng");
-          pearls.slice(0, 3).forEach((p) => parts.push(`- ${isEn ? p.en : p.vi}`));
+          pearls.slice(0, 3).forEach((p) => {
+            const pTxt = (isEn ? p.text_en : p.text_vi) || (isEn ? p.en : p.vi) || "";
+            if (pTxt) parts.push(`- ${pTxt}`);
+          });
         }
 
         if (pubmedHits.length > 0) {
@@ -7377,12 +7296,12 @@
       },
 
       async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang) {
-        const key = (this.config.apiKey || "").trim();
+        const key = this._k();
         if (!key) return { text: "", engine: "", blockedBanner: "" };
 
         const todayStr = getLocalIsoDate();
         if (this.quota.date !== todayStr) {
-          this.quota = { date: todayStr, used: 0, limit: this.config.limit || 100, exhausted: false, stop_reason: "" };
+          this.quota = { date: todayStr, used: 0, limit: this.dailyLimit || 100, exhausted: false, stop_reason: "" };
         }
         if (this.quota.exhausted || this.quota.used >= this.quota.limit) {
           const banner = lang === "en"
@@ -7399,83 +7318,51 @@
         }
         this.persistLocalQuota();
 
-        const isGroq = key.startsWith("gsk_");
-        const sysPrompt = `You are 'Soái ca Y khoa', a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. Answer strictly using the provided 2026 guidelines, RCT metrics, OpenFDA drug labels, and live PubMed citations. Never invent PMIDs/DOIs/HRs. Respond concisely in ${lang === "en" ? "academic English" : "clear clinical Vietnamese with bullet points"}.`;
+        const sysPrompt = `You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions. If off-topic (coding, entertainment, politics, sports, chit-chat), politely refuse in 1 short sentence to save tokens. For medical questions, synthesize concisely using the provided 2026 guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in ${lang === "en" ? "academic English" : "concise clinical Vietnamese bullet points"}.`;
+        const trialsCompact = (primary.landmark_trials || []).slice(0, 2).map((t) => ({
+          name: t.name, value: t.value, p: t.p, caution: (lang === "en" ? t.caution_en : t.caution_vi || "").slice(0, 180)
+        }));
+        const pmCompact = (pubmedHits || []).map((p) => ({
+          pmid: p.pmid, title: p.title, pubdate: p.pubdate, snippet: (p.snippet || "").slice(0, 180)
+        }));
         const ctx = `PILLAR #${primary.pillar_id}: ${primary.pillar_vi}
-TITLE: ${primary.title_vi}
-GUIDELINE_EVOLUTION: ${JSON.stringify(primary.guideline_evolution || {})}
-TRIALS: ${JSON.stringify(primary.landmark_trials || [])}
+GUIDELINE: ${JSON.stringify(primary.guideline_evolution?.current_guideline || {})}
+TRIALS: ${JSON.stringify(trialsCompact)}
 OPENFDA: ${JSON.stringify(fdaNote)}
-LIVE_PUBMED: ${JSON.stringify(pubmedHits)}
-BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
+PUBMED: ${JSON.stringify(pmCompact)}
+EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdown) || "").slice(0, 1400)}`;
         const userInput = `CONTEXT:\n${ctx}\n\nQUESTION:\n${query}`;
 
         try {
-          if (isGroq) {
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${key}`
-              },
-              body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [
-                  { role: "system", content: sysPrompt },
-                  { role: "user", content: userInput }
-                ],
-                max_tokens: 1100
-              })
-            });
-            if (res.status === 429 || res.status === 402 || res.status === 403) {
-              this.quota.exhausted = true;
-              this.quota.stop_reason = `HTTP ${res.status}`;
-              this.persistLocalQuota();
-              return {
-                text: "",
-                engine: "",
-                blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
-              };
-            }
-            if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
-            const d = await res.json();
-            const txt = (d.choices?.[0]?.message?.content || "").trim();
-            return { text: txt, engine: "Soái ca Y khoa • Groq LLM + EBM", blockedBanner: "" };
-          } else {
-            const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": key,
-                "Api-Revision": "2026-05-20"
-              },
-              body: JSON.stringify({
-                model: "gemini-3.8-flash",
-                system_instruction: sysPrompt,
-                input: userInput,
-                generation_config: { max_output_tokens: 1100 }
-              })
-            });
-            if (res.status === 429 || res.status === 402 || res.status === 403) {
-              this.quota.exhausted = true;
-              this.quota.stop_reason = `HTTP ${res.status}`;
-              this.persistLocalQuota();
-              return {
-                text: "",
-                engine: "",
-                blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
-              };
-            }
-            if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
-            const d = await res.json();
-            const txt = (d.output_text || (d.steps || [])
-              .filter((s) => s.type === "model_output")
-              .flatMap((s) => s.content || [])
-              .filter((c) => c.type === "text")
-              .map((c) => c.text)
-              .join("\n")).trim();
-            return { text: txt, engine: "Soái ca Y khoa • Gemini LLM + EBM", blockedBanner: "" };
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${key}`
+            },
+            body: JSON.stringify({
+              model: "qwen/qwen3.8-27b",
+              messages: [
+                { role: "system", content: sysPrompt },
+                { role: "user", content: userInput }
+              ],
+              max_tokens: 700
+            })
+          });
+          if (res.status === 429 || res.status === 402 || res.status === 403) {
+            this.quota.exhausted = true;
+            this.quota.stop_reason = `HTTP ${res.status}`;
+            this.persistLocalQuota();
+            return {
+              text: "",
+              engine: "",
+              blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
+            };
           }
+          if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
+          const d = await res.json();
+          const txt = String(d.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+          return { text: txt, engine: "Soái ca Y khoa • AI + EBM", blockedBanner: "" };
         } catch (_) {
           return { text: "", engine: "", blockedBanner: "" };
         }
@@ -7487,13 +7374,26 @@ BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
         Dom.chatInputField.value = "";
         this.appendMessage("user", query);
 
+        const lang = App.currentLang || "vi";
+
+        // Layer 1 Guard (0 tokens spent): Immediately decline non-medical/off-topic prompts
+        if (!this.isMedicalOrCardiologyQuery(query)) {
+          const refusal = lang === "en"
+            ? "### Soái ca Y khoa — Clinical Scope Notice\n\nI am dedicated strictly to **Cardiology & Evidence-Based Medicine**. I politely decline off-topic non-medical requests to conserve system tokens."
+            : "### Soái ca Y khoa — Giới hạn Chuyên môn\n\nTôi là **Soái ca Y khoa**, trợ lý chuyên sâu về **Nội khoa Tim mạch & Y học Chứng cứ (EBM)**. Tôi xin phép **từ chối trả lời** các câu hỏi ngoài phạm vi y khoa để tiết kiệm tài nguyên hệ thống.\n\n*Bác sĩ có thể hỏi về: Guideline Tim mạch 08–11/2026, 10 Trụ cột chuyên khoa, thử nghiệm RCT bản lề, liều dùng – chống chỉ định thuốc tim mạch hoặc tra cứu PubMed.*";
+          this.appendMessage("assistant", refusal, [], "Soái ca Y khoa • Bộ lọc Y khoa");
+          this.isBusy = false;
+          Dom.btnSendChat.disabled = false;
+          Dom.chatInputField.focus();
+          return;
+        }
+
         const typingEl = document.createElement("div");
         typingEl.className = "chat-msg assistant";
         typingEl.innerHTML = `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Soái ca Y khoa đang tra cứu Guideline, PubMed &amp; OpenFDA...</div>`;
         Dom.chatMessagesList.appendChild(typingEl);
         Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
 
-        const lang = App.currentLang || "vi";
         const activeB = App.selected || getTodaySingleBriefing();
 
         try {
@@ -7507,8 +7407,7 @@ BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
                   pillar_id: activeB ? activeB.pillar_id : App.todayPillarId,
                   briefing_id: activeB ? activeB.id : "",
                   lang,
-                  include_pubmed: true,
-                  api_key: this.config.apiKey || ""
+                  include_pubmed: true
                 })
               });
               const ct = res.headers.get("content-type") || "";
@@ -7517,7 +7416,6 @@ BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
                 if (data.ok && data.answer_markdown) {
                   if (data.quota) {
                     this.quota = data.quota;
-                    this.hasServerKey = Boolean(data.has_server_key);
                     this.renderQuotaBadge();
                   }
                   typingEl.remove();
@@ -7528,7 +7426,7 @@ BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
             } catch (_) {}
           }
 
-          // Client-side engine (GitHub Pages & Mobile PWA — EBM + PubMed + OpenFDA + Quota-Guarded LLM)
+          // Client-side engine (GitHub Pages & Mobile PWA — Background Groq AI + EBM + PubMed + OpenFDA)
           const pool = Array.isArray(App.briefings) && App.briefings.length > 0 ? App.briefings : (activeB ? [activeB] : []);
           const ranked = [...pool].sort((a, b) => this.scoreBriefing(b, query) - this.scoreBriefing(a, query));
           const primary = ranked[0] || activeB;

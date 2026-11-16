@@ -1953,7 +1953,9 @@ def _compose_deterministic_ebm_answer(
     if pearls:
         parts.append("#### Điểm Nhấn Đi Buồng (Take-Home)" if not is_en else "#### Take-Home Clinical Pearls")
         for p in pearls[:3]:
-            parts.append(f"- {p.get('en' if is_en else 'vi', '')}")
+            p_txt = p.get("text_en" if is_en else "text_vi") or p.get("en" if is_en else "vi", "")
+            if p_txt:
+                parts.append(f"- {p_txt}")
 
     if pubmed_hits:
         parts.append("#### Bằng chứng Mới Truy xuất từ NCBI PubMed" if not is_en else "#### Live NCBI PubMed References")
@@ -2097,11 +2099,56 @@ def _save_api_key_to_dotenv(api_key: str, daily_limit: int | None = None, reset_
     return {"ok": True, "quota": q, "has_server_key": bool(resolved), "provider": prov}
 
 
+_OFFTOPIC_RE = re.compile(
+    r"(viết code|lập trình|python|javascript|typescript|html|css|sql|java\b|c\+\+|react|docker|kubernetes|"
+    r"giải phương trình|toán học|tích phân|đạo hàm|bóng đá|football|world cup|nba|tennis|"
+    r"thời tiết|weather|dự báo mưa|chứng khoán|cổ phiếu|bitcoin|crypto|forex|vàng sjc|"
+    r"nấu ăn|công thức nấu|làm thơ|viết văn|kể chuyện|truyện cười|phim hay|bộ phim|ca nhạc|bài hát|"
+    r"chơi game|liên quân|lmht|xổ số|vietlott|tử vi|bói toán|phong thủy|du lịch|khách sạn|giá vé máy bay)",
+    re.IGNORECASE,
+)
+
+_MEDICAL_KEYWORDS_RE = re.compile(
+    r"(y khoa|tim mạch|tim|mạch|huyết áp|tha\b|suy tim|rung nhĩ|nhồi máu|đột quỵ|đau ngực|thắt ngực|"
+    r"thận|ckd|phổi|động mạch|tĩnh mạch|van tim|cơ tim|màng ngoài tim|nội tâm mạc|rối loạn nhịp|"
+    r"lipid|mỡ máu|xơ vữa|đái tháo đường|béo phì|bệnh nhân|lâm sàng|bệnh lý|triệu chứng|chẩn đoán|"
+    r"điều trị|phác đồ|thuốc|liều|uống|tiêm|chống chỉ định|tác dụng phụ|an toàn|tương tác|theo dõi|"
+    r"xét nghiệm|siêu âm|ecg|điện tâm đồ|lvef|egfr|bnp|nt-probnp|troponin|ldl|hdl|kali|creatinine|"
+    r"guideline|khuyến cáo|thử nghiệm|rct|esc|aha|acc|ish|aphrs|eacts|ccs|kdoqi|pubmed|fda|openfda|"
+    r"trụ cột|bài này|bản tin|tóm tắt|so sánh|điểm mới|cập nhật|cấp cứu|hồi sức|can thiệp|pci|tavr|cabg|"
+    r"stent|dapt|doac|noac|aspirin|p2y12|ticagrelor|prasugrel|clopidogrel|statin|ezetimibe|pcsk9|"
+    r"colchicine|bempedoic|sglt2|dapagliflozin|empagliflozin|finerenone|spironolactone|arni|sacubitril|"
+    r"acei|arb|chẹn beta|carvedilol|nebivolol|amlodipine|rivaroxaban|apixaban|semaglutide|tirzepatide|"
+    r"mavacamten|aficamten|sotatercept|amiodarone|ranolazine|pfa|ablation|heart|cardio|cardiac|clinical|"
+    r"patient|trial|dose|dosing|safety|pillar|briefing|summary|compare|2026)",
+    re.IGNORECASE,
+)
+
+
+def _is_medical_or_cardiology_query(query: str, briefings: list[dict], active_bid: str = "", active_pid: int | None = None) -> bool:
+    """Zero-token pre-LLM gatekeeper: block off-topic prompts before spending API quota."""
+    q = (query or "").strip()
+    if not q or len(q) < 2:
+        return False
+    has_med_kw = bool(_MEDICAL_KEYWORDS_RE.search(q))
+    if _OFFTOPIC_RE.search(q) and not has_med_kw:
+        return False
+    if has_med_kw:
+        return True
+    # Also check corpus match score without counting the active-briefing bonus
+    top_score = max(
+        (_score_briefing_for_chat(b, q, "", None) for b in briefings if "-main" in str(b.get("id", ""))),
+        default=0,
+    )
+    return top_score >= 6
+
+
 def answer_ebm_chat_query(req_data: dict) -> dict:
     """
     Soái ca Y khoa Q&A Handler:
-    Combines 10-pillar EBM curation + Live NCBI PubMed abstracts + OpenFDA drug labels,
-    with optional Gemini/Groq LLM synthesis guarded by a strict daily hard-stop quota circuit breaker.
+    - Enforces a zero-token off-topic medical relevance filter before invoking LLM.
+    - Combines 10-pillar EBM curation + Live NCBI PubMed + OpenFDA drug labels.
+    - Runs Groq/Gemini API from server .env strictly within daily turn limits.
     """
     query = str(req_data.get("query", "")).strip()
     if not query:
@@ -2116,6 +2163,32 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     raw_pid = req_data.get("pillar_id")
     active_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
     include_pubmed = bool(req_data.get("include_pubmed", True))
+    quota = _load_chat_quota()
+    provider, api_key = _resolve_chat_llm_key(req_data.get("api_key", ""))
+
+    # Layer 1 Guard (0 tokens spent): Reject non-medical / off-topic questions immediately
+    if not _is_medical_or_cardiology_query(query, briefings, active_bid, active_pid):
+        refusal = (
+            "### Soái ca Y khoa — Giới hạn Chuyên môn\n\n"
+            "Tôi là **Soái ca Y khoa**, trợ lý chuyên sâu về **Nội khoa Tim mạch & Y học Chứng cứ (EBM)**. "
+            "Tôi xin phép **từ chối trả lời** các câu hỏi ngoài phạm vi y khoa để tiết kiệm tài nguyên hệ thống.\n\n"
+            "*Bác sĩ có thể hỏi về: Guideline Tim mạch 08–11/2026, 10 Trụ cột chuyên khoa, thử nghiệm RCT bản lề, liều dùng – chống chỉ định thuốc tim mạch hoặc tra cứu bài báo PubMed.*"
+            if lang != "en" else
+            "### Soái ca Y khoa — Clinical Scope Notice\n\n"
+            "I am **Soái ca Y khoa**, dedicated strictly to **Cardiology & Evidence-Based Medicine**. "
+            "I politely decline off-topic non-medical requests to conserve system tokens."
+        )
+        return {
+            "ok": True,
+            "rejected_offtopic": True,
+            "answer_markdown": refusal,
+            "sources": [],
+            "engine_used": "Soái ca Y khoa • Bộ lọc Y khoa",
+            "matched_pillar_id": active_pid or 1,
+            "matched_briefing_id": active_bid,
+            "quota": quota,
+            "has_server_key": bool(api_key),
+        }
 
     ranked = sorted(
         briefings,
@@ -2128,11 +2201,9 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     pubmed_hits: list[dict] = []
     if include_pubmed:
         pm_query = _build_pubmed_chat_query(query, primary)
-        pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=3)
+        pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=2)
 
     fda_note = _fetch_openfda_drug_note(query)
-    provider, api_key = _resolve_chat_llm_key(req_data.get("api_key", ""))
-    quota = _load_chat_quota()
     quota_banner = ""
 
     if api_key:
@@ -2159,32 +2230,48 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                     quota["stop_reason"] = "Daily cap reached"
                 _save_chat_quota_unlocked(quota)
 
+            # Token-optimized compact clinical context (~1,600 chars)
+            trials_compact = [
+                {
+                    "name": t.get("name"),
+                    "value": t.get("value"),
+                    "p": t.get("p"),
+                    "caution": t.get("caution_vi" if lang != "en" else "caution_en", "")[:180],
+                }
+                for t in (primary.get("landmark_trials") or [])[:2]
+            ]
+            pm_compact = [
+                {"pmid": p.get("pmid"), "title": p.get("title"), "pubdate": p.get("pubdate"), "snippet": (p.get("snippet") or "")[:180]}
+                for p in pubmed_hits
+            ]
             ctx_blob = (
-                f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')} / {primary.get('pillar_name')}\n"
-                f"TITLE: {primary.get('title_vi')}\n"
-                f"GUIDELINE_EVOLUTION: {json.dumps(primary.get('guideline_evolution', {}), ensure_ascii=False)}\n"
-                f"TRIALS: {json.dumps(primary.get('landmark_trials', []), ensure_ascii=False)}\n"
-                f"PUBMED_LIVE: {json.dumps(pubmed_hits, ensure_ascii=False)}\n"
-                f"OPENFDA_LABEL: {json.dumps(fda_note, ensure_ascii=False)}\n"
-                f"BODY_EXCERPT:\n{(primary.get('part1_vi_markdown') or '')[:3500]}"
+                f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')}\n"
+                f"GUIDELINE: {json.dumps(primary.get('guideline_evolution', {}).get('current_guideline', {}), ensure_ascii=False)}\n"
+                f"PRIOR: {json.dumps(primary.get('guideline_evolution', {}).get('prior_guideline', {}), ensure_ascii=False)}\n"
+                f"TRIALS: {json.dumps(trials_compact, ensure_ascii=False)}\n"
+                f"PUBMED: {json.dumps(pm_compact, ensure_ascii=False)}\n"
+                f"OPENFDA: {json.dumps(fda_note, ensure_ascii=False)}\n"
+                f"EXCERPT:\n{(primary.get('part1_vi_markdown' if lang != 'en' else 'part2_en_markdown') or '')[:1400]}"
             )
             sys_prompt = (
-                "You are 'Soái ca Y khoa', a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
-                "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, OpenFDA labels, and live PubMed hits provided below. "
-                "Never fabricate PMIDs, DOIs, HR values, or drug dosages. Respond concisely in "
-                + ("academic English." if lang == "en" else "clear clinical Vietnamese with structured bullet points.")
+                "You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. "
+                "STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions. "
+                "If the user asks anything unrelated to medicine/cardiology (coding, entertainment, politics, sports, general chit-chat), "
+                "politely refuse in 1 short sentence to save tokens. "
+                "For medical questions, answer concisely and accurately using the provided 2026 Guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in "
+                + ("academic English." if lang == "en" else "concise clinical Vietnamese bullet points.")
             )
-            user_prompt = f"GROUNDED CONTEXT:\n{ctx_blob}\n\nCLINICIAN QUESTION:\n{query}"
+            user_prompt = f"CONTEXT:\n{ctx_blob}\n\nQUESTION:\n{query}"
             try:
                 llm_text = ""
                 if provider == "groq":
                     payload = json.dumps({
-                        "model": "llama-3.3-70b-versatile",
+                        "model": "qwen/qwen3.8-27b",
                         "messages": [
                             {"role": "system", "content": sys_prompt},
                             {"role": "user", "content": user_prompt},
                         ],
-                        "max_tokens": 1100,
+                        "max_tokens": 700,
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://api.groq.com/openai/v1/chat/completions",
@@ -2192,20 +2279,21 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         headers={
                             "Content-Type": "application/json",
                             "Authorization": f"Bearer {api_key}",
-                            "User-Agent": "SoaiCaYKhoa/1.0",
+                            "User-Agent": "Mozilla/5.0",
                         },
                         method="POST",
                     )
                     with urllib.request.urlopen(req, timeout=20) as r:
                         resp_j = json.loads(r.read().decode("utf-8"))
                     llm_text = resp_j["choices"][0]["message"]["content"]
-                    engine_name = "Soái ca Y khoa • Groq LLM + EBM"
+                    llm_text = re.sub(r"<think>[\s\S]*?</think>", "", llm_text).strip()
+                    engine_name = "Soái ca Y khoa • AI + EBM"
                 else:
                     payload = json.dumps({
                         "model": "gemini-3.8-flash",
                         "system_instruction": sys_prompt,
                         "input": user_prompt,
-                        "generation_config": {"max_output_tokens": 1100},
+                        "generation_config": {"max_output_tokens": 700},
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://generativelanguage.googleapis.com/v1beta/interactions",
@@ -2224,7 +2312,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
                         for c in (s.get("content") or []) if c.get("type") == "text"
                     )
-                    engine_name = "Soái ca Y khoa • Gemini LLM + EBM"
+                    engine_name = "Soái ca Y khoa • Gemini AI + EBM"
 
                 if llm_text and llm_text.strip():
                     return {
@@ -2552,20 +2640,6 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             try:
                 payload = answer_ebm_chat_query(req_data)
                 self._send_json(200 if payload.get("ok") else 400, payload)
-            except Exception as exc:
-                self._send_json(500, {"ok": False, "error": str(exc)})
-            return
-
-        if path == "/api/chat/config":
-            try:
-                raw_lim = req_data.get("daily_limit")
-                lim = int(raw_lim) if raw_lim is not None and str(raw_lim).strip() else None
-                res = _save_api_key_to_dotenv(
-                    api_key=str(req_data.get("api_key", "")),
-                    daily_limit=lim,
-                    reset_today=bool(req_data.get("reset_today", False)),
-                )
-                self._send_json(200, res)
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
