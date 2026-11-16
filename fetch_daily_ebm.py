@@ -1422,60 +1422,23 @@ def refresh_today_briefing(
                     "already_up_to_date": True,
                 }
 
-        # Step 1 (15%): Daily ascending rotation identification
+        # Step 1 (15%): Daily ascending rotation identification & Live Latest-Guideline Crawler
         if progress_cb:
             progress_cb(15, f"Hôm nay: Trụ cột #{pid}/10 — {target_pillar['vi_name']}")
 
-        curated = _load_curated_pillar_briefing(target_pillar, today_str)
-
-        # Step 2 (45%): Step-0 NCBI PubMed verification for current & prior Guidelines
-        guideline_pmids: list[str] = []
-        if curated and isinstance(curated.get("guideline_evolution"), dict):
-            ge = curated["guideline_evolution"]
-            for g_key in ("current_guideline", "prior_guideline"):
-                g_obj = ge.get(g_key)
-                if isinstance(g_obj, dict) and g_obj.get("pmid"):
-                    guideline_pmids.append(str(g_obj["pmid"]).strip())
-
-        guideline_query = (
-            " OR ".join(f"{pmid}[pmid]" for pmid in guideline_pmids)
-            if guideline_pmids
-            else target_pillar["search_query"]
-        )
-        if progress_cb:
-            progress_cb(30, f"Step 0: Đang xác thực Guideline hiện hành & tiền nhiệm trên NCBI PubMed...")
-        guideline_refs = fetch_pubmed_metadata(guideline_query, max_results=4)
-        if progress_cb:
-            if guideline_refs:
-                progress_cb(45, f"Đã xác thực {len(guideline_refs)} văn kiện Guideline qua NCBI PubMed.")
-            else:
-                progress_cb(45, "Giữ nguyên neo Guideline Step-0 đã xác thực (chế độ dự phòng ngoại tuyến).")
-
-        # Step 3 (75%): Step-0 verification for Landmark RCTs & build Guideline Evolution briefing
-        curated_anchors = curated.get("pubmed_anchors", []) if curated else []
-        trial_pmids = [
-            str(a.get("pmid")).strip()
-            for a in curated_anchors
-            if isinstance(a, dict) and a.get("pmid") and str(a.get("pmid")).strip() not in guideline_pmids
-        ]
-        if trial_pmids:
-            trial_query = " OR ".join(f"{pmid}[pmid]" for pmid in trial_pmids[:4])
-        elif curated and isinstance(curated.get("landmark_trials"), list) and curated["landmark_trials"]:
-            names = [t.get("name", "") for t in curated["landmark_trials"][:3] if isinstance(t, dict) and t.get("name")]
-            trial_query = (" OR ".join(names) + f" {target_pillar['name']}").strip()
-        else:
-            trial_query = target_pillar["search_query"]
-
-        if progress_cb:
-            progress_cb(60, f"Step 0: Đang xác thực Landmark RCTs nền tảng cho Trụ cột #{pid}...")
-        trial_refs = fetch_pubmed_metadata(trial_query, max_results=4)
-        all_verified_refs = guideline_refs + trial_refs
+        from crawl_cardiology_news import crawl_latest_guidelines, refresh_guideline_briefing
 
         resolved_key = api_key.strip()
         resolved_model = model_name.strip()
+
+        if progress_cb:
+            progress_cb(30, f"Đang crawl Guideline mới nhất (2025–2026) từ NCBI PubMed cho Trụ cột #{pid}...")
+
         if use_llm and resolved_key and resolved_model:
+            crawled_gl = crawl_latest_guidelines(pid, max_results=5, min_year=2025)
+            curated = refresh_guideline_briefing(pillar_id=pid, date_str=today_str)
             if progress_cb:
-                progress_cb(75, f"Đang tổng hợp Guideline Evolution bằng `{resolved_model}` (Step-0 Verified)...")
+                progress_cb(65, f"Đang tổng hợp Guideline Evolution bằng `{resolved_model}` (Live Guideline + Step-0)...")
             new_briefing = generate_briefing(
                 pillar=target_pillar,
                 model_name=resolved_model,
@@ -1484,15 +1447,41 @@ def refresh_today_briefing(
                 base_url=base_url.strip(),
             )
             if curated:
-                for key in ("guideline_evolution", "landmark_trials", "pearls", "topic_focus_vi", "topic_focus_en", "week_label", "short_date"):
+                for key in (
+                    "guideline_evolution",
+                    "landmark_trials",
+                    "pearls",
+                    "topic_focus_vi",
+                    "topic_focus_en",
+                    "week_label",
+                    "short_date",
+                    "live_crawled_guidelines",
+                    "last_guideline_crawl_at",
+                ):
                     if curated.get(key) and not new_briefing.get(key):
                         new_briefing[key] = curated[key]
+            crawled_anchors = [
+                {
+                    "pmid": g["pmid"],
+                    "title": g["title"],
+                    "source": g["source"],
+                    "pubdate": g["pubdate"],
+                    "doi": g["doi"],
+                    "url": g["url"],
+                }
+                for g in crawled_gl
+            ]
             new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
+                crawled_anchors,
                 new_briefing.get("pubmed_anchors", []),
-                all_verified_refs,
             )
-        elif curated is not None:
-            new_briefing = curated
+        else:
+            # Default: run deterministic live 2025-2026 guideline crawler + Guideline Evolution merge
+            new_briefing = refresh_guideline_briefing(
+                pillar_id=pid,
+                date_str=today_str,
+                progress_cb=progress_cb,
+            )
             new_briefing["date"] = today_str
             new_briefing["time"] = new_briefing.get("time") or "07:00 AM"
             new_briefing["pillar_id"] = pid
@@ -1500,21 +1489,26 @@ def refresh_today_briefing(
             new_briefing.setdefault("pillar_vi", target_pillar["vi_name"])
             new_briefing["verified_step0"] = True
             new_briefing.pop("crawled_articles", None)
-            new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
-                new_briefing.get("pubmed_anchors", []),
-                all_verified_refs,
-            )
-            if progress_cb:
-                progress_cb(
-                    75,
-                    f"Đã hoàn tất tổng hợp Guideline Evolution & {len(new_briefing['pubmed_anchors'])} nguồn Step-0.",
+
+            # Verify landmark trial anchors on PubMed Step-0 as well
+            gl_pmids = {
+                str(g.get("pmid", "")).strip()
+                for g in (new_briefing.get("live_crawled_guidelines") or [])
+                if g.get("pmid")
+            }
+            trial_pmids = [
+                str(a.get("pmid")).strip()
+                for a in (new_briefing.get("pubmed_anchors") or [])
+                if isinstance(a, dict) and a.get("pmid") and str(a.get("pmid")).strip() not in gl_pmids
+            ]
+            if trial_pmids:
+                if progress_cb:
+                    progress_cb(85, f"Step 0: Xác thực {len(trial_pmids[:4])} thử nghiệm Landmark RCTs trên PubMed...")
+                trial_refs = fetch_pubmed_metadata(" OR ".join(f"{p}[pmid]" for p in trial_pmids[:4]), max_results=4)
+                new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
+                    new_briefing.get("pubmed_anchors", []),
+                    trial_refs,
                 )
-        else:
-            pmids_for_abs = [r["pmid"] for r in all_verified_refs if r.get("pmid")]
-            abstracts_map = fetch_pubmed_abstracts(pmids_for_abs[:4])
-            new_briefing = _build_pubmed_digest_briefing(target_pillar, all_verified_refs, abstracts_map)
-            if progress_cb:
-                progress_cb(75, f"Đã tổng hợp bản tin PubMed Step-0 cho Trụ cột #{pid}.")
 
         # Step 4 (100%): Upsert ONLY today's single pillar briefing into data/briefings.js
         if pillar_id is None:
@@ -1734,6 +1728,17 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
                 self._send_json(401, {"ok": False, "error": "Unauthorized"})
                 return
             self._send_json(200, {"ok": True, "user": user})
+            return
+
+        if path == "/api/crawl-guideline":
+            raw_pid = query_params.get("pillar_id", [None])[0]
+            try:
+                pid_val = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else get_pillar_for_date(datetime.date.today())["id"]
+                from crawl_cardiology_news import crawl_latest_guidelines
+                items = crawl_latest_guidelines(pid_val, max_results=5, min_year=2025)
+                self._send_json(200, {"ok": True, "pillar_id": pid_val, "guidelines": items})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
             return
 
         if path == "/api/feedback":

@@ -4910,10 +4910,18 @@
         const cYr = ge.current_guideline.year || "";
         const extractSoc = (name) => {
           if (!name) return "Guideline";
-          if (/ESC\/ESH/i.test(name)) return "ESC/ESH";
           if (/ESC\/EACTS/i.test(name)) return "ESC/EACTS";
+          if (/ESC\/EAS/i.test(name)) return "ESC/EAS";
+          if (/ESC\/ESH/i.test(name)) return "ESC/ESH";
+          if (/ESC\/ERA/i.test(name)) return "ESC/ERA";
+          if (/AHA\/ACC/i.test(name)) return "AHA/ACC";
           if (/ACC\/AHA/i.test(name)) return "ACC/AHA";
+          if (/APHRS/i.test(name)) return "APHRS";
+          if (/CCS\/CHFS/i.test(name)) return "CCS/CHFS";
+          if (/JCS/i.test(name)) return "JCS";
+          if (/ISH/i.test(name)) return "ISH";
           if (/ESC/i.test(name)) return "ESC";
+          if (/ACC/i.test(name)) return "ACC";
           if (/KDIGO/i.test(name)) return "KDIGO";
           return "Guideline";
         };
@@ -5137,10 +5145,13 @@
       if (g.pmid) {
         links.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(g.pmid)}/" target="_blank" rel="noopener noreferrer">PMID: ${escapeHtml(g.pmid)}</a>`);
       }
+      const livePill = isCurrent && g.crawled_live
+        ? ` <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.14);color:#047857;border:1px solid rgba(16,185,129,0.3);vertical-align:middle;"><i class="fa-solid fa-satellite-dish"></i> Live Crawl</span>`
+        : "";
       return `
         <div class="guideline-ref-box ${isCurrent ? "current" : ""}">
-          <div class="guideline-ref-kicker">${escapeHtml(roleLabel)} ${g.year ? `&bull; ${escapeHtml(g.year)}` : ""}</div>
-          <div class="guideline-ref-name">${escapeHtml(g.name || "")}</div>
+          <div class="guideline-ref-kicker">${escapeHtml(roleLabel)} ${g.year ? `&bull; ${escapeHtml(g.year)}` : ""}${livePill}</div>
+          <div class="guideline-ref-name">${escapeHtml(g.name || g.title || "")}</div>
           ${links.length > 0 ? `<div class="guideline-ref-meta">${links.join(" &bull; ")}</div>` : ""}
         </div>
       `;
@@ -5637,7 +5648,67 @@
         }, 1200);
       };
 
-      // GitHub Pages / Static Cloud PWA live NCBI PubMed Step-0 verification mode
+      // Client-side Live Latest-Guideline Crawler (2025–2026+ Official Guidelines Only via NCBI PubMed)
+      const CLIENT_GUIDELINE_QUERIES = {
+        1: '("High Blood Pressure"[Title] OR hypertension[Title]) AND ("AHA/ACC"[Title] OR "ACC/AHA"[Title] OR "ISH"[Title] OR "ESC"[Title] OR "KDOQI"[Title]) NOT "Africa"[Title]',
+        2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title]) AND ("ESC/EAS"[Title] OR "ACC/AHA"[Title] OR "ESC"[Title])',
+        3: '("Acute Coronary Syndromes"[Title] OR "Chronic Coronary"[Title] OR "Coronary Artery Revascularization"[Title]) AND ("ACC/AHA"[Title] OR "ESC"[Title])',
+        4: '(("Antiplatelet"[Title] OR "Anticoagulant"[Title] OR "Acute Coronary Syndromes"[Title] OR "Stroke Prevention in Atrial Fibrillation"[Title]) AND ("ACC/AHA"[Title] OR "APHRS"[Title] OR "ESC"[Title]))',
+        5: '("heart failure"[Title] OR "cardiogenic shock"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA/ACC"[Title] OR "CCS"[Title] OR "JCS"[Title])',
+        6: '("Atrial Fibrillation"[Title] OR "Arrhythmia"[Title] OR "ventricular"[Title]) AND ("APHRS"[Title] OR "ESC"[Title] OR "HRS"[Title] OR "ACC/AHA"[Title])',
+        7: '("valvular heart disease"[Title] OR "Infective Endocarditis"[Title]) AND ("ESC/EACTS"[Title] OR "ESC"[Title] OR "JCS"[Title] OR "ACC/AHA"[Title])',
+        8: '("myocarditis"[Title] OR "pericarditis"[Title] OR "cardiomyopathies"[Title] OR "Adult Congenital Heart Disease"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])',
+        9: '("Acute Pulmonary Embolism"[Title] OR "Pulmonary Embolism"[Title] OR "aortic"[Title] OR "peripheral arterial"[Title]) AND ("AHA/ACC"[Title] OR "ESC"[Title] OR "JCS"[Title])',
+        10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "pregnancy"[Title] OR "cardio-oncology"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])'
+      };
+
+      async function crawlLatestGuidelineFromPubMed(pillarId) {
+        const topicQ = CLIENT_GUIDELINE_QUERIES[pillarId] || '("ESC Guidelines"[Title] OR "AHA/ACC"[Title] OR "ACC/AHA"[Title])';
+        const dateFilter = '("2025/01/01"[Date - Publication] : "2030/12/31"[Date - Publication])';
+        const typeFilter = '("Practice Guideline"[Publication Type] OR "Guideline"[Publication Type] OR "Guidelines"[Title] OR "Guideline"[Title] OR "Focused Update"[Title] OR "Expert Consensus"[Title] OR "Ten Commandments"[Title]) NOT "Correction to"[Title] NOT "Corrigendum"[Title] NOT "WITHDRAWN"[Title] NOT "Author Correction"[Title] NOT "Reply"[Title]';
+        const term = `(${topicQ}) AND ${typeFilter} AND ${dateFilter}`;
+        const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(term)}&retmode=json&retmax=12&sort=pub+date`;
+        const sResp = await fetch(esearchUrl);
+        if (!sResp.ok) return [];
+        const sJson = await sResp.json();
+        const ids = (sJson && sJson.esearchresult && sJson.esearchresult.idlist) || [];
+        if (ids.length === 0) return [];
+        const sumUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(ids.slice(0, 12).join(","))}&retmode=json`;
+        const sumResp = await fetch(sumUrl);
+        if (!sumResp.ok) return [];
+        const sumJson = await sumResp.json();
+        const resultObj = (sumJson && sumJson.result) || {};
+        const list = [];
+        for (const pid of ids) {
+          const it = resultObj[pid];
+          if (!it || !it.title) continue;
+          const titleClean = String(it.title).replace(/\.+$/, "").trim();
+          const low = titleClean.toLowerCase();
+          if (/(correction to|corrigendum|withdrawn|reply to|demographic reporting|informing the 202|patient perspective|missing stakeholders)/i.test(low)) continue;
+          const doiObj = (it.articleids || []).find((a) => a.idtype === "doi");
+          const doi = doiObj ? doiObj.value : "";
+          const pubdate = it.pubdate || "";
+          const yrMatch = (titleClean.match(/\b(202[5-9]|203\d)\b/) || pubdate.match(/\b(202[5-9]|203\d)\b/));
+          const year = yrMatch ? yrMatch[1] : "2026";
+          const isPrimary = /guideline(s)?\s+(for|on)|focused update|expert consensus/i.test(low);
+          const isFlagship = /Eur Heart J|Circulation|J Am Coll Cardiol|Hypertension|J Hypertens|J Arrhythm|Can J Cardiol|Circ J/i.test(it.source || "");
+          const score = (Number(year) * 100) + (isPrimary ? 15 : 5) + (isFlagship ? 4 : 0);
+          list.push({
+            pmid: String(pid),
+            title: titleClean,
+            source: it.source || "PubMed",
+            pubdate,
+            year,
+            doi,
+            url: doi ? `https://doi.org/${doi}` : `https://pubmed.ncbi.nlm.nih.gov/${pid}/`,
+            _score: score
+          });
+        }
+        list.sort((a, b) => b._score - a._score);
+        return list.slice(0, 4);
+      }
+
+      // GitHub Pages / Static Cloud PWA live NCBI PubMed Guideline Crawler mode
       if (!App.serverAvailable || isFileOrigin()) {
         const localToday = getLocalIsoDate();
         const pid = getPillarIdForDate(localToday);
@@ -5645,19 +5716,53 @@
         computeRotationPillarsFromDate(localToday);
         setProgress(20, `Đang đồng bộ chu kỳ Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}...`);
         try {
-          const pInfo = getPillarInfo(pid);
-          const q = (pInfo.search_query || pInfo.name || "ESC Guidelines").split(" ").slice(0, 6).join(" ");
-          setProgress(55, `Đang đối chiếu trực tiếp NCBI PubMed Step-0 cho Trụ cột #${pid}...`);
-          const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmode=json&retmax=3`;
-          await fetch(url).catch(() => {});
-          setProgress(90, "Đang dựng lại sơ đồ Guideline Evolution...");
+          setProgress(45, `Đang crawl Guideline mới nhất (2025–2026) từ NCBI PubMed cho Trụ cột #${pid}...`);
+          const crawled = await crawlLatestGuidelineFromPubMed(pid);
+          setProgress(85, "Đang cập nhật sơ đồ Guideline Evolution & Nguồn Step-0...");
           const target = getTodaySingleBriefing();
+          if (target && crawled.length > 0) {
+            const top = crawled[0];
+            const ge = target.guideline_evolution || (target.guideline_evolution = {});
+            const cur = ge.current_guideline || {};
+            const curYears = (String(cur.year || "").match(/\b20\d{2}\b/g) || []).map(Number);
+            const curMaxYear = curYears.length > 0 ? Math.max(...curYears) : 0;
+            const nowStamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+            if (Number(top.year) > curMaxYear) {
+              if (cur.name || cur.title) {
+                ge.prior_guideline = {
+                  name: cur.name || cur.title,
+                  year: String(curMaxYear || 2024),
+                  doi: cur.doi || "",
+                  pmid: cur.pmid || ""
+                };
+              }
+              ge.current_guideline = {
+                name: top.title,
+                year: String(top.year),
+                doi: top.doi,
+                pmid: top.pmid,
+                crawled_live: true,
+                crawled_at: nowStamp
+              };
+            } else {
+              cur.crawled_live = true;
+              cur.crawled_at = nowStamp;
+              ge.current_guideline = cur;
+            }
+            const existing = Array.isArray(target.pubmed_anchors) ? target.pubmed_anchors : [];
+            const seenPmid = new Set(existing.map((a) => String(a.pmid || "")));
+            const newAnchors = crawled
+              .filter((g) => g.pmid && !seenPmid.has(g.pmid))
+              .map(({ _score, year, ...rest }) => rest);
+            target.pubmed_anchors = [...newAnchors, ...existing];
+            target.last_guideline_crawl_at = nowStamp;
+          }
           renderDailyRotationBanner();
           renderPillarsTiles();
           renderModeSpecificPanels();
           if (target) selectBriefing(target);
-          setProgress(100, `Hoàn tất xác thực Trụ cột #${pid}/10 (100%)!`);
-          if (!silent) showToast(`Đã đồng bộ Trụ cột #${pid} hôm nay qua NCBI PubMed!`);
+          setProgress(100, `Đã crawl ${crawled.length} Guideline mới nhất (2025–2026) cho Trụ cột #${pid}/10!`);
+          if (!silent) showToast(`Đã crawl Guideline 2025–2026 mới nhất cho Trụ cột #${pid} từ NCBI PubMed!`);
         } catch (_) {
           setProgress(100, "Đã đồng bộ dữ liệu cục bộ.");
         } finally {
