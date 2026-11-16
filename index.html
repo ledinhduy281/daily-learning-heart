@@ -2750,9 +2750,120 @@
       display: flex;
     }
     .ebm-chat-panel.expanded {
-      width: 680px;
-      height: 78dvh;
-      max-height: calc(100dvh - 96px);
+      inset: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      border-radius: 0 !important;
+      border: none !important;
+      z-index: 260;
+    }
+    .ebm-chat-panel.expanded .chat-messages-scroll,
+    .ebm-chat-panel.expanded .chat-input-form,
+    .ebm-chat-panel.expanded .chat-context-strip,
+    .ebm-chat-panel.expanded .chat-quick-strip,
+    .ebm-chat-panel.expanded .chat-history-drawer {
+      padding-left: max(18px, calc((100vw - 980px) / 2));
+      padding-right: max(18px, calc((100vw - 980px) / 2));
+    }
+    .chat-hdr-btn.active-btn {
+      background: rgba(62, 207, 142, 0.28);
+      border-color: var(--color-primary);
+      color: #ffffff;
+    }
+    .chat-history-drawer {
+      display: none;
+      flex-direction: column;
+      max-height: 260px;
+      background: var(--color-canvas-soft);
+      border-bottom: 1px solid var(--color-hairline);
+      flex-shrink: 0;
+    }
+    .ebm-chat-panel.expanded .chat-history-drawer {
+      max-height: 340px;
+    }
+    .chat-history-drawer.open {
+      display: flex;
+    }
+    .chat-history-header {
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid var(--color-hairline-cool);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+    .chat-history-list {
+      overflow-y: auto;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chat-history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--rounded-sm);
+      border: 1px solid var(--color-hairline);
+      background: var(--color-canvas);
+      cursor: pointer;
+      transition: border-color 0.14s ease, background-color 0.14s ease;
+    }
+    .chat-history-item:hover {
+      border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.06);
+    }
+    .chat-history-item.active {
+      border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.12);
+    }
+    .chat-history-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .chat-history-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--color-ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-history-meta {
+      font-size: 10.5px;
+      color: var(--color-ink-mute);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chat-history-del-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .chat-history-del-btn:hover {
+      background: var(--color-danger-soft);
+      color: #b91c1c;
     }
 
     .ebm-chat-header {
@@ -3048,8 +3159,7 @@
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         padding: 10px 14px;
       }
-      .ebm-chat-panel,
-      .ebm-chat-panel.expanded {
+      .ebm-chat-panel:not(.expanded) {
         inset: auto 0 0 0;
         width: 100vw;
         max-width: 100vw;
@@ -3786,16 +3896,34 @@
         <div class="ebm-chat-subtitle" id="chatEngineSubtitle">Trợ lý Lâm sàng Tim mạch • Thực chứng EBM &amp; PubMed</div>
       </div>
       <div class="ebm-chat-actions">
-        <button type="button" class="chat-hdr-btn" id="btnExpandChat" title="Mở rộng / Thu gọn khung chat" aria-label="Mở rộng khung chat">
+        <button type="button" class="chat-hdr-btn" id="btnNewChat" title="Cuộc trò chuyện mới" aria-label="Cuộc trò chuyện mới">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+        <button type="button" class="chat-hdr-btn" id="btnToggleChatHistory" title="Lịch sử các cuộc trò chuyện" aria-label="Lịch sử trò chuyện">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </button>
+        <button type="button" class="chat-hdr-btn" id="btnExpandChat" title="Phóng toàn trang" aria-label="Phóng toàn trang">
           <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
         </button>
-        <button type="button" class="chat-hdr-btn" id="btnClearChat" title="Xóa lịch sử hỏi đáp" aria-label="Xóa hội thoại">
+        <button type="button" class="chat-hdr-btn" id="btnClearChat" title="Xóa cuộc trò chuyện hiện tại" aria-label="Xóa hội thoại">
           <i class="fa-regular fa-trash-can"></i>
         </button>
         <button type="button" class="chat-hdr-btn" id="btnCloseChat" title="Đóng" aria-label="Đóng chat">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
+    </div>
+
+    <div class="chat-history-drawer" id="chatHistoryDrawer">
+      <div class="chat-history-header">
+        <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--color-primary-deep); margin-right: 5px;"></i> Lịch sử các cuộc trò chuyện</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" class="btn btn-secondary-outline" id="btnNewChatFromDrawer" style="padding: 3px 8px; font-size: 11px;">
+            <i class="fa-solid fa-plus"></i> Trò chuyện mới
+          </button>
+        </div>
+      </div>
+      <div class="chat-history-list" id="chatHistoryList"></div>
     </div>
 
     <div class="chat-context-strip">
@@ -3854,6 +3982,7 @@
     const CLOUD_USERS_KEY = "ebm_cloud_users_db";
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
+    const CHAT_SESSIONS_KEY = "soaica_chat_sessions_v1";
     const ANCHOR_DATE_STR = "2026-11-16";
 
     const DEFAULT_PILLARS_CATALOG = [
@@ -4116,6 +4245,11 @@
       btnFloatingChat: document.getElementById("btnFloatingChat"),
       ebmChatPanel: document.getElementById("ebmChatPanel"),
       btnCloseChat: document.getElementById("btnCloseChat"),
+      btnNewChat: document.getElementById("btnNewChat"),
+      btnNewChatFromDrawer: document.getElementById("btnNewChatFromDrawer"),
+      btnToggleChatHistory: document.getElementById("btnToggleChatHistory"),
+      chatHistoryDrawer: document.getElementById("chatHistoryDrawer"),
+      chatHistoryList: document.getElementById("chatHistoryList"),
       btnExpandChat: document.getElementById("btnExpandChat"),
       btnClearChat: document.getElementById("btnClearChat"),
       chatEngineSubtitle: document.getElementById("chatEngineSubtitle"),
@@ -6809,9 +6943,13 @@
 
     const EbmChat = {
       isOpen: false,
+      isExpanded: false,
+      isHistoryOpen: false,
       isBusy: false,
       dailyLimit: 500,
       quota: { date: "", used: 0, limit: 500, exhausted: false, stop_reason: "" },
+      sessions: [],
+      currentSessionId: "",
       messages: [],
 
       _k() {
@@ -6824,7 +6962,7 @@
         this.bindEvents();
         this.updateContext();
         this.renderQuotaBadge();
-        this.pushWelcomeMessage();
+        this.loadSessions();
         this.syncServerQuota();
       },
 
@@ -6924,14 +7062,35 @@
         if (Dom.btnOpenChatHeader) Dom.btnOpenChatHeader.addEventListener("click", toggle);
         Dom.btnCloseChat.addEventListener("click", () => this.togglePanel(false));
 
-        Dom.btnExpandChat.addEventListener("click", () => {
-          Dom.ebmChatPanel.classList.toggle("expanded");
-        });
+        Dom.btnExpandChat.addEventListener("click", () => this.toggleExpand());
+        if (Dom.btnNewChat) Dom.btnNewChat.addEventListener("click", () => this.createNewSession(true));
+        if (Dom.btnNewChatFromDrawer) Dom.btnNewChatFromDrawer.addEventListener("click", () => this.createNewSession(true));
+        if (Dom.btnToggleChatHistory) Dom.btnToggleChatHistory.addEventListener("click", () => this.toggleHistoryDrawer());
+        if (Dom.chatHistoryList) {
+          Dom.chatHistoryList.addEventListener("click", (e) => {
+            const delBtn = e.target.closest("[data-del-sid]");
+            if (delBtn) {
+              e.stopPropagation();
+              this.deleteSession(delBtn.dataset.delSid);
+              return;
+            }
+            const item = e.target.closest(".chat-history-item[data-sid]");
+            if (item) {
+              this.switchSession(item.dataset.sid);
+            }
+          });
+        }
 
         Dom.btnClearChat.addEventListener("click", () => {
-          this.messages = [];
-          Dom.chatMessagesList.innerHTML = "";
-          this.pushWelcomeMessage();
+          const cid = this.currentSessionId;
+          if (cid) {
+            this.deleteSession(cid);
+          } else {
+            this.messages = [];
+            Dom.chatMessagesList.innerHTML = "";
+            this.pushWelcomeMessage();
+          }
+          showToast("Đã xóa cuộc trò chuyện hiện tại.");
         });
 
         Dom.chatQuickPrompts.addEventListener("click", (e) => {
@@ -6954,6 +7113,195 @@
             this.togglePanel(false);
           }
         });
+      },
+
+      toggleExpand(forceState) {
+        this.isExpanded = typeof forceState === "boolean" ? forceState : !this.isExpanded;
+        Dom.ebmChatPanel.classList.toggle("expanded", this.isExpanded);
+        if (this.isExpanded) {
+          Dom.btnExpandChat.innerHTML = '<i class="fa-solid fa-down-left-and-up-right-to-center"></i>';
+          Dom.btnExpandChat.title = "Thu nhỏ khung chat";
+          Dom.btnExpandChat.setAttribute("aria-label", "Thu nhỏ khung chat");
+          Dom.btnExpandChat.classList.add("active-btn");
+        } else {
+          Dom.btnExpandChat.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
+          Dom.btnExpandChat.title = "Phóng toàn trang";
+          Dom.btnExpandChat.setAttribute("aria-label", "Phóng toàn trang");
+          Dom.btnExpandChat.classList.remove("active-btn");
+        }
+      },
+
+      loadSessions() {
+        try {
+          const raw = safeStorageGet(CHAT_SESSIONS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              this.sessions = parsed.filter((s) => s && s.id && Array.isArray(s.messages));
+              if (this.sessions.length > 0) {
+                const latest = this.sessions[0];
+                this.currentSessionId = latest.id;
+                this.messages = [...latest.messages];
+                this.renderCurrentMessages();
+                this.renderHistoryDrawer();
+                return;
+              }
+            }
+          }
+        } catch (_) {}
+        this.sessions = [];
+        this.createNewSession(false);
+      },
+
+      saveSessions() {
+        const curIdx = this.sessions.findIndex((s) => s.id === this.currentSessionId);
+        const firstUser = (this.messages || []).find((m) => m && m.role === "user" && String(m.markdownText || "").trim());
+        const rawTitle = firstUser ? String(firstUser.markdownText).trim().replace(/\s+/g, " ") : "";
+        const derivedTitle = rawTitle
+          ? (rawTitle.length > 56 ? `${rawTitle.slice(0, 56)}...` : rawTitle)
+          : "Cuộc trò chuyện mới";
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = b ? b.pillar_id : (App.todayPillarId || 1);
+
+        if (curIdx >= 0) {
+          this.sessions[curIdx] = {
+            ...this.sessions[curIdx],
+            title: derivedTitle,
+            pillarId: this.sessions[curIdx].pillarId || pid,
+            updatedAt: new Date().toISOString(),
+            messages: [...this.messages]
+          };
+        } else if (this.currentSessionId) {
+          this.sessions.unshift({
+            id: this.currentSessionId,
+            title: derivedTitle,
+            pillarId: pid,
+            updatedAt: new Date().toISOString(),
+            messages: [...this.messages]
+          });
+        }
+
+        // Keep active session + sessions that have at least 1 user question, capped at 30
+        this.sessions = this.sessions
+          .filter((s) => s.id === this.currentSessionId || (s.messages || []).some((m) => m && m.role === "user"))
+          .slice(0, 30);
+
+        safeStorageSet(CHAT_SESSIONS_KEY, JSON.stringify(this.sessions));
+        this.renderHistoryDrawer();
+      },
+
+      createNewSession(notify = true) {
+        if (this.isBusy) return;
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = (b && b.pillar_id) || App.todayPillarId || 1;
+        const sess = {
+          id: `csess-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          title: "Cuộc trò chuyện mới",
+          pillarId: pid,
+          updatedAt: new Date().toISOString(),
+          messages: []
+        };
+        this.sessions = (this.sessions || []).filter(
+          (s) => Array.isArray(s.messages) && s.messages.some((m) => m && m.role === "user")
+        );
+        this.sessions.unshift(sess);
+        this.currentSessionId = sess.id;
+        this.messages = [];
+        Dom.chatMessagesList.innerHTML = "";
+        this.toggleHistoryDrawer(false);
+        this.pushWelcomeMessage();
+        if (notify) {
+          showToast("Đã bắt đầu cuộc trò chuyện mới với Soái ca Y khoa.");
+        }
+        if (this.isOpen && Dom.chatInputField) {
+          setTimeout(() => Dom.chatInputField.focus(), 50);
+        }
+      },
+
+      switchSession(sessionId, closeHistory = true) {
+        if (this.isBusy) return;
+        const found = (this.sessions || []).find((s) => s.id === sessionId);
+        if (!found) return;
+        this.currentSessionId = found.id;
+        this.messages = Array.isArray(found.messages) ? [...found.messages] : [];
+        this.renderCurrentMessages();
+        if (closeHistory) {
+          this.toggleHistoryDrawer(false);
+        }
+        this.renderHistoryDrawer();
+      },
+
+      deleteSession(sessionId) {
+        if (this.isBusy) return;
+        this.sessions = (this.sessions || []).filter((s) => s.id !== sessionId);
+        if (sessionId === this.currentSessionId) {
+          if (this.sessions.length > 0) {
+            this.switchSession(this.sessions[0].id, false);
+          } else {
+            this.createNewSession(false);
+            return;
+          }
+        }
+        safeStorageSet(CHAT_SESSIONS_KEY, JSON.stringify(this.sessions));
+        this.renderHistoryDrawer();
+      },
+
+      renderCurrentMessages() {
+        Dom.chatMessagesList.innerHTML = "";
+        (this.messages || []).forEach((m) => this.renderMessageDom(m));
+        Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
+      },
+
+      toggleHistoryDrawer(forceState) {
+        this.isHistoryOpen = typeof forceState === "boolean" ? forceState : !this.isHistoryOpen;
+        if (Dom.chatHistoryDrawer) {
+          Dom.chatHistoryDrawer.classList.toggle("open", this.isHistoryOpen);
+        }
+        if (Dom.btnToggleChatHistory) {
+          Dom.btnToggleChatHistory.classList.toggle("active-btn", this.isHistoryOpen);
+        }
+        if (this.isHistoryOpen) {
+          this.renderHistoryDrawer();
+        }
+      },
+
+      renderHistoryDrawer() {
+        if (!Dom.chatHistoryList) return;
+        const list = this.sessions || [];
+        if (list.length === 0) {
+          Dom.chatHistoryList.innerHTML = `<div style="font-size: 12px; color: var(--color-ink-mute); padding: 8px 4px;">Chưa có lịch sử cuộc trò chuyện nào.</div>`;
+          return;
+        }
+        Dom.chatHistoryList.innerHTML = list.map((s) => {
+          const isCur = s.id === this.currentSessionId;
+          const qCount = (s.messages || []).filter((m) => m && m.role === "user").length;
+          let timeStr = "";
+          try {
+            const d = new Date(s.updatedAt);
+            if (!isNaN(d.getTime())) {
+              const hh = String(d.getHours()).padStart(2, "0");
+              const mm = String(d.getMinutes()).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mo = String(d.getMonth() + 1).padStart(2, "0");
+              timeStr = `${hh}:${mm} • ${dd}/${mo}`;
+            }
+          } catch (_) {}
+          return `<div class="chat-history-item${isCur ? " active" : ""}" data-sid="${escapeHtml(s.id)}">
+            <div class="chat-history-main">
+              <div class="chat-history-title">${escapeHtml(s.title || "Cuộc trò chuyện mới")}</div>
+              <div class="chat-history-meta">
+                <span>Trụ cột #${escapeHtml(String(s.pillarId || 1))}</span>
+                <span>•</span>
+                <span>${qCount} câu hỏi</span>
+                ${timeStr ? `<span>•</span><span>${escapeHtml(timeStr)}</span>` : ""}
+                ${isCur ? `<span style="color: var(--color-primary-deep); font-weight: 600;">• Đang mở</span>` : ""}
+              </div>
+            </div>
+            <button type="button" class="chat-history-del-btn" data-del-sid="${escapeHtml(s.id)}" title="Xóa cuộc trò chuyện" aria-label="Xóa cuộc trò chuyện">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>`;
+        }).join("");
       },
 
       togglePanel(forceState) {
@@ -7008,11 +7356,18 @@
 
       appendMessage(role, markdownText, sources = [], engineLabel = "") {
         const id = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        this.messages.push({ id, role, markdownText, sources, engineLabel });
+        const msgObj = { id, role, markdownText, sources, engineLabel };
+        this.messages.push(msgObj);
+        const wrap = this.renderMessageDom(msgObj);
+        this.saveSessions();
+        return wrap;
+      },
 
+      renderMessageDom(msgObj) {
+        const { id, role, markdownText, sources = [], engineLabel = "" } = msgObj;
         const wrap = document.createElement("div");
         wrap.className = `chat-msg ${role}`;
-        wrap.id = id;
+        wrap.id = id || `cmsg-${Date.now()}`;
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble";
