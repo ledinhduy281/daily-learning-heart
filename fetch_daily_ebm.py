@@ -1763,13 +1763,106 @@ def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", 
     return score
 
 
+_CARDIO_DRUG_MAP: dict[str, str] = {
+    "finerenone": "finerenone",
+    "kerendia": "finerenone",
+    "dapagliflozin": "dapagliflozin",
+    "forxiga": "dapagliflozin",
+    "empagliflozin": "empagliflozin",
+    "jardiance": "empagliflozin",
+    "mavacamten": "mavacamten",
+    "camzyos": "mavacamten",
+    "aficamten": "aficamten",
+    "ticagrelor": "ticagrelor",
+    "brilinta": "ticagrelor",
+    "prasugrel": "prasugrel",
+    "clopidogrel": "clopidogrel",
+    "plavix": "clopidogrel",
+    "rivaroxaban": "rivaroxaban",
+    "xarelto": "rivaroxaban",
+    "apixaban": "apixaban",
+    "eliquis": "apixaban",
+    "dabigatran": "dabigatran",
+    "sacubitril": "sacubitril",
+    "entresto": "sacubitril",
+    "spironolactone": "spironolactone",
+    "semaglutide": "semaglutide",
+    "wegovy": "semaglutide",
+    "ozempic": "semaglutide",
+    "tirzepatide": "tirzepatide",
+    "colchicine": "colchicine",
+    "bempedoic": "bempedoic acid",
+    "evolocumab": "evolocumab",
+    "alirocumab": "alirocumab",
+    "inclisiran": "inclisiran",
+    "sotatercept": "sotatercept",
+    "winrevair": "sotatercept",
+    "amiodarone": "amiodarone",
+    "carvedilol": "carvedilol",
+    "nebivolol": "nebivolol",
+    "valsartan": "valsartan",
+    "ramipril": "ramipril",
+    "amlodipine": "amlodipine",
+    "ranolazine": "ranolazine",
+}
+
+
+def _fetch_openfda_drug_note(query: str) -> dict | None:
+    """Query public keyless OpenFDA Drug Label API for dosing, contraindications, and safety notes."""
+    q_low = (query or "").lower()
+    matched_drug = ""
+    for alias, generic in _CARDIO_DRUG_MAP.items():
+        if alias in q_low:
+            matched_drug = generic
+            break
+    if not matched_drug:
+        return None
+    try:
+        search_expr = urllib.parse.quote(f'openfda.generic_name:"{matched_drug}"')
+        url = f"https://api.fda.gov/drug/label.json?search={search_expr}&limit=1"
+        req = urllib.request.Request(url, headers={"User-Agent": "SoaiCaYKhoa/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        res = (data.get("results") or [None])[0]
+        if not res:
+            return None
+
+        wants_contra = any(w in q_low for w in ("chống chỉ định", "an toàn", "cảnh báo", "tác dụng phụ", "caution", "safety", "contraindicat", "thận", "kali"))
+        wants_dose = any(w in q_low for w in ("liều", "dose", "dosing", "mg", "uống", "tiêm", "chỉnh liều"))
+
+        raw_txt = ""
+        field_label = "Tóm tắt Dược lâm sàng OpenFDA"
+        if wants_contra and res.get("contraindications"):
+            raw_txt = " ".join(res["contraindications"])
+            field_label = "Chống chỉ định (OpenFDA)"
+        elif wants_dose and res.get("dosage_and_administration"):
+            raw_txt = " ".join(res["dosage_and_administration"])
+            field_label = "Liều dùng & Cách dùng (OpenFDA)"
+        elif res.get("warnings_and_cautions") or res.get("contraindications"):
+            raw_txt = " ".join(res.get("contraindications") or res.get("warnings_and_cautions"))
+            field_label = "Lưu ý An toàn (OpenFDA)"
+        elif res.get("indications_and_usage"):
+            raw_txt = " ".join(res["indications_and_usage"])
+            field_label = "Chỉ định Chính thức (OpenFDA)"
+
+        cleaned = re.sub(r"\s+", " ", raw_txt).strip()
+        if not cleaned:
+            return None
+        if len(cleaned) > 340:
+            cleaned = cleaned[:337].rsplit(" ", 1)[0] + "..."
+        return {"drug": matched_drug.title(), "label": field_label, "text": cleaned}
+    except Exception:
+        return None
+
+
 def _compose_deterministic_ebm_answer(
     query: str,
     briefings: list[dict],
     pubmed_hits: list[dict],
     lang: str = "vi",
+    fda_note: dict | None = None,
 ) -> tuple[str, list[dict]]:
-    """Build a structured, zero-cost ($0) Step-0 grounded EBM clinical answer without LLM fees."""
+    """Build Soái ca Y khoa structured clinical response grounded on 2026 Guidelines, RCTs, PubMed & OpenFDA."""
     primary = briefings[0]
     is_en = lang == "en"
     q_low = (query or "").lower()
@@ -1780,12 +1873,20 @@ def _compose_deterministic_ebm_answer(
     trials = primary.get("landmark_trials") or []
     pearls = primary.get("pearls") or []
 
+    translate_fn = None
+    if not is_en:
+        try:
+            from crawl_cardiology_news import translate_en_to_vi
+            translate_fn = translate_en_to_vi
+        except Exception:
+            translate_fn = None
+
     parts: list[str] = []
     if is_en:
-        parts.append(f"### EBM Clinical Answer — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
-        parts.append(f"**Current Standard ({cur_g.get('year', '2026')}):** {cur_g.get('name', primary.get('title_en', ''))} *(Prior: {prior_g.get('name', '—')})*.")
+        parts.append(f"### Soái ca Y khoa — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
+        parts.append(f"**Current Guideline ({cur_g.get('year', '2026')}):** {cur_g.get('name', primary.get('title_en', ''))} *(Prior: {prior_g.get('name', '—')})*.")
     else:
-        parts.append(f"### Giải đáp Chứng cứ — Trụ cột #{primary.get('pillar_id')}: {primary.get('pillar_vi', primary.get('pillar_name', ''))}")
+        parts.append(f"### Soái ca Y khoa — Giải đáp Trụ cột #{primary.get('pillar_id')}: {primary.get('pillar_vi', primary.get('pillar_name', ''))}")
         parts.append(f"**Khuyến cáo Hiện hành ({cur_g.get('year', '08–11/2026')}):** {cur_g.get('name', primary.get('title_vi', ''))} *(Tiền nhiệm: {prior_g.get('name', '—')})*.")
 
     # Match relevant sentences inside markdown body
@@ -1813,7 +1914,7 @@ def _compose_deterministic_ebm_answer(
             cleaned = ln if ln.startswith("-") else f"- {ln}"
             parts.append(cleaned)
     elif steps:
-        parts.append("#### Diễn tiến Khuyến cáo (Prior ➔ Hiện hành)" if not is_en else "#### Guideline Evolution")
+        parts.append("#### Diễn tiến Khuyến cáo (Tiền nhiệm ➔ Hiện hành)" if not is_en else "#### Guideline Evolution")
         for st in steps:
             t_lbl = st.get("title_en" if is_en else "title_vi", "")
             d_lbl = st.get("desc_en" if is_en else "desc_vi", "")
@@ -1831,15 +1932,36 @@ def _compose_deterministic_ebm_answer(
                 f"  - *Safety Caveat:* {caut}"
             )
 
+    if fda_note and fda_note.get("text"):
+        note_txt = fda_note["text"]
+        if not is_en and translate_fn:
+            try:
+                tr_txt = translate_fn(note_txt[:300])
+                if tr_txt:
+                    note_txt = tr_txt
+            except Exception:
+                pass
+        hdr_fda = f"#### Dữ liệu Dược lâm sàng Chính thức ({fda_note['drug']})" if not is_en else f"#### Official Drug Label Data ({fda_note['drug']})"
+        parts.append(hdr_fda)
+        parts.append(f"- **{fda_note['label']}:** {note_txt}")
+
     if pearls:
         parts.append("#### Điểm Nhấn Đi Buồng (Take-Home)" if not is_en else "#### Take-Home Clinical Pearls")
         for p in pearls[:3]:
             parts.append(f"- {p.get('en' if is_en else 'vi', '')}")
 
     if pubmed_hits:
-        parts.append("#### Bài báo Thực chứng Truy xuất Trực tiếp từ NCBI PubMed ($0)" if not is_en else "#### Live NCBI PubMed References ($0)")
+        parts.append("#### Bằng chứng Mới Truy xuất từ NCBI PubMed" if not is_en else "#### Live NCBI PubMed References")
         for ph in pubmed_hits:
-            snip = f" — *{ph['snippet']}*" if ph.get("snippet") else ""
+            snip_txt = ph.get("snippet", "")
+            if snip_txt and not is_en and translate_fn:
+                try:
+                    tr_s = translate_fn(snip_txt[:280])
+                    if tr_s:
+                        snip_txt = tr_s
+                except Exception:
+                    pass
+            snip = f" — *{snip_txt}*" if snip_txt else ""
             parts.append(f"- **{ph['title']}** (*{ph['source']}*, {ph['pubdate']} — PMID `{ph['pmid']}`){snip}")
 
     sources: list[dict] = []
@@ -1865,9 +1987,9 @@ def _compose_deterministic_ebm_answer(
 
 def answer_ebm_chat_query(req_data: dict) -> dict:
     """
-    Free ($0) Dual-Engine EBM Cardiology Q&A Handler:
-    1) Default Engine ($0, zero key): Clinical briefing search + live NCBI PubMed abstracts.
-    2) Optional Free Tier LLM (Gemini/Groq user key): LLM reasoning strictly grounded on Engine 1 context.
+    Soái ca Y khoa Q&A Handler:
+    Combines 10-pillar EBM curation + Live NCBI PubMed abstracts + OpenFDA drug labels,
+    with optional server LLM synthesis when a key is configured in environment.
     """
     query = str(req_data.get("query", "")).strip()
     if not query:
@@ -1896,91 +2018,76 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         pm_query = _build_pubmed_chat_query(query, primary)
         pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=3)
 
-    provider = str(req_data.get("provider", "ebm-pubmed")).strip().lower()
-    api_key = str(req_data.get("api_key", "")).strip()
-    if not api_key and provider in ("gemini-free", "gemini"):
-        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    fda_note = _fetch_openfda_drug_note(query)
 
-    if api_key and provider in ("gemini-free", "gemini", "groq-free", "groq"):
-        fallback_md, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang)
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
+    if api_key:
+        _, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note)
         ctx_blob = (
             f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')} / {primary.get('pillar_name')}\n"
             f"TITLE: {primary.get('title_vi')}\n"
             f"GUIDELINE_EVOLUTION: {json.dumps(primary.get('guideline_evolution', {}), ensure_ascii=False)}\n"
             f"TRIALS: {json.dumps(primary.get('landmark_trials', []), ensure_ascii=False)}\n"
             f"PUBMED_LIVE: {json.dumps(pubmed_hits, ensure_ascii=False)}\n"
+            f"OPENFDA_LABEL: {json.dumps(fda_note, ensure_ascii=False)}\n"
             f"BODY_EXCERPT:\n{(primary.get('part1_vi_markdown') or '')[:3500]}"
         )
         sys_prompt = (
-            "You are a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
-            "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, and live PubMed hits provided below. "
+            "You are 'Soái ca Y khoa', a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
+            "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, OpenFDA labels, and live PubMed hits provided below. "
             "Never fabricate PMIDs, DOIs, HR values, or drug dosages. Respond concisely in "
             + ("academic English." if lang == "en" else "clear clinical Vietnamese with structured bullet points.")
         )
         user_prompt = f"GROUNDED CONTEXT:\n{ctx_blob}\n\nCLINICIAN QUESTION:\n{query}"
         try:
-            llm_text = ""
-            if provider.startswith("gemini"):
-                payload = json.dumps({
-                    "model": "gemini-3.8-flash",
-                    "system_instruction": sys_prompt,
-                    "input": user_prompt,
-                    "generation_config": {"max_output_tokens": 1100},
-                }).encode("utf-8")
-                req = urllib.request.Request(
-                    "https://generativelanguage.googleapis.com/v1beta/interactions",
-                    data=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": api_key,
-                        "Api-Revision": "2026-05-20",
-                    },
-                    method="POST",
-                )
-                with urllib.request.urlopen(req, timeout=20) as r:
-                    resp_j = json.loads(r.read().decode("utf-8"))
-                llm_text = resp_j.get("output_text") or "\n".join(
-                    c.get("text", "")
-                    for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
-                    for c in (s.get("content") or []) if c.get("type") == "text"
-                )
-            else:
-                payload = json.dumps({
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": [
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "max_tokens": 1100,
-                }).encode("utf-8")
-                req = urllib.request.Request(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    data=payload,
-                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-                    method="POST",
-                )
-                with urllib.request.urlopen(req, timeout=20) as r:
-                    resp_j = json.loads(r.read().decode("utf-8"))
-                llm_text = resp_j["choices"][0]["message"]["content"]
-
+            payload = json.dumps({
+                "model": "gemini-3.8-flash",
+                "system_instruction": sys_prompt,
+                "input": user_prompt,
+                "generation_config": {"max_output_tokens": 1100},
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                "https://generativelanguage.googleapis.com/v1beta/interactions",
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": api_key,
+                    "Api-Revision": "2026-05-20",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=20) as r:
+                resp_j = json.loads(r.read().decode("utf-8"))
+            llm_text = resp_j.get("output_text") or "\n".join(
+                c.get("text", "")
+                for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
+                for c in (s.get("content") or []) if c.get("type") == "text"
+            )
             if llm_text and llm_text.strip():
                 return {
                     "ok": True,
                     "answer_markdown": llm_text.strip(),
                     "sources": sources,
-                    "engine_used": f"{provider} ($0 Free Tier + Step-0)",
+                    "engine_used": "Soái ca Y khoa • EBM & PubMed",
                     "matched_pillar_id": primary.get("pillar_id"),
                     "matched_briefing_id": primary.get("id"),
                 }
         except Exception as exc:
             print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
 
-    answer_md, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang)
+    answer_md, sources = _compose_deterministic_ebm_answer(
+        query,
+        top_briefings,
+        pubmed_hits,
+        lang=lang,
+        fda_note=fda_note,
+    )
+    engine_lbl = "Soái ca Y khoa • EBM, PubMed & OpenFDA" if fda_note else "Soái ca Y khoa • EBM & PubMed"
     return {
         "ok": True,
         "answer_markdown": answer_md,
         "sources": sources,
-        "engine_used": "EBM RAG + Live NCBI PubMed ($0)",
+        "engine_used": engine_lbl,
         "matched_pillar_id": primary.get("pillar_id"),
         "matched_briefing_id": primary.get("id"),
     }
@@ -1992,7 +2099,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
     - GET  /api/status         -> Rotation state, today/yesterday/tomorrow pillars, user & feedback summary
     - GET  /api/refresh-stream -> SSE progress stream refreshing today's single pillar briefing
     - POST /api/refresh        -> Refreshes today's single pillar briefing
-    - POST /api/chat           -> Free ($0) EBM clinical Q&A chatbot (EBM RAG + Live PubMed + optional Free AI)
+    - POST /api/chat           -> Soái ca Y khoa EBM clinical Q&A chatbot (EBM RAG + Live PubMed + OpenFDA)
     - POST /api/auth/login     -> Email/username + password or demo 1-click sign-in
     - POST /api/auth/register  -> Register physician account
     - GET  /api/auth/me        -> Current authenticated user from Bearer token
