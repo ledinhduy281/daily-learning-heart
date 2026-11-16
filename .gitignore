@@ -7,3 +7,5 @@ data/daily_refresh.log
 data/server.log
 data/users.json
 data/feedback.json
+data/chat_quota.json
+

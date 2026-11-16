@@ -29,6 +29,7 @@ import secrets
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -41,8 +42,10 @@ BRIEFINGS_JS_PATH = DATA_DIR / "briefings.js"
 ROTATION_STATE_PATH = DATA_DIR / "rotation_state.json"
 USERS_PATH = DATA_DIR / "users.json"
 FEEDBACK_PATH = DATA_DIR / "feedback.json"
+CHAT_QUOTA_PATH = DATA_DIR / "chat_quota.json"
 PROMPT_MD_PATH = BASE_DIR / "PROMPT.md"
 ANCHOR_DATE = datetime.date(2026, 11, 16)
+_quota_lock = threading.Lock()
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -1756,6 +1759,8 @@ def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", 
         elif tok in hay_body:
             score += 2
 
+    if "-main" in str(b.get("id", "")) or "2026" in str((b.get("guideline_evolution") or {}).get("current_guideline", {}).get("year", "")):
+        score += 15
     if active_briefing_id and b.get("id") == active_briefing_id:
         score += 4
     elif active_pillar_id and int(b.get("pillar_id") or 0) == int(active_pillar_id):
@@ -1985,11 +1990,118 @@ def _compose_deterministic_ebm_answer(
     return "\n\n".join(parts), sources
 
 
+def _default_daily_llm_limit() -> int:
+    try:
+        val = int(os.environ.get("MAX_DAILY_LLM_CALLS", "100") or "100")
+        return max(1, min(val, 2000))
+    except ValueError:
+        return 100
+
+
+def _load_chat_quota_unlocked() -> dict:
+    """Load daily hard-stop LLM quota from disk, auto-resetting at midnight."""
+    today_str = datetime.date.today().isoformat()
+    default_limit = _default_daily_llm_limit()
+    state = {
+        "date": today_str,
+        "used": 0,
+        "limit": default_limit,
+        "exhausted": False,
+        "stop_reason": "",
+    }
+    if CHAT_QUOTA_PATH.exists():
+        try:
+            loaded = json.loads(CHAT_QUOTA_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                limit_val = max(1, min(int(loaded.get("limit", default_limit) or default_limit), 2000))
+                if loaded.get("date") == today_str:
+                    used_val = max(0, int(loaded.get("used", 0) or 0))
+                    state = {
+                        "date": today_str,
+                        "used": used_val,
+                        "limit": limit_val,
+                        "exhausted": bool(loaded.get("exhausted", False)) or (used_val >= limit_val),
+                        "stop_reason": str(loaded.get("stop_reason", "")),
+                    }
+                else:
+                    state["limit"] = limit_val
+        except Exception:
+            pass
+    return state
+
+
+def _save_chat_quota_unlocked(state: dict) -> None:
+    _atomic_write_text(CHAT_QUOTA_PATH, json.dumps(state, indent=2, ensure_ascii=False))
+
+
+def _load_chat_quota() -> dict:
+    with _quota_lock:
+        return _load_chat_quota_unlocked()
+
+
+def _resolve_chat_llm_key(req_key: str = "") -> tuple[str, str]:
+    """Resolve explicit or server .env API key and auto-detect provider (Groq gsk_ vs Gemini AIza)."""
+    key = (
+        str(req_key or "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+        or os.environ.get("GROQ_API_KEY", "").strip()
+        or os.environ.get("GOOGLE_API_KEY", "").strip()
+    )
+    if not key:
+        return "", ""
+    if key.startswith("gsk_"):
+        return "groq", key
+    return "gemini", key
+
+
+def _save_api_key_to_dotenv(api_key: str, daily_limit: int | None = None, reset_today: bool = False) -> dict:
+    """Persist Gemini (AIza...) or Groq (gsk_...) key to .env + update daily hard cap in chat_quota.json."""
+    clean_key = str(api_key or "").strip()
+    env_path = BASE_DIR / ".env"
+    existing_kv: dict[str, str] = {}
+    if env_path.exists():
+        for ln in env_path.read_text(encoding="utf-8").splitlines():
+            s = ln.strip()
+            if s and not s.startswith("#") and "=" in s:
+                k, v = s.split("=", 1)
+                existing_kv[k.strip()] = v.strip().strip('"').strip("'")
+
+    if clean_key:
+        if clean_key.startswith("gsk_"):
+            existing_kv["GROQ_API_KEY"] = clean_key
+            existing_kv.setdefault("GEMINI_API_KEY", "")
+            os.environ["GROQ_API_KEY"] = clean_key
+        else:
+            existing_kv["GEMINI_API_KEY"] = clean_key
+            existing_kv.setdefault("GROQ_API_KEY", "")
+            os.environ["GEMINI_API_KEY"] = clean_key
+
+    with _quota_lock:
+        q = _load_chat_quota_unlocked()
+        if daily_limit is not None:
+            new_lim = max(1, min(int(daily_limit), 2000))
+            q["limit"] = new_lim
+            existing_kv["MAX_DAILY_LLM_CALLS"] = str(new_lim)
+            os.environ["MAX_DAILY_LLM_CALLS"] = str(new_lim)
+        if reset_today:
+            q["used"] = 0
+            q["exhausted"] = False
+            q["stop_reason"] = ""
+        else:
+            q["exhausted"] = bool(q["exhausted"]) or (q["used"] >= q["limit"])
+        _save_chat_quota_unlocked(q)
+
+    lines = [f"{k}={v}" for k, v in existing_kv.items()]
+    _atomic_write_text(env_path, "\n".join(lines) + "\n")
+    prov, resolved = _resolve_chat_llm_key("")
+    return {"ok": True, "quota": q, "has_server_key": bool(resolved), "provider": prov}
+
+
 def answer_ebm_chat_query(req_data: dict) -> dict:
     """
     Soái ca Y khoa Q&A Handler:
     Combines 10-pillar EBM curation + Live NCBI PubMed abstracts + OpenFDA drug labels,
-    with optional server LLM synthesis when a key is configured in environment.
+    with optional Gemini/Groq LLM synthesis guarded by a strict daily hard-stop quota circuit breaker.
     """
     query = str(req_data.get("query", "")).strip()
     if not query:
@@ -2019,61 +2131,126 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=3)
 
     fda_note = _fetch_openfda_drug_note(query)
+    provider, api_key = _resolve_chat_llm_key(req_data.get("api_key", ""))
+    quota = _load_chat_quota()
+    quota_banner = ""
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
     if api_key:
-        _, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note)
-        ctx_blob = (
-            f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')} / {primary.get('pillar_name')}\n"
-            f"TITLE: {primary.get('title_vi')}\n"
-            f"GUIDELINE_EVOLUTION: {json.dumps(primary.get('guideline_evolution', {}), ensure_ascii=False)}\n"
-            f"TRIALS: {json.dumps(primary.get('landmark_trials', []), ensure_ascii=False)}\n"
-            f"PUBMED_LIVE: {json.dumps(pubmed_hits, ensure_ascii=False)}\n"
-            f"OPENFDA_LABEL: {json.dumps(fda_note, ensure_ascii=False)}\n"
-            f"BODY_EXCERPT:\n{(primary.get('part1_vi_markdown') or '')[:3500]}"
-        )
-        sys_prompt = (
-            "You are 'Soái ca Y khoa', a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
-            "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, OpenFDA labels, and live PubMed hits provided below. "
-            "Never fabricate PMIDs, DOIs, HR values, or drug dosages. Respond concisely in "
-            + ("academic English." if lang == "en" else "clear clinical Vietnamese with structured bullet points.")
-        )
-        user_prompt = f"GROUNDED CONTEXT:\n{ctx_blob}\n\nCLINICIAN QUESTION:\n{query}"
-        try:
-            payload = json.dumps({
-                "model": "gemini-3.8-flash",
-                "system_instruction": sys_prompt,
-                "input": user_prompt,
-                "generation_config": {"max_output_tokens": 1100},
-            }).encode("utf-8")
-            req = urllib.request.Request(
-                "https://generativelanguage.googleapis.com/v1beta/interactions",
-                data=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": api_key,
-                    "Api-Revision": "2026-05-20",
-                },
-                method="POST",
+        if quota["exhausted"] or quota["used"] >= quota["limit"]:
+            if lang == "en":
+                quota_banner = (
+                    f"> ⚠️ **LLM API paused for today ({quota['used']}/{quota['limit']} turns used)** "
+                    "to stay strictly within your daily cap. Below is the direct lookup from EBM & NCBI PubMed:\n\n"
+                )
+            else:
+                quota_banner = (
+                    f"> ⚠️ **Đã dừng gọi API LLM hôm nay ({quota['used']}/{quota['limit']} lượt)** "
+                    "để đảm bảo không vượt hạn mức. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n"
+                )
+        else:
+            _, sources = _compose_deterministic_ebm_answer(
+                query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note
             )
-            with urllib.request.urlopen(req, timeout=20) as r:
-                resp_j = json.loads(r.read().decode("utf-8"))
-            llm_text = resp_j.get("output_text") or "\n".join(
-                c.get("text", "")
-                for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
-                for c in (s.get("content") or []) if c.get("type") == "text"
+            with _quota_lock:
+                quota = _load_chat_quota_unlocked()
+                quota["used"] += 1
+                if quota["used"] >= quota["limit"]:
+                    quota["exhausted"] = True
+                    quota["stop_reason"] = "Daily cap reached"
+                _save_chat_quota_unlocked(quota)
+
+            ctx_blob = (
+                f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')} / {primary.get('pillar_name')}\n"
+                f"TITLE: {primary.get('title_vi')}\n"
+                f"GUIDELINE_EVOLUTION: {json.dumps(primary.get('guideline_evolution', {}), ensure_ascii=False)}\n"
+                f"TRIALS: {json.dumps(primary.get('landmark_trials', []), ensure_ascii=False)}\n"
+                f"PUBMED_LIVE: {json.dumps(pubmed_hits, ensure_ascii=False)}\n"
+                f"OPENFDA_LABEL: {json.dumps(fda_note, ensure_ascii=False)}\n"
+                f"BODY_EXCERPT:\n{(primary.get('part1_vi_markdown') or '')[:3500]}"
             )
-            if llm_text and llm_text.strip():
-                return {
-                    "ok": True,
-                    "answer_markdown": llm_text.strip(),
-                    "sources": sources,
-                    "engine_used": "Soái ca Y khoa • EBM & PubMed",
-                    "matched_pillar_id": primary.get("pillar_id"),
-                    "matched_briefing_id": primary.get("id"),
-                }
-        except Exception as exc:
-            print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
+            sys_prompt = (
+                "You are 'Soái ca Y khoa', a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
+                "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, OpenFDA labels, and live PubMed hits provided below. "
+                "Never fabricate PMIDs, DOIs, HR values, or drug dosages. Respond concisely in "
+                + ("academic English." if lang == "en" else "clear clinical Vietnamese with structured bullet points.")
+            )
+            user_prompt = f"GROUNDED CONTEXT:\n{ctx_blob}\n\nCLINICIAN QUESTION:\n{query}"
+            try:
+                llm_text = ""
+                if provider == "groq":
+                    payload = json.dumps({
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [
+                            {"role": "system", "content": sys_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "max_tokens": 1100,
+                    }).encode("utf-8")
+                    req = urllib.request.Request(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        data=payload,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {api_key}",
+                            "User-Agent": "SoaiCaYKhoa/1.0",
+                        },
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(req, timeout=20) as r:
+                        resp_j = json.loads(r.read().decode("utf-8"))
+                    llm_text = resp_j["choices"][0]["message"]["content"]
+                    engine_name = "Soái ca Y khoa • Groq LLM + EBM"
+                else:
+                    payload = json.dumps({
+                        "model": "gemini-3.8-flash",
+                        "system_instruction": sys_prompt,
+                        "input": user_prompt,
+                        "generation_config": {"max_output_tokens": 1100},
+                    }).encode("utf-8")
+                    req = urllib.request.Request(
+                        "https://generativelanguage.googleapis.com/v1beta/interactions",
+                        data=payload,
+                        headers={
+                            "Content-Type": "application/json",
+                            "x-goog-api-key": api_key,
+                            "Api-Revision": "2026-05-20",
+                        },
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(req, timeout=20) as r:
+                        resp_j = json.loads(r.read().decode("utf-8"))
+                    llm_text = resp_j.get("output_text") or "\n".join(
+                        c.get("text", "")
+                        for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
+                        for c in (s.get("content") or []) if c.get("type") == "text"
+                    )
+                    engine_name = "Soái ca Y khoa • Gemini LLM + EBM"
+
+                if llm_text and llm_text.strip():
+                    return {
+                        "ok": True,
+                        "answer_markdown": llm_text.strip(),
+                        "sources": sources,
+                        "engine_used": engine_name,
+                        "matched_pillar_id": primary.get("pillar_id"),
+                        "matched_briefing_id": primary.get("id"),
+                        "quota": quota,
+                        "has_server_key": True,
+                    }
+            except urllib.error.HTTPError as he:
+                if he.code in (429, 402, 403):
+                    with _quota_lock:
+                        quota = _load_chat_quota_unlocked()
+                        quota["exhausted"] = True
+                        quota["stop_reason"] = f"HTTP {he.code}"
+                        _save_chat_quota_unlocked(quota)
+                    quota_banner = (
+                        f"> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP {he.code})** để bảo vệ hạn mức tài khoản. "
+                        "Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n"
+                    )
+                print(f"[Chat LLM HTTP {he.code}] Fallback to EBM", file=sys.stderr)
+            except Exception as exc:
+                print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
 
     answer_md, sources = _compose_deterministic_ebm_answer(
         query,
@@ -2082,6 +2259,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         lang=lang,
         fda_note=fda_note,
     )
+    if quota_banner:
+        answer_md = quota_banner + answer_md
     engine_lbl = "Soái ca Y khoa • EBM, PubMed & OpenFDA" if fda_note else "Soái ca Y khoa • EBM & PubMed"
     return {
         "ok": True,
@@ -2090,6 +2269,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         "engine_used": engine_lbl,
         "matched_pillar_id": primary.get("pillar_id"),
         "matched_briefing_id": primary.get("id"),
+        "quota": quota,
+        "has_server_key": bool(api_key),
     }
 
 
@@ -2251,6 +2432,16 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
 
+        if path == "/api/chat/quota":
+            prov, resolved = _resolve_chat_llm_key("")
+            self._send_json(200, {
+                "ok": True,
+                "quota": _load_chat_quota(),
+                "has_server_key": bool(resolved),
+                "provider": prov,
+            })
+            return
+
         if path == "/api/feedback":
             token = self._extract_token(query_params=query_params)
             user = get_user_by_token(token)
@@ -2361,6 +2552,20 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             try:
                 payload = answer_ebm_chat_query(req_data)
                 self._send_json(200 if payload.get("ok") else 400, payload)
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+
+        if path == "/api/chat/config":
+            try:
+                raw_lim = req_data.get("daily_limit")
+                lim = int(raw_lim) if raw_lim is not None and str(raw_lim).strip() else None
+                res = _save_api_key_to_dotenv(
+                    api_key=str(req_data.get("api_key", "")),
+                    daily_limit=lim,
+                    reset_today=bool(req_data.get("reset_today", False)),
+                )
+                self._send_json(200, res)
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
