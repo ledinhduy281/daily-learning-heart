@@ -1449,10 +1449,10 @@ def refresh_today_briefing(
         resolved_model = model_name.strip()
 
         if progress_cb:
-            progress_cb(30, f"Đang crawl Guideline mới nhất (2025–2026) từ NCBI PubMed cho Trụ cột #{pid}...")
+            progress_cb(30, f"Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) từ NCBI PubMed cho Trụ cột #{pid}...")
 
         if use_llm and resolved_key and resolved_model:
-            crawled_gl = crawl_latest_guidelines(pid, max_results=5, min_year=2025)
+            crawled_gl = crawl_latest_guidelines(pid, max_results=5, min_year=2026, days_back=90)
             curated = refresh_guideline_briefing(pillar_id=pid, date_str=today_str)
             if progress_cb:
                 progress_cb(65, f"Đang tổng hợp Guideline Evolution bằng `{resolved_model}` (Live Guideline + Step-0)...")
@@ -1749,11 +1749,13 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/crawl-guideline":
             raw_pid = query_params.get("pillar_id", [None])[0]
+            raw_days = query_params.get("days_back", [None])[0]
             try:
                 pid_val = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else get_pillar_for_date(datetime.date.today())["id"]
+                days_val = int(raw_days) if raw_days and str(raw_days).isdigit() else 90
                 from crawl_cardiology_news import crawl_latest_guidelines
-                items = crawl_latest_guidelines(pid_val, max_results=5, min_year=2025)
-                self._send_json(200, {"ok": True, "pillar_id": pid_val, "guidelines": items})
+                items = crawl_latest_guidelines(pid_val, max_results=5, min_year=2026, days_back=days_val)
+                self._send_json(200, {"ok": True, "pillar_id": pid_val, "days_back": days_val, "guidelines": items})
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return

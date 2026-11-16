@@ -545,29 +545,32 @@ def build_crawled_briefing(pillar: dict, articles: list) -> dict:
 
 
 # ==============================================================================
-# LIVE LATEST-GUIDELINE CRAWLER (2025–2026+ Official Society Guidelines Only)
+# LIVE LATEST-GUIDELINE CRAWLER (Rolling Last 3 Months / 90 Days: Official Guidelines)
 # ==============================================================================
 
 REPUTABLE_GUIDELINE_JOURNALS = (
     '("Eur Heart J"[Journal] OR "Circulation"[Journal] OR "J Am Coll Cardiol"[Journal] '
     'OR "Hypertension"[Journal] OR "Eur J Prev Cardiol"[Journal] OR "Europace"[Journal] '
     'OR "Eur J Heart Fail"[Journal] OR "J Arrhythm"[Journal] OR "J Hypertens"[Journal] '
-    'OR "Can J Cardiol"[Journal] OR "Circ J"[Journal] OR "Curr Cardiol Rep"[Journal] '
-    'OR "Curr Atheroscler Rep"[Journal] OR "Am J Kidney Dis"[Journal] OR "J Hosp Med"[Journal] '
-    'OR "JACC Adv"[Journal] OR "Eur Heart J Suppl"[Journal] OR "Eur J Cardiothorac Surg"[Journal])'
+    'OR "Hypertens Res"[Journal] OR "J Formos Med Assoc"[Journal] OR "Can J Cardiol"[Journal] '
+    'OR "Circ J"[Journal] OR "Curr Cardiol Rep"[Journal] OR "Curr Atheroscler Rep"[Journal] '
+    'OR "Am J Kidney Dis"[Journal] OR "J Hosp Med"[Journal] OR "JACC Adv"[Journal] '
+    'OR "Eur Heart J Suppl"[Journal] OR "Eur J Cardiothorac Surg"[Journal] '
+    'OR "Eur Heart J Acute Cardiovasc Care"[Journal] OR "Catheter Cardiovasc Interv"[Journal] '
+    'OR "BMC Nephrol"[Journal] OR "Heart Lung Circ"[Journal] OR "J Cardiovasc Comput Tomogr"[Journal])'
 )
 
 PILLAR_GUIDELINE_QUERIES = {
-    1: '("High Blood Pressure"[Title] OR hypertension[Title]) AND ("AHA/ACC"[Title] OR "ACC/AHA"[Title] OR "ISH"[Title] OR "ESC"[Title] OR "KDOQI"[Title]) NOT "Africa"[Title] NOT "Nigeria"[Title]',
-    2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title]) AND ("ESC/EAS"[Title] OR "ACC/AHA"[Title] OR "ESC"[Title])',
-    3: '("Acute Coronary Syndromes"[Title] OR "Chronic Coronary"[Title] OR "Coronary Artery Revascularization"[Title]) AND ("ACC/AHA"[Title] OR "ESC"[Title])',
-    4: '(("Antiplatelet"[Title] OR "Anticoagulant"[Title] OR "Acute Coronary Syndromes"[Title] OR "Stroke Prevention in Atrial Fibrillation"[Title]) AND ("ACC/AHA"[Title] OR "APHRS"[Title] OR "ESC"[Title]))',
-    5: '("heart failure"[Title] OR "cardiogenic shock"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA/ACC"[Title] OR "CCS"[Title] OR "JCS"[Title])',
-    6: '("Atrial Fibrillation"[Title] OR "Arrhythmia"[Title] OR "ventricular"[Title]) AND ("APHRS"[Title] OR "ESC"[Title] OR "HRS"[Title] OR "ACC/AHA"[Title])',
-    7: '("valvular heart disease"[Title] OR "Infective Endocarditis"[Title]) AND ("ESC/EACTS"[Title] OR "ESC"[Title] OR "JCS"[Title] OR "ACC/AHA"[Title])',
-    8: '("myocarditis"[Title] OR "pericarditis"[Title] OR "cardiomyopathies"[Title] OR "Adult Congenital Heart Disease"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])',
-    9: '("Acute Pulmonary Embolism"[Title] OR "Pulmonary Embolism"[Title] OR "aortic"[Title] OR "peripheral arterial"[Title]) AND ("AHA/ACC"[Title] OR "ESC"[Title] OR "JCS"[Title])',
-    10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "pregnancy"[Title] OR "cardio-oncology"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])',
+    1: '(hypertension[Title] OR "blood pressure"[Title] OR antihypertensive[Title]) NOT "pulmonary"[Title] NOT "portal"[Title]',
+    2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title] OR ASCVD[Title] OR "lipid-lowering"[Title]) NOT "anesthetic"[Title]',
+    3: '("coronary"[Title] OR "acute coronary"[Title] OR "PCI"[Title] OR "angina"[Title] OR "coronary computed tomographic"[Title])',
+    4: '(antiplatelet[Title] OR anticoagulant[Title] OR anticoagulation[Title] OR "stroke prevention"[Title] OR "thromboembolism"[Title])',
+    5: '("heart failure"[Title] OR "cardiogenic shock"[Title] OR "HFpEF"[Title] OR "HFrEF"[Title])',
+    6: '("atrial fibrillation"[Title] OR "arrhythmia"[Title] OR "arrhythmic"[Title] OR "rhythm disorders"[Title] OR "ventricular"[Title]) NOT "desmoid"[Title] NOT "thyroid"[Title]',
+    7: '("valvular"[Title] OR "aortic valve"[Title] OR "aortic stenosis"[Title] OR "mitral"[Title] OR "tricuspid"[Title] OR "infective endocarditis"[Title])',
+    8: '(myocarditis[Title] OR pericarditis[Title] OR "cardiomyopathy"[Title] OR "cardiomyopathies"[Title] OR "congenital heart"[Title]) NOT "neonates"[Title]',
+    9: '("pulmonary embolism"[Title] OR "pulmonary hypertension"[Title] OR "aortic surgery"[Title] OR "aortic dissection"[Title] OR "peripheral artery"[Title] OR "venous thromboembolism"[Title]) NOT "infants"[Title]',
+    10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "exercise prescriptions"[Title] OR "cardiovascular disease and pregnancy"[Title])',
 }
 
 _MONTH_MAP = {
@@ -582,14 +585,20 @@ def _detect_guideline_society(title: str, journal: str = "") -> str:
         return "ESC / EACTS"
     if "ESC/EAS" in t:
         return "ESC / EAS"
+    if "ESC/ERA" in t or ("chronic kidney disease" in t.lower() and ("ESC" in t or journal == "Eur Heart J")):
+        return "ESC / ERA"
     if "AHA/ACC/ESC/WHF" in t:
         return "AHA / ACC / ESC / WHF"
     if "AHA/ACC" in t or "American Heart Association/American College of Cardiology" in t:
         return "AHA / ACC"
     if "ACC/AHA" in t or "American College of Cardiology/American Heart Association" in t:
         return "ACC / AHA"
+    if "EACTS" in t:
+        return "EACTS"
     if "ISH" in t or "International Society of Hypertension" in t:
         return "ISH"
+    if "THS" in t or "Taiwan hypertension society" in t.lower():
+        return "THS"
     if "APHRS" in t or "Asia Pacific Heart Rhythm Society" in t:
         return "APHRS"
     if "CCS/CHFS" in t or "Canadian Cardiovascular Society" in t:
@@ -598,6 +607,10 @@ def _detect_guideline_society(title: str, journal: str = "") -> str:
         return "JCS / JHFS"
     if "KDOQI" in t:
         return "KDOQI / AHA / ACC"
+    if "UK kidney" in t.lower():
+        return "UKKA"
+    if "PERT Consortium" in t:
+        return "PERT Consortium / AHA"
     if "ESC" in t or "European Society of Cardiology" in t or journal == "Eur Heart J":
         return "ESC"
     if "ACC" in t or journal == "J Am Coll Cardiol":
@@ -608,7 +621,7 @@ def _detect_guideline_society(title: str, journal: str = "") -> str:
 
 
 def _score_guideline_candidate(item: dict) -> tuple:
-    """Rank primary society 2025-2026 guidelines highest, sorted newest-first."""
+    """Rank newest 3-month (Aug-Nov 2026) official society guidelines/statements highest."""
     title_low = (item.get("title") or "").lower()
     journal = item.get("source") or ""
     year = int(item.get("year") or 0)
@@ -617,7 +630,17 @@ def _score_guideline_candidate(item: dict) -> tuple:
 
     is_correction = any(
         bad in title_low
-        for bad in ("correction to", "corrigendum", "withdrawn", "reply to", "author correction")
+        for bad in (
+            "correction to",
+            "correction:",
+            "corrigendum",
+            "withdrawn",
+            "reply to",
+            "author correction",
+            "large language model",
+            "chatgpt",
+            "artificial intelligence",
+        )
     )
     if is_correction:
         return (-1, 0, 0, 0)
@@ -627,14 +650,16 @@ def _score_guideline_candidate(item: dict) -> tuple:
         or "Guideline" in pub_types
         or bool(re.search(r"^(?:\d{4}\s+)?[\w/]+\s+guidelines?\s+(?:for|on)\s+", title_low))
         or "focused update of" in title_low
-        or "guideline for the evaluation and management" in title_low
-        or "guideline for the prevention, detection" in title_low
-        or "guideline for the management of patients" in title_low
-        or "guideline on the management of" in title_low
+        or "guideline for the" in title_low
+        or "guidelines for the" in title_low
+        or "guideline on the" in title_low
+        or "guidelines on cardiac" in title_low
         or "guidelines (part" in title_low
-        or "expert consensus statement" in title_low
-        or "expert consensus decision pathway" in title_low
-        or "expert consensus document" in title_low
+        or "expert consensus" in title_low
+        or "scientific statement" in title_low
+        or "consensus statement" in title_low
+        or "consensus document" in title_low
+        or "position paper" in title_low
     )
     is_secondary = any(
         w in title_low
@@ -646,15 +671,12 @@ def _score_guideline_candidate(item: dict) -> tuple:
             "projected impact",
             "implications of",
             "prevalence",
-            "chatgpt",
             "demographic reporting",
             "studies informing",
             "informing the 202",
-            "mechanisms of myocarditis",
-            "a european view",
-            "relevance of the",
             "patient perspective",
             "missing stakeholders",
+            "retrieval-augmented",
             "g ital cardiol",
         )
     )
@@ -667,19 +689,34 @@ def _score_guideline_candidate(item: dict) -> tuple:
         "J Am Coll Cardiol",
         "Hypertension",
         "J Hypertens",
+        "Hypertens Res",
         "J Arrhythm",
         "Can J Cardiol",
         "Circ J",
         "Eur J Prev Cardiol",
+        "Eur J Cardiothorac Surg",
+        "J Formos Med Assoc",
+        "Am J Kidney Dis",
+        "JACC Adv",
     )
 
     priority = 0
     if is_primary_gl and not is_secondary:
         priority += 18
-        if "joint committee on clinical practice guidelines" in title_low or "developed by the task force" in title_low or bool(re.match(r"^(?:202[5-9]\s+)?(?:esc|aha/acc|acc/aha|jcs|aphrs)", title_low)):
+        if any(
+            k in title_low
+            for k in (
+                "joint committee on clinical practice guidelines",
+                "developed by the task force",
+                "scientific statement",
+                "expert consensus",
+                "guidelines for",
+                "guidelines on",
+            )
+        ):
             priority += 8
-    elif ("ten commandments" in title_low or "10 commandments" in title_low or "key updates" in title_low or "top 10" in title_low or "comparison of" in title_low or "kdoqi commentary" in title_low) and not is_secondary:
-        priority += 9
+    elif ("ten commandments" in title_low or "10 commandments" in title_low or "key updates" in title_low or "key highlights" in title_low or "top 10" in title_low or "comparison of" in title_low or "kdoqi commentary" in title_low or "pert consortium" in title_low) and not is_secondary:
+        priority += 10
     elif not is_secondary:
         priority += 3
     else:
@@ -689,37 +726,46 @@ def _score_guideline_candidate(item: dict) -> tuple:
     if item.get("has_abstract"):
         priority += 1
 
-    # Penalize secondary studies explicitly referencing older 2017-2023 guidelines without 2025/2026 in title
-    old_ref = re.search(r"\b20(1[0-9]|2[0-3])\b", title_low)
-    new_ref = re.search(r"\b202[5-9]\b", title_low)
-    if old_ref and not new_ref and "focused update" not in title_low:
-        priority -= 12
+    # Penalize papers about old <=2024 guidelines when they don't mention 2026
+    old_ref = re.search(r"\b20(1[0-9]|2[0-4])\b", title_low)
+    has_2026 = bool(re.search(r"\b202[6-9]\b", title_low))
+    if old_ref and not has_2026:
+        priority -= 14
 
-    effective_year = year if new_ref else (year if priority > 0 else 2024)
-    # Prefer primary flagship guidelines strongly, with newest effective year first
-    return (effective_year, priority, month, int(item.get("pmid", "0") or 0))
+    return (year, month, priority, int(item.get("pmid", "0") or 0))
 
 
-def crawl_latest_guidelines(pillar_id: int, max_results: int = 5, min_year: int = 2025) -> list[dict]:
+def crawl_latest_guidelines(
+    pillar_id: int,
+    max_results: int = 5,
+    min_year: int = 2026,
+    days_back: int = 90,
+) -> list[dict]:
     """
-    Live-crawls the NEWEST official society clinical practice guidelines & focused updates
-    (2025–2026+, never stuck at old 2024 articles) from NCBI PubMed E-utilities for `pillar_id`.
-    Strictly filters out random non-guideline research articles, errata/corrections, and withdrawn notices.
+    Live-crawls official Cardiology Society guidelines, scientific statements, and
+    expert consensus documents published strictly within the LAST 3 MONTHS (`days_back=90`,
+    Aug–Nov 2026 relative to today's clock) from NCBI PubMed E-utilities.
+    Never returns old 2024 or 2025 publications.
     """
     topic_q = PILLAR_GUIDELINE_QUERIES.get(
         pillar_id,
         '("ESC Guidelines"[Title] OR "AHA/ACC"[Title] OR "ACC/AHA"[Title])',
     )
     today = datetime.date.today()
-    start_year = max(2025, min_year)
-    end_dt = (today + datetime.timedelta(days=120)).strftime("%Y/%m/%d")
-    date_filter = f'("{start_year}/01/01"[Date - Publication] : "{end_dt}"[Date - Publication])'
+    min_pub_year = max(2026, int(min_year or 2026))
+    start_date = max(today - datetime.timedelta(days=days_back), datetime.date(min_pub_year, 1, 1))
+    start_dt = start_date.strftime("%Y/%m/%d")
+    end_dt = (today + datetime.timedelta(days=45)).strftime("%Y/%m/%d")
+    date_filter = f'("{start_dt}"[Date - Publication] : "{end_dt}"[Date - Publication])'
     type_filter = (
         '("Practice Guideline"[Publication Type] OR "Guideline"[Publication Type] '
         'OR "Guideline"[Title] OR "Guidelines"[Title] OR "Focused Update"[Title] '
-        'OR "Expert Consensus"[Title] OR "Ten Commandments"[Title] OR "10 commandments"[Title]) '
-        'NOT "Correction to"[Title] NOT "Corrigendum"[Title] NOT "WITHDRAWN"[Title] '
-        'NOT "Author Correction"[Title] NOT "Reply"[Title]'
+        'OR "Expert Consensus"[Title] OR "Scientific Statement"[Title] '
+        'OR "Consensus Statement"[Title] OR "Consensus Document"[Title] '
+        'OR "Position Paper"[Title] OR "Ten Commandments"[Title] OR "10 commandments"[Title]) '
+        'NOT "Correction to"[Title] NOT "Correction:"[Title] NOT "Corrigendum"[Title] '
+        'NOT "WITHDRAWN"[Title] NOT "Author Correction"[Title] NOT "Reply"[Title] '
+        'NOT "Large Language Model"[Title] NOT "ChatGPT"[Title] NOT "2024 ESC"[Title]'
     )
 
     queries_to_try = [
@@ -829,7 +875,7 @@ def crawl_latest_guidelines(pillar_id: int, max_results: int = 5, min_year: int 
                     full_abs_parts.append(txt)
             full_abstract = "\n\n".join(full_abs_parts)
 
-            title_year_match = re.search(r"\b(202[5-9]|203\d)\b", title)
+            title_year_match = re.search(r"\b(202[6-9]|203\d)\b", title)
             display_year = int(title_year_match.group(1)) if title_year_match else year_num
 
             item = {
@@ -849,7 +895,7 @@ def crawl_latest_guidelines(pillar_id: int, max_results: int = 5, min_year: int 
                 "full_abstract": full_abstract,
                 "has_abstract": bool(full_abstract),
             }
-            if _score_guideline_candidate(item)[0] >= start_year:
+            if year_num >= min_pub_year and _score_guideline_candidate(item)[0] >= min_pub_year:
                 candidates.append(item)
 
         candidates.sort(key=_score_guideline_candidate, reverse=True)
@@ -884,9 +930,9 @@ def refresh_guideline_briefing(
     briefing.pop("crawled_articles", None)
 
     if progress_cb:
-        progress_cb(45, f"Đang crawl Guideline mới nhất (2025–2026) từ NCBI PubMed cho Trụ cột #{pillar_id}...")
+        progress_cb(45, f"Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) từ NCBI PubMed cho Trụ cột #{pillar_id}...")
 
-    crawled_guidelines = crawl_latest_guidelines(pillar_id, max_results=5, min_year=2025)
+    crawled_guidelines = crawl_latest_guidelines(pillar_id, max_results=5, min_year=2026, days_back=90)
     now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if crawled_guidelines:
@@ -980,23 +1026,23 @@ def refresh_guideline_briefing(
 
         # Append live crawl log block inside Block A / bottom section if not already injected
         live_vi_lines = [
-            f"\n\n### Cập nhật Crawl Guideline Mới nhất trực tiếp từ NCBI PubMed (`{now_iso}`)",
+            f"\n\n### Cập nhật Crawl Guideline 3 tháng gần nhất từ NCBI PubMed (`{now_iso}`)",
             *[
-                f"- **[{g['society']} {g['year']}]** *{g['title']}* — *{g['source']}* ({g['pubdate']}) | DOI: `{g['doi']}` | PMID: `{g['pmid']}`"
+                f"- **[{g['society']} {g['pubdate']}]** *{g['title']}* — *{g['source']}* | DOI: `{g['doi']}` | PMID: `{g['pmid']}`"
                 for g in crawled_guidelines[:3]
             ],
         ]
         live_en_lines = [
-            f"\n\n### Live NCBI PubMed Latest-Guideline Crawl (`{now_iso}`)",
+            f"\n\n### Live NCBI PubMed Last-3-Months Guideline Crawl (`{now_iso}`)",
             *[
-                f"- **[{g['society']} {g['year']}]** *{g['title']}* — *{g['source']}* ({g['pubdate']}) | DOI: `{g['doi']}` | PMID: `{g['pmid']}`"
+                f"- **[{g['society']} {g['pubdate']}]** *{g['title']}* — *{g['source']}* | DOI: `{g['doi']}` | PMID: `{g['pmid']}`"
                 for g in crawled_guidelines[:3]
             ],
         ]
-        vi_marker = "### Cập nhật Crawl Guideline Mới nhất"
-        en_marker = "### Live NCBI PubMed Latest-Guideline Crawl"
-        p1 = re.split(r"\n\n### Cập nhật Crawl Guideline Mới nhất.*?(?=\n\n---|\Z)", briefing["part1_vi_markdown"], flags=re.S)[0]
-        p2 = re.split(r"\n\n### Live NCBI PubMed Latest-Guideline Crawl.*?(?=\n\n---|\Z)", briefing["part2_en_markdown"], flags=re.S)[0]
+        vi_marker = "### Cập nhật Crawl Guideline"
+        en_marker = "### Live NCBI PubMed Last-3-Months Guideline Crawl"
+        p1 = re.split(r"\n\n### Cập nhật Crawl Guideline.*?(?=\n\n---|\Z)", briefing["part1_vi_markdown"], flags=re.S)[0]
+        p2 = re.split(r"\n\n### Live NCBI PubMed (?:Latest-|Last-3-Months )Guideline Crawl.*?(?=\n\n---|\Z)", briefing["part2_en_markdown"], flags=re.S)[0]
         if vi_marker not in p1:
             p1 = p1 + "\n".join(live_vi_lines)
         if en_marker not in p2:
@@ -1011,7 +1057,7 @@ def refresh_guideline_briefing(
     if progress_cb:
         progress_cb(
             75,
-            f"Đã crawl {len(crawled_guidelines)} văn kiện Guideline mới nhất (2025–2026) từ PubMed cho Trụ cột #{pillar_id}.",
+            f"Đã crawl {len(crawled_guidelines)} văn kiện Guideline trong 3 tháng gần nhất (08–11/2026) cho Trụ cột #{pillar_id}.",
         )
     return briefing
 

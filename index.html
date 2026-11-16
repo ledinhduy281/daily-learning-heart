@@ -5705,25 +5705,30 @@
         }, 1200);
       };
 
-      // Client-side Live Latest-Guideline Crawler (2025–2026+ Official Guidelines Only via NCBI PubMed)
+      // Client-side Live Latest-Guideline Crawler (Strict Last 3 Months / 90 Days: Aug–Nov 2026)
       const CLIENT_GUIDELINE_QUERIES = {
-        1: '("High Blood Pressure"[Title] OR hypertension[Title]) AND ("AHA/ACC"[Title] OR "ACC/AHA"[Title] OR "ISH"[Title] OR "ESC"[Title] OR "KDOQI"[Title]) NOT "Africa"[Title]',
-        2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title]) AND ("ESC/EAS"[Title] OR "ACC/AHA"[Title] OR "ESC"[Title])',
-        3: '("Acute Coronary Syndromes"[Title] OR "Chronic Coronary"[Title] OR "Coronary Artery Revascularization"[Title]) AND ("ACC/AHA"[Title] OR "ESC"[Title])',
-        4: '(("Antiplatelet"[Title] OR "Anticoagulant"[Title] OR "Acute Coronary Syndromes"[Title] OR "Stroke Prevention in Atrial Fibrillation"[Title]) AND ("ACC/AHA"[Title] OR "APHRS"[Title] OR "ESC"[Title]))',
-        5: '("heart failure"[Title] OR "cardiogenic shock"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA/ACC"[Title] OR "CCS"[Title] OR "JCS"[Title])',
-        6: '("Atrial Fibrillation"[Title] OR "Arrhythmia"[Title] OR "ventricular"[Title]) AND ("APHRS"[Title] OR "ESC"[Title] OR "HRS"[Title] OR "ACC/AHA"[Title])',
-        7: '("valvular heart disease"[Title] OR "Infective Endocarditis"[Title]) AND ("ESC/EACTS"[Title] OR "ESC"[Title] OR "JCS"[Title] OR "ACC/AHA"[Title])',
-        8: '("myocarditis"[Title] OR "pericarditis"[Title] OR "cardiomyopathies"[Title] OR "Adult Congenital Heart Disease"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])',
-        9: '("Acute Pulmonary Embolism"[Title] OR "Pulmonary Embolism"[Title] OR "aortic"[Title] OR "peripheral arterial"[Title]) AND ("AHA/ACC"[Title] OR "ESC"[Title] OR "JCS"[Title])',
-        10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "pregnancy"[Title] OR "cardio-oncology"[Title]) AND ("ESC"[Title] OR "ACC"[Title] OR "AHA"[Title])'
+        1: '(hypertension[Title] OR "blood pressure"[Title] OR antihypertensive[Title]) NOT "pulmonary"[Title] NOT "portal"[Title]',
+        2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title] OR ASCVD[Title] OR "lipid-lowering"[Title]) NOT "anesthetic"[Title]',
+        3: '("coronary"[Title] OR "acute coronary"[Title] OR "PCI"[Title] OR "angina"[Title] OR "coronary computed tomographic"[Title])',
+        4: '(antiplatelet[Title] OR anticoagulant[Title] OR anticoagulation[Title] OR "stroke prevention"[Title] OR "thromboembolism"[Title])',
+        5: '("heart failure"[Title] OR "cardiogenic shock"[Title] OR "HFpEF"[Title] OR "HFrEF"[Title])',
+        6: '("atrial fibrillation"[Title] OR "arrhythmia"[Title] OR "arrhythmic"[Title] OR "rhythm disorders"[Title] OR "ventricular"[Title]) NOT "desmoid"[Title] NOT "thyroid"[Title]',
+        7: '("valvular"[Title] OR "aortic valve"[Title] OR "aortic stenosis"[Title] OR "mitral"[Title] OR "tricuspid"[Title] OR "infective endocarditis"[Title])',
+        8: '(myocarditis[Title] OR pericarditis[Title] OR "cardiomyopathy"[Title] OR "cardiomyopathies"[Title] OR "congenital heart"[Title]) NOT "neonates"[Title]',
+        9: '("pulmonary embolism"[Title] OR "pulmonary hypertension"[Title] OR "aortic surgery"[Title] OR "aortic dissection"[Title] OR "peripheral artery"[Title] OR "venous thromboembolism"[Title]) NOT "infants"[Title]',
+        10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "exercise prescriptions"[Title] OR "cardiovascular disease and pregnancy"[Title])'
       };
 
-      async function crawlLatestGuidelineFromPubMed(pillarId) {
+      async function crawlLatestGuidelineFromPubMed(pillarId, daysBack = 90) {
         const topicQ = CLIENT_GUIDELINE_QUERIES[pillarId] || '("ESC Guidelines"[Title] OR "AHA/ACC"[Title] OR "ACC/AHA"[Title])';
-        const dateFilter = '("2025/01/01"[Date - Publication] : "2030/12/31"[Date - Publication])';
-        const typeFilter = '("Practice Guideline"[Publication Type] OR "Guideline"[Publication Type] OR "Guidelines"[Title] OR "Guideline"[Title] OR "Focused Update"[Title] OR "Expert Consensus"[Title] OR "Ten Commandments"[Title]) NOT "Correction to"[Title] NOT "Corrigendum"[Title] NOT "WITHDRAWN"[Title] NOT "Author Correction"[Title] NOT "Reply"[Title]';
-        const term = `(${topicQ}) AND ${typeFilter} AND ${dateFilter}`;
+        const now = new Date();
+        const minDate = new Date(Math.max(now.getTime() - daysBack * 86400000, Date.UTC(2026, 0, 1)));
+        const maxDate = new Date(now.getTime() + 45 * 86400000);
+        const fmt = (d) => `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}`;
+        const dateFilter = `("${fmt(minDate)}"[Date - Publication] : "${fmt(maxDate)}"[Date - Publication])`;
+        const socFilter = '("ESC"[Title] OR "AHA"[Title] OR "ACC"[Title] OR "ISH"[Title] OR "APHRS"[Title] OR "EACTS"[Title] OR "CCS"[Title] OR "JCS"[Title] OR "KDOQI"[Title] OR "THS"[Title] OR "iCARDIO"[Title] OR "PERT"[Title] OR "Eur Heart J"[Journal] OR "Circulation"[Journal] OR "J Am Coll Cardiol"[Journal] OR "Hypertension"[Journal] OR "J Hypertens"[Journal] OR "Hypertens Res"[Journal] OR "J Arrhythm"[Journal] OR "Can J Cardiol"[Journal] OR "Eur J Prev Cardiol"[Journal] OR "Eur J Cardiothorac Surg"[Journal] OR "JACC Adv"[Journal] OR "Am J Kidney Dis"[Journal])';
+        const typeFilter = '("Practice Guideline"[Publication Type] OR "Guideline"[Publication Type] OR "Guidelines"[Title] OR "Guideline"[Title] OR "Focused Update"[Title] OR "Expert Consensus"[Title] OR "Scientific Statement"[Title] OR "Consensus Statement"[Title] OR "Consensus Document"[Title] OR "Position Paper"[Title] OR "Ten Commandments"[Title]) NOT "Correction to"[Title] NOT "Correction:"[Title] NOT "Corrigendum"[Title] NOT "WITHDRAWN"[Title] NOT "Author Correction"[Title] NOT "Reply"[Title] NOT "Large Language Model"[Title] NOT "ChatGPT"[Title] NOT "2024 ESC"[Title]';
+        const term = `(${topicQ}) AND ${socFilter} AND ${typeFilter} AND ${dateFilter}`;
         const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(term)}&retmode=json&retmax=12&sort=pub+date`;
         const sResp = await fetch(esearchUrl);
         if (!sResp.ok) return [];
@@ -5741,15 +5746,17 @@
           if (!it || !it.title) continue;
           const titleClean = String(it.title).replace(/\.+$/, "").trim();
           const low = titleClean.toLowerCase();
-          if (/(correction to|corrigendum|withdrawn|reply to|demographic reporting|informing the 202|patient perspective|missing stakeholders)/i.test(low)) continue;
+          if (/(correction to|correction:|corrigendum|withdrawn|reply to|demographic reporting|informing the 202|patient perspective|missing stakeholders|large language model|chatgpt)/i.test(low)) continue;
           const doiObj = (it.articleids || []).find((a) => a.idtype === "doi");
           const doi = doiObj ? doiObj.value : "";
           const pubdate = it.pubdate || "";
-          const yrMatch = (titleClean.match(/\b(202[5-9]|203\d)\b/) || pubdate.match(/\b(202[5-9]|203\d)\b/));
+          const pubYrMatch = pubdate.match(/\b(20\d{2})\b/);
+          if (pubYrMatch && Number(pubYrMatch[1]) < 2026) continue;
+          const yrMatch = (pubdate.match(/\b(202[6-9]|203\d)\b/) || titleClean.match(/\b(202[6-9]|203\d)\b/));
           const year = yrMatch ? yrMatch[1] : "2026";
-          const isPrimary = /guideline(s)?\s+(for|on)|focused update|expert consensus/i.test(low);
-          const isFlagship = /Eur Heart J|Circulation|J Am Coll Cardiol|Hypertension|J Hypertens|J Arrhythm|Can J Cardiol|Circ J/i.test(it.source || "");
-          const score = (Number(year) * 100) + (isPrimary ? 15 : 5) + (isFlagship ? 4 : 0);
+          const isPrimary = /guideline(s)?\s+(for|on)|focused update|expert consensus|scientific statement|consensus statement|ten commandments/i.test(low);
+          const isFlagship = /Eur Heart J|Circulation|J Am Coll Cardiol|Hypertension|J Hypertens|Hypertens Res|J Arrhythm|Can J Cardiol|Circ J|Eur J Cardiothorac Surg/i.test(it.source || "");
+          const score = (Number(year) * 100) + (isPrimary ? 18 : 5) + (isFlagship ? 4 : 0);
           list.push({
             pmid: String(pid),
             title: titleClean,
@@ -5765,7 +5772,7 @@
         return list.slice(0, 4);
       }
 
-      // GitHub Pages / Static Cloud PWA live NCBI PubMed Guideline Crawler mode
+      // GitHub Pages / Static Cloud PWA live NCBI PubMed Guideline Crawler mode (Last 3 Months)
       if (!App.serverAvailable || isFileOrigin()) {
         const localToday = getLocalIsoDate();
         const pid = getPillarIdForDate(localToday);
@@ -5773,8 +5780,8 @@
         computeRotationPillarsFromDate(localToday);
         setProgress(20, `Đang đồng bộ chu kỳ Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}...`);
         try {
-          setProgress(45, `Đang crawl Guideline mới nhất (2025–2026) từ NCBI PubMed cho Trụ cột #${pid}...`);
-          const crawled = await crawlLatestGuidelineFromPubMed(pid);
+          setProgress(45, `Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}...`);
+          const crawled = await crawlLatestGuidelineFromPubMed(pid, 90);
           setProgress(85, "Đang cập nhật sơ đồ Guideline Evolution & Nguồn Step-0...");
           const target = getTodaySingleBriefing();
           if (target && crawled.length > 0) {
@@ -5788,14 +5795,14 @@
               if (cur.name || cur.title) {
                 ge.prior_guideline = {
                   name: cur.name || cur.title,
-                  year: String(curMaxYear || 2024),
+                  year: String(curMaxYear || 2025),
                   doi: cur.doi || "",
                   pmid: cur.pmid || ""
                 };
               }
               ge.current_guideline = {
                 name: top.title,
-                year: String(top.year),
+                year: `${top.year} (3T gần nhất)`,
                 doi: top.doi,
                 pmid: top.pmid,
                 crawled_live: true,
@@ -5818,8 +5825,8 @@
           renderPillarsTiles();
           renderModeSpecificPanels();
           if (target) selectBriefing(target);
-          setProgress(100, `Đã crawl ${crawled.length} Guideline mới nhất (2025–2026) cho Trụ cột #${pid}/10!`);
-          if (!silent) showToast(`Đã crawl Guideline 2025–2026 mới nhất cho Trụ cột #${pid} từ NCBI PubMed!`);
+          setProgress(100, `Đã crawl ${crawled.length} Guideline mới nhất (3 tháng gần nhất) cho Trụ cột #${pid}/10!`);
+          if (!silent) showToast(`Đã crawl Guideline 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}!`);
         } catch (_) {
           setProgress(100, "Đã đồng bộ dữ liệu cục bộ.");
         } finally {

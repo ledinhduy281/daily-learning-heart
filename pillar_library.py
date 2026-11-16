@@ -238,23 +238,23 @@ def _make_briefing(
 #   2026-07-12 | 2026-07-19 | 2026-07-26 | 2026-11-16 (Today - expected_output.md)
 # ==============================================================================
 
-_P1_TODAY_VI = """# Bản tin Lâm sàng Nội Tim mạch: Chuẩn hóa Phân tầng Nguy cơ Bằng PREVENT và Mục tiêu HATT <120–129 mmHg (2025–2026)
+_P1_TODAY_VI = """# Bản tin Lâm sàng Nội Tim mạch: Chuẩn hóa Toàn cầu Tăng huyết áp 09–11/2026 (ISH 2026 Global Practice, THS Older Adults & KDOQI PREVENT)
 
 **Trụ cột 1: Tăng huyết áp & Các yếu tố nguy cơ tim mạch**
 
 ---
 
-## BLOCK A — Cập nhật & Tiến hóa Khuyến cáo (Guideline Update & Evolution)
+## BLOCK A — Cập nhật & Tiến hóa Khuyến cáo (3 Tháng gần nhất: 08–11/2026)
 
-**Khuyến cáo hiện hành (2025–2026):** *2025 AHA/ACC Multisociety High Blood Pressure Guideline* (cập nhật triển khai 2026 trong *Curr Cardiol Rep* 2026 & *Am J Kidney Dis / KDOQI Commentary* Nov 2026; PMID: `42704524`, `42907045`) song hành cùng *2026 ISH Guidelines for the Management of Hypertension* (*Journal of Hypertension*, Oct 2026; Vol. 44, pp. 1732–1760; DOI: `10.1097/HJH.0000000000004411`; PMID: `42554264`).
+**Khuyến cáo hiện hành (09–11/2026):** *2026 International Society of Hypertension Global Hypertension Practice Guidelines* (*Journal of Hypertension*, Dec 2026 / Epub Nov 2026; DOI: `10.1097/HJH.0000000000004451`; PMID: `42909506`), *2026 THS Guidelines for Hypertension in Older Adults* (*J Formos Med Assoc* / *Hypertens Res* Oct 2026; PMIDs: `42926177`, `42934269`) và *KDOQI Commentary on PREVENT & CKD Hypertension* (*Am J Kidney Dis* Nov 2026; DOI: `10.1053/j.ajkd.2026.07.006`; PMID: `42907045`) cùng tổng kết thực hành *Curr Cardiol Rep* (Sep 2026; PMID: `42704524`).
 
-**Phiên bản tiền nhiệm để đối chiếu:** *2018 ESC/ESH Guidelines* (*Eur Heart J* 2018; DOI: `10.1093/eurheartj/ehy339`) và *2024 ESC Guidelines for the management of elevated blood pressure and hypertension* (*Eur Heart J* 2024; Vol. 45, Issue 38, pp. 3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
+**Phiên bản tiền nhiệm để đối chiếu:** *2024 ESC Guidelines for Elevated BP and Hypertension* (*Eur Heart J* 2024; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`) và *2025 AHA/ACC High Blood Pressure Guideline* (*JACC* 2025; DOI: `10.1016/j.jacc.2025.05.007`; PMID: `40815242`).
 
-### Tiến hóa tư duy qua các thế hệ khuyến cáo (2018 ➔ 2024 ➔ 2025–2026)
+### Tiến hóa tư duy qua các thế hệ khuyến cáo (2018/2024 ➔ 2025 ➔ 09–11/2026)
 
-* **Phân tầng nguy cơ bằng phương trình PREVENT không phụ thuộc chủng tộc (2025 AHA/ACC & KDOQI 2026):** Khác với thang đo Pooled Cohort Equations (2017 ACC/AHA) hay mô hình truyền thống 2018 vốn tách rời bệnh thận mạn (CKD) khỏi công cụ tính nguy cơ tim mạch gộp, khuyến cáo **2025 AHA/ACC** và bình luận đồng thuận **KDOQI 2026** chính thức tích hợp công thức **PREVENT (race-free)** có đưa vào eGFR và yếu tố chuyển hóa–thận (CKM), đồng thời sử dụng **ngưỡng nguy cơ tim mạch 10 năm ≥ 7,5%** để chỉ định khởi trị thuốc hạ áp cho tăng huyết áp giai đoạn 1 (**130–139 / 80–89 mmHg**). Đây là bước hội tụ trực tiếp với khái niệm *Elevated BP (130–139/80–89 mmHg) + SCORE2 ≥10% (Class I, LOE A)* của ESC 2024.
-* **Tiến hóa đích Huyết áp Tâm thu (SBP): Từ e ngại <120 mmHg ➔ 120–129 mmHg (ESC 2024) ➔ Khuyến khích SBP <120 mmHg (AHA/ACC 2025–2026):** Trong khi ESC/ESH 2018 đặt đích 2 bước (<140 rồi <130 mmHg) và e ngại hạ <120 mmHg vì lo ngại đường cong J, dữ liệu tích lũy từ SPRINT, ESPRIT và BPROAD đã thúc đẩy **ESC 2024** thống nhất đích **SBP 120–129 mmHg (Class I)** kèm nguyên tắc ALARA cho người suy yếu/≥85 tuổi; và đến **2025 AHA/ACC Multisociety Guideline**, hướng dẫn giữ ngưỡng điều trị chuẩn **<130/80 mmHg** nhưng **chủ động khuyến khích đích SBP <120 mmHg** ở người lớn có nguy cơ tim mạch cao dung nạp tốt thuốc hạ áp.
-* **Chuẩn hóa phác đồ đơn giản & Viên phối hợp cố định liều (SPC) theo 2026 ISH Guidelines (Oct 2026):** Văn kiện **2026 ISH** nhấn mạnh sử dụng phác đồ từng bước đơn giản hóa, khởi trị sớm viên phối hợp liều cố định (RASi + CCB hoặc lợi tiểu giống thiazide) và mở rộng mô hình chăm sóc theo đội ngũ (team-based care) nhằm thu hẹp khoảng trống kiểm soát huyết áp thực tế.
+* **Tích hợp PREVENT vào Bệnh thận mạn (KDOQI Nov 2026 & Curr Cardiol Rep Sep 2026):** Khác với Pooled Cohort Equations (2017) hay bản 2018 tách rời CKD, phân tích triển khai **Sep–Nov 2026** của **KDOQI** và **AHA/ACC** chuẩn hóa phương trình **PREVENT (không phụ thuộc chủng tộc)** tích hợp trực tiếp eGFR/uACR, dùng **ngưỡng nguy cơ 10 năm ≥ 7,5%** để khởi trị thuốc hạ áp ngay ở THA giai đoạn 1 (**130–139/80–89 mmHg**).
+* **Cá thể hóa Đích SBP 120–129 mmHg / <120 mmHg & Người cao tuổi (THS Oct 2026 & ISH Global 2026):** Trong khi 2024 ESC thống nhất đích **120–129 mmHg** và 2025 AHA/ACC khuyến khích **<120 mmHg** ở nguy cơ cao dung nạp tốt, bộ hướng dẫn **2026 ISH Global Hypertension Practice Guidelines** (PMID `42909506`) và **2026 Taiwan Hypertension Society (THS) Older Adults Guidelines** (24–27/10/2026; PMID `42926177`, `42934269`) nhấn mạnh cân bằng giữa đích tích cực (dựa trên SPRINT, ESPRIT, BPROAD) với sàng lọc suy yếu và tụt huyết áp tư thế ở người cao tuổi châu Á (ALARA).
+* **Phác đồ Đơn giản & Viên phối hợp cố định liều (2026 ISH Global):** Chuẩn hóa viên phối hợp cố định liều (RASi + CCB hoặc lợi tiểu giống thiazide) ngay bước đầu và chăm sóc đa ngành nhằm thu hẹp khoảng trống kiểm soát huyết áp thực tế.
 
 ### Cơ sở sinh lý bệnh và rào cản lâm sàng cũ
 
@@ -333,23 +333,22 @@ _P1_TODAY_VI_OLD_TRIALS = """
 
 _P1_TODAY_VI = _P1_TODAY_VI + _P1_TODAY_VI_OLD_TRIALS
 
-_P1_TODAY_EN = """# Internal Cardiology Clinical Briefing: Race-Free PREVENT Risk Thresholds and Intensive <120–129 mmHg Systolic Targets (2025–2026)
+_P1_TODAY_EN = """# Internal Cardiology Clinical Briefing: Sep–Nov 2026 Global Hypertension Updates (2026 ISH Global Practice, THS Older Adults & KDOQI PREVENT)
 
 **Pillar 1: Hypertension & Cardiovascular Risk Factors**
 
 ---
 
-## BLOCK A — Guideline Update & Evolution
+## BLOCK A — Guideline Update & Evolution (Last 3 Months: Aug–Nov 2026)
 
-**Current Governing Guidelines (2025–2026):** *2025 AHA/ACC Multisociety High Blood Pressure Guideline* (2026 implementation synthesis & CKD updates in *Curr Cardiol Rep* Sep 2026 [PMID: `42704524`] and *KDOQI Commentary / Am J Kidney Dis* Nov 2026 [PMID: `42907045`]) alongside the *2026 ISH Guidelines for the Management of Hypertension* (*Journal of Hypertension*, Oct 2026; Vol. 44, pp. 1732–1760; DOI: `10.1097/HJH.0000000000004411`; PMID: `42554264`).
+**Current Governing Guidelines (Sep–Nov 2026):** *2026 International Society of Hypertension Global Hypertension Practice Guidelines* (*J Hypertens*, Dec 2026 / Epub Nov 2026; DOI: `10.1097/HJH.0000000000004451`; PMID: `42909506`), *2026 THS Guidelines for Hypertension in Older Adults* (*J Formos Med Assoc* / *Hypertens Res* Oct 2026; PMIDs: `42926177`, `42934269`), and *Nov 2026 KDOQI Commentary on CKD & PREVENT* (*Am J Kidney Dis* Nov 2026; DOI: `10.1053/j.ajkd.2026.07.006`; PMID: `42907045`) alongside the *Sep 2026 Clinical Update* (*Curr Cardiol Rep* Sep 2026; PMID: `42704524`).
 
-**Predecessor Guidelines for Comparison:** *2018 ESC/ESH Guidelines* (*Eur Heart J* 2018; DOI: `10.1093/eurheartj/ehy339`) and *2024 ESC Guidelines for the management of elevated blood pressure and hypertension* (*Eur Heart J* 2024; Vol. 45, Issue 38, pp. 3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
+**Predecessor Guidelines for Comparison:** *2024 ESC Guidelines* (*Eur Heart J* 2024; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`) and *2025 AHA/ACC High Blood Pressure Guideline* (*JACC* Nov 2025; DOI: `10.1016/j.jacc.2025.05.007`; PMID: `40815242`).
 
-### Conceptual Evolution Across Guideline Generations (2018 ➔ 2024 ➔ 2025–2026)
+### Conceptual Evolution (2018/2024 ➔ 2025 ➔ Sep–Nov 2026)
 
-* **Race-Free PREVENT Risk Equations & CKD Integration (2025 AHA/ACC & 2026 KDOQI):** Whereas earlier cardiovascular risk equations omitted chronic kidney disease (CKD) from primary prediction algorithms, the **2025 AHA/ACC Guideline** and the **November 2026 KDOQI Commentary** formally adopt the race-free **PREVENT** equations incorporating eGFR and cardiovascular-kidney-metabolic (CKM) metrics, establishing a **7.5% 10-year CVD risk threshold** to initiate pharmacotherapy in Stage-1 hypertension (130–139/80–89 mmHg)—converging with ESC 2024's Elevated BP ≥130/80 mmHg + high-risk/SCORE2 ≥10% rule (**Class I, LOE A**).
-* **Systolic Blood Pressure (SBP) Treatment Target Evolution:** Shifting from 2018's cautious two-step approach (<140 then <130 mmHg, avoiding <120 mmHg due to J-curve fears) to **2024 ESC**'s unified **120–129 mmHg** target (or ALARA in frail/≥85y adults), the **2025 AHA/ACC Guideline** maintains the core goal of **<130/80 mmHg** while actively **encouraging SBP <120 mmHg** in appropriate high-risk adults who tolerate intensification—grounded in SPRINT, ESPRIT, and BPROAD.
-* **Pragmatic Protocol Simplification & Team-Based Delivery (2026 ISH Guidelines, Oct 2026):** The **2026 ISH** guidelines reinforce simplified stepped pharmacotherapy protocols, early single-pill combination (SPC) initiation, and structured multidisciplinary follow-up to close real-world blood pressure control gaps.
+* **CKD & Race-Free PREVENT Integration (Nov 2026 KDOQI & Sep 2026 Update):** The **November 2026 KDOQI Commentary** highlights formal integration of CKD parameters (eGFR/uACR) into the race-free **PREVENT** risk model, triggering antihypertensive pharmacotherapy in stage-1 hypertension at a **7.5% 10-year CVD risk threshold**.
+* **Pragmatic Intensive Targets & Frailty-Adjusted Older Adult Targets (2026 ISH Global & Oct 2026 THS Guidelines):** While 2024 ESC unified at 120–129 mmHg and 2025 AHA/ACC encouraged SBP <120 mmHg, the newly published **2026 ISH Global Practice Guidelines** (PMID `42909506`) and **October 2026 Taiwan Hypertension Society (THS) Older Adults Guidelines** (`42926177`, `42934269`) operationalize upfront single-pill combinations (SPC), orthostatic safety checks, and frailty-tailored goals across Asian and global populations.
 
 ### Pathophysiological Rationale and Historical Clinical Barriers
 
@@ -1034,47 +1033,47 @@ True resistant hypertension is driven by occult volume/aldosterone excess and he
         date="2026-11-16",
         pillar_id=1,
         pillar_vi_override="Tăng huyết áp & Các yếu tố nguy cơ tim mạch",
-        topic_focus_vi="PREVENT 7,5% & Đích HATT <120–129 mmHg (AHA/ACC 2025 & ISH 2026)",
-        topic_focus_en="PREVENT 7.5% & <120–129 mmHg SBP Target (2025 AHA/ACC & 2026 ISH)",
-        title_vi="Chuẩn hóa Phân tầng Nguy cơ Bằng PREVENT và Mục tiêu HATT <120–129 mmHg (2025–2026)",
-        title_en="Race-Free PREVENT Risk Thresholds and Intensive <120–129 mmHg Systolic Targets (2025–2026)",
+        topic_focus_vi="09–11/2026: ISH Global Practice, THS Older Adults & KDOQI PREVENT",
+        topic_focus_en="Sep–Nov 2026: ISH Global, THS Older Adults & KDOQI PREVENT",
+        title_vi="Chuẩn hóa Toàn cầu Tăng huyết áp 09–11/2026 (ISH 2026 Global Practice, THS Older Adults & KDOQI PREVENT)",
+        title_en="Sep–Nov 2026 Global Hypertension Updates (2026 ISH Global Practice, THS Older Adults & KDOQI PREVENT)",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2018 ESC/ESH & 2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
-                "year": "2018 / 2024",
+                "name": "2024 ESC Elevated BP/Hypertension & 2025 AHA/ACC High Blood Pressure Guidelines",
+                "year": "2024 / 2025",
                 "doi": "10.1093/eurheartj/ehae178",
                 "pmid": "39210715",
             },
             "current_guideline": {
-                "name": "2025 AHA/ACC High Blood Pressure Guideline & 2026 ISH Hypertension Guidelines",
-                "year": "2025 / 2026",
-                "doi": "10.1016/j.jacc.2025.05.007",
-                "pmid": "40815242",
+                "name": "2026 ISH Global Hypertension Practice Guidelines, 2026 THS Older Adults & Nov 2026 KDOQI",
+                "year": "2026 (09–11/2026)",
+                "doi": "10.1097/HJH.0000000000004451",
+                "pmid": "42909506",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC/ESH 2018 → ESC 2024",
-                    "Directive A • 2018 ESC/ESH → 2024 ESC",
-                    "Từ Đích 2 bước (<140 rồi <130) ➔ Elevated BP 120–129 mmHg",
-                    "From Two-Step (<140 then <130) ➔ Elevated BP 120–129 mmHg",
-                    "ESC/ESH 2018 tránh hạ <120 mmHg vì lo đường cong J; đến ESC 2024 rút gọn thành Elevated BP (120–139/70–89), khởi trị khi ≥130/80 + SCORE2 ≥10% và đặt đích thống nhất 120–129 mmHg.",
-                    "2018 ESC/ESH avoided <120 mmHg over J-curve fears; 2024 ESC introduced Elevated BP (120–139/70–89), starting drugs at ≥130/80 + SCORE2 ≥10% and targeting 120–129 mmHg.",
+                    "Chỉ dẫn A • ESC 2024 → AHA/ACC 2025",
+                    "Directive A • 2024 ESC → 2025 AHA/ACC",
+                    "Elevated BP 120–129 mmHg & Phương trình PREVENT (Ngưỡng 7,5%)",
+                    "Elevated BP 120–129 mmHg & Race-Free PREVENT (7.5% Threshold)",
+                    "ESC 2024 hợp nhất đích 120–129 mmHg và khởi trị ≥130/80 + SCORE2 ≥10%; AHA/ACC 2025 khuyến khích SBP <120 mmHg và dùng PREVENT ≥7,5%.",
+                    "2024 ESC set a 120–129 mmHg target (≥130/80 + SCORE2 ≥10%); 2025 AHA/ACC encouraged SBP <120 mmHg with a 7.5% PREVENT threshold.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • SPRINT, ESPRIT, BPROAD",
                     "Evidence Turning Point • SPRINT, ESPRIT, BPROAD",
                     "Giảm 12%–25% MACE ở cả ĐTĐ & Không ĐTĐ",
                     "12%–25% MACE Reduction Across Diabetic & Non-Diabetic Cohorts",
-                    "SPRINT (HR 0,75), ESPRIT (n=11.255 gồm 39% ĐTĐ & 27% đột quỵ; HR 0,88) và BPROAD (n=12.821 ĐTĐ2; HR 0,79) khẳng định lợi ích bảo vệ tim mạch của đích SBP <120 mmHg.",
-                    "SPRINT (HR 0.75), ESPRIT (n=11,255 including ~39% DM & ~27% stroke; HR 0.88), and BPROAD (n=12,821 T2DM; HR 0.79) confirmed CV protection of intensive <120 mmHg SBP control.",
+                    "SPRINT (HR 0,75), ESPRIT (HR 0,88) và BPROAD (HR 0,79) khẳng định lợi ích giảm biến cố tim mạch của đích SBP <120–129 mmHg khi theo dõi sát an toàn thận.",
+                    "SPRINT (HR 0.75), ESPRIT (HR 0.88), and BPROAD (HR 0.79) proved intensive SBP reduction reduces MACE across T2DM, post-stroke, and CKD subsets.",
                 ),
                 _step(
-                    "Chỉ dẫn B • AHA/ACC 2025 & ISH / KDOQI 2026 (Hiện hành)",
-                    "Directive B • 2025 AHA/ACC & 2026 ISH / KDOQI (Current)",
-                    "PREVENT ≥7,5% (I, A), Khuyến khích SBP <120 & SPC chuẩn hóa",
-                    "Race-Free PREVENT ≥7.5%, Encourage SBP <120 & Standardized SPC",
-                    "2025 AHA/ACC & KDOQI Nov 2026 tích hợp phương trình PREVENT không chủng tộc (ngưỡng 7,5% cho THA độ 1) và khuyến khích SBP <120 mmHg; 2026 ISH (Oct 2026) chuẩn hóa viên phối hợp liều cố định SPC.",
-                    "2025 AHA/ACC & Nov 2026 KDOQI adopt race-free PREVENT (7.5% threshold for stage-1 HTN) and encourage SBP <120 mmHg; Oct 2026 ISH standardizes simplified single-pill combination protocols.",
+                    "Chỉ dẫn B • ISH Global, THS Older Adults & KDOQI (09–11/2026)",
+                    "Directive B • Sep–Nov 2026 ISH Global, THS Older Adults & KDOQI",
+                    "ISH Global Practice 2026, THS Người cao tuổi (10/2026) & KDOQI CKD (11/2026)",
+                    "2026 ISH Global Practice, Oct 2026 THS Older Adults & Nov 2026 KDOQI",
+                    "Trong 3 tháng 09–11/2026: 2026 ISH Global Practice (PMID 42909506) chuẩn hóa viên phối hợp liều cố định SPC toàn cầu; 2026 THS Guidelines (Oct 2026; PMID 42926177) cá thể hóa đích ở người cao tuổi suy yếu; KDOQI (Nov 2026; PMID 42907045) tích hợp CKD vào PREVENT.",
+                    "Published Sep–Nov 2026: 2026 ISH Global Guidelines standardize upfront SPC therapy worldwide; Oct 2026 THS calibrates older-adult targets in Asia; Nov 2026 KDOQI integrates CKD risk into PREVENT.",
                 ),
             ],
         },
@@ -1142,11 +1141,11 @@ True resistant hypertension is driven by occult volume/aldosterone excess and he
             ),
         ],
         pubmed_anchors=[
-            _anchor("40815242", "2025 AHA/ACC/Multisociety Guideline for High Blood Pressure in Adults.", "J Am Coll Cardiol (2025)", "2025 Nov 4", "10.1016/j.jacc.2025.05.007", "86", "1567-1678"),
-            _anchor("42554264", "2026 ISH guidelines for the management of hypertension.", "J Hypertens (2026)", "2026 Oct 1", "10.1097/HJH.0000000000004411", "44", "1732-1760"),
-            _anchor("42704524", "The 2025 AHA/ACC Hypertension Guidelines: Key Updates, Historical Context, and Clinical Implications.", "Curr Cardiol Rep (2026)", "2026 Sep 7", "10.1007/s11886-026-02413-0", "28", ""),
+            _anchor("42909506", "2026 International Society of Hypertension Global Hypertension Practice Guidelines.", "J Hypertens (2026)", "2026 Dec 1", "10.1097/HJH.0000000000004451", "", ""),
             _anchor("42907045", "KDOQI Commentary on the 2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults.", "Am J Kidney Dis (2026)", "2026 Nov", "10.1053/j.ajkd.2026.07.006", "88", "645-681"),
-            _anchor("39210715", "2024 ESC Guidelines for the management of elevated blood pressure and hypertension.", "Eur Heart J (2024)", "2024 Oct 7", "10.1093/eurheartj/ehae178", "45", "3912-4018"),
+            _anchor("42926177", "2026 THS guidelines for the management of hypertension in older adults.", "J Formos Med Assoc (2026)", "2026 Oct 24", "10.1016/j.jfma.2026.09.040", "", ""),
+            _anchor("42934269", "The 2026 Taiwan hypertension society guidelines for hypertension in older adults: asian perspectives.", "Hypertens Res (2026)", "2026 Oct 27", "10.1038/s41440-026-02685-7", "", ""),
+            _anchor("42704524", "The 2025 AHA/ACC Hypertension Guidelines: Key Updates, Historical Context, and Clinical Implications.", "Curr Cardiol Rep (2026)", "2026 Sep 7", "10.1007/s11886-026-02413-0", "28", ""),
             _anchor("26551272", "A Randomized Trial of Intensive versus Standard Blood-Pressure Control (SPRINT).", "NEJM (2015)", "2015 Nov 26", "10.1056/NEJMoa1511939", "373", "2103-2116"),
             _anchor("38945140", "Lowering systolic blood pressure to less than 120 mm Hg versus less than 140 mm Hg (ESPRIT).", "The Lancet (2024)", "2024 Jul 20", "10.1016/S0140-6736(24)01028-6", "404", "245-255"),
             _anchor("39555827", "Intensive Blood-Pressure Control in Patients with Type 2 Diabetes (BPROAD).", "NEJM (2025)", "2025 Mar 27", "10.1056/NEJMoa2412006", "392", "1155-1167"),
@@ -1726,31 +1725,31 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
         briefing_id="ebm-2026-11-07-p2-main",
         date="2026-11-07",
         pillar_id=2,
-        topic_focus_vi="2026 ACC/AHA & 2025 ESC/EAS Lipid: LDL-C <55, non-HDL-C <85 & Colchicine",
-        topic_focus_en="2026 ACC/AHA & 2025 ESC/EAS Lipid: LDL-C <55, non-HDL-C <85 & Colchicine",
-        title_vi="Tiêu chuẩn 2025–2026 Kiểm soát Xơ vữa Mạch máu: Đích LDL-C <55 & non-HDL-C <85 mg/dL Phối hợp Sớm cùng Kháng viêm Colchicine",
-        title_en="2025–2026 Atherosclerosis Standard: Goal-Directed LDL-C <55 & non-HDL-C <85 mg/dL Combined with Anti-Inflammatory Colchicine",
+        topic_focus_vi="08–11/2026: ACC/AHA ASCVD Top 10 (09/2026), MESA (11/2026) & ESC VTE Lipid Consensus",
+        topic_focus_en="Aug–Nov 2026: ACC/AHA ASCVD Top 10, Nov 2026 MESA & ESC Lipid Consensus",
+        title_vi="Cập nhật Lipid máu 08–11/2026: Top 10 Dự phòng ASCVD (09/2026), Mở rộng Statin (11/2026) & Đồng thuận ESC Chống viêm",
+        title_en="Aug–Nov 2026 Dyslipidemia Updates: Secondary ASCVD Top 10 (Sep 2026), Statin Reclassification (Nov 2026) & ESC Consensus",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2019 ESC/EAS Dyslipidaemias & 2024 ESC CCS Guidelines",
-                "year": "2019 / 2024",
-                "doi": "10.1093/eurheartj/ehae177",
-                "pmid": "39210710",
+                "name": "2024 ESC CCS & 2025 ESC/EAS Focused Update on Dyslipidaemias",
+                "year": "2024 / 2025",
+                "doi": "10.1093/eurheartj/ehaf190",
+                "pmid": "40878289",
             },
             "current_guideline": {
-                "name": "2026 ACC/AHA Dyslipidemia Guideline & 2025 ESC/EAS Focused Update on Dyslipidaemias",
-                "year": "2025 / 2026",
-                "doi": "10.1016/j.jacc.2025.11.016",
-                "pmid": "41824590",
+                "name": "2026 ACC/AHA Dyslipidemia Guideline (Aug–Nov 2026 ASCVD Updates) & ESC Sep 2026 Consensus",
+                "year": "2026 (08–11/2026)",
+                "doi": "10.1007/s11883-026-01465-5",
+                "pmid": "42709273",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC/EAS 2019 → ESC 2024",
-                    "Directive A • 2019 ESC/EAS → 2024 ESC",
-                    "Thiết lập Đích LDL-C <55 & Bổ sung Colchicine IIa",
-                    "LDL-C <55 mg/dL & Addition of Colchicine Class IIa",
-                    "ESC 2019 & 2024 đặt mục tiêu LDL-C < 55 mg/dL trong nguy cơ rất cao và nâng Colchicine 0,5 mg/ngày lên Class IIa, trong khi AHA/ACC 2018 còn giữ mô hình ngưỡng phần trăm.",
-                    "2019–2024 ESC anchored LDL-C <55 mg/dL and elevated colchicine 0.5 mg daily to Class IIa, whereas the 2018 ACC/AHA still used fixed statin intensity thresholds.",
+                    "Chỉ dẫn A • ESC 2024 → ESC/EAS 2025 Focused Update",
+                    "Directive A • 2024 ESC → 2025 ESC/EAS Focused Update",
+                    "Thiết lập Đích LDL-C <55 & Colchicine IIa",
+                    "LDL-C <55 mg/dL & Colchicine Class IIa",
+                    "ESC 2024 nâng Colchicine 0,5 mg lên Class IIa và 2025 ESC/EAS Focused Update tinh chỉnh ngưỡng nguy cơ theo từng tầng LDL-C châu Âu.",
+                    "2024 ESC elevated colchicine 0.5 mg to Class IIa and the 2025 ESC/EAS Focused Update refined risk-linked LDL-C goals in Europe.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • LoDoCo2, COLCOT & CLEAR Outcomes",
@@ -1758,15 +1757,15 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
                     "Giảm 23%–31% MACE bằng Chống viêm & Mở rộng Non-Statin",
                     "23%–31% MACE Cut via Anti-Inflammation & Non-Statins",
                     "LoDoCo2 (HR 0,69), COLCOT (HR 0,77) và CLEAR Outcomes (HR 0,87) chứng minh phải kiểm soát đồng thời viêm mạch máu tồn dư và gánh nặng apolipoprotein B / Lp(a) từ sớm.",
-                    "LoDoCo2 (HR 0.69), COLCOT (HR 0.77), and CLEAR Outcomes (HR 0.87) proved the necessity of tackling residual inflammation alongside early apoB/Lp(a) and non-statin LDL lowering.",
+                    "LoDoCo2 (HR 0.69), COLCOT (HR 0.77), and CLEAR Outcomes (HR 0.87) proved the necessity of tackling residual inflammation alongside early apoB/Lp(a) lowering.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC/EAS 2025 Focused Update & ACC/AHA 2026 (Hiện hành)",
-                    "Directive B • 2025 ESC/EAS Focused Update & 2026 ACC/AHA (Current)",
-                    "Hội tụ Toàn cầu: LDL-C <55 & non-HDL-C <85 mg/dL + Phối hợp Sớm",
-                    "Transatlantic Convergence: LDL-C <55 & non-HDL-C <85 + Upfront Combo",
-                    "2025 ESC/EAS Focused Update (Eur Heart J Nov 2025) và 2026 ACC/AHA Dyslipidemia Guideline (Circulation/JACC Apr–May 2026) tái lập mục tiêu rõ ràng: LDL-C <55 mg/dL, non-HDL-C <85 mg/dL ở ASCVD rất cao, tích hợp apoB, Lp(a), CAC và phối hợp sớm ezetimibe/PCSK9i/inclisiran/bempedoic acid.",
-                    "The 2025 ESC/EAS Focused Update and 2026 ACC/AHA Dyslipidemia Guideline reintroduce explicit targets (LDL-C <55 mg/dL, non-HDL-C <85 mg/dL in very-high-risk ASCVD), integrate apoB, Lp(a), CAC, and mandate early non-statin escalation.",
+                    "Chỉ dẫn B • Các Cập nhật 08–11/2026 (Hiện hành)",
+                    "Directive B • Aug–Nov 2026 Dyslipidemia Updates (Current)",
+                    "LDL-C <55 & non-HDL-C <85 mg/dL, MESA 11/2026 & Đồng thuận ESC 09/2026",
+                    "LDL-C <55 & non-HDL-C <85, Nov 2026 MESA & Sep 2026 ESC Consensus",
+                    "Trong 3 tháng gần nhất: 2026 ACC/AHA Secondary ASCVD Top 10 (Sep 8, 2026; PMID 42709273) tái lập đích LDL-C <55 & non-HDL-C <85 mg/dL; JACC Adv (Nov 13, 2026; PMID 43025043) định lượng tái phân tầng ASCVD/PREVENT; và ESC Sep 9, 2026 (PMID 42712221) mở rộng hạ lipid trong thuyên tắc huyết khối tĩnh mạch.",
+                    "Aug–Nov 2026 updates: Sep 8, 2026 ACC/AHA ASCVD Top 10 (PMID 42709273) sets LDL-C <55 & non-HDL-C <85; Nov 13, 2026 JACC Adv (PMID 43025043) quantifies MESA statin reclassification; Sep 9, 2026 ESC Consensus (PMID 42712221) extends lipid lowering to VTE.",
                 ),
             ],
         },
@@ -1834,21 +1833,19 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
             ),
         ],
         pubmed_anchors=[
-            _anchor("41824590", "2026 ACC/AHA/AACVPR/ABC/ACPM/ADA/AGS/APhA/ASPC/NLA/PCNA Guideline on the Management of Dyslipidemia.", "J Am Coll Cardiol (2026)", "2026 May 19", "10.1016/j.jacc.2025.11.016", "", ""),
-            _anchor("41824552", "2026 ACC/AHA Guideline on the Management of Dyslipidemia.", "Circulation (2026)", "2026 Apr 28", "10.1161/CIR.0000000000001425", "", ""),
-            _anchor("40878289", "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias.", "Eur Heart J (2025)", "2025 Nov 7", "10.1093/eurheartj/ehaf190", "46", "4359-4378"),
-            _anchor("41416697", "The '10 commandments' for the 2025 focused update of the 2019 ESC/EAS guidelines for the management of dyslipidaemias.", "Eur Heart J (2026)", "2026 Feb 11", "10.1093/eurheartj/ehaf919", "", ""),
-            _anchor("42579320", "Comparison of the 2025 ESC/EAS and 2026 ACC/AHA Guidelines for Dyslipidemia Management.", "Eur J Prev Cardiol (2026)", "2026 Aug 11", "10.1093/eurjpc/zwag413", "", ""),
+            _anchor("43025043", "Impact of the 2026 Dyslipidemia Guideline on ASCVD Reclassification and Statin Recommendations in MESA.", "JACC Adv (2026)", "2026 Nov 13", "10.1016/j.jacadv.2026.103485", "", ""),
             _anchor("42709273", "Top 10 Concepts in Secondary ASCVD Prevention From the 2026 ACC/AHA Dyslipidemia Guideline.", "Curr Atheroscler Rep (2026)", "2026 Sep 8", "10.1007/s11883-026-01465-5", "28", ""),
+            _anchor("42712221", "Lipid lowering therapy in venous thromboembolism: Clinical Consensus Statement of ESC Working Groups.", "Eur J Prev Cardiol (2026)", "2026 Sep 9", "10.1093/eurjpc/zwag481", "", ""),
+            _anchor("42579320", "Comparison of the 2025 ESC/EAS and 2026 ACC/AHA Guidelines for Dyslipidemia Management.", "Eur J Prev Cardiol (2026)", "2026 Aug 11", "10.1093/eurjpc/zwag413", "", ""),
             _anchor("32865380", "Colchicine in Patients with Chronic Coronary Disease (LoDoCo2).", "NEJM (2020)", "2020 Nov 5", "10.1056/NEJMoa2021372", "383", "1838-1847"),
             _anchor("31733140", "Efficacy and Safety of Low-Dose Colchicine after Myocardial Infarction (COLCOT).", "NEJM (2019)", "2019 Dec 26", "10.1056/NEJMoa1912388", "381", "2497-2505"),
             _anchor("36876740", "Bempedoic Acid and Cardiovascular Outcomes in Statin-Intolerant Patients (CLEAR Outcomes).", "NEJM (2023)", "2023 Apr 13", "10.1056/NEJMoa2215024", "388", "1353-1364"),
         ],
-        part1_vi_markdown="""# Tiêu chuẩn 2025–2026 Kiểm soát Xơ vữa Mạch máu: Đích LDL-C <55 & non-HDL-C <85 mg/dL Phối hợp Sớm cùng Kháng viêm Colchicine
+        part1_vi_markdown="""# Cập nhật Lipid máu 08–11/2026: Top 10 Dự phòng ASCVD (09/2026), Mở rộng Statin (11/2026) & Đồng thuận ESC Chống viêm
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo trong 3 Tháng Gần Nhất (08–11/2026)
 
-Chuyên đề thuộc **Trụ cột 2: Rối loạn Lipid máu & Xơ vữa động mạch**. Hai văn kiện chuẩn mực mới nhất hiện nay là **2026 ACC/AHA/Multisociety Guideline on the Management of Dyslipidemia** (*Circulation* 28/04/2026 [PMID: `41824552`] & *JACC* 19/05/2026 [DOI: `10.1016/j.jacc.2025.11.016`; PMID: `41824590`]) và **2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias** (*Eur Heart J* 07/11/2025; Vol. 46, pp. 4359–4378; DOI: `10.1093/eurheartj/ehaf190`; PMID: `40878289`).
+Chuyên đề thuộc **Trụ cột 2: Rối loạn Lipid máu & Xơ vữa động mạch**. Loạt văn kiện thực hành mới nhất công bố từ **08–11/2026** bao gồm **Tái phân tầng ASCVD/PREVENT trong 2026 Dyslipidemia Guideline** (*JACC Adv* 13/11/2026; DOI `10.1016/j.jacadv.2026.103485`; PMID `43025043`), **Top 10 Concepts in Secondary ASCVD Prevention From the 2026 ACC/AHA Dyslipidemia Guideline** (*Curr Atheroscler Rep* 08/09/2026; DOI `10.1007/s11883-026-01465-5`; PMID `42709273`), **ESC Clinical Consensus Statement về Hạ lipid trong Thuyên tắc huyết khối tĩnh mạch** (*Eur J Prev Cardiol* 09/09/2026; DOI `10.1093/eurjpc/zwag481`; PMID `42712221`), và **Đối chiếu 2025 ESC/EAS vs 2026 ACC/AHA** (*Eur J Prev Cardiol* 11/08/2026; PMID `42579320`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: 2018/2019 ➔ 2024 ➔ 2025–2026
 - **Lập trường trước đây (ACC/AHA 2018 & ESC/EAS 2019):** Bản ACC/AHA 2018 bỏ ngưỡng mục tiêu LDL-C cố định để dùng ngưỡng điều trị statin theo cường độ, còn ESC 2019 tiên phong hạ LDL-C < 55 mg/dL ở nguy cơ rất cao nhưng chưa tích hợp thuốc chống viêm. Đến **ESC 2024 CCS**, colchicine liều thấp (0,5 mg/ngày) mới đạt Class IIa, LOE A.
@@ -1901,11 +1898,11 @@ Xơ vữa động mạch bị thúc đẩy đồng thời bởi sự tích tụ 
 *Nội dung phân tích trên phục vụ mục tiêu đào tạo y khoa chứng cứ; bác sĩ lâm sàng cần đối chiếu trực tiếp với văn bản khuyến cáo 2025 ESC/EAS Focused Update & 2026 ACC/AHA Dyslipidemia Guideline và hồ sơ tương tác thuốc của từng người bệnh cụ thể.*
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# 2025–2026 Atherosclerosis Standard: Goal-Directed LDL-C <55 & non-HDL-C <85 mg/dL Combined with Anti-Inflammatory Colchicine
+        part2_en_markdown="""# Aug–Nov 2026 Dyslipidemia Updates: Secondary ASCVD Top 10 (Sep 2026), Statin Reclassification (Nov 2026) & ESC Consensus
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Aug–Nov 2026)
 
-This briefing addresses **Pillar 2: Dyslipidemia & Atherosclerosis**. The governing 2025–2026 clinical practice standards are the **2026 ACC/AHA/Multisociety Guideline on the Management of Dyslipidemia** (*Circulation* Apr 2026 [PMID: `41824552`] & *JACC* May 2026 [DOI: `10.1016/j.jacc.2025.11.016`; PMID: `41824590`]) and the **2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias** (*Eur Heart J* Nov 2025; 46:4359–4378; DOI: `10.1093/eurheartj/ehaf190`; PMID: `40878289`).
+This briefing addresses **Pillar 2: Dyslipidemia & Atherosclerosis**, anchored strictly within the **Aug–Nov 2026** evidence window by **ASCVD/PREVENT Statin Reclassification under the 2026 Dyslipidemia Guideline** (*JACC Adv* Nov 13, 2026; DOI `10.1016/j.jacadv.2026.103485`; PMID: `43025043`), **Top 10 Concepts in Secondary ASCVD Prevention From the 2026 ACC/AHA Dyslipidemia Guideline** (*Curr Atheroscler Rep* Sep 8, 2026; DOI `10.1007/s11883-026-01465-5`; PMID: `42709273`), the **ESC Working Groups Clinical Consensus on Lipid-Lowering Therapy in VTE** (*Eur J Prev Cardiol* Sep 9, 2026; PMID: `42712221`), and the **2025 ESC/EAS vs. 2026 ACC/AHA Comparative Appraisal** (*Eur J Prev Cardiol* Aug 11, 2026; PMID: `42579320`).
 
 ### 1. Guideline Evolution: 2018/2019 ➔ 2024 ➔ 2025–2026
 - **Prior Stance (2018 ACC/AHA & 2019 ESC/EAS):** While ESC 2019 championed LDL-C <55 mg/dL in very-high-risk ASCVD and ESC 2024 CCS added low-dose colchicine (Class IIa), the 2018 US guideline avoided explicit numeric targets in favor of fixed statin intensity categories.
@@ -2525,31 +2522,31 @@ Moving away from rigid first-line/second-line anti-anginal hierarchies (2013 ESC
         briefing_id="ebm-2026-11-08-p3-main",
         date="2026-11-08",
         pillar_id=3,
-        topic_focus_vi="2025 ACC/AHA ACS & ESC CCS: OMT Đa trụ cột & Vi mạch Vành (INOCA/ANOCA)",
-        topic_focus_en="2025 ACC/AHA ACS & ESC CCS: Multi-Pillar OMT & INOCA/ANOCA",
-        title_vi="Bệnh Mạch vành Toàn diện (2025 ACC/AHA ACS & ESC CCS): Tối ưu Nội khoa Từ Vi mạch Vành (INOCA/ANOCA) đến Hậu Hội chứng Vành cấp",
-        title_en="Comprehensive Coronary Artery Disease (2025 ACC/AHA ACS & ESC CCS): Stratified Medical Therapy from Microvascular Angina to Post-ACS Stabilization",
+        topic_focus_vi="09–11/2026: AHA ACS Antiplatelet Statement, ESC-ACVC Hậu Cấp cứu & SCCT CCTA",
+        topic_focus_en="Sep–Nov 2026: AHA ACS Statement, ESC-ACVC Follow-Up & SCCT CCTA",
+        title_vi="Cập nhật Mạch vành 09–11/2026 (AHA Scientific Statement 11/2026, ESC-ACVC & SCCT CCTA): Tối ưu Nội khoa & Theo dõi Sớm",
+        title_en="Sep–Nov 2026 Coronary Updates (Nov 2026 AHA ACS Statement, ESC-ACVC Follow-Up & SCCT CCTA): Early Ambulatory Care & OMT",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2019 ESC CCS & 2023 ESC Acute Coronary Syndromes Guidelines",
-                "year": "2019 / 2023",
-                "doi": "10.1093/eurheartj/ehad191",
-                "pmid": "37622654",
+                "name": "2024 ESC CCS & Early 2025 ACC/AHA Acute Coronary Syndromes Guidelines",
+                "year": "2024 / 2025",
+                "doi": "10.1093/eurheartj/ehae177",
+                "pmid": "39210710",
             },
             "current_guideline": {
-                "name": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Acute Coronary Syndromes & 2024 ESC CCS Guidelines",
-                "year": "2024 / 2025",
-                "doi": "10.1161/CIR.0000000000001309",
-                "pmid": "40014670",
+                "name": "Nov 2026 AHA ACS Scientific Statement, Nov 2026 ESC-ACVC Follow-Up & Sep–Oct 2026 CCTA Update",
+                "year": "2026 (09–11/2026)",
+                "doi": "10.1161/CIR.0000000000001478",
+                "pmid": "42866888",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC 2019 CCS & 2013/2014 AHA/ACC",
-                    "Directive A • 2019 ESC CCS & Legacy 2013/2014 AHA/ACC",
-                    "Xoay quanh Hẹp Thượng tâm mạc & ICFT chỉ IIa/IIb",
-                    "Epicardial Focus & Fragmented STEMI/NSTEMI Guidance",
-                    "Bệnh nhân đau ngực không hẹp mạch vành (INOCA/ANOCA) dễ bị coi nhẹ; hướng dẫn STEMI/NSTE-ACS cũ tách rời từ 2013–2014 chưa tích hợp phác đồ lipid/GDMT tăng cường sớm.",
-                    "Patients with non-obstructive coronaries (ANOCA/INOCA) lacked formal Class I testing, while separate 2013–2014 US STEMI/NSTEMI guidelines pre-dated modern rapid GDMT/lipid escalation.",
+                    "Chỉ dẫn A • ESC 2024 CCS → ACC/AHA 2025 ACS",
+                    "Directive A • 2024 ESC CCS → 2025 ACC/AHA ACS",
+                    "ICFT Class I (INOCA) & Hợp nhất Phác đồ Mạch vành 2024–2025",
+                    "ICFT Class I (INOCA) & Unified 2024–2025 ACS Guidance",
+                    "ESC 2024 nâng thăm dò vi mạch ICFT lên Class I, LOE B và chuẩn hóa RF-CL; 2025 ACC/AHA hợp nhất quản lý STEMI/NSTE-ACS.",
+                    "ESC 2024 elevated ICFT to Class I, LOE B with RF-CL scoring, while 2025 ACC/AHA unified STEMI and NSTE-ACS guidelines.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • ISCHEMIA & CorMicA",
@@ -2560,12 +2557,12 @@ Moving away from rigid first-line/second-line anti-anginal hierarchies (2013 ESC
                     "ISCHEMIA proved no survival gain from upfront PCI in stable CAD without left main disease, while CorMicA validated ICFT-guided therapy in ANOCA.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC 2024 CCS & ACC/AHA 2025 ACS (Hiện hành)",
-                    "Directive B • 2024 ESC CCS & 2025 ACC/AHA ACS (Current)",
-                    "ICFT Class I (INOCA) & Hợp nhất Phác đồ Mạch vành Cấp–Mạn 2025",
-                    "ICFT Class I (INOCA) & Unified 2025 ACC/AHA ACS Lipid/OMT Standards",
-                    "ESC 2024 nâng ICFT lên Class I, LOE B cho ANOCA/INOCA và chuẩn hóa mô hình RF-CL; đến 2025 ACC/AHA ACS Guideline (Circulation Apr 2025 / JACC Jun 2025) hợp nhất phác đồ ACS lần đầu sau 10 năm với nội khoa tăng cường lipid sớm & tải/duy trì chuẩn.",
-                    "ESC 2024 elevated ICFT to Class I, LOE B with RF-CL estimation; the unified 2025 ACC/AHA ACS Guideline integrates first-line rapid OMT/lipid intensification across the acute-to-chronic coronary continuum.",
+                    "Chỉ dẫn B • Tuyên bố 09–11/2026 AHA, ESC-ACVC & SCCT (Hiện hành)",
+                    "Directive B • Sep–Nov 2026 AHA, ESC-ACVC & SCCT Consensus (Current)",
+                    "AHA Nov 2026 ACS Multidisciplinary, ESC-ACVC Nov 2026 & SCCT CCTA 2026",
+                    "Nov 2026 AHA ACS Statement, ESC-ACVC Follow-Up & 2026 CCTA Consensus",
+                    "Trong 3 tháng 09–11/2026: AHA Scientific Statement (Circulation Nov 10, 2026; PMID 42866888) chuẩn hóa phối hợp đa chuyên khoa sau ACS; ESC-ACVC Consensus (Nov 10, 2026; PMID 43008190) thiết lập lộ trình tái khám sớm ngoại trú tối ưu GDMT; và 2026 SCCT CCTA Update (Sep–Oct 2026; PMID 42864251) chuẩn hóa đọc CCTA.",
+                    "Published Sep–Nov 2026: Nov 10 AHA Scientific Statement (PMID 42866888) standardizes multidisciplinary post-ACS antiplatelet care; Nov 10 ESC-ACVC Consensus (PMID 43008190) sets early ambulatory follow-up; Sep–Oct 2026 CCTA Consensus updates non-invasive CAD imaging.",
                 ),
             ],
         },
@@ -2615,18 +2612,19 @@ Moving away from rigid first-line/second-line anti-anginal hierarchies (2013 ESC
             ),
         ],
         pubmed_anchors=[
-            _anchor("40014670", "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes.", "Circulation (2025)", "2025 Apr", "10.1161/CIR.0000000000001309", "", ""),
-            _anchor("40013746", "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes.", "J Am Coll Cardiol (2025)", "2025 Jun 10", "10.1016/j.jacc.2024.11.009", "", ""),
-            _anchor("40467140", "Maturation of Lipid Management in the 2025 ACC/AHA Acute Coronary Syndrome Guideline.", "J Am Coll Cardiol (2025)", "2025 Jun 10", "10.1016/j.jacc.2025.04.024", "85", "2107-2110"),
+            _anchor("42866888", "Multidisciplinary Approach to Antiplatelet Management in Coronary Syndromes: A Scientific Statement From the American Heart Association.", "Circulation (2026)", "2026 Nov 10", "10.1161/CIR.0000000000001478", "", ""),
+            _anchor("43008190", "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.", "Eur Heart J Acute Cardiovasc Care (2026)", "2026 Nov 10", "10.1093/ehjacc/zuag133", "", ""),
+            _anchor("42864251", "Interpretation and reporting of coronary computed tomographic angiography (2026 update).", "J Cardiovasc Comput Tomogr (2026)", "2026 Sep-Oct", "", "", ""),
+            _anchor("43023246", "ELCA Utilization in Complex PCI: A Position Paper.", "Catheter Cardiovasc Interv (2026)", "2026 Nov 13", "", "", ""),
             _anchor("39210710", "2024 ESC Guidelines for the management of chronic coronary syndromes.", "European Heart Journal (2024)", "2024 Sep 29", "10.1093/eurheartj/ehae177", "45", "3415-3537"),
             _anchor("32227755", "Initial Invasive or Conservative Strategy for Stable Coronary Disease (ISCHEMIA).", "NEJM (2020)", "2020 Apr 9", "10.1056/NEJMoa1915922", "382", "1395-1407"),
             _anchor("30266608", "Stratified Medical Therapy Using Invasive Coronary Function Testing in Angina: The CorMicA Trial.", "JACC (2018)", "2018 Dec 11", "10.1016/j.jacc.2018.09.006", "72", "2841-2855"),
         ],
-        part1_vi_markdown="""# Bệnh Mạch vành Toàn diện (2025 ACC/AHA ACS & ESC CCS): Tối ưu Nội khoa Từ Vi mạch Vành (INOCA/ANOCA) đến Hậu Hội chứng Vành cấp
+        part1_vi_markdown="""# Cập nhật Mạch vành 09–11/2026 (AHA Scientific Statement 11/2026, ESC-ACVC & SCCT CCTA): Tối ưu Nội khoa & Theo dõi Sớm
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025)
+## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (09–11/2026)
 
-Chuyên đề thuộc **Trụ cột 3: Bệnh mạch vành điều trị nội khoa & Bệnh lý vi mạch vành**. Hai văn kiện trụ cột hiện hành bao gồm **2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes** (*Circulation* 2025 [DOI: `10.1161/CIR.0000000000001309`; PMID: `40014670`] & *JACC* 06/2025 [DOI: `10.1016/j.jacc.2024.11.009`; PMID: `40013746`]) và **2024 ESC Guidelines for Chronic Coronary Syndromes** (DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+Chuyên đề thuộc **Trụ cột 3: Bệnh mạch vành điều trị nội khoa & Bệnh lý vi mạch vành**. Các văn kiện mới nhất trong **3 tháng 09–11/2026** bao gồm **AHA Scientific Statement về Quản lý Đa chuyên khoa trong Hội chứng Vành** (*Circulation* 10/11/2026; DOI `10.1161/CIR.0000000000001478`; PMID `42866888`), **Đồng thuận ESC-ACVC về Tái đánh giá Ngoại trú Sớm Hậu Hồi sức Tim mạch** (*Eur Heart J Acute Cardiovasc Care* 10/11/2026; DOI `10.1093/ehjacc/zuag133`; PMID `43008190`), **Cập nhật 2026 Đọc & Báo cáo Chụp CT Động mạch Vành** (*J Cardiovasc Comput Tomogr* 09–10/2026; PMID `42864251`) và **Position Paper Can thiệp Tổn thương Phức tạp 13/11/2026** (PMID `43023246`), xây dựng trên nền **2024 ESC CCS** (`39210710`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành 2025
 - **Lập trường trước đây (2013/2014 AHA/ACC & 2019 ESC CCS):** Từng tách rời khuyến cáo STEMI và NSTE-ACS từ hơn một thập kỷ trước, đồng thời bệnh nhân đau thắt ngực không hẹp tắc nghẽn (INOCA/ANOCA) thường bị kết luận "mạch vành bình thường" và ngừng thuốc.
@@ -2674,11 +2672,11 @@ Hệ tuần hoàn vành gồm động mạch thượng tâm mạc dẫn máu (đ
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# Comprehensive Coronary Artery Disease (2025 ACC/AHA ACS & ESC CCS): Stratified Medical Therapy from Microvascular Angina to Post-ACS Stabilization
+        part2_en_markdown="""# Sep–Nov 2026 Coronary Updates (Nov 2026 AHA ACS Statement, ESC-ACVC Follow-Up & SCCT CCTA): Early Ambulatory Care & OMT
 
-## BLOCK A — Guideline Update & Evolution (2025)
+## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Sep–Nov 2026)
 
-This briefing addresses **Pillar 3: Medical Coronary Artery Disease & Microvascular Disease**, anchored by the **2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes** (*Circulation* Apr 2025 [DOI: `10.1161/CIR.0000000000001309`; PMID: `40014670`] & *JACC* Jun 2025 [DOI: `10.1016/j.jacc.2024.11.009`; PMID: `40013746`]) alongside the **2024 ESC Guidelines for chronic coronary syndromes** (DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+This briefing addresses **Pillar 3: Medical Coronary Artery Disease & Microvascular Disease**, anchored strictly within the **Sep–Nov 2026** evidence window by the **AHA Scientific Statement on Multidisciplinary Management in Coronary Syndromes** (*Circulation* Nov 10, 2026; DOI `10.1161/CIR.0000000000001478`; PMID: `42866888`), **ESC-ACVC Clinical Consensus on Early Ambulatory Re-evaluation Post-ACCU** (*Eur Heart J Acute Cardiovasc Care* Nov 10, 2026; DOI `10.1093/ehjacc/zuag133`; PMID: `43008190`), **2026 CCTA Interpretation & Reporting Update** (*J Cardiovasc Comput Tomogr* Sep–Oct 2026; PMID: `42864251`), and **Nov 13 Complex PCI Position Paper** (PMID: `43023246`), atop the **2024 ESC CCS** framework (`39210710`).
 
 ### 1. Guideline Evolution: Prior Paradigm → Paradigm Shift → Contemporary Consensus
 - **Historical Stance (2019 ESC Guidelines):** Management of stable coronary disease was heavily driven by epicardial luminal anatomy ("oculostenotic reflex"). Patients with angina and non-obstructive coronary arteries (ANOCA/INOCA) were frequently reassured that their vessels were "normal" and discharged without targeted anti-anginal therapy, while patients with moderate-to-severe stress ischemia were routinely referred for early revascularization under the assumption of survival benefit.
@@ -3326,47 +3324,47 @@ Despite lifelong aspirin monotherapy beyond 12 months, patients with multivessel
         briefing_id="ebm-2026-11-09-p4-main",
         date="2026-11-09",
         pillar_id=4,
-        topic_focus_vi="2025 ACC/AHA ACS & 2026 APHRS AF: Xuống thang DAPT & DOACs",
-        topic_focus_en="2025 ACC/AHA ACS & 2026 APHRS AF: DAPT De-escalation & DOACs",
-        title_vi="Xuống thang Chống kết tập Tiểu cầu Kép & Chống đông Hiện đại (2025 ACC/AHA ACS & 2026 APHRS AF): Cân bằng Huyết khối và Xuất huyết",
-        title_en="Modern DAPT De-escalation & Anticoagulation (2025 ACC/AHA ACS & 2026 APHRS AF): Balancing Ischemic Protection and Bleeding Risk",
+        topic_focus_vi="08–11/2026: AHA ACS Statement (11/2026), ACC Antiplatelet (09/2026) & APHRS Part II",
+        topic_focus_en="Aug–Nov 2026: Nov 2026 AHA ACS Statement, Sep 2026 ACC Antiplatelet & APHRS II",
+        title_vi="Chống huyết khối 08–11/2026 (AHA Statement 11/2026, ACC 09/2026 & APHRS Part II 10/2026): Cân bằng Huyết khối – Xuất huyết",
+        title_en="Aug–Nov 2026 Antithrombotic Standards (Nov 2026 AHA Statement, Sep 2026 ACC & Oct 2026 APHRS II): Bleeding-Adjusted Precision",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2017 ESC DAPT & 2023 ESC Acute Coronary Syndromes Guidelines",
-                "year": "2017 / 2023",
+                "name": "2023 ESC ACS & Early 2025 ACC/AHA ACS Antithrombotic Guidelines",
+                "year": "2023 / 2025",
                 "doi": "10.1093/eurheartj/ehad191",
                 "pmid": "37622654",
             },
             "current_guideline": {
-                "name": "2025 ACC/AHA ACS Guideline (Antithrombotic Rx) & 2026 APHRS AF Stroke Prevention Guidelines",
-                "year": "2025 / 2026",
-                "doi": "10.1016/j.jacc.2025.04.002",
-                "pmid": "40467132",
+                "name": "Nov 2026 AHA ACS Statement, Sep 2026 ACC Antiplatelet Statement & Oct 2026 APHRS Part II",
+                "year": "2026 (08–11/2026)",
+                "doi": "10.1161/CIR.0000000000001478",
+                "pmid": "42866888",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC 2017 → ESC 2023 ACS",
-                    "Directive A • 2017 ESC → 2023 ESC ACS",
-                    "Từ 12 Tháng DAPT Cứng nhắc ➔ Xuống thang Class IIa",
-                    "From Rigid 12-Month DAPT ➔ Class IIa De-escalation",
-                    "ESC 2017 ép giữ Aspirin + P2Y12i đủ 12 tháng; đến ESC 2023 mở đường xuống thang sang đơn trị P2Y12i sau 3–6 tháng ổn định (Class IIa) và 1 tháng ở HBR (Class IIb).",
-                    "2017 ESC mandated 12 full months of DAPT post-ACS; 2023 ESC opened 3–6 month de-escalation to P2Y12i monotherapy (Class IIa) and 1-month DAPT in HBR (Class IIb).",
+                    "Chỉ dẫn A • ESC 2023 → ACC/AHA Early 2025 ACS",
+                    "Directive A • 2023 ESC → Early 2025 ACC/AHA ACS",
+                    "Từ 12 Tháng DAPT Cứng nhắc ➔ Mở đường Đơn trị P2Y12i",
+                    "From Rigid 12-Month DAPT ➔ Early P2Y12i Monotherapy Pathway",
+                    "ESC 2023 và ACC/AHA đầu 2025 khuyến cáo chuyển sang đơn trị P2Y12i sau 1–3/6 tháng dung nạp tốt hoặc rút ngắn ở nguy cơ xuất huyết cao ARC-HBR.",
+                    "2023 ESC and early 2025 ACC/AHA codified transition to P2Y12i monotherapy at 1–6 months or HBR abbreviation.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • TWILIGHT, TICO, MASTER DAPT",
                     "Evidence Turning Point • TWILIGHT, TICO, MASTER DAPT",
                     "Bỏ Aspirin Sau 1–3 Tháng Giảm 44% Xuất huyết Không Tăng Thiếu máu",
                     "Dropping Aspirin at 1–3 Months Cuts Bleeding 44% Without Ischemic Penalty",
-                    "TWILIGHT (n=7.119; BARC 2/3/5 HR 0,56; MACE HR 0,99), TICO (n=3.056 STEMI/NSTE-ACS; NACE HR 0,66) và MASTER DAPT (n=4.579 HBR 1 tháng; chảy máu giảm 2,82%) khẳng định an toàn.",
+                    "TWILIGHT (n=7.119; BARC 2/3/5 HR 0,56; MACE HR 0,99), TICO (n=3.056; NACE HR 0,66) và MASTER DAPT (n=4.579 HBR 1 tháng; chảy máu giảm 2,82%) khẳng định an toàn.",
                     "TWILIGHT (BARC 2/3/5 HR 0.56), TICO (NACE HR 0.66), and MASTER DAPT (bleeding -2.82%) proved aspirin withdrawal safety on modern DES.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ACC/AHA 2025 ACS & APHRS 2026 (Hiện hành)",
-                    "Directive B • 2025 ACC/AHA ACS & 2026 APHRS (Current)",
-                    "Chuẩn hóa Đơn trị Ticagrelor (Class I/IIa) & Chiến lược DOAC/LAAO 2026",
-                    "Endorsement of Ticagrelor Monotherapy & 2026 DOAC/LAAO Strategy",
-                    "2025 ACC/AHA ACS Guideline (Circulation/JACC Apr–Jun 2025) cập nhật chiến lược chống huyết khối rút gọn DAPT sang đơn trị Ticagrelor sau 1–3 tháng PCI dung nạp tốt; song hành 2026 APHRS Part II (Oct 2026) tối ưu liều DOAC/chức năng thận và bít tiểu nhĩ trái (LAAO).",
-                    "The 2025 ACC/AHA ACS Guideline codifies transition to ticagrelor monotherapy after 1–3 months post-PCI, while the Oct 2026 APHRS Part II Guideline refines DOAC dosing, renal vigilance, and LAAO in AF.",
+                    "Chỉ dẫn B • Tuyên bố 08–11/2026 ACC, AHA & APHRS (Hiện hành)",
+                    "Directive B • Aug–Nov 2026 ACC, AHA & APHRS Statements (Current)",
+                    "ACC ASCVD Sep 2026, APHRS DOAC Oct 2026 & AHA ACS Nov 2026",
+                    "Sep 2026 ACC Antiplatelet, Oct 2026 APHRS DOAC & Nov 2026 AHA ACS",
+                    "Trong 3 tháng gần nhất: ACC Scientific Statement (JACC Sep 15, 2026; PMID 42377293) & AHA Scientific Statement (Circulation Nov 10, 2026; PMID 42866888) chuẩn hóa xuống thang kháng tiểu cầu đa chuyên khoa (bao gồm cầu nối phẫu thuật/xuất huyết); APHRS Part II (Oct 2026; PMID 42923502) & UKKA (Aug 2026; PMID 43035656) tối ưu DOAC theo chức năng thận.",
+                    "Aug–Nov 2026: Sep 15 ACC Scientific Statement (PMID 42377293) and Nov 10 AHA Scientific Statement (PMID 42866888) detail perioperative/bleeding de-escalation, while Oct 2026 APHRS Part II & Aug 2026 UKKA refine DOAC dosing in AF + CKD.",
                 ),
             ],
         },
@@ -3434,19 +3432,20 @@ Despite lifelong aspirin monotherapy beyond 12 months, patients with multivessel
             ),
         ],
         pubmed_anchors=[
-            _anchor("40467132", "Antiplatelet and Anticoagulant Therapy in the 2025 ACC/AHA Guideline for Acute Coronary Syndromes.", "J Am Coll Cardiol (2025)", "2025 Jun 10", "10.1016/j.jacc.2025.04.002", "85", "2074-2078"),
-            _anchor("40014670", "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes.", "Circulation (2025)", "2025 Apr", "10.1161/CIR.0000000000001309", "", ""),
+            _anchor("42866888", "Multidisciplinary Approach to Antiplatelet Management in Coronary Syndromes: A Scientific Statement From the American Heart Association.", "Circulation (2026)", "2026 Nov 10", "10.1161/CIR.0000000000001478", "", ""),
+            _anchor("42377293", "Antiplatelet Therapy in the Management of Atherosclerotic Cardiovascular Disease: 2026 ACC Scientific Statement.", "J Am Coll Cardiol (2026)", "2026 Sep 15", "10.1016/j.jacc.2026.05.037", "", ""),
             _anchor("42923502", "2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines (Part II) on Stroke Prevention in Atrial Fibrillation.", "J Arrhythm (2026)", "2026 Oct", "10.1002/joa3.70491", "42", "e70491"),
+            _anchor("43035656", "UK Kidney Association clinical practice guideline on antithrombotic and CKD management.", "BMC Nephrol (2026)", "2026 Aug 19", "10.1186/s12882-026-05270-9", "", ""),
             _anchor("37622654", "2023 ESC Guidelines for the management of acute coronary syndromes.", "Eur Heart J (2023)", "2023 Oct 12", "10.1093/eurheartj/ehad191", "44", "3720-3826"),
             _anchor("31556978", "Ticagrelor with or without Aspirin in High-Risk Patients after PCI (TWILIGHT).", "NEJM (2019)", "2019 Nov 21", "10.1056/NEJMoa1908419", "381", "2032-2042"),
             _anchor("32543684", "Ticagrelor Monotherapy vs Ticagrelor With Aspirin in ACS (TICO).", "JAMA (2020)", "2020 Jun 16", "10.1001/jama.2020.7580", "323", "2407-2416"),
             _anchor("34449185", "Dual Antiplatelet Therapy after PCI in Patients at High Bleeding Risk (MASTER DAPT).", "NEJM (2021)", "2021 Oct 28", "10.1056/NEJMoa2108749", "385", "1643-1655"),
         ],
-        part1_vi_markdown="""# Xuống thang Chống kết tập Tiểu cầu Kép & Chống đông Hiện đại (2025 ACC/AHA ACS & 2026 APHRS AF): Cân bằng Huyết khối và Xuất huyết
+        part1_vi_markdown="""# Chống huyết khối 08–11/2026 (AHA Statement 11/2026, ACC 09/2026 & APHRS Part II 10/2026): Cân bằng Huyết khối – Xuất huyết
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo & Tuyên bố Chuyên môn trong 3 Tháng Gần Nhất (08–11/2026)
 
-Chuyên đề thuộc **Trụ cột 4: Liệu pháp Chống huyết khối**. Văn kiện định hướng thực hành mới nhất bao gồm **2025 ACC/AHA ACS Guideline** (chuyên luận chống huyết khối trên *JACC* 10/06/2025: DOI `10.1016/j.jacc.2025.04.002`; PMID `40467132` & *Circulation* 2025; PMID `40014670`), **2026 APHRS Guidelines Part II on Stroke Prevention in AF** (*J Arrhythm* Oct 2026; DOI `10.1002/joa3.70491`; PMID `42923502`), đối chiếu cùng **2023 ESC ACS** (PMID `37622654`).
+Chuyên đề thuộc **Trụ cột 4: Liệu pháp Chống huyết khối**. Bộ văn kiện cập nhật mới nhất trong **08–11/2026** gồm **AHA Scientific Statement về Quản lý Kháng tiểu cầu Đa chuyên khoa** (*Circulation* 10/11/2026; DOI `10.1161/CIR.0000000000001478`; PMID `42866888`), **2026 ACC Scientific Statement về Kháng tiểu cầu trong ASCVD** (*JACC* 15/09/2026; DOI `10.1016/j.jacc.2026.05.037`; PMID `42377293`), **2026 APHRS Guidelines Part II về Dự phòng Đột quỵ Rung nhĩ** (*J Arrhythm* 10/2026; PMID `42923502`), và **UK Kidney Association Guideline 19/08/2026** (PMID `43035656`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại
 - **Lập trường trước đây (ESC 2017 DAPT & 2020 NSTE-ACS):** Phác đồ mặc định cứng nhắc là duy trì kháng kết tập tiểu cầu kép (DAPT: Aspirin + Ticagrelor/Prasugrel) đủ **12 tháng** sau hội chứng vành cấp (ACS), bất kể nguy cơ xuất huyết của người bệnh, trừ trường hợp xuất huyết nặng đang tiến triển. Việc ngừng Aspirin sớm trước 12 tháng từng bị xem là rủi ro cao gây huyết khối trong stent.
@@ -3494,11 +3493,11 @@ Chuyên đề thuộc **Trụ cột 4: Liệu pháp Chống huyết khối**. V�
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# Modern DAPT De-escalation & Anticoagulation (2025 ACC/AHA ACS & 2026 APHRS AF): Balancing Ischemic Protection and Bleeding Risk
+        part2_en_markdown="""# Aug–Nov 2026 Antithrombotic Standards (Nov 2026 AHA Statement, Sep 2026 ACC & Oct 2026 APHRS II): Bleeding-Adjusted Precision
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Scientific Statement Updates (Aug–Nov 2026)
 
-This briefing addresses **Pillar 4: Antithrombotic Therapy**, anchored by the **2025 ACC/AHA ACS Guideline** (antiplatelet & anticoagulant synthesis in *JACC* Jun 2025: DOI `10.1016/j.jacc.2025.04.002`, PMID `40467132`; *Circulation* 2025: PMID `40014670`) and the **2026 APHRS Guidelines Part II on Stroke Prevention in AF** (*J Arrhythm* Oct 2026: DOI `10.1002/joa3.70491`, PMID `42923502`), evolving from the **2023 ESC ACS Guidelines** (`ehad191`).
+This briefing addresses **Pillar 4: Antithrombotic Therapy**, anchored strictly within **Aug–Nov 2026** by the **Nov 10, 2026 AHA Scientific Statement on Multidisciplinary Antiplatelet Management** (*Circulation* 2026: DOI `10.1161/CIR.0000000000001478`, PMID: `42866888`), **2026 ACC Scientific Statement on Antiplatelet Therapy in ASCVD** (*JACC* Sep 15, 2026: DOI `10.1016/j.jacc.2026.05.037`, PMID: `42377293`), **2026 APHRS Guidelines Part II on Stroke Prevention in AF** (*J Arrhythm* Oct 2026: PMID: `42923502`), and **UKKA Aug 2026 CKD Guidance** (PMID: `43035656`), evolving from **2023 ESC ACS** (`ehad191`).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
 - **Historical Stance (2017 ESC DAPT & 2020 NSTE-ACS):** Mandated rigid 12-month dual antiplatelet therapy (DAPT) post-ACS regardless of bleeding risk.
@@ -4103,31 +4102,31 @@ Routine intra-aortic balloon pump (IABP) support was downgraded to **Class III, 
         briefing_id="ebm-2026-11-10-p5-main",
         date="2026-11-10",
         pillar_id=5,
-        topic_focus_vi="2026 ESC HF & 2026 ACC HFpEF: Phổ HFnrEF, SGLT2i & Finerenone",
-        topic_focus_en="2026 ESC HF & 2026 ACC HFpEF: HFnrEF Spectrum, SGLT2i & Finerenone",
-        title_vi="Chuẩn 2026 Điều trị Suy tim (2026 ESC HF & 2026 ACC HFpEF ECDP): Định nghĩa Toàn cầu Thứ hai & Phác đồ Tứ trụ Toàn Dải EF",
-        title_en="2026 Heart Failure Standard (2026 ESC HF & 2026 ACC HFpEF ECDP): Second Universal Definition & Cross-Spectrum GDMT",
+        topic_focus_vi="08–11/2026: 2026 ESC HF (10/2026), iCARDIO (11/2026) & ACC HFpEF ECDP",
+        topic_focus_en="Aug–Nov 2026: Oct 2026 ESC HF, Nov 2026 iCARDIO & ACC HFpEF ECDP",
+        title_vi="Chuẩn 08–11/2026 Điều trị Suy tim (ESC HF 10/2026, ACC HFpEF 10/2026 & iCARDIO 11/2026): Phổ Toàn Dải EF",
+        title_en="Aug–Nov 2026 Heart Failure Standard (Oct 2026 ESC HF, ACC HFpEF ECDP & Nov 2026 iCARDIO): Cross-Spectrum GDMT",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2021 ESC HF Guidelines & 2023 ESC HF Focused Update",
-                "year": "2021 / 2023",
+                "name": "2023 ESC HF Focused Update & 2025 CCS/CHFS HFnrEF Guideline",
+                "year": "2023 / 2025",
                 "doi": "10.1093/eurheartj/ehad195",
                 "pmid": "37622666",
             },
             "current_guideline": {
-                "name": "2026 ESC Guidelines for the management of heart failure & 2026 ACC HFpEF ECDP",
-                "year": "2025 / 2026",
+                "name": "Oct 2026 ESC Heart Failure, Oct 2026 ACC HFpEF ECDP & Nov 2026 iCARDIO Implementation Guidelines",
+                "year": "2026 (08–11/2026)",
                 "doi": "10.1093/eurheartj/ehag100",
                 "pmid": "42661420",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC 2021 → ESC 2023 Focused Update",
-                    "Directive A • 2021 ESC → 2023 ESC Focused Update",
-                    "Nâng SGLT2i lên Class I, LOE A trên HFmrEF & HFpEF",
-                    "SGLT2i Elevated to Class I, LOE A in HFmrEF & HFpEF",
-                    "ESC 2023 Focused Update nâng Dapagliflozin và Empagliflozin lên Class I, LOE A cho HFmrEF & HFpEF, chấm dứt giai đoạn chỉ dùng lợi tiểu quai.",
-                    "The 2023 ESC Focused Update elevated dapagliflozin and empagliflozin to Class I, LOE A across HFmrEF and HFpEF, ending loop-diuretic-only care.",
+                    "Chỉ dẫn A • ESC 2023 Focused Update → CCS 2025",
+                    "Directive A • 2023 ESC Focused Update → 2025 CCS",
+                    "Nâng SGLT2i lên Class I & Khái niệm HFnrEF (LVEF >40%)",
+                    "SGLT2i Class I & Introduction of HFnrEF (LVEF >40%)",
+                    "ESC 2023 Focused Update đưa SGLT2i lên Class I, LOE A trên HFmrEF & HFpEF; CCS 2025 hợp nhất nhóm LVEF >40%.",
+                    "2023 ESC Focused Update elevated SGLT2i to Class I, LOE A across HFmrEF/HFpEF, and CCS 2025 introduced the unified HFnrEF (>40%) label.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • EMPEROR-Preserved, DELIVER, FINEARTS-HF",
@@ -4138,12 +4137,12 @@ Routine intra-aortic balloon pump (IABP) support was downgraded to **Class III, 
                     "EMPEROR-Preserved (HR 0.79), DELIVER (HR 0.82), and FINEARTS-HF (RR 0.84; p=0.007) completed cross-spectrum LVEF >40% evidence.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC HF 2026, ACC HFpEF 2026 & CCS HFnrEF 2025 (Hiện hành)",
-                    "Directive B • 2026 ESC HF, 2026 ACC HFpEF & 2025 CCS HFnrEF (Current)",
-                    "2026 ESC HF (Oct 2026), Định nghĩa Toàn cầu II (2026) & Phổ HFnrEF (>40%)",
-                    "2026 ESC HF (Oct 2026), 2nd Universal Definition & Unified HFnrEF >40%",
-                    "2026 ESC Heart Failure Guidelines (Eur Heart J Oct 2026; PMID: 42661420), 2026 ACC HFpEF Consensus (JACC Oct 2026), 2026 Second Universal Definition of HF và 2025 CCS/CHFS Guideline thống nhất phổ LVEF >40% (HFnrEF) với 4 trụ cột: SGLT2i, Finerenone (MRA), ARNI và GLP-1RA.",
-                    "2026 ESC HF Guidelines (Oct 2026), 2026 ACC HFpEF ECDP, 2026 Second Universal Definition of HF, and 2025 CCS/CHFS HFnrEF unify LVEF >40% therapy around SGLT2i, nsMRA, ARNI, and GLP-1RA.",
+                    "Chỉ dẫn B • Chuẩn 08–11/2026 (ESC, ACC, WHF & iCARDIO)",
+                    "Directive B • Aug–Nov 2026 Global Standards (ESC, ACC, WHF & iCARDIO)",
+                    "ESC HF 10/2026, ACC HFpEF 10/2026 & iCARDIO Implementation 11/2026",
+                    "Oct 2026 ESC HF, Oct 2026 ACC HFpEF & Nov 2026 iCARDIO Guidelines",
+                    "Loạt văn kiện 08–11/2026 gồm 2026 ESC HF Guidelines (Oct 9, 2026; PMID 42661420), 2026 ACC HFpEF ECDP (Oct 13, 2026; PMID 42494134), 2nd Universal Definition of HF (Aug 18, 2026; PMID 42366997) và 2026 iCARDIO Global Implementation Guidelines (Nov 11, 2026; PMID 43015148) thống nhất chuẩn hóa tứ trụ SGLT2i + Finerenone + ARNI + GLP-1RA và khởi trị nhanh hậu xuất viện.",
+                    "Aug–Nov 2026 landmarks—Oct 2026 ESC HF Guidelines (42661420), Oct 2026 ACC HFpEF ECDP (42494134), Aug 2026 2nd Universal Definition (42366997), and Nov 11, 2026 iCARDIO Global Implementation Guidelines (43015148)—operationalize SGLT2i + finerenone + ARNI + GLP-1RA across ambulatory/acute HF.",
                 ),
             ],
         },
@@ -4212,20 +4211,19 @@ Routine intra-aortic balloon pump (IABP) support was downgraded to **Class III, 
         ],
         pubmed_anchors=[
             _anchor("42661420", "2026 ESC Guidelines for the management of heart failure.", "Eur Heart J (2026)", "2026 Oct 9", "10.1093/eurheartj/ehag100", "47", "5346-5457"),
+            _anchor("43015148", "2026 iCARDIO Alliance Global Implementation Guidelines on Heart Failure.", "Heart Lung Circ (2026)", "2026 Nov 11", "10.1016/j.hlc.2026.10.001", "", ""),
             _anchor("42494134", "Management of Heart Failure With Preserved Ejection Fraction: 2026 ACC Expert Consensus Decision Pathway.", "J Am Coll Cardiol (2026)", "2026 Oct 13", "10.1016/j.jacc.2026.06.018", "", ""),
             _anchor("42366997", "AHA/ACC/ESC/WHF Expert Consensus Document: Second Universal Definition of Heart Failure (2026).", "Circulation (2026)", "2026 Aug 18", "10.1161/CIR.0000000000001455", "", ""),
-            _anchor("41110921", "CCS/CHFS 2025 Guideline Update for Pharmacologic Management of Heart Failure With Nonreduced Ejection Fraction (LVEF > 40%).", "Can J Cardiol (2025)", "2025 Oct", "10.1016/j.cjca.2025.07.027", "41", "1857-1874"),
-            _anchor("40100174", "2025 Concise Clinical Guidance: ACC Expert Consensus Statement on Cardiogenic Shock.", "J Am Coll Cardiol (2025)", "2025 Apr 29", "10.1016/j.jacc.2025.02.018", "85", "1618-1641"),
             _anchor("37622666", "2023 Focused Update of the 2021 ESC Guidelines for acute and chronic heart failure.", "Eur Heart J (2023)", "2023 Oct 1", "10.1093/eurheartj/ehad195", "44", "3627-3639"),
             _anchor("34449189", "Empagliflozin in Heart Failure with a Preserved Ejection Fraction (EMPEROR-Preserved).", "NEJM (2021)", "2021 Oct 14", "10.1056/NEJMoa2107038", "385", "1451-1461"),
             _anchor("36027570", "Dapagliflozin in Heart Failure with Mildly Reduced or Preserved Ejection Fraction (DELIVER).", "NEJM (2022)", "2022 Sep 22", "10.1056/NEJMoa2206286", "387", "1089-1098"),
             _anchor("39225278", "Finerenone in Heart Failure with Mildly Reduced or Preserved Ejection Fraction (FINEARTS-HF).", "NEJM (2024)", "2024 Oct 24", "10.1056/NEJMoa2407107", "391", "1475-1485"),
         ],
-        part1_vi_markdown="""# Chuẩn 2026 Điều trị Suy tim (2026 ESC HF & 2026 ACC HFpEF ECDP): Định nghĩa Toàn cầu Thứ hai & Phác đồ Tứ trụ Toàn Dải EF
+        part1_vi_markdown="""# Chuẩn 08–11/2026 Điều trị Suy tim (ESC HF 10/2026, ACC HFpEF 10/2026 & iCARDIO 11/2026): Phổ Toàn Dải EF
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo trong 3 Tháng Gần Nhất (08–11/2026)
 
-Chuyên đề thuộc **Trụ cột 5: Suy tim Toàn diện & Sốc tim**. Bốn văn kiện chuẩn mực mới nhất năm 2025–2026 bao gồm **2026 ESC Guidelines for the management of heart failure** (*Eur Heart J* Oct 2026; Vol. 47, pp. 5346–5457; DOI: `10.1093/eurheartj/ehag100`; PMID: `42661420`), **2026 ACC Expert Consensus Decision Pathway on HFpEF** (*JACC* Oct 2026; PMID: `42494134`), **Second Universal Definition of Heart Failure (2026)** (*Circulation/JACC/EHJ* 2026; PMID: `42366997`) và **2025 CCS/CHFS Guideline Update for HFnrEF (LVEF > 40%)** (*Can J Cardiol* Oct 2025; PMID: `41110921`).
+Chuyên đề thuộc **Trụ cột 5: Suy tim Toàn diện & Sốc tim**. Bốn văn kiện chuẩn mực công bố trong **08–11/2026** bao gồm **2026 iCARDIO Alliance Global Implementation Guidelines on Heart Failure** (*Heart Lung Circ* 11/11/2026; DOI `10.1016/j.hlc.2026.10.001`; PMID `43015148`), **2026 ESC Guidelines for the management of heart failure** (*Eur Heart J* 09/10/2026; Vol. 47, pp. 5346–5457; DOI `10.1093/eurheartj/ehag100`; PMID `42661420`), **2026 ACC Expert Consensus Decision Pathway on HFpEF** (*JACC* 13/10/2026; PMID `42494134`), và **Second Universal Definition of Heart Failure (2026)** (*Circulation* 18/08/2026; PMID `42366997`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: 2021/2023 ➔ 2025–2026
 - **Lập trường trước đây (ESC 2016, 2021 & 2023 Focused Update):** Trong suy tim phân suất tống máu bảo tồn (HFpEF, LVEF ≥ 50%) và giảm nhẹ (HFmrEF, LVEF 41–49%), từ tình trạng chỉ có lợi tiểu quai giảm ứ huyết năm 2021, đến ESC 2023 Focused Update đã nâng **SGLT2i** lên Class I, LOE A.
@@ -4281,11 +4279,11 @@ Khác với HFrEF (chết tế bào cơ tim và tái cấu trúc lệch tâm), H
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# 2026 Heart Failure Standard (2026 ESC HF & 2026 ACC HFpEF ECDP): Second Universal Definition & Cross-Spectrum GDMT
+        part2_en_markdown="""# Aug–Nov 2026 Heart Failure Standard (Oct 2026 ESC HF, ACC HFpEF ECDP & Nov 2026 iCARDIO): Cross-Spectrum GDMT
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Aug–Nov 2026)
 
-This briefing addresses **Pillar 5: Comprehensive Heart Failure & Cardiogenic Shock**. Governing 2025–2026 standards include the **2026 ESC Guidelines for the management of heart failure** (*Eur Heart J* Oct 2026; DOI: `10.1093/eurheartj/ehag100`; PMID: `42661420`), **2026 ACC Expert Consensus Decision Pathway on HFpEF** (*JACC* Oct 2026; PMID: `42494134`), **Second Universal Definition of Heart Failure (2026)** (*Circulation* Aug 2026; PMID: `42366997`), and **2025 CCS/CHFS Guideline Update for HFnrEF (LVEF > 40%)** (*Can J Cardiol* Oct 2025; PMID: `41110921`), building upon the foundational **2023 ESC Focused Update** (DOI: `10.1093/eurheartj/ehad195`).
+This briefing addresses **Pillar 5: Comprehensive Heart Failure & Cardiogenic Shock**. Four governing **Aug–Nov 2026** standards include **2026 iCARDIO Alliance Global Implementation Guidelines on Heart Failure** (*Heart Lung Circ* Nov 11, 2026; DOI: `10.1016/j.hlc.2026.10.001`; PMID: `43015148`), **2026 ESC Guidelines for the management of heart failure** (*Eur Heart J* Oct 9, 2026; DOI: `10.1093/eurheartj/ehag100`; PMID: `42661420`), **2026 ACC Expert Consensus Decision Pathway on HFpEF** (*JACC* Oct 13, 2026; PMID: `42494134`), and **Second Universal Definition of Heart Failure (2026)** (*Circulation* Aug 18, 2026; PMID: `42366997`), evolving from **2023 ESC Focused Update** (`10.1093/eurheartj/ehad195`).
 
 ### 1. Guideline Evolution: Prior Paradigm → Paradigm Shift → Contemporary Consensus
 - **Historical Stance (2016 ESC Guidelines, Initial 2021 ESC Guidelines):** HFmrEF (LVEF 41–49%) and HFpEF (LVEF ≥ 50%) were long regarded as a therapeutic wasteland. Loop diuretics were recommended solely for congestion relief (**Class I, LOE B**), while zero disease-modifying therapies carried a Class I recommendation for HFpEF.
@@ -4879,20 +4877,20 @@ Following AFFIRM (2002), pharmacologic rhythm control was deemed prognostically 
         briefing_id="ebm-2026-11-11-p6-main",
         date="2026-11-11",
         pillar_id=6,
-        topic_focus_vi="2026 APHRS AF (4 Phần) & ESC AF-CARE: CHA2DS2-VA, Nhịp Sớm & PFA",
-        topic_focus_en="2026 APHRS AF (Parts I–IV) & ESC AF-CARE: Early Rhythm & PFA",
-        title_vi="Cập nhật Toàn diện Rung nhĩ (2026 APHRS 4 Phần & ESC AF-CARE): Kiểm soát Nhịp Sớm, Thang CHA2DS2-VA & Kỷ nguyên Triệt đốt PFA",
-        title_en="Comprehensive Atrial Fibrillation Update (2026 APHRS Parts I–IV & ESC AF-CARE): Early Rhythm Control & Pulsed Field Ablation",
+        topic_focus_vi="10–11/2026: APHRS AF (4 Phần 10/2026), ESC-ACVC (11/2026) & PFA",
+        topic_focus_en="Oct–Nov 2026: Oct 2026 APHRS AF (Parts I–IV), Nov 2026 ESC-ACVC & PFA",
+        title_vi="Cập nhật Rung nhĩ 10–11/2026 (2026 APHRS 4 Phần & ESC-ACVC 11/2026): Kiểm soát Nhịp Sớm, CHA2DS2-VA & PFA",
+        title_en="Oct–Nov 2026 Atrial Fibrillation Updates (Oct 2026 APHRS Parts I–IV & Nov 2026 ESC-ACVC): Early Rhythm & PFA",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2020 ESC & 2024 ESC/EACTS Atrial Fibrillation Guidelines (AF-CARE)",
-                "year": "2020 / 2024",
+                "name": "2024 ESC/EACTS AF-CARE & 2025 ESC-EHRA Heart Rhythm Atlas",
+                "year": "2024 / 2025",
                 "doi": "10.1093/eurheartj/ehae176",
                 "pmid": "39210723",
             },
             "current_guideline": {
-                "name": "2026 Asia Pacific Heart Rhythm Society (APHRS) AF Guidelines (Parts I–IV) & 2025 ESC-EHRA",
-                "year": "2025 / 2026",
+                "name": "Oct 2026 APHRS AF Guidelines (Parts I–IV) & Nov 2026 ESC-ACVC Acute Cardiac Follow-Up",
+                "year": "2026 (10–11/2026)",
                 "doi": "10.1002/joa3.70495",
                 "pmid": "42923148",
             },
@@ -4978,16 +4976,16 @@ Following AFFIRM (2002), pharmacologic rhythm control was deemed prognostically 
             _anchor("42923502", "2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines (Part II) on Stroke Prevention in Atrial Fibrillation.", "J Arrhythm (2026)", "2026 Oct", "10.1002/joa3.70491", "42", "e70491"),
             _anchor("42923076", "2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines (Part III) on Rate and Rhythm Control in Atrial Fibrillation.", "J Arrhythm (2026)", "2026 Oct", "10.1002/joa3.70492", "42", "e70492"),
             _anchor("42923086", "2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines (Part IV) on Comprehensive Lifestyle Risk Factor and Comorbidity Management in Atrial Fibrillation.", "J Arrhythm (2026)", "2026 Oct", "10.1002/joa3.70490", "42", ""),
-            _anchor("40697128", "Arrhythmia care in ESC member countries: the 2025 ESC-EHRA atlas on heart rhythm disorders.", "Europace (2025)", "2025 Jul 1", "10.1093/europace/euaf124", "27", ""),
+            _anchor("43008190", "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.", "Eur Heart J Acute Cardiovasc Care (2026)", "2026 Nov 10", "10.1093/ehjacc/zuag133", "", ""),
             _anchor("39210723", "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with EACTS.", "Eur Heart J (2024)", "2024 Sep 29", "10.1093/eurheartj/ehae176", "45", "3314-3414"),
             _anchor("32865375", "Early Rhythm-Control Therapy in Patients with Atrial Fibrillation (EAST-AFNET 4).", "NEJM (2020)", "2020 Oct 1", "10.1056/NEJMoa2019422", "383", "1305-1316"),
             _anchor("37634148", "Pulsed Field or Conventional Thermal Ablation for Paroxysmal Atrial Fibrillation (ADVENT).", "NEJM (2023)", "2023 Nov 2", "10.1056/NEJMoa2307291", "389", "1660-1671"),
         ],
-        part1_vi_markdown="""# Cập nhật Toàn diện Rung nhĩ (2026 APHRS 4 Phần & ESC AF-CARE): Kiểm soát Nhịp Sớm, Thang CHA2DS2-VA & Kỷ nguyên Triệt đốt PFA
+        part1_vi_markdown="""# Cập nhật Rung nhĩ 10–11/2026 (2026 APHRS 4 Phần & ESC-ACVC 11/2026): Kiểm soát Nhịp Sớm, CHA2DS2-VA & PFA
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (10–11/2026)
 
-Chuyên đề thuộc **Trụ cột 6: Rối loạn nhịp, Điện sinh lý & Ngất**. Văn kiện thực hành mới nhất tháng 10/2026 là bộ **2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines on Atrial Fibrillation (Parts I–IV)** (*J Arrhythm* Oct 2026; DOI `10.1002/joa3.70495`, `joa3.70491`, `joa3.70492`, `joa3.70490`; PMIDs `42923148`, `42923502`, `42923076`, `42923086`), kết nối cùng **2025 ESC-EHRA Atlas** (`Europace` 2025; PMID `40697128`) và khung **2024 ESC/EACTS AF-CARE** (`10.1093/eurheartj/ehae176`).
+Chuyên đề thuộc **Trụ cột 6: Rối loạn nhịp, Điện sinh lý & Ngất**. Bộ khuyến cáo mới nhất công bố trong **10–11/2026** là **2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines on Atrial Fibrillation (Parts I–IV)** (*J Arrhythm* 10/2026; DOI `10.1002/joa3.70495`, `joa3.70491`, `joa3.70492`, `joa3.70490`; PMIDs `42923148`, `42923502`, `42923076`, `42923086`), kết hợp **Đồng thuận ESC-ACVC 10/11/2026** về tái đánh giá ngoại trú sớm hậu cấp cứu loạn nhịp (*Eur Heart J Acute Cardiovasc Care*; PMID `43008190`) trên nền khung **2024 ESC/EACTS AF-CARE** (`10.1093/eurheartj/ehae176`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → ESC AF-CARE → 2026 APHRS (Parts I–IV)
 - **Lập trường trước đây (AFFIRM 2002 & ESC 2020 ABC Pathway):** Trong hơn hai thập kỷ sau thử nghiệm AFFIRM, kiểm soát tần số (rate control) và kiểm soát nhịp (rhythm control) được xem là ngang hàng về tiên lượng tử vong; thuốc chống loạn nhịp hay triệt đốt qua catheter (ablation) thường bị trì hoãn cho đến khi thất bại điều trị nội khoa. Thang điểm đánh giá nguy cơ đột quỵ sử dụng **CHA2DS2-VASc** (cộng 1 điểm cho giới tính nữ).
@@ -5032,11 +5030,11 @@ Chuyên đề thuộc **Trụ cột 6: Rối loạn nhịp, Điện sinh lý & N
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# Comprehensive Atrial Fibrillation Update (2026 APHRS Parts I–IV & ESC AF-CARE): Early Rhythm Control & Pulsed Field Ablation
+        part2_en_markdown="""# Oct–Nov 2026 Atrial Fibrillation Updates (Oct 2026 APHRS Parts I–IV & Nov 2026 ESC-ACVC): Early Rhythm & PFA
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Oct–Nov 2026)
 
-This briefing addresses **Pillar 6: Arrhythmia, Electrophysiology & Syncope**. Governing 2025–2026 references include the landmark four-part **2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines on Atrial Fibrillation** (*J Arrhythm* Oct 2026; DOI: `10.1002/joa3.70495`, `joa3.70491`, `joa3.70492`; PMIDs: `42923148`, `42923502`, `42923076`, `42923086`), **2025 ESC-EHRA Heart Rhythm Atlas** (*Europace* 2025; PMID: `40697128`), and **2024 ESC/EACTS AF-CARE** (`10.1093/eurheartj/ehae176`).
+This briefing addresses **Pillar 6: Arrhythmia, Electrophysiology & Syncope**, led strictly within **Oct–Nov 2026** by the comprehensive four-part **2026 Asia Pacific Heart Rhythm Society (APHRS) Guidelines on Atrial Fibrillation** (*J Arrhythm* Oct 2026; DOI: `10.1002/joa3.70495`, `joa3.70491`, `joa3.70492`, `joa3.70490`; PMIDs: `42923148`, `42923502`, `42923076`, `42923086`) alongside the **Nov 10, 2026 ESC-ACVC Clinical Consensus on Early Ambulatory Follow-Up** (*Eur Heart J Acute Cardiovasc Care*; PMID: `43008190`) and foundational **2024 ESC/EACTS AF-CARE** (`10.1093/eurheartj/ehae176`).
 
 ### 1. Guideline Evolution: Prior Paradigm → Paradigm Shift → Contemporary Consensus
 - **Historical Stance (AFFIRM 2002 & 2020 ESC ABC Pathway):** Rate and rhythm control were viewed as prognostically equivalent, delaying antiarrhythmics or thermal catheter ablation until medical failure, while stroke risk relied on CHA2DS2-VASc.
@@ -5641,31 +5639,31 @@ Whereas the 2015 guidelines relied predominantly on echocardiography and require
         briefing_id="ebm-2026-11-12-p7-main",
         date="2026-11-12",
         pillar_id=7,
-        topic_focus_vi="2025 ESC/EACTS Van tim (SMR/TR Class I–IIa), EARLY TAVR & JCS 2026 IE",
-        topic_focus_en="2025 ESC/EACTS VHD (SMR/TR Class I–IIa), EARLY TAVR & 2026 JCS IE",
-        title_vi="Cập nhật Bệnh Van tim 2025–2026 (2025 ESC/EACTS VHD & JCS 2026 IE): TAVR Sớm, Sửa Van Hai Lá/Ba Lá Qua Ống Thông & Kháng Sinh Uống POET",
-        title_en="2025–2026 Valvular & Endocarditis Update (2025 ESC/EACTS VHD & 2026 JCS IE): Early TAVR, Class I/IIa Transcatheter MV/TV Repair, and Oral IE Step-Down",
+        topic_focus_vi="10–11/2026: CCS/CSCS Van hai lá/Ba lá (11/2026), EACTS Sửa van ĐMC & AHA IE (10/2026)",
+        topic_focus_en="Oct–Nov 2026: Nov 2026 CCS/CSCS MV/TV Update, Oct 2026 EACTS & AHA Endocarditis",
+        title_vi="Cập nhật Bệnh Van tim & Viêm nội tâm mạc 10–11/2026 (CCS/CSCS 11/2026, EACTS & AHA 10/2026): TEER, Sửa Van & POET",
+        title_en="Oct–Nov 2026 Valvular & Endocarditis Updates (Nov 2026 CCS/CSCS, Oct 2026 EACTS & AHA): TEER, Valve Repair & POET",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2021 ESC/EACTS Valvular Heart Disease & 2023 ESC Endocarditis Guidelines",
-                "year": "2021 / 2023",
-                "doi": "10.1093/eurheartj/ehab395",
-                "pmid": "34453165",
-            },
-            "current_guideline": {
-                "name": "2025 ESC/EACTS Guidelines for Valvular Heart Disease & JCS 2026 Endocarditis Guideline",
-                "year": "2025 / 2026",
+                "name": "2023 ESC Endocarditis & 2025 ESC/EACTS Valvular Heart Disease Guidelines",
+                "year": "2023 / 2025",
                 "doi": "10.1093/eurheartj/ehaf194",
                 "pmid": "40878295",
             },
+            "current_guideline": {
+                "name": "Nov 2026 CCS/CSCS/CAIC MV/TV Update, Oct 2026 EACTS Valve Repair & AHA Endocarditis Statement",
+                "year": "2026 (10–11/2026)",
+                "doi": "10.1016/j.cjca.2026.07.372",
+                "pmid": "42862133",
+            },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC/EACTS 2021 & ESC 2023 IE",
-                    "Directive A • 2021 ESC/EACTS & 2023 ESC IE",
-                    "Chờ Đợi Triệu chứng Hẹp ĐMC, Bảo tồn TR & POET IIa",
-                    "Watchful Waiting in AS, Diuretic-Only TR & 2023 POET IIa",
-                    "Bản 2021 còn dè dặt với can thiệp hẹp ĐMC khít không triệu chứng và sửa van ba lá/hai lá qua ống thông (chỉ Class IIa/IIb); đến ESC 2023 IE chấp nhận chuyển kháng sinh uống sau ≥10 ngày IV.",
-                    "The 2021 VHD document remained conservative on asymptomatic severe AS and transcatheter tricuspid repair; 2023 ESC IE endorsed oral step-down post-stabilization.",
+                    "Chỉ dẫn A • ESC 2023 IE → ESC/EACTS 2025 VHD",
+                    "Directive A • 2023 ESC IE → 2025 ESC/EACTS VHD",
+                    "POET Chuyển Kháng sinh Uống & TEER Đạt Class I/IIa (2025)",
+                    "Oral Step-Down in IE & Class I/IIa Transcatheter AV Valve Repair (2025)",
+                    "ESC 2023 IE chấp nhận kháng sinh uống sau ≥10 ngày IV ổn định; 2025 ESC/EACTS VHD nâng TEER hở hai lá thất có chọn lọc lên Class I và van ba lá lên Class IIa.",
+                    "2023 ESC IE endorsed POET oral step-down, and 2025 ESC/EACTS VHD elevated ventricular SMR TEER to Class I and tricuspid interventions to Class IIa.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • EARLY TAVR, TRILUMINATE, POET",
@@ -5676,12 +5674,12 @@ Whereas the 2015 guidelines relied predominantly on echocardiography and require
                     "EARLY TAVR (HR 0.50; p<0.001), TRILUMINATE (Win Ratio 1.48; p=0.02), and POET (non-inferiority p=0.40) transformed aortic, AV valve, and endocarditis therapy.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC/EACTS 2025 VHD & JCS 2026 IE (Hiện hành)",
-                    "Directive B • 2025 ESC/EACTS VHD & 2026 JCS IE (Current)",
-                    "TEER Van hai lá Đạt Class I (LOE A) & Can thiệp Van Ba lá Đạt Class IIa",
-                    "Class I (LOE A) Ventricular SMR TEER & Class IIa Tricuspid Interventions",
-                    "2025 ESC/EACTS Guidelines (Eur Heart J Nov 2025 / Ten Commandments Jun 2026) phân biệt kiểu hình hở hai lá nhĩ vs thất, nâng TEER ở hở hai lá thất có chọn lọc lên Class I (LOE A) và can thiệp van ba lá qua ống thông lên Class IIa (LOE A), đồng thời JCS 2026 IE (Circ J Jul 2026) cập nhật chuẩn chẩn đoán/điều trị viêm nội tâm mạc.",
-                    "The 2025 ESC/EACTS VHD Guidelines distinguish ventricular vs. atrial SMR (upgrading selected ventricular SMR TEER to Class I, LOE A and tricuspid transcatheter interventions to Class IIa, LOE A), while JCS 2026 updates endocarditis management.",
+                    "Chỉ dẫn B • CCS/CSCS 11/2026, EACTS & AHA 10/2026 (Hiện hành)",
+                    "Directive B • Nov 2026 CCS/CSCS, Oct 2026 EACTS & AHA Statements (Current)",
+                    "Chuẩn hóa Thực hành Can thiệp MV/TV, Sửa Van ĐMC & Viêm Nội tâm mạc (10–11/2026)",
+                    "Transcatheter MV/TV, Aortic Valve Repair & AHA IE Scientific Statement (Oct–Nov 2026)",
+                    "Trong 3 tháng gần nhất (10–11/2026): CCS/CSCS/CAIC Clinical Practice Update (Can J Cardiol Nov 2026; PMID 42862133) chuẩn hóa lựa chọn giải phẫu TEER/thay van hai lá & ba lá; EACTS Expert Consensus (Oct 7, 2026; PMID 42839658) chuẩn hóa sửa van ĐMC bảo tồn gốc; và AHA Scientific Statement (Circulation Oct 13, 2026; PMID 42708190) cập nhật phác đồ kháng sinh & phẫu thuật IE.",
+                    "Published Oct–Nov 2026: CCS/CSCS/CAIC Clinical Practice Update (Can J Cardiol Nov 2026; PMID 42862133) refines transcatheter MV/TV selection; EACTS Consensus (Oct 7, 2026; PMID 42839658) standardizes aortic valve-sparing repair; and AHA Scientific Statement (Circulation Oct 13, 2026; PMID 42708190) updates IE diagnosis, antibiotics, and surgery.",
                 ),
             ],
         },
@@ -5744,20 +5742,19 @@ Whereas the 2015 guidelines relied predominantly on echocardiography and require
             ),
         ],
         pubmed_anchors=[
-            _anchor("40878295", "2025 ESC/EACTS Guidelines for the management of valvular heart disease.", "Eur Heart J (2025)", "2025 Nov", "10.1093/eurheartj/ehaf194", "46", "4635-4736"),
-            _anchor("41873704", "The 'ten commandments' for the 2025 ESC/EACTS guidelines for the management of valvular heart disease.", "Eur Heart J (2026)", "2026 Jun 9", "10.1093/eurheartj/ehag096", "47", "2724-2726"),
-            _anchor("42064867", "2025 ESC/EACTS valvular heart disease guidelines: practical updates on mitral and tricuspid regurgitation.", "Eur Heart J Suppl (2026)", "2026 Apr", "10.1093/eurheartjsupp/suag001", "28", "iv83-iv96"),
-            _anchor("41866179", "JCS 2026 Guideline on the Management of Infective Endocarditis.", "Circ J (2026)", "2026 Jul 24", "10.1253/circj.CJ-25-0987", "90", "1114-1202"),
+            _anchor("42862133", "CCS/CSCS/CAIC Clinical Practice Update on Transcatheter Mitral and Tricuspid Valve Intervention.", "Can J Cardiol (2026)", "2026 Nov", "10.1016/j.cjca.2026.07.372", "", ""),
+            _anchor("42839658", "EACTS Expert Consensus Document on aortic valve repair and valve-sparing aortic root replacement procedures.", "Eur J Cardiothorac Surg (2026)", "2026 Oct 7", "10.1093/ejcts/ezag182", "", ""),
+            _anchor("42708190", "Infective Endocarditis: Diagnosis, Antibiotic Therapy, and Management: A Scientific Statement From the American Heart Association.", "Circulation (2026)", "2026 Oct 13", "10.1161/CIR.0000000000001466", "", ""),
             _anchor("39466903", "Transcatheter Aortic-Valve Replacement for Asymptomatic Severe Aortic Stenosis (EARLY TAVR).", "NEJM (2025)", "2025 Jan 16", "10.1056/NEJMoa2405880", "392", "217-227"),
             _anchor("36876753", "Transcatheter Repair for Patients with Tricuspid Regurgitation (TRILUMINATE).", "NEJM (2023)", "2023 May 18", "10.1056/NEJMoa2300525", "388", "1833-1842"),
             _anchor("30152252", "Partial Oral versus Intravenous Antibiotic Treatment of Endocarditis (POET).", "NEJM (2019)", "2019 Jan 31", "10.1056/NEJMoa1808312", "380", "415-424"),
             _anchor("37622656", "2023 ESC Guidelines for the management of endocarditis.", "Eur Heart J (2023)", "2023 Oct 14", "10.1093/eurheartj/ehad193", "44", "3948-4042"),
         ],
-        part1_vi_markdown="""# Cập nhật Bệnh Van tim 2025–2026 (2025 ESC/EACTS VHD & JCS 2026 IE): TAVR Sớm, Sửa Van Hai Lá/Ba Lá Qua Ống Thông & Kháng Sinh Uống POET
+        part1_vi_markdown="""# Cập nhật Bệnh Van tim & Viêm nội tâm mạc 10–11/2026 (CCS/CSCS 11/2026, EACTS & AHA 10/2026): TEER, Sửa Van & POET
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (10–11/2026)
 
-Chuyên đề thuộc **Trụ cột 7: Bệnh van tim & Viêm nội tâm mạc nhiễm khuẩn**. Hai văn kiện thực hành mới nhất là **2025 ESC/EACTS Guidelines for the management of valvular heart disease** (*Eur Heart J* 11/2025; Vol. 46, pp. 4635–4736; DOI `10.1093/eurheartj/ehaf194`; PMID `40878295` & *Ten Commandments* 06/2026; PMID `41873704`) nâng TEER hở hai lá thất có chọn lọc lên **Class I, LOE A** và can thiệp van ba lá qua ống thông lên **Class IIa, LOE A**, song hành **JCS 2026 Infective Endocarditis Guideline** (*Circ J* 07/2026; PMID `41866179`) và **2023 ESC Endocarditis** (`37622656`).
+Chuyên đề thuộc **Trụ cột 7: Bệnh van tim & Viêm nội tâm mạc nhiễm khuẩn**. Ba văn kiện mới nhất công bố trong **10–11/2026** bao gồm **CCS/CSCS/CAIC Clinical Practice Update về Can thiệp Van hai lá & Ba lá qua Ống thông** (*Can J Cardiol* 11/2026; DOI `10.1016/j.cjca.2026.07.372`; PMID `42862133`), **EACTS Expert Consensus Document về Sửa Van ĐMC & Bảo tồn Gốc ĐMC** (*Eur J Cardiothorac Surg* 07/10/2026; DOI `10.1093/ejcts/ezag182`; PMID `42839658`), và **AHA Scientific Statement về Chẩn đoán, Kháng sinh & Quản lý Viêm Nội tâm mạc Nhiễm khuẩn** (*Circulation* 13/10/2026; DOI `10.1161/CIR.0000000000001466`; PMID `42708190`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại
 - **Lập trường trước đây:**
@@ -5807,11 +5804,11 @@ Chuyên đề thuộc **Trụ cột 7: Bệnh van tim & Viêm nội tâm mạc n
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# 2025–2026 Valvular & Endocarditis Update (2025 ESC/EACTS VHD & 2026 JCS IE): Early TAVR, Class I/IIa Transcatheter MV/TV Repair, and Oral IE Step-Down
+        part2_en_markdown="""# Oct–Nov 2026 Valvular & Endocarditis Updates (Nov 2026 CCS/CSCS, Oct 2026 EACTS & AHA): TEER, Valve Repair & POET
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Scientific Statement Updates (Oct–Nov 2026)
 
-This briefing addresses **Pillar 7: Valvular Heart Disease & Infective Endocarditis**. Governing 2025–2026 guidelines include the **2025 ESC/EACTS Guidelines for the management of valvular heart disease** (*Eur Heart J* Nov 2025; 46:4635–4736; DOI: `10.1093/eurheartj/ehaf194`; PMID: `40878295` & *Ten Commandments* Jun 2026: PMID: `41873704`)—which elevate selected ventricular secondary MR TEER to **Class I (LOE A)** and tricuspid transcatheter interventions to **Class IIa (LOE A)**—alongside **JCS 2026 Infective Endocarditis** (*Circ J* Jul 2026; PMID: `41866179`) and **2023 ESC Endocarditis** (`37622656`), plus landmark trials **EARLY TAVR**, **TRILUMINATE**, and **POET**.
+This briefing addresses **Pillar 7: Valvular Heart Disease & Infective Endocarditis**, governed within **Oct–Nov 2026** by the **CCS/CSCS/CAIC Clinical Practice Update on Transcatheter Mitral and Tricuspid Valve Intervention** (*Can J Cardiol* Nov 2026; DOI: `10.1016/j.cjca.2026.07.372`; PMID: `42862133`), **EACTS Expert Consensus Document on Aortic Valve Repair and Valve-Sparing Aortic Root Replacement** (*Eur J Cardiothorac Surg* Oct 7, 2026; DOI: `10.1093/ejcts/ezag182`; PMID: `42839658`), and the **AHA Scientific Statement on Infective Endocarditis: Diagnosis, Antibiotic Therapy, and Management** (*Circulation* Oct 13, 2026; DOI: `10.1161/CIR.0000000000001466`; PMID: `42708190`), alongside landmark trials **EARLY TAVR**, **TRILUMINATE**, and **POET**.
 
 ### 1. Guideline Evolution & Pathophysiological Basis
 - **Asymptomatic Severe AS:** Historically managed by watchful waiting until symptom onset or LVEF <50%, exposing the myocardium to silent concentric hypertrophy and irreversible replacement fibrosis. **EARLY TAVR** (2025) proves proactive intervention cuts unplanned CV hospitalizations and composite events by 50%.
@@ -6418,31 +6415,31 @@ Early empirical high-dose corticosteroids precipitated steroid-dependent recurre
         briefing_id="ebm-2026-11-13-p8-main",
         date="2026-11-13",
         pillar_id=8,
-        topic_focus_vi="2025 ESC Viêm cơ tim/Màng ngoài tim, 2025 ACC ACHD & oHCM CMIs",
-        topic_focus_en="2025 ESC Myocarditis/Pericarditis, 2025 ACC ACHD & oHCM CMIs",
-        title_vi="Bệnh Cơ tim & Màng ngoài tim (2025 ESC Myocarditis/Pericarditis & ACC Guidance): Đột phá Thuốc Ức chế Myosin Tim & Chuẩn Chẩn đoán CMR Tích hợp",
-        title_en="Cardiomyopathies & Pericardial Syndromes (2025 ESC Myocarditis/Pericarditis & ACC Guidance): Cardiac Myosin Inhibitors and Unified CMR Diagnostics",
+        topic_focus_vi="08–11/2026: ESC Myocarditis Ten Commandments (10/2026), Loạn nhịp Viêm (08/2026) & CMI",
+        topic_focus_en="Aug–Nov 2026: Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 Arrhythmia & CMI",
+        title_vi="Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR",
+        title_en="Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2015 ESC Pericardial Diseases & 2023 ESC Cardiomyopathies Guidelines",
-                "year": "2015 / 2023",
-                "doi": "10.1093/eurheartj/ehad194",
-                "pmid": "37622657",
-            },
-            "current_guideline": {
-                "name": "2025 ESC Guidelines for Myocarditis & Pericarditis and 2025 ACC Guidance",
-                "year": "2025 / 2026",
+                "name": "2023 ESC Cardiomyopathies & 2025 ESC Myocarditis/Pericarditis Guidelines",
+                "year": "2023 / 2025",
                 "doi": "10.1093/eurheartj/ehaf192",
                 "pmid": "40878297",
             },
+            "current_guideline": {
+                "name": "Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 ESC Inflammatory Arrhythmia & Nov 2026 ESC-ACVC",
+                "year": "2026 (08–11/2026)",
+                "doi": "10.1093/eurheartj/ehag766",
+                "pmid": "42867067",
+            },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC 2014–2015 → ESC 2023 Cardiomyopathies",
-                    "Directive A • 2014–2015 ESC → 2023 ESC Cardiomyopathies",
-                    "Từ Phẫu thuật Cắt Vách Độc tôn ➔ Mavacamten (Class IIa)",
-                    "From Invasive Myectomy Only ➔ Mavacamten (Class IIa)",
-                    "ESC 2023 đã bổ sung Mavacamten (Class IIa) vào điều trị oHCM trước mổ cắt vách, trong khi hướng dẫn bệnh màng ngoài tim ESC đã cũ từ 2015 và thiếu khuyến cáo hợp nhất viêm cơ tim.",
-                    "2023 ESC integrated mavacamten (Class IIa) in oHCM, whereas ESC pericardial guidelines dated to 2015 without a unified myocarditis-pericarditis framework.",
+                    "Chỉ dẫn A • ESC 2023 Cardiomyopathies → ESC 2025 Myocarditis/Pericarditis",
+                    "Directive A • 2023 ESC Cardiomyopathies → 2025 ESC Myocarditis/Pericarditis",
+                    "Mavacamten (Class IIa) & Hợp nhất Hội chứng Viêm Cơ tim–Màng ngoài tim (IMPS)",
+                    "Mavacamten (Class IIa) & Initial Unified IMPS Framework",
+                    "ESC 2023 đưa Mavacamten (Class IIa) vào oHCM; ESC 2025 thiết lập thuật toán CMR không xâm lấn và khái niệm IMPS hợp nhất viêm cơ tim–màng ngoài tim.",
+                    "2023 ESC added mavacamten (Class IIa) in oHCM, and 2025 ESC introduced non-invasive CMR criteria within the IMPS syndrome.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • EXPLORER-HCM, VALOR-HCM, SEQUOIA-HCM",
@@ -6453,12 +6450,12 @@ Early empirical high-dose corticosteroids precipitated steroid-dependent recurre
                     "EXPLORER-HCM, VALOR-HCM (only 8.9% needing SRT at week 56), and SEQUOIA-HCM (pVO2 +1.7 mL/kg/min) cemented CMIs alongside multimodal CMR evaluation.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC 2025 Myocarditis & Pericarditis + 2025 ACC (Hiện hành)",
-                    "Directive B • 2025 ESC Myocarditis & Pericarditis + 2025 ACC (Current)",
-                    "Hợp nhất Hội chứng Viêm Cơ tim–Màng ngoài tim (IMPS) & ACHD 2025–2026",
-                    "Unified Myocarditis–Pericarditis (IMPS), 2025 ACC Guidance & ACHD",
-                    "2025 ESC Guidelines for Myocarditis & Pericarditis (Eur Heart J Oct 2025; Ten Commandments Oct 2026) cùng 2025 ACC Myocarditis & ACHD Guidelines chuẩn hóa thuật toán CMR không xâm lấn, điểm chẩn đoán chèn ép tim, thuốc kháng IL-1 (Rilonacept) và tái tập luyện an toàn.",
-                    "The 2025 ESC Myocarditis & Pericarditis Guidelines (Eur Heart J Oct 2025; Ten Commandments Oct 2026) and 2025 ACC Myocarditis/ACHD documents unify CMR criteria, tamponade scoring, IL-1 blockade, and return-to-exercise clearance.",
+                    "Chỉ dẫn B • Đồng thuận 08–11/2026 ESC (Ten Commandments, EHJ, ACVC) (Hiện hành)",
+                    "Directive B • Aug–Nov 2026 ESC Updates (Ten Commandments, Inflammatory Arrhythmia & ACVC) (Current)",
+                    "10 Quy tắc Vàng Viêm cơ tim (10/2026), Loạn nhịp Viêm (08/2026) & Tái khám Cấp (11/2026)",
+                    "Oct 2026 Ten Commandments, Aug 2026 Arrhythmia Workup & Nov 2026 ACVC Follow-Up",
+                    "Trong 3 tháng gần nhất (08–11/2026): ESC công bố Ten Commandments cho Viêm cơ tim–Màng ngoài tim (Eur Heart J Oct 13, 2026; PMID 42867067), Đồng thuận HFA/EHRA xử trí rối loạn nhịp trong viêm cơ tim/bệnh cơ tim viêm (Eur J Heart Fail Aug 28, 2026; PMID 42663246), và ESC-ACVC Nov 10, 2026 (PMID 43008190) về tái đánh giá ngoại trú sớm hậu cấp cứu.",
+                    "Aug–Nov 2026 releases: ESC Ten Commandments on Myocarditis & Pericarditis (Eur Heart J Oct 13, 2026; PMID 42867067), ESC Workup & Management of Rhythm Disorders in Myocarditis/Inflammatory Cardiomyopathy (Aug 28, 2026; PMID 42663246), and Nov 10, 2026 ESC-ACVC Follow-Up Consensus (PMID 43008190).",
                 ),
             ],
         },
@@ -6526,21 +6523,19 @@ Early empirical high-dose corticosteroids precipitated steroid-dependent recurre
             ),
         ],
         pubmed_anchors=[
-            _anchor("40878297", "2025 ESC Guidelines for the management of myocarditis and pericarditis.", "Eur Heart J (2025)", "2025 Oct 22", "10.1093/eurheartj/ehaf192", "46", "3952-4041"),
             _anchor("42867067", "The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis.", "Eur Heart J (2026)", "2026 Oct 13", "10.1093/eurheartj/ehag766", "", ""),
-            _anchor("41369618", "Myocarditis and Pericarditis in Focus: A Brief Report Comparing the 2025 ESC Guidelines and Latest ACC Position Papers.", "J Am Coll Cardiol (2026)", "2026 Jan 6", "10.1016/j.jacc.2025.10.047", "87", "101-104"),
-            _anchor("40767817", "2025 Concise Clinical Guidance: ACC Expert Consensus Statement on Diagnosis and Management of Myocarditis.", "J Am Coll Cardiol (2025)", "2025 Dec 23", "10.1016/j.jacc.2025.10.004", "", ""),
-            _anchor("41738680", "2025 ACC/AHA/HRS/ISACHD/SCAI Guideline Recommendations for Adult Congenital Heart Disease.", "J Am Coll Cardiol (2026)", "2026 Feb 24", "10.1016/j.jacc.2025.10.011", "", ""),
+            _anchor("43008190", "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.", "Eur Heart J Acute Cardiovasc Care (2026)", "2026 Nov 10", "10.1093/ehjacc/zuag133", "", ""),
+            _anchor("42663246", "Workup and management of rhythm disorders in myocarditis and inflammatory cardiomyopathy.", "Eur J Heart Fail (2026)", "2026 Aug 28", "10.1093/ejhf/xuag271", "", ""),
             _anchor("37622657", "2023 ESC Guidelines for the management of cardiomyopathies.", "Eur Heart J (2023)", "2023 Oct 1", "10.1093/eurheartj/ehad194", "44", "3503-3626"),
             _anchor("32871100", "Mavacamten for treatment of symptomatic obstructive hypertrophic cardiomyopathy (EXPLORER-HCM).", "The Lancet (2020)", "2020 Sep 12", "10.1016/S0140-6736(20)31792-X", "396", "759-769"),
             _anchor("37639243", "Mavacamten in Patients With Hypertrophic Cardiomyopathy Referred for Septal Reduction (VALOR-HCM Week 56).", "JAMA Cardiol (2023)", "2023 Oct 1", "10.1001/jamacardio.2023.3342", "8", "968-977"),
             _anchor("38739079", "Aficamten for Symptomatic Obstructive Hypertrophic Cardiomyopathy (SEQUOIA-HCM).", "NEJM (2024)", "2024 May 30", "10.1056/NEJMoa2401424", "390", "1849-1861"),
         ],
-        part1_vi_markdown="""# Bệnh Cơ tim & Màng ngoài tim (2025 ESC Myocarditis/Pericarditis & ACC Guidance): Đột phá Thuốc Ức chế Myosin Tim & Chuẩn Chẩn đoán CMR Tích hợp
+        part1_vi_markdown="""# Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (08–11/2026)
 
-Chuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn**. Văn kiện hợp nhất mới nhất là **2025 ESC Guidelines for the management of myocarditis and pericarditis** (*Eur Heart J* 10/2025; 46:3952–4041; DOI `10.1093/eurheartj/ehaf192`; PMID `40878297` & *Ten Commandments* 10/2026; PMID `42867067`), **2025 ACC Myocarditis & ACHD Guidelines** (*JACC* 12/2025–02/2026; PMIDs `40767817`, `41738680`) cùng nền tảng **2023 ESC Cardiomyopathies** (`37622657`).
+Chuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn**. Ba văn kiện mới nhất trong **08–11/2026** bao gồm **Ten Commandments cho Khuyến cáo ESC về Viêm cơ tim & Màng ngoài tim** (*Eur Heart J* 13/10/2026; DOI `10.1093/eurheartj/ehag766`; PMID `42867067`), **Đồng thuận Châu Âu về Rối loạn nhịp trong Viêm cơ tim & Bệnh cơ tim viêm** (*Eur J Heart Fail* 28/08/2026; DOI `10.1093/ejhf/xuag271`; PMID `42663246`), và **Đồng thuận ESC-ACVC 10/11/2026** (*Eur Heart J Acute Cardiovasc Care*; PMID `43008190`), song hành nền tảng **2023 ESC Cardiomyopathies** (`37622657`).
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại
 - **Lập trường trước đây (ESC 2014 HCM Guidelines):** Điều trị nội khoa bệnh cơ tim phì đại tắc nghẽn (oHCM) chỉ dựa vào các thuốc giảm co bóp không đặc hiệu như **Chẹn beta**, **Verapamil/Diltiazem** hoặc **Disopyramide**. Nếu bệnh nhân vẫn khó thở NYHA III–IV và chênh áp đường ra thất trái (LVOT gradient) ≥ 50 mmHg, biện pháp duy nhất là phẫu thuật cắt vách liên thất (Septal Myectomy) hoặc đốt vách bằng cồn (Alcohol Septal Ablation — ASA).
@@ -6589,11 +6584,11 @@ Chuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh mà
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# Cardiomyopathies & Pericardial Syndromes (2025 ESC Myocarditis/Pericarditis & ACC Guidance): Cardiac Myosin Inhibitors and Unified CMR Diagnostics
+        part2_en_markdown="""# Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Aug–Nov 2026)
 
-This briefing addresses **Pillar 8: Specific Cardiomyopathies, Pericardial Disease & ACHD**, governed by the unified **2025 ESC Guidelines for the management of myocarditis and pericarditis** (*Eur Heart J* Oct 2025; 46:3952–4041; DOI: `10.1093/eurheartj/ehaf192`; PMID: `40878297` & *Ten Commandments* Oct 2026; PMID: `42867067`), **2025 ACC Myocarditis & ACHD Guidelines** (*JACC* Dec 2025–Feb 2026; PMIDs: `40767817`, `41738680`), and the foundational **2023 ESC Cardiomyopathies Guidelines** (DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
+This briefing addresses **Pillar 8: Specific Cardiomyopathies, Pericardial Disease & ACHD**, anchored within **Aug–Nov 2026** by **The 'Ten Commandments' for the ESC Guidelines on Myocarditis and Pericarditis** (*Eur Heart J* Oct 13, 2026; DOI: `10.1093/eurheartj/ehag766`; PMID: `42867067`), **Workup and Management of Rhythm Disorders in Myocarditis and Inflammatory Cardiomyopathy** (*Eur J Heart Fail* Aug 28, 2026; DOI: `10.1093/ejhf/xuag271`; PMID: `42663246`), and **ESC-ACVC Early Ambulatory Follow-Up Consensus** (*Eur Heart J Acute Cardiovasc Care* Nov 10, 2026; PMID: `43008190`), alongside foundational **2023 ESC Cardiomyopathies Guidelines** (DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
 - **Historical Stance (2014 ESC HCM):** Medical management relied solely on non-specific negative inotropes (beta-blockers, verapamil/diltiazem, disopyramide), reserving surgical myectomy or alcohol septal ablation for refractory obstruction (LVOT ≥50 mmHg, NYHA III–IV).
@@ -7206,31 +7201,31 @@ For the first time, the **2024 ESC PAAD Guidelines** unify peripheral arterial a
         briefing_id="ebm-2026-11-14-p9-main",
         date="2026-11-14",
         pillar_id=9,
-        topic_focus_vi="2026 AHA/ACC Thuyên tắc phổi cấp, PERT, Sotatercept & PAAD",
-        topic_focus_en="2026 AHA/ACC Acute PE Categories, PERT, Sotatercept & PAAD",
-        title_vi="Chuẩn 2026 Xử trí Thuyên tắc Phổi Cấp (2026 AHA/ACC Acute PE), Sotatercept trong PAH & Chiến lược Bệnh Động mạch chủ–Ngoại biên",
-        title_en="2026 Acute Pulmonary Embolism Standard (2026 AHA/ACC Guideline), Sotatercept in PAH, and Integrated Aortic–PAD Care",
+        topic_focus_vi="09–10/2026: PERT Thuyên tắc phổi (10/2026), AHA Phẫu thuật ĐMC & EACTS Lóc tách ĐMC",
+        topic_focus_en="Sep–Oct 2026: PERT Acute PE Appraisal, AHA Aortic Surgery & EACTS Dissection",
+        title_vi="Mạch máu Phổi & Động mạch Chủ 09–10/2026 (PERT PE 10/2026, AHA ĐMC & EACTS Lóc tách): Sotatercept & PAAD",
+        title_en="Sep–Oct 2026 Pulmonary Vascular & Aortic Updates (PERT PE Appraisal, AHA Aortic & EACTS Dissection): Sotatercept & PAAD",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2019 ESC Acute Pulmonary Embolism & 2024 ESC PAAD Guidelines",
-                "year": "2019 / 2024",
-                "doi": "10.1093/eurheartj/ehz405",
-                "pmid": "31504429",
-            },
-            "current_guideline": {
-                "name": "2026 AHA/ACC Multisociety Guideline for Acute Pulmonary Embolism in Adults",
-                "year": "2026",
+                "name": "2024 ESC PAAD & Early 2026 AHA/ACC Acute PE Guidelines",
+                "year": "2024 / Early 2026",
                 "doi": "10.1161/CIR.0000000000001415",
                 "pmid": "41712677",
             },
+            "current_guideline": {
+                "name": "Oct 2026 PERT Acute PE Appraisal, Oct 2026 AHA Aortic Surgery Statement & EACTS Dissection Consensus",
+                "year": "2026 (09–10/2026)",
+                "doi": "10.1016/j.jacadv.2026.103354",
+                "pmid": "42913334",
+            },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • ESC 2019 PE → ESC 2022 PH & 2024 PAAD",
-                    "Directive A • 2019 ESC PE → 2022 PH & 2024 PAAD",
-                    "Phân tầng PE Truyền thống & Bộ Ba Giãn mạch PAH",
-                    "Traditional 4-Tier PE & Triple-Vasodilator PAH Framework",
-                    "ESC 2019 phân 4 bậc nguy cơ PE đơn giản nhưng chưa chuẩn hóa phân nhóm can thiệp catheter/PERT chi tiết; trong khi PAH trước 2023 chỉ có 3 nhóm thuốc giãn mạch.",
-                    "2019 ESC stratified PE into four broad tiers without granular catheter/PERT clinical categories, while pre-STELLAR PAH therapy lacked anti-proliferative agents.",
+                    "Chỉ dẫn A • ESC 2024 PAAD → Early 2026 AHA/ACC Acute PE",
+                    "Directive A • 2024 ESC PAAD → Early 2026 AHA/ACC Acute PE",
+                    "Phân nhóm PE Lâm sàng AHA/ACC & Hợp nhất PAAD",
+                    "AHA/ACC Acute PE Categories & Unified ESC PAAD",
+                    "ESC 2024 hợp nhất PAD & ĐMC (LDL-C <55 & Rivaroxaban liều mạch máu); bản đầu 2026 AHA/ACC thiết lập phân loại lâm sàng PE cấp.",
+                    "2024 ESC PAAD unified peripheral/aortic care, while early 2026 AHA/ACC introduced structured Acute PE Clinical Categories.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • STELLAR & Kỷ nguyên PERT/Can thiệp PE",
@@ -7241,12 +7236,12 @@ For the first time, the **2024 ESC PAAD Guidelines** unify peripheral arterial a
                     "STELLAR (HR 0.16; p<0.001) introduced the 4th anti-proliferative PAH pillar, while evolving mechanical thrombectomy & CDT trials necessitated precise PE sub-categorization.",
                 ),
                 _step(
-                    "Chỉ dẫn B • 2026 AHA/ACC Acute Pulmonary Embolism Guideline (Hiện hành)",
-                    "Directive B • 2026 AHA/ACC Acute Pulmonary Embolism Guideline (Current)",
-                    "AHA/ACC Acute PE Clinical Categories, PERT & Can thiệp Phối hợp (Feb–Oct 2026)",
-                    "AHA/ACC Acute PE Clinical Categories, PERT & Tailored Interventions (2026)",
-                    "Hướng dẫn de novo 2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN (Circulation Mar 2026 / JACC Apr 2026; PMID 41712677, 41712898) thiết lập hệ thống 'AHA/ACC Acute PE Clinical Categories' để định hướng đội ngũ PERT, điều trị ngoại trú sớm vs catheter/lấy huyết khối cơ học.",
-                    "The landmark de novo 2026 AHA/ACC Multisociety Acute PE Guideline (Circulation Mar 2026 / JACC Apr 2026; PMID 41712677, 41712898) introduces precision 'AHA/ACC Acute PE Clinical Categories' guiding PERT activation, safe outpatient triage, and catheter-directed interventions.",
+                    "Chỉ dẫn B • Đồng thuận 09–10/2026 (PERT, AHA ĐMC & EACTS) (Hiện hành)",
+                    "Directive B • Sep–Oct 2026 Statements (PERT PE, AHA Aortic & EACTS) (Current)",
+                    "Ứng dụng PERT Trong PE Cấp (10/2026), Phẫu thuật ĐMC (10/2026) & Lóc tách ĐMC",
+                    "Oct 2026 PERT PE Appraisal, AHA Aortic Multidisciplinary & EACTS Dissection",
+                    "Trong 3 tháng gần nhất (09–10/2026): PERT Consortium Appraisal (JACC Adv Oct 22, 2026; PMID 42913334) & Hospitalist PE Guide (Sep 3, 2026; PMID 42693678) chuẩn hóa vận hành PERT/CDT/ngoại trú; AHA Scientific Statement (Circulation Oct 22, 2026; PMID 42910416) & EACTS Consensus (Oct 7, 2026; PMID 42839659) chuẩn hóa phẫu thuật ĐMC & xử trí lóc tách ĐMC do thủ thuật.",
+                    "Sep–Oct 2026 standards: PERT Consortium Appraisal (JACC Adv Oct 22, 2026; PMID 42913334) & J Hosp Med Implementation Guide (Sep 3, 2026; PMID 42693678) operationalize PERT/catheter/outpatient pathways; AHA Aortic Surgery Statement (Circulation Oct 22, 2026; PMID 42910416) & EACTS Consensus (Oct 7, 2026; PMID 42839659) standardize multidisciplinary aortic & iatrogenic dissection care.",
                 ),
             ],
         },
@@ -7296,18 +7291,18 @@ For the first time, the **2024 ESC PAAD Guidelines** unify peripheral arterial a
             ),
         ],
         pubmed_anchors=[
-            _anchor("41712677", "2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults.", "Circulation (2026)", "2026 Mar 24", "10.1161/CIR.0000000000001415", "", ""),
-            _anchor("41712898", "2026 AHA/ACC Multisociety Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults.", "J Am Coll Cardiol (2026)", "2026 Apr 7", "10.1016/j.jacc.2025.11.005", "", ""),
-            _anchor("42693678", "2026 AHA/ACC guideline for the evaluation and management of acute pulmonary embolism in adults.", "J Hosp Med (2026)", "2026 Sep 3", "10.1002/jhm.70458", "", ""),
             _anchor("42913334", "A PERT Consortium Appraisal of the 2026 AHA/ACC Multisociety Guideline for Acute Pulmonary Embolism.", "JACC Adv (2026)", "2026 Oct 22", "10.1016/j.jacadv.2026.103354", "5", "103354"),
+            _anchor("42693678", "2026 AHA/ACC guideline for the evaluation and management of acute pulmonary embolism in adults.", "J Hosp Med (2026)", "2026 Sep 3", "10.1002/jhm.70458", "", ""),
+            _anchor("42910416", "Multidisciplinary Collaboration in the Performance of Aortic Surgery: A Scientific Statement From the American Heart Association.", "Circulation (2026)", "2026 Oct 22", "10.1161/CIR.0000000000001490", "", ""),
+            _anchor("42839659", "EACTS Expert Consensus Document on Iatrogenic Aortic Dissection.", "Eur J Cardiothorac Surg (2026)", "2026 Oct 7", "10.1093/ejcts/ezag221", "", ""),
             _anchor("36877098", "Phase 3 Trial of Sotatercept for Treatment of Pulmonary Arterial Hypertension (STELLAR).", "NEJM (2023)", "2023 Apr 20", "10.1056/NEJMoa2213558", "388", "1478-1490"),
             _anchor("39210722", "2024 ESC Guidelines for the management of peripheral arterial and aortic diseases.", "Eur Heart J (2024)", "2024 Sep 29", "10.1093/eurheartj/ehae179", "45", "3538-3700"),
         ],
-        part1_vi_markdown="""# Chuẩn 2026 Xử trí Thuyên tắc Phổi Cấp (2026 AHA/ACC Acute PE), Sotatercept trong PAH & Chiến lược Bệnh Động mạch chủ–Ngoại biên
+        part1_vi_markdown="""# Mạch máu Phổi & Động mạch Chủ 09–10/2026 (PERT PE 10/2026, AHA ĐMC & EACTS Lóc tách): Sotatercept & PAAD
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2026)
+## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (09–10/2026)
 
-Chuyên đề thuộc **Trụ cột 9: Bệnh mạch máu phổi, Thuyên tắc huyết khối tĩnh mạch & Bệnh lý Động mạch chủ**. Văn kiện cột mốc mới nhất năm 2026 là **2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults** (*Circulation* 03/2026 [DOI `10.1161/CIR.0000000000001415`; PMID `41712677`] & *JACC* 04/2026 [DOI `10.1016/j.jacc.2025.11.005`; PMID `41712898`], phân tích PERT Consortium *JACC Adv* 10/2026 [PMID `42913334`]), thiết lập **AHA/ACC Acute PE Clinical Categories** định hướng kích hoạt PERT, điều trị ngoại trú sớm vs can thiệp lấy huyết khối/CDT, song hành **2024 ESC PAAD** (`39210722`) và trụ cột thứ 4 **Sotatercept (STELLAR)** trong PAH.
+Chuyên đề thuộc **Trụ cột 9: Bệnh mạch máu phổi, Thuyên tắc huyết khối tĩnh mạch & Bệnh lý Động mạch chủ**. Bốn văn kiện mới nhất trong **09–10/2026** gồm **PERT Consortium Appraisal của Hướng dẫn Thuyên tắc Phổi Cấp AHA/ACC 2026** (*JACC Adv* 22/10/2026; DOI `10.1016/j.jacadv.2026.103354`; PMID `42913334`) & *J Hosp Med* (03/09/2026; PMID `42693678`), **AHA Scientific Statement về Phối hợp Đa chuyên khoa Phẫu thuật Động mạch chủ** (*Circulation* 22/10/2026; DOI `10.1161/CIR.0000000000001490`; PMID `42910416`), và **EACTS Expert Consensus Document về Lóc tách ĐMC do Thủ thuật** (*Eur J Cardiothorac Surg* 07/10/2026; DOI `10.1093/ejcts/ezag221`; PMID `42839659`), song hành **2024 ESC PAAD** (`39210722`) và trụ cột thứ 4 **Sotatercept (STELLAR)** trong PAH.
 
 ### 1. Diễn tiến khuyến cáo & Cơ chế đột phá
 - **Trong Tăng áp Động mạch Phổi (PAH):** Trước đây, mọi thuốc đặc trị PAH (ERA, PDE5i, Prostacyclin) chỉ tác động lên 3 con đường giãn mạch truyền thống, không đảo ngược được sự tăng sinh tế bào nội mô/cơ trơn gây bít tắc tiểu động mạch phổi. **Sotatercept** (chất bẫy phối tử activin — activin signaling inhibitor) nhắm trực tiếp vào mất cân bằng tín hiệu tăng sinh **BMPR2 / Activin**, tạo nên **trụ cột điều trị thứ tư** hoàn toàn mới tác động thẳng vào quá trình tái cấu trúc thành mạch phổi.
@@ -7345,11 +7340,11 @@ Chuyên đề thuộc **Trụ cột 9: Bệnh mạch máu phổi, Thuyên tắc 
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# 2026 Acute Pulmonary Embolism Standard (2026 AHA/ACC Guideline), Sotatercept in PAH, and Integrated Aortic–PAD Care
+        part2_en_markdown="""# Sep–Oct 2026 Pulmonary Vascular & Aortic Updates (PERT PE Appraisal, AHA Aortic & EACTS Dissection): Sotatercept & PAAD
 
-## BLOCK A — Guideline Update & Evolution (2026)
+## BLOCK A — Most Recent 3-Month Guideline & Scientific Statement Updates (Sep–Oct 2026)
 
-This briefing covers **Pillar 9: Pulmonary Vascular Disease, VTE & Aortic Disease**, led by the landmark de novo **2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults** (*Circulation* Mar 2026 [DOI: `10.1161/CIR.0000000000001415`; PMID: `41712677`]; *JACC* Apr 2026 [DOI: `10.1016/j.jacc.2025.11.005`; PMID: `41712898`]; PERT Consortium *JACC Adv* Oct 2026 [PMID: `42913334`]), alongside **STELLAR** (2023) and the **2024 ESC PAAD Guidelines** (DOI: `10.1093/eurheartj/ehae179`, PMID: `39210722`).
+This briefing covers **Pillar 9: Pulmonary Vascular Disease, VTE & Aortic Disease**, anchored within **Sep–Oct 2026** by **A PERT Consortium Appraisal of the 2026 AHA/ACC Multisociety Guideline for Acute Pulmonary Embolism** (*JACC Adv* Oct 22, 2026; DOI: `10.1016/j.jacadv.2026.103354`; PMID: `42913334`) & *J Hosp Med* (Sep 3, 2026; PMID: `42693678`), **AHA Scientific Statement on Multidisciplinary Collaboration in Aortic Surgery** (*Circulation* Oct 22, 2026; DOI: `10.1161/CIR.0000000000001490`; PMID: `42910416`), and **EACTS Expert Consensus Document on Iatrogenic Aortic Dissection** (*Eur J Cardiothorac Surg* Oct 7, 2026; DOI: `10.1093/ejcts/ezag221`; PMID: `42839659`), alongside **STELLAR** (2023) and **2024 ESC PAAD Guidelines** (DOI: `10.1093/eurheartj/ehae179`, PMID: `39210722`).
 
 ### 1. Guideline Evolution & Pathophysiological Rationale
 - **PAH Anti-Proliferative Revolution:** Conventional PAH therapies (ERAs, PDE5i, prostacyclins) addressed only three vasodilator pathways without reversing plexiform pulmonary arteriolar obliteration. By restoring the disrupted **BMPR2 / activin** balance, the activin-signaling inhibitor **sotatercept** establishes an unprecedented fourth anti-proliferative therapeutic pillar.
@@ -7949,31 +7944,31 @@ Obesity-related HFpEF represents a distinct phenotype characterized by epicardia
         briefing_id="ebm-2026-11-15-p10-main",
         date="2026-11-15",
         pillar_id=10,
-        topic_focus_vi="2026 ESC/ERA Tim-Thận (CKD), 2026 Rehab & 2025 ESC Thai kỳ",
-        topic_focus_en="2026 ESC/ERA CVD-CKD, 2026 Cardiac Rehab & 2025 Pregnancy",
-        title_vi="Chuẩn 2026 Tim mạch Liên chuyên khoa (2026 ESC/ERA Tim–Thận, 2026 Phục hồi chức năng & 2025 Thai kỳ): Tích hợp Trục Tim–Thận–Chuyển hóa",
-        title_en="2026 Cross-Specialty Cardiology (2026 ESC/ERA CVD & CKD, 2026 Cardiac Rehab & 2025 Pregnancy): Integrated Cardiorenal-Metabolic Protection",
+        topic_focus_vi="08–11/2026: ESC/ERA Tim-Thận (11/2026), ESC Rehab (10/2026) & ACC Vận động (10/2026)",
+        topic_focus_en="Aug–Nov 2026: Nov 2026 ESC/ERA CVD-CKD, Oct 2026 ESC Rehab & Oct 2026 ACC Exercise",
+        title_vi="Tim mạch Liên chuyên khoa 08–11/2026 (ESC/ERA CKD 11/2026, ESC Rehab & ACC 10/2026): Trục Tim–Thận–Chuyển hóa",
+        title_en="Aug–Nov 2026 Cross-Specialty Cardiology (Nov 2026 ESC/ERA CKD, Oct 2026 Rehab & ACC Exercise): Cardiorenal Protection",
         guideline_evolution={
             "prior_guideline": {
-                "name": "2018 ESC Pregnancy & 2024 ESC CCS Guidelines",
-                "year": "2018 / 2024",
-                "doi": "10.1093/eurheartj/ehae177",
-                "pmid": "39210710",
+                "name": "2024 ESC CCS & 2025 ESC CVD and Pregnancy Guidelines",
+                "year": "2024 / 2025",
+                "doi": "10.1093/eurheartj/ehaf193",
+                "pmid": "40878294",
             },
             "current_guideline": {
-                "name": "2026 ESC/ERA Guidelines for CVD & CKD, 2026 Cardiac Rehab & 2025 Pregnancy",
-                "year": "2025 / 2026",
-                "doi": "10.1093/eurheartj/ehag098",
-                "pmid": "42661426",
+                "name": "Nov 2026 ESC/ERA CVD-CKD Ten Commandments, Oct 2026 ESC Cardiac Rehab & Oct 2026 ACC Exercise Statement",
+                "year": "2026 (08–11/2026)",
+                "doi": "10.1093/eurheartj/ehag768",
+                "pmid": "43024482",
             },
             "steps": [
                 _step(
-                    "Chỉ dẫn A • Trước 2025 (ESC 2018–2024)",
-                    "Directive A • 2018–2024 ESC Baseline",
-                    "Điều trị Tách rời Tim – Thận – Thai kỳ & Chuyển hóa",
-                    "Siloed Cardiac, Renal, Obstetric & Metabolic Pathways",
-                    "Trước 2025, chưa có hướng dẫn ESC hợp nhất chuyên biệt cho đồng thời bệnh tim mạch và bệnh thận mạn (CKD) hay phục hồi chức năng tim mạch độc lập; hướng dẫn thai kỳ ESC cũng chờ cập nhật từ 2018.",
-                    "Prior to 2025–2026, ESC lacked dedicated unified CVD+CKD or standalone cardiac rehabilitation guidelines, while pregnancy guidelines dated back to 2018.",
+                    "Chỉ dẫn A • ESC 2024 CCS → ESC 2025 Thai kỳ",
+                    "Directive A • 2024 ESC CCS → 2025 ESC Pregnancy",
+                    "Khởi đầu Semaglutide (IIa) & Chăm sóc Tim mạch–Thai kỳ",
+                    "Semaglutide Class IIa & 2025 Pregnancy Guidance",
+                    "ESC 2024 CCS khuyến cáo Semaglutide 2,4 mg (IIa) cho CAD kèm thừa cân không ĐTĐ; ESC 11/2025 cập nhật Tim mạch–Thai kỳ, nhưng vẫn thiếu hướng dẫn chuyên biệt Tim–Thận và Phục hồi chức năng.",
+                    "2024 ESC CCS added semaglutide (Class IIa) in non-diabetic CAD and 2025 ESC updated pregnancy care, but dedicated CVD+CKD and cardiac rehab guidelines arrived in late 2026.",
                 ),
                 _step(
                     "Bước ngoặt Chứng cứ • SELECT & FLOW",
@@ -7984,12 +7979,12 @@ Obesity-related HFpEF represents a distinct phenotype characterized by epicardia
                     "SELECT (HR 0.80; p<0.001) and FLOW (HR 0.76; p=0.0003) crystallized shared cardiorenal-metabolic disease modification via RASi + SGLT2i + finerenone + GLP-1RA.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC 2025 Thai kỳ & ESC 2026 CKD / Phục hồi Chức năng (Hiện hành)",
-                    "Directive B • 2025 ESC Pregnancy & 2026 ESC/ERA CKD / Rehab (Current)",
-                    "Hướng dẫn Lần đầu 2026 ESC/ERA Tim–Thận (Aug–Nov 2026) & Phục hồi chức năng 2026",
-                    "2026 ESC/ERA CVD & CKD (Aug–Nov 2026), 2026 Rehab & 2025 Pregnancy",
-                    "2026 ESC/ERA Guidelines for CVD and CKD (Eur Heart J Aug 2026 & Ten Commandments Nov 13, 2026; PMIDs 42661426, 43024482) chuẩn hóa quản lý đồng thời Tim–Thận; song hành cùng 2026 ESC Cardiac Rehabilitation (Oct 2026; PMID 42661418) và 2025 ESC CVD & Pregnancy (Nov 2025; PMID 40878294).",
-                    "The inaugural 2026 ESC/ERA Guidelines for CVD and CKD (Eur Heart J Aug 2026; Ten Commandments Nov 13, 2026; PMIDs 42661426, 43024482) integrate nephrology–cardiology therapy, alongside Oct 2026 ESC Cardiac Rehabilitation and 2025 ESC Pregnancy Guidelines.",
+                    "Chỉ dẫn B • Bộ Hướng dẫn 08–11/2026 ESC/ERA, Phục hồi Chức năng & ACC (Hiện hành)",
+                    "Directive B • Aug–Nov 2026 ESC/ERA CKD, Cardiac Rehab & ACC Exercise Standards (Current)",
+                    "ESC/ERA Tim–Thận (08 & 11/2026), Phục hồi Chức năng (10/2026) & ACC Vận động",
+                    "Nov 2026 ESC/ERA CVD-CKD Ten Commandments, Oct 2026 Cardiac Rehab & ACC Exercise",
+                    "Trong 3 tháng gần nhất (08–11/2026): ESC/ERA Guidelines for CVD and CKD (Eur Heart J Aug 28, 2026; PMID 42661426 & Ten Commandments Nov 13, 2026; PMID 43024482) chuẩn hóa bộ tứ bảo vệ Tim–Thận; 2026 ESC Cardiac Rehabilitation Guidelines (Oct 23, 2026; PMID 42661418) và 2026 ACC Exercise Prescriptions Statement (Oct 15, 2026; PMID 42878712) chuẩn hóa đơn kê vận động tim mạch.",
+                    "Aug–Nov 2026 releases: 2026 ESC/ERA Guidelines for CVD and CKD (Aug 28, 2026; PMID 42661426 & Ten Commandments Nov 13, 2026; PMID 43024482) formalize integrated nephrology–cardiology care; Oct 23, 2026 ESC Cardiac Rehabilitation Guidelines (PMID 42661418) and Oct 15, 2026 ACC Scientific Statement on Exercise Prescriptions (PMID 42878712) standardize structured rehabilitation.",
                 ),
             ],
         },
@@ -8039,19 +8034,19 @@ Obesity-related HFpEF represents a distinct phenotype characterized by epicardia
             ),
         ],
         pubmed_anchors=[
-            _anchor("42661426", "2026 ESC Guidelines for the management of cardiovascular disease and chronic kidney disease, in collaboration with ERA.", "Eur Heart J (2026)", "2026 Aug 28", "10.1093/eurheartj/ehag098", "", ""),
             _anchor("43024482", "Ten commandments for the management of cardiovascular disease and chronic kidney disease.", "Eur Heart J (2026)", "2026 Nov 13", "10.1093/eurheartj/ehag768", "", ""),
+            _anchor("42661426", "2026 ESC Guidelines for the management of cardiovascular disease and chronic kidney disease, in collaboration with ERA.", "Eur Heart J (2026)", "2026 Aug 28", "10.1093/eurheartj/ehag098", "", ""),
             _anchor("42661418", "2026 ESC Guidelines on cardiac rehabilitation.", "Eur Heart J (2026)", "2026 Oct 23", "10.1093/eurheartj/ehag099", "47", "5631-5729"),
-            _anchor("40878294", "2025 ESC Guidelines for the management of cardiovascular disease and pregnancy.", "Eur Heart J (2025)", "2025 Nov 14", "10.1093/eurheartj/ehaf193", "46", "4462-4568"),
+            _anchor("42878712", "Exercise Prescriptions for Cardiovascular Health in Adults: 2026 ACC Scientific Statement.", "J Am Coll Cardiol (2026)", "2026 Oct 15", "10.1016/j.jacc.2026.09.008", "", ""),
             _anchor("37952131", "Semaglutide and Cardiovascular Outcomes in Obesity without Diabetes (SELECT).", "NEJM (2023)", "2023 Dec 14", "10.1056/NEJMoa2307563", "389", "2221-2232"),
             _anchor("38785209", "Effects of Semaglutide on Chronic Kidney Disease in Patients with Type 2 Diabetes (FLOW).", "NEJM (2024)", "2024 Jul 11", "10.1056/NEJMoa2403347", "391", "109-121"),
             _anchor("37622663", "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes.", "Eur Heart J (2023)", "2023 Oct 14", "10.1093/eurheartj/ehad192", "44", "4043-4140"),
         ],
-        part1_vi_markdown="""# Chuẩn 2026 Tim mạch Liên chuyên khoa (2026 ESC/ERA Tim–Thận, 2026 Phục hồi chức năng & 2025 Thai kỳ): Tích hợp Trục Tim–Thận–Chuyển hóa
+        part1_vi_markdown="""# Tim mạch Liên chuyên khoa 08–11/2026 (ESC/ERA CKD 11/2026, ESC Rehab & ACC 10/2026): Trục Tim–Thận–Chuyển hóa
 
-## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo Hướng dẫn Thực hành lâm sàng (2025–2026)
+## BLOCK A — Cập nhật Khuyến cáo & Tuyên bố Chuyên môn trong 3 Tháng Gần Nhất (08–11/2026)
 
-Chuyên đề thuộc **Trụ cột 10: Tim mạch Liên chuyên khoa & Chẩn đoán hình ảnh / Sinh học**. Ba văn kiện ESC mới nhất năm 2025–2026 bao gồm **2026 ESC/ERA Guidelines for the management of cardiovascular disease and chronic kidney disease** (*Eur Heart J* 08/2026 [PMID `42661426`] & *Ten Commandments* 13/11/2026 [DOI `10.1093/eurheartj/ehag768`; PMID `43024482`]), **2026 ESC Guidelines on cardiac rehabilitation** (*Eur Heart J* 10/2026; 47:5631–5729; PMID `42661418`), và **2025 ESC Guidelines on CVD and Pregnancy** (*Eur Heart J* 11/2025; PMID `40878294`), gắn kết chặt chẽ với trục **Tim – Thận – Chuyển hóa (CKM)** và bằng chứng **SELECT / FLOW**.
+Chuyên đề thuộc **Trụ cột 10: Tim mạch Liên chuyên khoa & Chẩn đoán hình ảnh / Sinh học**. Bốn văn kiện trọng điểm trong **08–11/2026** bao gồm **Ten Commandments cho 2026 ESC/ERA Guidelines về Bệnh Tim mạch và Bệnh Thận mạn** (*Eur Heart J* 13/11/2026; DOI `10.1093/eurheartj/ehag768`; PMID `43024482` & bản gốc 28/08/2026; PMID `42661426`), **2026 ESC Guidelines on Cardiac Rehabilitation** (*Eur Heart J* 23/10/2026; 47:5631–5729; PMID `42661418`), và **2026 ACC Scientific Statement on Exercise Prescriptions** (*JACC* 15/10/2026; DOI `10.1016/j.jacc.2026.09.008`; PMID `42878712`), gắn kết với bằng chứng **SELECT / FLOW**.
 
 ### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại
 - **Lập trường trước đây:** Thuốc đồng vận thụ thể GLP-1 (GLP-1RA) chỉ được xem là thuốc hạ đường huyết cho bệnh nhân đái tháo đường type 2 hoặc thuốc giảm cân đơn thuần; ở bệnh nhân không mắc đái tháo đường, béo phì chỉ được khuyên thay đổi lối sống mà không có thuốc nào chứng minh giảm nhồi máu cơ tim/đột quỵ.
@@ -8093,11 +8088,11 @@ Chuyên đề thuộc **Trụ cột 10: Tim mạch Liên chuyên khoa & Chẩn �
 ⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.
 
 [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]""",
-        part2_en_markdown="""# 2026 Cross-Specialty Cardiology (2026 ESC/ERA CVD & CKD, 2026 Cardiac Rehab & 2025 Pregnancy): Integrated Cardiorenal-Metabolic Protection
+        part2_en_markdown="""# Aug–Nov 2026 Cross-Specialty Cardiology (Nov 2026 ESC/ERA CKD, Oct 2026 Rehab & ACC Exercise): Cardiorenal Protection
 
-## BLOCK A — Guideline Update & Evolution (2025–2026)
+## BLOCK A — Most Recent 3-Month Guideline & Scientific Statement Updates (Aug–Nov 2026)
 
-This briefing addresses **Pillar 10: Cross-Specialty Cardiology & Diagnostics**, governed by three landmark 2025–2026 ESC guidelines: **2026 ESC/ERA Guidelines for the management of cardiovascular disease and chronic kidney disease** (*Eur Heart J* Aug 2026 [PMID: `42661426`] & *Ten Commandments* Nov 2026 [DOI: `10.1093/eurheartj/ehag768`; PMID: `43024482`]), **2026 ESC Guidelines on cardiac rehabilitation** (*Eur Heart J* Oct 2026; 47:5631–5729; PMID: `42661418`), and **2025 ESC Guidelines on CVD and Pregnancy** (*Eur Heart J* Nov 2025; PMID: `40878294`), anchored by **SELECT** and **FLOW**.
+This briefing addresses **Pillar 10: Cross-Specialty Cardiology & Diagnostics**, led strictly within **Aug–Nov 2026** by **Ten Commandments for the Management of CVD and CKD** (*Eur Heart J* Nov 13, 2026; DOI: `10.1093/eurheartj/ehag768`; PMID: `43024482` & full **2026 ESC/ERA Guidelines**, Aug 28, 2026; PMID: `42661426`), **2026 ESC Guidelines on Cardiac Rehabilitation** (*Eur Heart J* Oct 23, 2026; 47:5631–5729; PMID: `42661418`), and **Exercise Prescriptions for Cardiovascular Health in Adults: 2026 ACC Scientific Statement** (*JACC* Oct 15, 2026; DOI: `10.1016/j.jacc.2026.09.008`; PMID: `42878712`), anchored by **SELECT** and **FLOW**.
 
 ### 1. Guideline Evolution & Pathophysiological Basis
 - **Historical Stance:** GLP-1 receptor agonists were confined strictly to glycemic lowering in type 2 diabetes, while non-diabetic obesity relied solely on lifestyle counseling.
