@@ -959,8 +959,14 @@ def _save_users_data_unlocked(data: dict) -> None:
     _atomic_write_text(USERS_PATH, json.dumps(data, indent=2, ensure_ascii=False))
 
 
+def _normalize_identifier(identifier: str) -> str:
+    ident = str(identifier or "").strip().lower()
+    ident = re.sub(r"\s*\.\s*", ".", ident)
+    return re.sub(r"\s+", "", ident)
+
+
 def _find_user_by_identifier(users_dict: dict, identifier: str) -> dict | None:
-    ident = identifier.strip().lower()
+    ident = _normalize_identifier(identifier)
     if not ident:
         return None
     if ident in users_dict:
@@ -968,7 +974,10 @@ def _find_user_by_identifier(users_dict: dict, identifier: str) -> dict | None:
     for u in users_dict.values():
         if not isinstance(u, dict):
             continue
-        if u.get("username", "").strip().lower() == ident or u.get("email", "").strip().lower() == ident:
+        if (
+            _normalize_identifier(u.get("username", "")) == ident
+            or _normalize_identifier(u.get("email", "")) == ident
+        ):
             return u
     return None
 
@@ -1022,13 +1031,21 @@ def login_user(req_data: dict) -> tuple[int, dict]:
             _save_users_data_unlocked(data)
             return 200, {"ok": True, "token": token, "user": _safe_user(user)}
 
-        identifier = str(req_data.get("username") or req_data.get("email") or "").strip()
+        identifier = _normalize_identifier(str(req_data.get("username") or req_data.get("email") or ""))
         password = str(req_data.get("password") or "")
+        trimmed_pw = password.strip()
         if not identifier or not password:
             return 400, {"ok": False, "error": "Vui lòng nhập tên đăng nhập và mật khẩu."}
 
         user = _find_user_by_identifier(data["users"], identifier)
-        if not user or not _verify_password(password, user.get("salt", ""), user.get("password_hash", "")):
+        pw_ok = bool(
+            user
+            and (
+                _verify_password(password, user.get("salt", ""), user.get("password_hash", ""))
+                or (trimmed_pw and _verify_password(trimmed_pw, user.get("salt", ""), user.get("password_hash", "")))
+            )
+        )
+        if not pw_ok:
             return 401, {"ok": False, "error": "Tên đăng nhập hoặc mật khẩu không đúng."}
 
         token = _create_session_for_user(data, user)

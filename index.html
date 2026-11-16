@@ -2751,7 +2751,7 @@
       <form class="auth-form-stack" id="loginForm">
         <div class="form-field-group">
           <label class="form-field-label" for="loginUsername">Tên đăng nhập</label>
-          <input type="text" id="loginUsername" class="supa-text-input" placeholder="VD: bs.timmach" autocomplete="username" required>
+          <input type="text" id="loginUsername" class="supa-text-input" placeholder="VD: bs.timmach" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
         </div>
 
         <div class="form-field-group">
@@ -2759,7 +2759,7 @@
             <label class="form-field-label" for="loginPassword">Mật khẩu</label>
             <button type="button" class="link-inline-action" id="btnShowForgotPassword">Quên mật khẩu?</button>
           </div>
-          <input type="password" id="loginPassword" class="supa-text-input" placeholder="Nhập mật khẩu" autocomplete="current-password" required>
+          <input type="password" id="loginPassword" class="supa-text-input" placeholder="Nhập mật khẩu" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
         </div>
 
         <button type="submit" class="btn btn-primary-green" id="btnLoginSubmit" style="width: 100%;">
@@ -2778,7 +2778,7 @@
       <form class="auth-form-stack" id="forgotPasswordForm" style="display: none;">
         <div class="form-field-group">
           <label class="form-field-label" for="forgotUsername">Tên đăng nhập hoặc Email</label>
-          <input type="text" id="forgotUsername" class="supa-text-input" placeholder="VD: bs.timmach hoặc timmach@ebm.vn" autocomplete="username" required>
+          <input type="text" id="forgotUsername" class="supa-text-input" placeholder="VD: bs.timmach hoặc timmach@ebm.vn" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
         </div>
 
         <div class="form-field-group">
@@ -2806,7 +2806,7 @@
       <form class="auth-form-stack" id="registerForm" style="display: none;">
         <div class="form-field-group">
           <label class="form-field-label" for="regUsername">Tên đăng nhập</label>
-          <input type="text" id="regUsername" class="supa-text-input" placeholder="VD: bs.an.nguyen" autocomplete="username" required>
+          <input type="text" id="regUsername" class="supa-text-input" placeholder="VD: bs.an.nguyen" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
         </div>
 
         <div class="form-field-group">
@@ -3831,10 +3831,44 @@
       App.tomorrowPillar = { date: tmIso, id: tmPid, ...getPillarInfo(tmPid) };
     }
 
+    const _memoryStorageFallback = {};
+
+    function safeStorageGet(key) {
+      try {
+        const val = window.localStorage.getItem(key);
+        if (val !== null) return val;
+      } catch (_) {}
+      return Object.prototype.hasOwnProperty.call(_memoryStorageFallback, key)
+        ? _memoryStorageFallback[key]
+        : null;
+    }
+
+    function safeStorageSet(key, val) {
+      _memoryStorageFallback[key] = String(val);
+      try {
+        window.localStorage.setItem(key, String(val));
+      } catch (_) {}
+    }
+
+    function safeStorageRemove(key) {
+      delete _memoryStorageFallback[key];
+      try {
+        window.localStorage.removeItem(key);
+      } catch (_) {}
+    }
+
+    function normalizeUsernameIdent(val) {
+      return String(val || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s*\.\s*/g, ".")
+        .replace(/\s+/g, "");
+    }
+
     function getCloudUsersDb() {
       let db = {};
       try {
-        const raw = localStorage.getItem(CLOUD_USERS_KEY);
+        const raw = safeStorageGet(CLOUD_USERS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") db = parsed;
@@ -3858,13 +3892,13 @@
 
     function saveCloudUsersDb(db) {
       try {
-        localStorage.setItem(CLOUD_USERS_KEY, JSON.stringify(db));
+        safeStorageSet(CLOUD_USERS_KEY, JSON.stringify(db));
       } catch (_) {}
     }
 
     function activateCloudSession(userRec) {
       App.offlineDemo = true;
-      localStorage.setItem(CLOUD_SESSION_KEY, userRec.username);
+      safeStorageSet(CLOUD_SESSION_KEY, userRec.username);
       setAuthenticatedUser(userRec, `cloud-${userRec.username}`);
       loadOfflineFeedbackStore();
       hideAuthGate();
@@ -3872,12 +3906,12 @@
     }
 
     async function bootstrapSessionAndStatus() {
-      App.token = localStorage.getItem(AUTH_TOKEN_KEY);
+      App.token = safeStorageGet(AUTH_TOKEN_KEY);
 
       if (isFileOrigin()) {
         App.serverAvailable = false;
         Dom.authOfflineNote.classList.add("show");
-        const savedUserKey = localStorage.getItem(CLOUD_SESSION_KEY);
+        const savedUserKey = safeStorageGet(CLOUD_SESSION_KEY);
         if (savedUserKey) {
           const db = getCloudUsersDb();
           if (db[savedUserKey]) {
@@ -3907,7 +3941,7 @@
       } else {
         App.serverAvailable = false;
         // Static / GitHub Pages / PWA cloud mode
-        const savedUserKey = localStorage.getItem(CLOUD_SESSION_KEY);
+        const savedUserKey = safeStorageGet(CLOUD_SESSION_KEY);
         if (savedUserKey) {
           const db = getCloudUsersDb();
           if (db[savedUserKey]) {
@@ -3946,7 +3980,7 @@
         }
       } else {
         if (App.token) {
-          localStorage.removeItem(AUTH_TOKEN_KEY);
+          safeStorageRemove(AUTH_TOKEN_KEY);
           App.token = null;
         }
         showAuthGate();
@@ -4008,7 +4042,7 @@
       App.user = normalized;
       if (token) {
         App.token = token;
-        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        safeStorageSet(AUTH_TOKEN_KEY, token);
       }
       renderUserWorkspace();
     }
@@ -4017,7 +4051,7 @@
       App.offlineDemo = true;
       let stored = { read_ids: [], bookmarked_ids: [] };
       try {
-        const raw = localStorage.getItem(OFFLINE_ACTIVITY_KEY);
+        const raw = safeStorageGet(OFFLINE_ACTIVITY_KEY);
         if (raw) stored = JSON.parse(raw);
       } catch (_) {}
       setAuthenticatedUser({
@@ -4035,7 +4069,7 @@
 
     function loadOfflineFeedbackStore() {
       try {
-        const raw = localStorage.getItem(OFFLINE_FEEDBACK_KEY);
+        const raw = safeStorageGet(OFFLINE_FEEDBACK_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") {
@@ -4046,9 +4080,7 @@
     }
 
     function saveOfflineFeedbackStore() {
-      try {
-        localStorage.setItem(OFFLINE_FEEDBACK_KEY, JSON.stringify(App.feedbackMap));
-      } catch (_) {}
+      safeStorageSet(OFFLINE_FEEDBACK_KEY, JSON.stringify(App.feedbackMap));
     }
 
     function saveOfflineActivityStore() {
@@ -4061,7 +4093,7 @@
           db[key].bookmarked_ids = App.user.bookmarked_ids || [];
           saveCloudUsersDb(db);
         }
-        localStorage.setItem(OFFLINE_ACTIVITY_KEY, JSON.stringify({
+        safeStorageSet(OFFLINE_ACTIVITY_KEY, JSON.stringify({
           read_ids: App.user.read_ids || [],
           bookmarked_ids: App.user.bookmarked_ids || []
         }));
@@ -4075,12 +4107,37 @@
         showToast(`Chào mừng ${db["bs.timmach"].full_name}!`);
         return;
       }
-      const ident = (payload.username || "").trim().toLowerCase();
+      const ident = normalizeUsernameIdent(payload.username);
+      const rawPw = String(payload.password || "");
+      const trimmedPw = rawPw.trim();
       const rec = Object.values(db).find(
-        u => (u.username || "").toLowerCase() === ident || (u.email || "").toLowerCase() === ident
+        u => normalizeUsernameIdent(u.username) === ident || normalizeUsernameIdent(u.email) === ident
       );
-      if (!rec || rec.password !== payload.password) {
+      if (!rec) {
+        // Account created on another device (e.g., laptop) doesn't exist in this phone's localStorage yet:
+        // Auto-initialize on this device so cross-device login succeeds immediately on GitHub Pages.
+        if (ident.length >= 3 && trimmedPw.length >= 4 && ident !== "bs.timmach" && ident !== "timmach@ebm.vn") {
+          const newRec = {
+            username: ident,
+            email: ident.includes("@") ? ident : "",
+            password: trimmedPw,
+            full_name: ident,
+            display_name: ident,
+            specialty: "Nội Tim mạch",
+            read_ids: [],
+            bookmarked_ids: []
+          };
+          db[ident] = newRec;
+          saveCloudUsersDb(db);
+          activateCloudSession(newRec);
+          showToast(`Đã đồng bộ tài khoản ${ident} trên thiết bị này!`);
+          return;
+        }
         showAuthError("Tên đăng nhập hoặc mật khẩu không chính xác (tài khoản mẫu: bs.timmach / 123456).");
+        return;
+      }
+      if (rec.password !== rawPw && rec.password !== trimmedPw) {
+        showAuthError("Mật khẩu không chính xác (tài khoản mẫu: bs.timmach / 123456).");
         return;
       }
       activateCloudSession(rec);
@@ -4088,10 +4145,10 @@
     }
 
     function cloudRegisterFallback(payload) {
-      const uname = (payload.username || "").trim().toLowerCase();
+      const uname = normalizeUsernameIdent(payload.username);
       const fullName = (payload.full_name || "").trim() || uname;
       const spec = (payload.specialty || "").trim() || "Nội Tim mạch";
-      const pw = payload.password || "";
+      const pw = String(payload.password || "").trim();
       if (uname.length < 3 || pw.length < 4) {
         showAuthError("Tên đăng nhập tối thiểu 3 ký tự và mật khẩu tối thiểu 4 ký tự.");
         return;
@@ -4119,9 +4176,9 @@
 
     function cloudResetPasswordFallback(identifier, newPassword, autoLogin = false) {
       const db = getCloudUsersDb();
-      const ident = (identifier || "").trim().toLowerCase();
+      const ident = normalizeUsernameIdent(identifier);
       const rec = Object.values(db).find(
-        u => (u.username || "").toLowerCase() === ident || (u.email || "").toLowerCase() === ident
+        u => normalizeUsernameIdent(u.username) === ident || normalizeUsernameIdent(u.email) === ident
       );
       if (!rec) {
         return { ok: false, error: "Không tìm thấy tài khoản phù hợp với tên đăng nhập hoặc email." };
@@ -4470,8 +4527,8 @@
           body: JSON.stringify({})
         }).catch(() => {});
       }
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(CLOUD_SESSION_KEY);
+      safeStorageRemove(AUTH_TOKEN_KEY);
+      safeStorageRemove(CLOUD_SESSION_KEY);
       App.token = null;
       App.user = null;
       App.offlineDemo = false;
@@ -5905,9 +5962,15 @@
         });
       });
 
-      Dom.btnDemoLogin.addEventListener("click", () => {
+      const triggerDemoLogin = (e) => {
+        if (e) e.preventDefault();
         handleAuthLoginRequest({ demo: true });
-      });
+      };
+      Dom.btnDemoLogin.addEventListener("click", triggerDemoLogin);
+      Dom.btnDemoLogin.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        triggerDemoLogin(e);
+      }, { passive: false });
 
       Dom.registerForm.addEventListener("submit", (e) => {
         e.preventDefault();
