@@ -1728,10 +1728,22 @@ def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3) -> list[dict]
         return []
 
 
+_CHAT_STOPWORDS: set[str] = {
+    "tôi", "bạn", "mình", "anh", "chị", "em", "bác", "sĩ", "không", "chưa", "biết", "hiểu",
+    "gì", "về", "y", "khoa", "cho", "hãy", "giúp", "giải", "thích", "đơn", "giản", "dễ",
+    "hơn", "như", "thế", "nào", "sao", "vậy", "là", "của", "các", "những", "trong", "ngoài",
+    "trụ", "cột", "bài", "này", "bản", "tin", "hôm", "nay", "điểm", "mới", "nhất", "tóm",
+    "tắt", "nói", "rõ", "cụ", "thể", "ví", "dụ", "what", "how", "why", "explain", "simple",
+    "simpler", "pillar", "today", "the", "for", "about", "with", "from", "this", "that",
+}
+
+
 def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", active_pillar_id: int | None = None) -> int:
-    """Rank a curated briefing against a clinical user question using VI/EN tokens + synonyms."""
+    """Rank a curated briefing against a clinical user question using explicit pillar matching + VI/EN tokens."""
     q_low = (query or "").lower()
-    expanded: list[str] = re.findall(r"[\w\-]{2,}", q_low)
+    explicit_pids = [int(m) for m in re.findall(r"(?:trụ\s*cột|pillar|chủ\s*đề)\s*#?\s*(10|[1-9])\b", q_low)]
+    raw_terms: list[str] = re.findall(r"[\w\-]{2,}", q_low)
+    expanded: list[str] = [t for t in raw_terms if t not in _CHAT_STOPWORDS]
     for k, syns in _CHAT_SYNONYM_MAP.items():
         if k in q_low:
             expanded.extend(syns)
@@ -1749,22 +1761,36 @@ def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", 
     hay_body = (str(b.get("part1_vi_markdown", "")) + " " + str(b.get("part2_en_markdown", ""))).lower()
 
     score = 0
+    pid = int(b.get("pillar_id") or 0)
+    if explicit_pids:
+        score += 250 if pid in explicit_pids else -100
+
+    keyword_hits = 0
     seen_terms: set[str] = set()
     for tok in expanded:
-        if len(tok) < 2 or tok in seen_terms:
+        if len(tok) < 2 or tok in _CHAT_STOPWORDS or tok in seen_terms:
             continue
         seen_terms.add(tok)
         if tok in hay_head:
-            score += 6
+            keyword_hits += 6
         elif tok in hay_body:
-            score += 2
+            keyword_hits += 2
+    score += keyword_hits
 
     if "-main" in str(b.get("id", "")) or "2026" in str((b.get("guideline_evolution") or {}).get("current_guideline", {}).get("year", "")):
         score += 15
-    if active_briefing_id and b.get("id") == active_briefing_id:
-        score += 4
-    elif active_pillar_id and int(b.get("pillar_id") or 0) == int(active_pillar_id):
-        score += 2
+
+    has_ctx_phrase = any(p in q_low for p in ("hôm nay", "bài này", "bản tin này", "trụ cột này", "today", "current"))
+    if not explicit_pids and (has_ctx_phrase or keyword_hits == 0):
+        if active_briefing_id and b.get("id") == active_briefing_id:
+            score += 60
+        elif active_pillar_id and pid == int(active_pillar_id):
+            score += 45
+    else:
+        if active_briefing_id and b.get("id") == active_briefing_id:
+            score += 4
+        elif active_pillar_id and pid == int(active_pillar_id):
+            score += 2
     return score
 
 
@@ -2290,7 +2316,9 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                 "(including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). "
                 "If the user asks anything unrelated to medicine/cardiology (coding, entertainment, politics, sports, general chit-chat), "
                 "politely refuse in 1 short sentence to save tokens. "
-                "When the user asks to explain simply ('đơn giản', 'dễ hiểu', 'chưa hiểu'), explain in everyday, intuitive language with relatable bedside examples and unpack abbreviations (e.g., ISH, SPRINT, ESPRIT, PREVENT, CKD). "
+                "NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a question about a Cardiology Pillar (Trụ cột 1..10). "
+                "If the user says they know nothing about medicine ('không biết gì về y khoa', 'giải thích đơn giản', 'dễ hiểu', 'chưa hiểu'), "
+                "act as a warm, patient doctor explaining to a non-medical person using everyday life metaphors, short simple sentences, and zero unexplained jargon (unpack ISH, SPRINT, ESPRIT, PREVENT, CKD in plain language). "
                 "TERMINOLOGY RULE: Translate 'white-coat hypertension/effect' accurately as 'tăng huyết áp áo choàng trắng' (huyết áp tăng giả tạo tại phòng khám do hồi hộp khi gặp bác sĩ) — NEVER translate it as 'sốt nóng do y bác sĩ'. "
                 "Answer accurately using the provided 2026 Guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in "
                 + ("academic English." if lang == "en" else "clear, concise clinical Vietnamese.")
