@@ -2124,16 +2124,32 @@ _MEDICAL_KEYWORDS_RE = re.compile(
     re.IGNORECASE,
 )
 
+_FOLLOWUP_OR_CONTEXT_RE = re.compile(
+    r"(giải thích|dễ hiểu|đơn giản|chưa hiểu|không hiểu|khó hiểu|nói rõ|rõ hơn|cụ thể|ví dụ|"
+    r"tại sao|vì sao|như thế nào|nghĩa là|ý là|tóm lại|ngắn gọn|chi tiết|phân tích|bình dân|"
+    r"hôm nay|bài này|phần này|mục này|ở trên|vừa rồi|tiếp theo|còn gì|thế còn|vậy thì|ý số|điểm số|"
+    r"explain|simpler|simple|understand|clarify|example|why|how|detail|today|above|what does that mean|more about)",
+    re.IGNORECASE,
+)
 
-def _is_medical_or_cardiology_query(query: str, briefings: list[dict], active_bid: str = "", active_pid: int | None = None) -> bool:
-    """Zero-token pre-LLM gatekeeper: block off-topic prompts before spending API quota."""
+
+def _is_medical_or_cardiology_query(
+    query: str,
+    briefings: list[dict],
+    active_bid: str = "",
+    active_pid: int | None = None,
+    history: list[dict] | None = None,
+) -> bool:
+    """Zero-token pre-LLM gatekeeper: block off-topic prompts while permitting medical follow-ups."""
     q = (query or "").strip()
     if not q or len(q) < 2:
         return False
     has_med_kw = bool(_MEDICAL_KEYWORDS_RE.search(q))
     if _OFFTOPIC_RE.search(q) and not has_med_kw:
         return False
-    if has_med_kw:
+    if has_med_kw or _FOLLOWUP_OR_CONTEXT_RE.search(q):
+        return True
+    if any(isinstance(m, dict) and m.get("role") == "user" for m in (history or [])):
         return True
     # Also check corpus match score without counting the active-briefing bonus
     top_score = max(
@@ -2163,11 +2179,20 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     raw_pid = req_data.get("pillar_id")
     active_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
     include_pubmed = bool(req_data.get("include_pubmed", True))
+    raw_history = req_data.get("history")
+    clean_history: list[dict[str, str]] = []
+    if isinstance(raw_history, list):
+        for item in raw_history[-4:]:
+            if isinstance(item, dict) and item.get("role") in ("user", "assistant"):
+                txt = str(item.get("content", "")).strip()
+                if txt:
+                    clean_history.append({"role": str(item["role"]), "content": txt[:500]})
+
     quota = _load_chat_quota()
     provider, api_key = _resolve_chat_llm_key(req_data.get("api_key", ""))
 
     # Layer 1 Guard (0 tokens spent): Reject non-medical / off-topic questions immediately
-    if not _is_medical_or_cardiology_query(query, briefings, active_bid, active_pid):
+    if not _is_medical_or_cardiology_query(query, briefings, active_bid, active_pid, history=clean_history):
         refusal = (
             "### Soái ca Y khoa — Giới hạn Chuyên môn\n\n"
             "Tôi là **Soái ca Y khoa**, trợ lý chuyên sâu về **Nội khoa Tim mạch & Y học Chứng cứ (EBM)**. "
@@ -2190,9 +2215,15 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             "has_server_key": bool(api_key),
         }
 
+    search_query = query
+    if not _MEDICAL_KEYWORDS_RE.search(query) and clean_history:
+        prior_users = [m["content"] for m in clean_history if m.get("role") == "user"]
+        if prior_users:
+            search_query = f"{prior_users[-1]} {query}".strip()
+
     ranked = sorted(
         briefings,
-        key=lambda b: _score_briefing_for_chat(b, query, active_bid, active_pid),
+        key=lambda b: _score_briefing_for_chat(b, search_query, active_bid, active_pid),
         reverse=True,
     )
     top_briefings = ranked[:2]
@@ -2200,10 +2231,10 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
 
     pubmed_hits: list[dict] = []
     if include_pubmed:
-        pm_query = _build_pubmed_chat_query(query, primary)
+        pm_query = _build_pubmed_chat_query(search_query, primary)
         pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=2)
 
-    fda_note = _fetch_openfda_drug_note(query)
+    fda_note = _fetch_openfda_drug_note(search_query)
     quota_banner = ""
 
     if api_key:
@@ -2220,7 +2251,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                 )
         else:
             _, sources = _compose_deterministic_ebm_answer(
-                query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note
+                search_query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note
             )
             with _quota_lock:
                 quota = _load_chat_quota_unlocked()
@@ -2255,11 +2286,14 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             )
             sys_prompt = (
                 "You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. "
-                "STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions. "
+                "STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions "
+                "(including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). "
                 "If the user asks anything unrelated to medicine/cardiology (coding, entertainment, politics, sports, general chit-chat), "
                 "politely refuse in 1 short sentence to save tokens. "
-                "For medical questions, answer concisely and accurately using the provided 2026 Guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in "
-                + ("academic English." if lang == "en" else "concise clinical Vietnamese bullet points.")
+                "When the user asks to explain simply ('đơn giản', 'dễ hiểu', 'chưa hiểu'), explain in everyday, intuitive language with relatable bedside examples and unpack abbreviations (e.g., ISH, SPRINT, ESPRIT, PREVENT, CKD). "
+                "TERMINOLOGY RULE: Translate 'white-coat hypertension/effect' accurately as 'tăng huyết áp áo choàng trắng' (huyết áp tăng giả tạo tại phòng khám do hồi hộp khi gặp bác sĩ) — NEVER translate it as 'sốt nóng do y bác sĩ'. "
+                "Answer accurately using the provided 2026 Guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in "
+                + ("academic English." if lang == "en" else "clear, concise clinical Vietnamese.")
             )
             user_prompt = f"CONTEXT:\n{ctx_blob}\n\nQUESTION:\n{query}"
             try:
@@ -2269,6 +2303,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         "model": "qwen/qwen3.8-27b",
                         "messages": [
                             {"role": "system", "content": sys_prompt},
+                            *clean_history,
                             {"role": "user", "content": user_prompt},
                         ],
                         "max_tokens": 700,
@@ -2341,7 +2376,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                 print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
 
     answer_md, sources = _compose_deterministic_ebm_answer(
-        query,
+        search_query,
         top_briefings,
         pubmed_hits,
         lang=lang,

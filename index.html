@@ -6805,6 +6805,7 @@
 
     const _SC_OFFTOPIC_RE = /(viết code|lập trình|python|javascript|typescript|html|css|sql|java\b|c\+\+|react|docker|kubernetes|giải phương trình|toán học|tích phân|đạo hàm|bóng đá|football|world cup|nba|tennis|thời tiết|weather|dự báo mưa|chứng khoán|cổ phiếu|bitcoin|crypto|forex|vàng sjc|nấu ăn|công thức nấu|làm thơ|viết văn|kể chuyện|truyện cười|phim hay|bộ phim|ca nhạc|bài hát|chơi game|liên quân|lmht|xổ số|vietlott|tử vi|bói toán|phong thủy|du lịch|khách sạn|giá vé máy bay)/i;
     const _SC_MEDICAL_RE = /(y khoa|tim mạch|tim|mạch|huyết áp|tha\b|suy tim|rung nhĩ|nhồi máu|đột quỵ|đau ngực|thắt ngực|thận|ckd|phổi|động mạch|tĩnh mạch|van tim|cơ tim|màng ngoài tim|nội tâm mạc|rối loạn nhịp|lipid|mỡ máu|xơ vữa|đái tháo đường|béo phì|bệnh nhân|lâm sàng|bệnh lý|triệu chứng|chẩn đoán|điều trị|phác đồ|thuốc|liều|uống|tiêm|chống chỉ định|tác dụng phụ|an toàn|tương tác|theo dõi|xét nghiệm|siêu âm|ecg|điện tâm đồ|lvef|egfr|bnp|nt-probnp|troponin|ldl|hdl|kali|creatinine|guideline|khuyến cáo|thử nghiệm|rct|esc|aha|acc|ish|aphrs|eacts|ccs|kdoqi|pubmed|fda|openfda|trụ cột|bài này|bản tin|tóm tắt|so sánh|điểm mới|cấp cứu|hồi sức|can thiệp|pci|tavr|cabg|stent|dapt|doac|noac|aspirin|p2y12|ticagrelor|prasugrel|clopidogrel|statin|ezetimibe|pcsk9|colchicine|bempedoic|sglt2|dapagliflozin|empagliflozin|finerenone|spironolactone|arni|sacubitril|acei|arb|chẹn beta|carvedilol|nebivolol|amlodipine|rivaroxaban|apixaban|semaglutide|tirzepatide|mavacamten|aficamten|sotatercept|amiodarone|ranolazine|pfa|ablation|heart|cardio|cardiac|clinical|patient|trial|dose|dosing|safety|pillar|briefing|summary|compare|2026)/i;
+    const _SC_FOLLOWUP_RE = /(giải thích|dễ hiểu|đơn giản|chưa hiểu|không hiểu|khó hiểu|nói rõ|rõ hơn|cụ thể|ví dụ|tại sao|vì sao|như thế nào|nghĩa là|ý là|tóm lại|ngắn gọn|chi tiết|phân tích|bình dân|hôm nay|bài này|phần này|mục này|ở trên|vừa rồi|tiếp theo|còn gì|thế còn|vậy thì|ý số|điểm số|explain|simpler|simple|understand|clarify|example|why|how|detail|today|above|what does that mean|more about)/i;
 
     const EbmChat = {
       isOpen: false,
@@ -6883,12 +6884,28 @@
         }
       },
 
-      isMedicalOrCardiologyQuery(query) {
+      getRecentHistory() {
+        return (this.messages || [])
+          .filter((m, idx) => {
+            if (!m || (m.role !== "user" && m.role !== "assistant")) return false;
+            if (idx === 0 && m.role === "assistant") return false;
+            if (String(m.engineLabel || "").includes("Bộ lọc Y khoa")) return false;
+            return Boolean(String(m.markdownText || "").trim());
+          })
+          .slice(-4)
+          .map((m) => ({
+            role: m.role,
+            content: String(m.markdownText || "").slice(0, 500)
+          }));
+      },
+
+      isMedicalOrCardiologyQuery(query, priorHistory = []) {
         const q = (query || "").trim();
         if (!q || q.length < 2) return false;
         const hasMed = _SC_MEDICAL_RE.test(q);
         if (_SC_OFFTOPIC_RE.test(q) && !hasMed) return false;
-        if (hasMed) return true;
+        if (hasMed || _SC_FOLLOWUP_RE.test(q)) return true;
+        if (Array.isArray(priorHistory) && priorHistory.some((m) => m && m.role === "user")) return true;
         const pool = Array.isArray(App.briefings) ? App.briefings.filter((b) => String(b.id || "").includes("-main")) : [];
         let maxScore = 0;
         for (const b of pool) {
@@ -7297,7 +7314,7 @@
         return { markdown: parts.join("\n\n"), sources };
       },
 
-      async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang) {
+      async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory = []) {
         const key = this._k();
         if (!key) return { text: "", engine: "", blockedBanner: "" };
 
@@ -7320,7 +7337,7 @@
         }
         this.persistLocalQuota();
 
-        const sysPrompt = `You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions. If off-topic (coding, entertainment, politics, sports, chit-chat), politely refuse in 1 short sentence to save tokens. For medical questions, synthesize concisely using the provided 2026 guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in ${lang === "en" ? "academic English" : "concise clinical Vietnamese bullet points"}.`;
+        const sysPrompt = `You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions (including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). If off-topic (coding, entertainment, politics, sports, chit-chat), politely refuse in 1 short sentence to save tokens. When the user asks to explain simply ('đơn giản', 'dễ hiểu', 'chưa hiểu'), explain in everyday, intuitive language with relatable bedside examples and unpack abbreviations (e.g., ISH, SPRINT, ESPRIT, PREVENT, CKD). TERMINOLOGY RULE: Translate 'white-coat hypertension/effect' accurately as 'tăng huyết áp áo choàng trắng' (huyết áp tăng giả tạo tại phòng khám do hồi hộp khi gặp bác sĩ) — NEVER translate it as 'sốt nóng do y bác sĩ'. Synthesize accurately using the provided 2026 guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in ${lang === "en" ? "academic English" : "clear, concise clinical Vietnamese"}.`;
         const trialsCompact = (primary.landmark_trials || []).slice(0, 2).map((t) => ({
           name: t.name, value: t.value, p: t.p, caution: (lang === "en" ? t.caution_en : t.caution_vi || "").slice(0, 180)
         }));
@@ -7346,6 +7363,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               model: "qwen/qwen3.8-27b",
               messages: [
                 { role: "system", content: sysPrompt },
+                ...(Array.isArray(priorHistory) ? priorHistory : []),
                 { role: "user", content: userInput }
               ],
               max_tokens: 700
@@ -7374,12 +7392,13 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         this.isBusy = true;
         Dom.btnSendChat.disabled = true;
         Dom.chatInputField.value = "";
+        const priorHistory = this.getRecentHistory();
         this.appendMessage("user", query);
 
         const lang = App.currentLang || "vi";
 
         // Layer 1 Guard (0 tokens spent): Immediately decline non-medical/off-topic prompts
-        if (!this.isMedicalOrCardiologyQuery(query)) {
+        if (!this.isMedicalOrCardiologyQuery(query, priorHistory)) {
           const refusal = lang === "en"
             ? "### Soái ca Y khoa — Clinical Scope Notice\n\nI am dedicated strictly to **Cardiology & Evidence-Based Medicine**. I politely decline off-topic non-medical requests to conserve system tokens."
             : "### Soái ca Y khoa — Giới hạn Chuyên môn\n\nTôi là **Soái ca Y khoa**, trợ lý chuyên sâu về **Nội khoa Tim mạch & Y học Chứng cứ (EBM)**. Tôi xin phép **từ chối trả lời** các câu hỏi ngoài phạm vi y khoa để tiết kiệm tài nguyên hệ thống.\n\n*Bác sĩ có thể hỏi về: Guideline Tim mạch 08–11/2026, 10 Trụ cột chuyên khoa, thử nghiệm RCT bản lề, liều dùng – chống chỉ định thuốc tim mạch hoặc tra cứu PubMed.*";
@@ -7409,7 +7428,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                   pillar_id: activeB ? activeB.pillar_id : App.todayPillarId,
                   briefing_id: activeB ? activeB.id : "",
                   lang,
-                  include_pubmed: true
+                  include_pubmed: true,
+                  history: priorHistory
                 })
               });
               const ct = res.headers.get("content-type") || "";
@@ -7429,8 +7449,12 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           }
 
           // Client-side engine (GitHub Pages & Mobile PWA — Background Groq AI + EBM + PubMed + OpenFDA)
+          const priorUsers = priorHistory.filter((m) => m.role === "user").map((m) => m.content);
+          const searchQuery = (!_SC_MEDICAL_RE.test(query) && priorUsers.length > 0)
+            ? `${priorUsers[priorUsers.length - 1]} ${query}`.trim()
+            : query;
           const pool = Array.isArray(App.briefings) && App.briefings.length > 0 ? App.briefings : (activeB ? [activeB] : []);
-          const ranked = [...pool].sort((a, b) => this.scoreBriefing(b, query) - this.scoreBriefing(a, query));
+          const ranked = [...pool].sort((a, b) => this.scoreBriefing(b, searchQuery) - this.scoreBriefing(a, searchQuery));
           const primary = ranked[0] || activeB;
           if (!primary) {
             typingEl.remove();
@@ -7439,11 +7463,11 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           }
 
           const [pubmedHits, fdaNote] = await Promise.all([
-            this.fetchLivePubMedAbstracts(query, primary),
-            this.fetchOpenFdaDrugNote(query)
+            this.fetchLivePubMedAbstracts(searchQuery, primary),
+            this.fetchOpenFdaDrugNote(searchQuery)
           ]);
-          const llmOut = await this.callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang);
-          const det = await this.composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang);
+          const llmOut = await this.callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory);
+          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang);
           const finalMd = llmOut.text ? llmOut.text : ((llmOut.blockedBanner || "") + det.markdown);
           const engineLabel = llmOut.text
             ? llmOut.engine
