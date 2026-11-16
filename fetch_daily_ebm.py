@@ -1119,6 +1119,62 @@ def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
         return 200, {"ok": True, "user": _safe_user(user)}
 
 
+def reset_user_password(token: str, req_data: dict) -> tuple[int, dict]:
+    """
+    Resets password either via an active Bearer session token or by looking up
+    username/email (Forgot Password flow on the login screen).
+    """
+    identifier = str(req_data.get("username") or req_data.get("email") or "").strip()
+    new_password = str(req_data.get("new_password") or req_data.get("password") or "")
+    if len(new_password) < 4:
+        return 400, {"ok": False, "error": "Mật khẩu mới cần tối thiểu 4 ký tự."}
+
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        user = _resolve_user_from_token_unlocked(data, token) if token else None
+        if user is None and identifier:
+            user = _find_user_by_identifier(data["users"], identifier)
+        if not user:
+            return 404, {"ok": False, "error": "Không tìm thấy tài khoản phù hợp với tên đăng nhập hoặc email."}
+
+        salt, pw_hash = _hash_password(new_password)
+        user["salt"] = salt
+        user["password_hash"] = pw_hash
+        new_token = _create_session_for_user(data, user)
+        _save_users_data_unlocked(data)
+        return 200, {
+            "ok": True,
+            "token": new_token,
+            "user": _safe_user(user),
+            "message": "Đã đặt lại mật khẩu thành công.",
+        }
+
+
+def update_user_profile(token: str, req_data: dict) -> tuple[int, dict]:
+    """Updates display_name, specialty, and email for the authenticated user."""
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        user = _resolve_user_from_token_unlocked(data, token)
+        if not user:
+            return 401, {"ok": False, "error": "Unauthorized"}
+
+        display_name = str(
+            req_data.get("display_name") or req_data.get("full_name") or ""
+        ).strip()
+        specialty = str(req_data.get("specialty", "")).strip()
+        email = str(req_data.get("email", "")).strip()
+
+        if display_name:
+            user["display_name"] = display_name
+        if specialty:
+            user["specialty"] = specialty
+        if "email" in req_data:
+            user["email"] = email
+
+        _save_users_data_unlocked(data)
+        return 200, {"ok": True, "user": _safe_user(user)}
+
+
 # ---------------------------------------------------------------------------
 # Product Feedback Persistence (data/feedback.json)
 # ---------------------------------------------------------------------------
@@ -1720,6 +1776,18 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             token = self._extract_token(query_params=query_params, body_data=req_data)
             payload = logout_token(token)
             self._send_json(200, payload)
+            return
+
+        if path == "/api/auth/reset-password":
+            token = self._extract_token(query_params=query_params, body_data=req_data)
+            status, payload = reset_user_password(token, req_data)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/auth/profile":
+            token = self._extract_token(query_params=query_params, body_data=req_data)
+            status, payload = update_user_profile(token, req_data)
+            self._send_json(status, payload)
             return
 
         if path == "/api/user/activity":
