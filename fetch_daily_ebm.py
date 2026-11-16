@@ -1603,12 +1603,396 @@ def save_briefings_js(briefings: list, rotation_state: dict) -> None:
     print(f"[Saved] Updated {BRIEFINGS_JS_PATH} with {len(briefings)} briefings.")
 
 
+_CHAT_SYNONYM_MAP: dict[str, list[str]] = {
+    "tăng huyết áp": ["hypertension", "sbp", "bp", "sprint", "esprit", "bproad", "ish", "ths", "kdoqi", "spc"],
+    "huyết áp": ["hypertension", "blood pressure", "sbp", "sprint", "ish", "prevent"],
+    "tha": ["hypertension", "sbp", "rdn", "spironolactone"],
+    "thận": ["ckd", "egfr", "kdoqi", "era", "flow", "finerenone", "sglt2i", "creatinine", "kali"],
+    "lipid": ["ldl-c", "non-hdl", "dyslipidemia", "statin", "ezetimibe", "pcsk9", "inclisiran", "bempedoic", "colchicine", "lodoco2", "colcot"],
+    "mỡ máu": ["dyslipidemia", "ldl-c", "statin", "ezetimibe", "pcsk9", "clear outcomes"],
+    "xơ vữa": ["atherosclerosis", "ascvd", "ldl-c", "colchicine", "semaglutide"],
+    "mạch vành": ["coronary", "ccs", "acs", "ischemia", "cormica", "inoca", "anoca", "ccta", "pci"],
+    "vi mạch": ["inoca", "anoca", "cormica", "icft", "cfr", "imr", "acetylcholine"],
+    "đau thắt ngực": ["angina", "inoca", "anoca", "ischemia", "cormica", "ranolazine"],
+    "chống đông": ["anticoagulant", "doac", "aphrs", "cha2ds2", "warfarin", "dapt"],
+    "tiểu cầu": ["antiplatelet", "dapt", "p2y12", "ticagrelor", "prasugrel", "clopidogrel", "twilight", "tico", "master dapt"],
+    "dapt": ["dapt", "twilight", "tico", "master dapt", "ticagrelor", "aspirin", "p2y12", "hbr"],
+    "xuất huyết": ["bleeding", "arc-hbr", "precise-dapt", "ppi", "twilight", "master dapt"],
+    "suy tim": ["heart failure", "hfref", "hfpef", "hfmref", "sglt2", "finerenone", "finearts", "deliver", "emperor", "icardio"],
+    "rung nhĩ": ["atrial fibrillation", "aphrs", "af-care", "east-afnet", "advent", "pfa", "ablation", "cha2ds2"],
+    "nhịp": ["arrhythmia", "atrial fibrillation", "aphrs", "ablation", "pfa", "rhythm"],
+    "van tim": ["valvular", "aortic stenosis", "tavr", "early tavr", "mitral", "tricuspid", "triluminate", "teer", "eacts"],
+    "nội tâm mạc": ["endocarditis", "poet", "aha", "tee", "antibiotic"],
+    "cơ tim": ["cardiomyopathy", "hcm", "ohcm", "mavacamten", "aficamten", "explorer-hcm", "valor-hcm", "sequoia-hcm", "myocarditis", "cmr"],
+    "màng ngoài tim": ["pericarditis", "myocarditis", "imps", "cmr", "ten commandments"],
+    "thuyên tắc phổi": ["pulmonary embolism", "pe", "pert", "catheter", "thrombectomy"],
+    "tăng áp phổi": ["pulmonary hypertension", "pah", "sotatercept", "stellar"],
+    "động mạch chủ": ["aortic", "paad", "dissection", "eacts", "ahi", "asi"],
+    "béo phì": ["obesity", "semaglutide", "tirzepatide", "glp-1", "select", "flow", "bmi"],
+    "đái tháo đường": ["diabetes", "t2dm", "sglt2i", "glp-1", "semaglutide", "flow", "finerenone"],
+    "phục hồi chức năng": ["rehabilitation", "exercise", "rehab", "cardiopulmonary"],
+    "thai kỳ": ["pregnancy", "mwho", "obstetric"],
+    "an toàn": ["caution", "contraindication", "monitor", "egfr", "potassium", "kali", "lvef", "cyp", "lưu ý", "chống chỉ định"],
+    "chống chỉ định": ["chống chỉ định", "caution", "không dùng", "avoid", "never", "tránh"],
+    "liều": ["mg", "dose", "liều", "titrate", "chuẩn liều"],
+}
+
+
+def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
+    """Convert a bilingual VI/EN clinical question into an English NCBI PubMed search query."""
+    q_low = (query or "").lower()
+    terms: list[str] = []
+    for k, vals in _CHAT_SYNONYM_MAP.items():
+        if k in q_low:
+            terms.extend(vals[:3])
+    ascii_tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9\-/+]{2,}", query or "")
+    stop = {"the", "and", "for", "with", "what", "how", "when", "new", "latest", "guideline", "guidelines", "moi", "nhat"}
+    terms.extend(t for t in ascii_tokens if t.lower() not in stop)
+    deduped = list(dict.fromkeys(terms))[:5]
+    if not deduped and briefing:
+        pid = int(briefing.get("pillar_id") or 1)
+        from crawl_cardiology_news import PILLAR_CRAWL_QUERIES
+        return f"{PILLAR_CRAWL_QUERIES.get(pid, 'cardiology')} AND 2026[dp]"
+    joined = " OR ".join(f'"{t}"' if " " in t or "-" in t else t for t in deduped)
+    return f"({joined}) AND cardiology[MeSH Terms OR Title/Abstract] AND 2026[dp]"
+
+
+def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3) -> list[dict]:
+    """Fetch top PubMed metadata + parsed abstract conclusion snippet ($0 NCBI E-utilities)."""
+    if not query.strip():
+        return []
+    try:
+        enc_q = urllib.parse.quote(query)
+        esearch_url = (
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
+            f"db=pubmed&term={enc_q}&retmode=json&retmax={max_results}&sort=relevance"
+        )
+        with urllib.request.urlopen(urllib.request.Request(esearch_url, headers={"User-Agent": "CardiologyEBM/1.0"}), timeout=8) as r:
+            id_list = json.loads(r.read().decode("utf-8")).get("esearchresult", {}).get("idlist", [])
+        if not id_list:
+            return []
+
+        efetch_url = (
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
+            f"db=pubmed&id={','.join(id_list[:max_results])}&retmode=xml"
+        )
+        with urllib.request.urlopen(urllib.request.Request(efetch_url, headers={"User-Agent": "CardiologyEBM/1.0"}), timeout=10) as r:
+            root = ET.fromstring(r.read())
+
+        hits: list[dict] = []
+        for art in root.findall(".//PubmedArticle"):
+            pmid = (art.findtext(".//MedlineCitation/PMID") or "").strip()
+            title_el = art.find(".//Article/ArticleTitle")
+            title = "".join(title_el.itertext()).strip().rstrip(".") if title_el is not None else ""
+            if not pmid or not title:
+                continue
+            journal = (art.findtext(".//MedlineCitation/MedlineJournalInfo/MedlineTA") or "PubMed").strip()
+            year_s = (art.findtext(".//Article/Journal/JournalIssue/PubDate/Year") or "").strip()
+            month_s = (art.findtext(".//Article/Journal/JournalIssue/PubDate/Month") or "").strip()
+            pubdate = " ".join(x for x in (year_s, month_s) if x) or "2026"
+            doi = ""
+            for aid in art.findall(".//PubmedData/ArticleIdList/ArticleId"):
+                if aid.attrib.get("IdType") == "doi" and aid.text:
+                    doi = aid.text.strip()
+                    break
+            sections: dict[str, str] = {}
+            all_ab: list[str] = []
+            for ab in art.findall(".//Article/Abstract/AbstractText"):
+                lbl = (ab.attrib.get("Label") or ab.attrib.get("NlmCategory") or "SUMMARY").upper()
+                txt = "".join(ab.itertext()).strip()
+                if txt:
+                    sections[lbl] = txt
+                    all_ab.append(txt)
+            snippet = (
+                sections.get("CONCLUSIONS")
+                or sections.get("RESULTS")
+                or (all_ab[-1] if all_ab else "")
+            )
+            if len(snippet) > 340:
+                snippet = snippet[:337].rsplit(" ", 1)[0] + "..."
+            hits.append({
+                "pmid": pmid,
+                "title": title,
+                "source": journal,
+                "pubdate": pubdate,
+                "doi": doi,
+                "url": f"https://doi.org/{doi}" if doi else f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                "snippet": snippet,
+            })
+        return hits
+    except Exception as exc:
+        print(f"[Chat PubMed Warning] {exc}", file=sys.stderr)
+        return []
+
+
+def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", active_pillar_id: int | None = None) -> int:
+    """Rank a curated briefing against a clinical user question using VI/EN tokens + synonyms."""
+    q_low = (query or "").lower()
+    expanded: list[str] = re.findall(r"[\w\-]{2,}", q_low)
+    for k, syns in _CHAT_SYNONYM_MAP.items():
+        if k in q_low:
+            expanded.extend(syns)
+
+    hay_head = " ".join([
+        str(b.get("title_vi", "")),
+        str(b.get("title_en", "")),
+        str(b.get("topic_focus_vi", "")),
+        str(b.get("pillar_vi", "")),
+        str(b.get("pillar_name", "")),
+        json.dumps(b.get("guideline_evolution", {}), ensure_ascii=False),
+        json.dumps(b.get("landmark_trials", []), ensure_ascii=False),
+        json.dumps(b.get("pearls", []), ensure_ascii=False),
+    ]).lower()
+    hay_body = (str(b.get("part1_vi_markdown", "")) + " " + str(b.get("part2_en_markdown", ""))).lower()
+
+    score = 0
+    seen_terms: set[str] = set()
+    for tok in expanded:
+        if len(tok) < 2 or tok in seen_terms:
+            continue
+        seen_terms.add(tok)
+        if tok in hay_head:
+            score += 6
+        elif tok in hay_body:
+            score += 2
+
+    if active_briefing_id and b.get("id") == active_briefing_id:
+        score += 4
+    elif active_pillar_id and int(b.get("pillar_id") or 0) == int(active_pillar_id):
+        score += 2
+    return score
+
+
+def _compose_deterministic_ebm_answer(
+    query: str,
+    briefings: list[dict],
+    pubmed_hits: list[dict],
+    lang: str = "vi",
+) -> tuple[str, list[dict]]:
+    """Build a structured, zero-cost ($0) Step-0 grounded EBM clinical answer without LLM fees."""
+    primary = briefings[0]
+    is_en = lang == "en"
+    q_low = (query or "").lower()
+    ge = primary.get("guideline_evolution") or {}
+    prior_g = ge.get("prior_guideline") or {}
+    cur_g = ge.get("current_guideline") or {}
+    steps = ge.get("steps") or []
+    trials = primary.get("landmark_trials") or []
+    pearls = primary.get("pearls") or []
+
+    parts: list[str] = []
+    if is_en:
+        parts.append(f"### EBM Clinical Answer — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
+        parts.append(f"**Current Standard ({cur_g.get('year', '2026')}):** {cur_g.get('name', primary.get('title_en', ''))} *(Prior: {prior_g.get('name', '—')})*.")
+    else:
+        parts.append(f"### Giải đáp Chứng cứ — Trụ cột #{primary.get('pillar_id')}: {primary.get('pillar_vi', primary.get('pillar_name', ''))}")
+        parts.append(f"**Khuyến cáo Hiện hành ({cur_g.get('year', '08–11/2026')}):** {cur_g.get('name', primary.get('title_vi', ''))} *(Tiền nhiệm: {prior_g.get('name', '—')})*.")
+
+    # Match relevant sentences inside markdown body
+    raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
+    query_terms = set(re.findall(r"[\w\-]{3,}", q_low))
+    for k, syns in _CHAT_SYNONYM_MAP.items():
+        if k in q_low:
+            query_terms.update(syns)
+
+    lines = [
+        ln.strip() for ln in raw_md.splitlines()
+        if ln.strip() and not ln.strip().startswith("#") and not ln.strip().startswith("⚠️") and "[END OF PART" not in ln
+    ]
+    scored_lines: list[tuple[int, str]] = []
+    for ln in lines:
+        low_ln = ln.lower()
+        hits = sum(1 for t in query_terms if t in low_ln)
+        if hits > 0:
+            scored_lines.append((hits, ln))
+    scored_lines.sort(key=lambda x: x[0], reverse=True)
+
+    if scored_lines:
+        parts.append("#### Trọng tâm Trực tiếp cho Câu hỏi" if not is_en else "#### Direct Evidence Match")
+        for _, ln in scored_lines[:4]:
+            cleaned = ln if ln.startswith("-") else f"- {ln}"
+            parts.append(cleaned)
+    elif steps:
+        parts.append("#### Diễn tiến Khuyến cáo (Prior ➔ Hiện hành)" if not is_en else "#### Guideline Evolution")
+        for st in steps:
+            t_lbl = st.get("title_en" if is_en else "title_vi", "")
+            d_lbl = st.get("desc_en" if is_en else "desc_vi", "")
+            parts.append(f"- **{t_lbl}:** {d_lbl}")
+
+    if trials:
+        parts.append("#### Thử nghiệm Lâm sàng & Lưu ý An toàn tại Giường bệnh" if not is_en else "#### Landmark Trials & Bedside Safety Caveats")
+        for tr in trials[:3]:
+            chg = tr.get("changes_en" if is_en else "changes_vi", "")
+            caut = tr.get("caution_en" if is_en else "caution_vi", "")
+            parts.append(
+                f"- **{tr.get('name')}** (*{tr.get('journal')}* — **{tr.get('value')}**, {tr.get('ci')}, {tr.get('p')}): {chg}\n"
+                f"  - *Cảnh báo an toàn:* {caut}" if not is_en else
+                f"- **{tr.get('name')}** (*{tr.get('journal')}* — **{tr.get('value')}**, {tr.get('ci')}, {tr.get('p')}): {chg}\n"
+                f"  - *Safety Caveat:* {caut}"
+            )
+
+    if pearls:
+        parts.append("#### Điểm Nhấn Đi Buồng (Take-Home)" if not is_en else "#### Take-Home Clinical Pearls")
+        for p in pearls[:3]:
+            parts.append(f"- {p.get('en' if is_en else 'vi', '')}")
+
+    if pubmed_hits:
+        parts.append("#### Bài báo Thực chứng Truy xuất Trực tiếp từ NCBI PubMed ($0)" if not is_en else "#### Live NCBI PubMed References ($0)")
+        for ph in pubmed_hits:
+            snip = f" — *{ph['snippet']}*" if ph.get("snippet") else ""
+            parts.append(f"- **{ph['title']}** (*{ph['source']}*, {ph['pubdate']} — PMID `{ph['pmid']}`){snip}")
+
+    sources: list[dict] = []
+    seen_p: set[str] = set()
+    for src in (pubmed_hits + (primary.get("pubmed_anchors") or [])):
+        pm = str(src.get("pmid", "")).strip()
+        if not pm or pm in seen_p:
+            continue
+        seen_p.add(pm)
+        sources.append({
+            "pmid": pm,
+            "title": src.get("title", ""),
+            "source": src.get("source", ""),
+            "pubdate": src.get("pubdate", ""),
+            "doi": src.get("doi", ""),
+            "url": src.get("url") or (f"https://doi.org/{src['doi']}" if src.get("doi") else f"https://pubmed.ncbi.nlm.nih.gov/{pm}/"),
+        })
+        if len(sources) >= 6:
+            break
+
+    return "\n\n".join(parts), sources
+
+
+def answer_ebm_chat_query(req_data: dict) -> dict:
+    """
+    Free ($0) Dual-Engine EBM Cardiology Q&A Handler:
+    1) Default Engine ($0, zero key): Clinical briefing search + live NCBI PubMed abstracts.
+    2) Optional Free Tier LLM (Gemini/Groq user key): LLM reasoning strictly grounded on Engine 1 context.
+    """
+    query = str(req_data.get("query", "")).strip()
+    if not query:
+        return {"ok": False, "error": "Vui lòng nhập câu hỏi lâm sàng."}
+
+    briefings = load_existing_briefings()
+    if not briefings:
+        return {"ok": False, "error": "Chưa có dữ liệu bản tin EBM."}
+
+    lang = "en" if str(req_data.get("lang", "vi")).lower() == "en" else "vi"
+    active_bid = str(req_data.get("briefing_id", "")).strip()
+    raw_pid = req_data.get("pillar_id")
+    active_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
+    include_pubmed = bool(req_data.get("include_pubmed", True))
+
+    ranked = sorted(
+        briefings,
+        key=lambda b: _score_briefing_for_chat(b, query, active_bid, active_pid),
+        reverse=True,
+    )
+    top_briefings = ranked[:2]
+    primary = top_briefings[0]
+
+    pubmed_hits: list[dict] = []
+    if include_pubmed:
+        pm_query = _build_pubmed_chat_query(query, primary)
+        pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=3)
+
+    provider = str(req_data.get("provider", "ebm-pubmed")).strip().lower()
+    api_key = str(req_data.get("api_key", "")).strip()
+    if not api_key and provider in ("gemini-free", "gemini"):
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+
+    if api_key and provider in ("gemini-free", "gemini", "groq-free", "groq"):
+        fallback_md, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang)
+        ctx_blob = (
+            f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')} / {primary.get('pillar_name')}\n"
+            f"TITLE: {primary.get('title_vi')}\n"
+            f"GUIDELINE_EVOLUTION: {json.dumps(primary.get('guideline_evolution', {}), ensure_ascii=False)}\n"
+            f"TRIALS: {json.dumps(primary.get('landmark_trials', []), ensure_ascii=False)}\n"
+            f"PUBMED_LIVE: {json.dumps(pubmed_hits, ensure_ascii=False)}\n"
+            f"BODY_EXCERPT:\n{(primary.get('part1_vi_markdown') or '')[:3500]}"
+        )
+        sys_prompt = (
+            "You are a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. "
+            "Answer strictly using the grounded 2026 guidelines, landmark RCT metrics, and live PubMed hits provided below. "
+            "Never fabricate PMIDs, DOIs, HR values, or drug dosages. Respond concisely in "
+            + ("academic English." if lang == "en" else "clear clinical Vietnamese with structured bullet points.")
+        )
+        user_prompt = f"GROUNDED CONTEXT:\n{ctx_blob}\n\nCLINICIAN QUESTION:\n{query}"
+        try:
+            llm_text = ""
+            if provider.startswith("gemini"):
+                payload = json.dumps({
+                    "model": "gemini-3.8-flash",
+                    "system_instruction": sys_prompt,
+                    "input": user_prompt,
+                    "generation_config": {"max_output_tokens": 1100},
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    "https://generativelanguage.googleapis.com/v1beta/interactions",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": api_key,
+                        "Api-Revision": "2026-05-20",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    resp_j = json.loads(r.read().decode("utf-8"))
+                llm_text = resp_j.get("output_text") or "\n".join(
+                    c.get("text", "")
+                    for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
+                    for c in (s.get("content") or []) if c.get("type") == "text"
+                )
+            else:
+                payload = json.dumps({
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "max_tokens": 1100,
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    data=payload,
+                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    resp_j = json.loads(r.read().decode("utf-8"))
+                llm_text = resp_j["choices"][0]["message"]["content"]
+
+            if llm_text and llm_text.strip():
+                return {
+                    "ok": True,
+                    "answer_markdown": llm_text.strip(),
+                    "sources": sources,
+                    "engine_used": f"{provider} ($0 Free Tier + Step-0)",
+                    "matched_pillar_id": primary.get("pillar_id"),
+                    "matched_briefing_id": primary.get("id"),
+                }
+        except Exception as exc:
+            print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
+
+    answer_md, sources = _compose_deterministic_ebm_answer(query, top_briefings, pubmed_hits, lang=lang)
+    return {
+        "ok": True,
+        "answer_markdown": answer_md,
+        "sources": sources,
+        "engine_used": "EBM RAG + Live NCBI PubMed ($0)",
+        "matched_pillar_id": primary.get("pillar_id"),
+        "matched_briefing_id": primary.get("id"),
+    }
+
+
 class EBMRequestHandler(SimpleHTTPRequestHandler):
     """
     Serves the static HTML/JS/CSS files and provides local API endpoints:
     - GET  /api/status         -> Rotation state, today/yesterday/tomorrow pillars, user & feedback summary
     - GET  /api/refresh-stream -> SSE progress stream refreshing today's single pillar briefing
     - POST /api/refresh        -> Refreshes today's single pillar briefing
+    - POST /api/chat           -> Free ($0) EBM clinical Q&A chatbot (EBM RAG + Live PubMed + optional Free AI)
     - POST /api/auth/login     -> Email/username + password or demo 1-click sign-in
     - POST /api/auth/register  -> Register physician account
     - GET  /api/auth/me        -> Current authenticated user from Bearer token
@@ -1864,6 +2248,14 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             query = req_data.get("query", "ESC Guidelines cardiology")
             refs = fetch_pubmed_metadata(query, max_results=6)
             self._send_json(200, {"ok": True, "query": query, "results": refs})
+            return
+
+        if path == "/api/chat":
+            try:
+                payload = answer_ebm_chat_query(req_data)
+                self._send_json(200 if payload.get("ok") else 400, payload)
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
             return
 
         if path == "/api/generate":

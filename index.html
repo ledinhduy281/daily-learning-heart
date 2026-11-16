@@ -2684,6 +2684,384 @@
       }
     }
 
+    /* ========================================================================
+       $0 EBM CARDIOLOGY Q&A CHATBOT (DESKTOP PANEL & MOBILE BOTTOM SHEET)
+       ======================================================================== */
+    .chat-fab-btn {
+      position: fixed;
+      right: 22px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      z-index: 120;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 16px;
+      border-radius: 9999px;
+      background: var(--color-ink);
+      color: var(--color-on-dark);
+      border: 1px solid rgba(62, 207, 142, 0.45);
+      box-shadow: var(--shadow-2);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    }
+    .chat-fab-btn:hover {
+      transform: translateY(-2px);
+      background: #000000;
+      box-shadow: var(--shadow-3);
+    }
+    .chat-fab-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.25);
+    }
+    .chat-fab-badge {
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .ebm-chat-panel {
+      position: fixed;
+      right: 22px;
+      bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+      width: 440px;
+      max-width: calc(100vw - 24px);
+      height: 620px;
+      max-height: calc(100dvh - 104px);
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      box-shadow: var(--shadow-3);
+      z-index: 180;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .ebm-chat-panel.open {
+      display: flex;
+    }
+    .ebm-chat-panel.expanded {
+      width: 680px;
+      height: 78dvh;
+      max-height: calc(100dvh - 96px);
+    }
+
+    .ebm-chat-header {
+      padding: 12px 14px;
+      background: var(--color-canvas-night);
+      color: var(--color-on-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #2b2b2b;
+      flex-shrink: 0;
+    }
+    .ebm-chat-title-wrap {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+    .ebm-chat-title-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+    .ebm-chat-subtitle {
+      font-size: 11px;
+      color: #a3a3a3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ebm-chat-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .chat-hdr-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--rounded-sm);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      color: #e5e5e5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+    .chat-hdr-btn:hover {
+      background: rgba(62, 207, 142, 0.22);
+      color: #ffffff;
+    }
+
+    .chat-settings-drawer {
+      display: none;
+      padding: 12px 14px;
+      background: var(--color-canvas-soft);
+      border-bottom: 1px solid var(--color-hairline);
+      font-size: 12px;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-settings-drawer.open {
+      display: flex;
+    }
+    .chat-settings-drawer label {
+      font-weight: 600;
+      color: var(--color-ink);
+      display: block;
+      margin-bottom: 3px;
+    }
+    .chat-settings-input,
+    .chat-settings-select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--color-ink);
+    }
+
+    .chat-context-strip {
+      padding: 8px 14px;
+      background: rgba(62, 207, 142, 0.08);
+      border-bottom: 1px solid rgba(36, 180, 126, 0.2);
+      font-size: 11.5px;
+      color: var(--color-ink-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-context-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+    .chat-free-pill {
+      padding: 2px 7px;
+      border-radius: var(--rounded-xs);
+      background: rgba(36, 180, 126, 0.16);
+      color: #065f46;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .chat-quick-strip {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--color-hairline-cool);
+      background: var(--color-canvas);
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .chat-quick-strip::-webkit-scrollbar {
+      display: none;
+    }
+    .chat-quick-chip {
+      padding: 5px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--color-hairline);
+      background: var(--color-canvas-soft);
+      color: var(--color-ink-secondary);
+      font-size: 11.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .chat-quick-chip:hover {
+      border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.1);
+      color: var(--color-ink);
+    }
+
+    .chat-messages-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--color-canvas);
+    }
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-width: 94%;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .chat-msg.assistant {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+    .chat-bubble {
+      padding: 10px 13px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .chat-msg.user .chat-bubble {
+      background: var(--color-ink);
+      color: #ffffff;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-msg.assistant .chat-bubble {
+      background: var(--color-canvas-soft);
+      color: var(--color-ink);
+      border: 1px solid var(--color-hairline-cool);
+      border-bottom-left-radius: 3px;
+    }
+    .chat-bubble h3, .chat-bubble h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      margin: 6px 0 4px;
+      color: var(--color-ink);
+    }
+    .chat-bubble h3:first-child, .chat-bubble h4:first-child {
+      margin-top: 0;
+    }
+    .chat-bubble ul, .chat-bubble ol {
+      margin: 4px 0 6px 18px;
+      padding: 0;
+    }
+    .chat-bubble li {
+      margin-bottom: 3px;
+    }
+    .chat-bubble p {
+      margin: 0 0 6px;
+    }
+    .chat-bubble p:last-child {
+      margin-bottom: 0;
+    }
+    .chat-bubble code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: rgba(0, 0, 0, 0.06);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .chat-sources-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .chat-source-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--color-hairline);
+      background: var(--color-canvas);
+      color: var(--color-ink-secondary);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      text-decoration: none;
+    }
+    .chat-source-pill:hover {
+      border-color: var(--color-primary-deep);
+      color: var(--color-primary-deep);
+    }
+    .chat-msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: var(--color-ink-mute);
+    }
+    .chat-copy-btn {
+      border: none;
+      background: transparent;
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 1px 4px;
+    }
+    .chat-copy-btn:hover {
+      color: var(--color-ink);
+    }
+
+    .chat-input-form {
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--color-hairline);
+      background: var(--color-canvas-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-text-input {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 12px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas);
+      color: var(--color-ink);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      outline: none;
+    }
+    .chat-text-input:focus {
+      border-color: var(--color-primary-deep);
+    }
+
+    @media (max-width: 640px) {
+      .chat-fab-btn {
+        right: 14px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        padding: 10px 14px;
+      }
+      .ebm-chat-panel,
+      .ebm-chat-panel.expanded {
+        inset: auto 0 0 0;
+        width: 100vw;
+        max-width: 100vw;
+        height: 88dvh;
+        max-height: 88dvh;
+        border-radius: 16px 16px 0 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+    }
+
     @media print {
       header.nav-bar-light,
       .mode-rotation-section,
@@ -2696,7 +3074,9 @@
       .auth-gate-overlay,
       .modal-backdrop-supa,
       .toast-supa,
-      #refreshProgressStrip {
+      #refreshProgressStrip,
+      .chat-fab-btn,
+      .ebm-chat-panel {
         display: none !important;
       }
       .app-workspace {
@@ -2879,6 +3259,11 @@
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
+
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenChatHeader" title="Mở Trợ lý Hỏi–Đáp EBM Tim mạch ($0)">
+          <i class="fa-solid fa-comments" style="color: var(--color-primary-deep);"></i>
+          <span id="labelChatHeaderBtn">Hỏi Đáp EBM ($0)</span>
+        </button>
 
         <button type="button" class="btn btn-secondary-outline" id="btnOpenPubMedModal">
           <i class="fa-solid fa-magnifying-glass"></i>
@@ -3382,6 +3767,91 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       $0 FREE EBM CARDIOLOGY Q&A CHATBOT (FAB + DRAWER)
+       ======================================================================== -->
+  <button type="button" class="chat-fab-btn" id="btnFloatingChat" aria-label="Mở Trợ lý Hỏi Đáp EBM Tim mạch miễn phí">
+    <span class="chat-fab-dot" aria-hidden="true"></span>
+    <i class="fa-solid fa-user-doctor"></i>
+    <span id="labelFloatingChat">Hỏi Đáp EBM</span>
+    <span class="chat-fab-badge">$0</span>
+  </button>
+
+  <section class="ebm-chat-panel" id="ebmChatPanel" role="dialog" aria-label="Trợ lý Hỏi–Đáp EBM Tim mạch" aria-hidden="true">
+    <div class="ebm-chat-header">
+      <div class="ebm-chat-title-wrap">
+        <div class="ebm-chat-title-row">
+          <i class="fa-solid fa-heart-pulse" style="color: var(--color-primary);"></i>
+          <span id="chatHeaderTitle">Trợ lý EBM Tim mạch ($0)</span>
+        </div>
+        <div class="ebm-chat-subtitle" id="chatEngineSubtitle">EBM Nội bộ + Live NCBI PubMed • Hoàn toàn miễn phí</div>
+      </div>
+      <div class="ebm-chat-actions">
+        <button type="button" class="chat-hdr-btn" id="btnToggleChatSettings" title="Cấu hình AI Nâng cao ($0 Free Tier Key)" aria-label="Cấu hình AI miễn phí">
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+        <button type="button" class="chat-hdr-btn" id="btnExpandChat" title="Mở rộng / Thu gọn khung chat" aria-label="Mở rộng khung chat">
+          <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+        </button>
+        <button type="button" class="chat-hdr-btn" id="btnClearChat" title="Xóa lịch sử hỏi đáp" aria-label="Xóa hội thoại">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+        <button type="button" class="chat-hdr-btn" id="btnCloseChat" title="Đóng" aria-label="Đóng chat">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-settings-drawer" id="chatSettingsDrawer">
+      <div>
+        <label for="chatProviderSelect">Chế độ trả lời ($0 — Không tốn phí)</label>
+        <select id="chatProviderSelect" class="chat-settings-select">
+          <option value="ebm-pubmed">Mặc định: Trợ lý EBM 10 Trụ cột + Live PubMed ($0, không cần Key)</option>
+          <option value="gemini-free">Google Gemini 3.8 Flash (Dùng Free Tier Key — $0)</option>
+          <option value="groq-free">Groq Llama 3.3 70B (Dùng Free Tier Key — $0)</option>
+        </select>
+      </div>
+      <div id="chatKeyRow" style="display: none;">
+        <label for="chatApiKeyInput">API Key Miễn phí (lưu cục bộ trên trình duyệt của bạn)</label>
+        <input type="password" id="chatApiKeyInput" class="chat-settings-input" placeholder="Dán Google AI Studio Key hoặc Groq Free Key..." autocomplete="off">
+        <div style="font-size: 11px; color: var(--color-ink-mute); margin-top: 3px;">
+          Lấy key $0 tại <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-deep);">Google AI Studio</a> hoặc <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-deep);">Groq Console</a>. Nếu bỏ trống, hệ thống tự chạy chế độ EBM + PubMed $0.
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+        <label style="display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 500; cursor: pointer;">
+          <input type="checkbox" id="chkChatLivePubMed" checked>
+          <span>Tự động tra cứu thêm NCBI PubMed trực tiếp</span>
+        </label>
+        <button type="button" class="btn btn-primary-green" id="btnSaveChatSettings" style="padding: 5px 12px; font-size: 12px;">
+          <i class="fa-solid fa-check"></i> Lưu cấu hình
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-context-strip">
+      <div class="chat-context-text" id="chatActiveContextBar">
+        Đang bám sát: Trụ cột #1 • Tăng huyết áp &amp; Yếu tố nguy cơ
+      </div>
+      <span class="chat-free-pill" id="chatModeBadge">FREE $0</span>
+    </div>
+
+    <div class="chat-quick-strip" id="chatQuickPrompts">
+      <!-- Populated dynamically per selected briefing & language -->
+    </div>
+
+    <div class="chat-messages-scroll" id="chatMessagesList">
+      <!-- Messages rendered dynamically -->
+    </div>
+
+    <form class="chat-input-form" id="chatInputForm">
+      <input type="text" id="chatInputField" class="chat-text-input" placeholder="Hỏi về Guideline 08–11/2026, RCT, liều thuốc, chống chỉ định..." autocomplete="off">
+      <button type="submit" class="btn btn-primary-green" id="btnSendChat" style="padding: 9px 14px;" aria-label="Gửi câu hỏi">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </form>
+  </section>
+
   <!-- Toast -->
   <div class="toast-supa" id="toastBox" role="status" aria-live="polite">
     <i class="fa-solid fa-circle-check" style="color: var(--color-primary);"></i>
@@ -3414,6 +3884,7 @@
     const OFFLINE_FEEDBACK_KEY = "ebm_offline_feedback";
     const CLOUD_USERS_KEY = "ebm_cloud_users_db";
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
+    const CHAT_SETTINGS_KEY = "ebm_chat_settings_v1";
     const ANCHOR_DATE_STR = "2026-11-16";
 
     const DEFAULT_PILLARS_CATALOG = [
@@ -3670,7 +4141,29 @@
       btnAccResetDefaultPw: document.getElementById("btnAccResetDefaultPw"),
 
       toastBox: document.getElementById("toastBox"),
-      toastMsg: document.getElementById("toastMsg")
+      toastMsg: document.getElementById("toastMsg"),
+
+      btnOpenChatHeader: document.getElementById("btnOpenChatHeader"),
+      btnFloatingChat: document.getElementById("btnFloatingChat"),
+      ebmChatPanel: document.getElementById("ebmChatPanel"),
+      btnCloseChat: document.getElementById("btnCloseChat"),
+      btnExpandChat: document.getElementById("btnExpandChat"),
+      btnClearChat: document.getElementById("btnClearChat"),
+      btnToggleChatSettings: document.getElementById("btnToggleChatSettings"),
+      chatSettingsDrawer: document.getElementById("chatSettingsDrawer"),
+      chatProviderSelect: document.getElementById("chatProviderSelect"),
+      chatKeyRow: document.getElementById("chatKeyRow"),
+      chatApiKeyInput: document.getElementById("chatApiKeyInput"),
+      chkChatLivePubMed: document.getElementById("chkChatLivePubMed"),
+      btnSaveChatSettings: document.getElementById("btnSaveChatSettings"),
+      chatEngineSubtitle: document.getElementById("chatEngineSubtitle"),
+      chatActiveContextBar: document.getElementById("chatActiveContextBar"),
+      chatModeBadge: document.getElementById("chatModeBadge"),
+      chatQuickPrompts: document.getElementById("chatQuickPrompts"),
+      chatMessagesList: document.getElementById("chatMessagesList"),
+      chatInputForm: document.getElementById("chatInputForm"),
+      chatInputField: document.getElementById("chatInputField"),
+      btnSendChat: document.getElementById("btnSendChat")
     };
 
     /* ========================================================================
@@ -5145,6 +5638,9 @@
         recordBriefingRead(briefing.id);
       }
       fetchFeedbackForBriefing(briefing.id);
+      if (window.EbmChat && typeof window.EbmChat.updateContext === "function") {
+        window.EbmChat.updateContext();
+      }
     }
 
     /* ========================================================================
@@ -6099,6 +6595,7 @@
         if (App.mode === "history") renderPerPillarHistoryDiagram();
         renderBriefingsList();
         displayCurrentBriefing();
+        if (window.EbmChat) window.EbmChat.updateContext();
       });
 
       Dom.btnLangEn.addEventListener("click", () => {
@@ -6111,6 +6608,7 @@
         if (App.mode === "history") renderPerPillarHistoryDiagram();
         renderBriefingsList();
         displayCurrentBriefing();
+        if (window.EbmChat) window.EbmChat.updateContext();
       });
 
       // Bookmark Toggle
@@ -6286,6 +6784,570 @@
         Dom.pubMedResultsScroll.innerHTML = `<div style="color: var(--color-danger); padding: 1rem; font-size: 13px;">Lỗi: ${escapeHtml(err.message)}</div>`;
       }
     }
+
+    /* ========================================================================
+       $0 FREE DUAL-ENGINE EBM CARDIOLOGY Q&A CHATBOT
+       - Engine 1 (Default, $0, zero key): Client/Server EBM RAG + Live NCBI PubMed
+       - Engine 2 (Optional, $0 Free Tier Key): Gemini 3.8 Flash / Groq Llama 3.3
+       ======================================================================== */
+    const CHAT_SYNONYMS = {
+      "tăng huyết áp": ["hypertension", "sbp", "bp", "sprint", "esprit", "bproad", "ish", "ths", "kdoqi", "spc"],
+      "huyết áp": ["hypertension", "blood pressure", "sbp", "sprint", "ish", "prevent"],
+      "thận": ["ckd", "egfr", "kdoqi", "era", "flow", "finerenone", "sglt2i", "creatinine", "kali"],
+      "lipid": ["ldl-c", "non-hdl", "dyslipidemia", "statin", "ezetimibe", "pcsk9", "inclisiran", "bempedoic", "colchicine", "lodoco2", "colcot"],
+      "mỡ máu": ["dyslipidemia", "ldl-c", "statin", "ezetimibe", "pcsk9", "clear outcomes"],
+      "xơ vữa": ["atherosclerosis", "ascvd", "ldl-c", "colchicine", "semaglutide"],
+      "mạch vành": ["coronary", "ccs", "acs", "ischemia", "cormica", "inoca", "anoca", "ccta", "pci"],
+      "vi mạch": ["inoca", "anoca", "cormica", "icft", "cfr", "imr", "acetylcholine"],
+      "chống đông": ["anticoagulant", "doac", "aphrs", "cha2ds2", "warfarin", "dapt"],
+      "tiểu cầu": ["antiplatelet", "dapt", "p2y12", "ticagrelor", "prasugrel", "clopidogrel", "twilight", "tico", "master dapt"],
+      "dapt": ["dapt", "twilight", "tico", "master dapt", "ticagrelor", "aspirin", "p2y12", "hbr"],
+      "xuất huyết": ["bleeding", "arc-hbr", "precise-dapt", "ppi", "twilight", "master dapt"],
+      "suy tim": ["heart failure", "hfref", "hfpef", "hfmref", "sglt2", "finerenone", "finearts", "deliver", "emperor", "icardio"],
+      "rung nhĩ": ["atrial fibrillation", "aphrs", "af-care", "east-afnet", "advent", "pfa", "ablation", "cha2ds2"],
+      "van tim": ["valvular", "aortic stenosis", "tavr", "early tavr", "mitral", "tricuspid", "triluminate", "teer", "eacts"],
+      "nội tâm mạc": ["endocarditis", "poet", "aha", "tee", "antibiotic"],
+      "cơ tim": ["cardiomyopathy", "hcm", "ohcm", "mavacamten", "aficamten", "explorer-hcm", "valor-hcm", "sequoia-hcm", "myocarditis", "cmr"],
+      "màng ngoài tim": ["pericarditis", "myocarditis", "imps", "cmr", "ten commandments"],
+      "thuyên tắc phổi": ["pulmonary embolism", "pe", "pert", "catheter", "thrombectomy"],
+      "tăng áp phổi": ["pulmonary hypertension", "pah", "sotatercept", "stellar"],
+      "động mạch chủ": ["aortic", "paad", "dissection", "eacts", "ahi", "asi"],
+      "béo phì": ["obesity", "semaglutide", "tirzepatide", "glp-1", "select", "flow", "bmi"],
+      "an toàn": ["caution", "contraindication", "monitor", "egfr", "potassium", "kali", "lvef", "cyp", "lưu ý", "chống chỉ định"],
+      "chống chỉ định": ["chống chỉ định", "caution", "không dùng", "avoid", "never", "tránh"],
+      "liều": ["mg", "dose", "liều", "titrate", "chuẩn liều"]
+    };
+
+    const EbmChat = {
+      isOpen: false,
+      isBusy: false,
+      settings: {
+        provider: "ebm-pubmed",
+        apiKey: "",
+        includePubMed: true
+      },
+      messages: [],
+
+      init() {
+        this.loadSettings();
+        this.bindEvents();
+        this.syncSettingsUI();
+        this.updateContext();
+        this.pushWelcomeMessage();
+      },
+
+      loadSettings() {
+        try {
+          const raw = safeStorageGet(CHAT_SETTINGS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+              this.settings = {
+                provider: parsed.provider || "ebm-pubmed",
+                apiKey: parsed.apiKey || "",
+                includePubMed: parsed.includePubMed !== false
+              };
+            }
+          }
+        } catch (_) {}
+      },
+
+      saveSettings() {
+        this.settings = {
+          provider: Dom.chatProviderSelect.value || "ebm-pubmed",
+          apiKey: (Dom.chatApiKeyInput.value || "").trim(),
+          includePubMed: Boolean(Dom.chkChatLivePubMed.checked)
+        };
+        safeStorageSet(CHAT_SETTINGS_KEY, JSON.stringify(this.settings));
+        this.syncSettingsUI();
+        Dom.chatSettingsDrawer.classList.remove("open");
+        showToast("Đã lưu cấu hình Trợ lý Hỏi–Đáp ($0).");
+      },
+
+      syncSettingsUI() {
+        Dom.chatProviderSelect.value = this.settings.provider;
+        Dom.chatApiKeyInput.value = this.settings.apiKey || "";
+        Dom.chkChatLivePubMed.checked = Boolean(this.settings.includePubMed);
+        const needsKey = this.settings.provider !== "ebm-pubmed";
+        Dom.chatKeyRow.style.display = needsKey ? "block" : "none";
+
+        if (needsKey && this.settings.apiKey) {
+          const lbl = this.settings.provider === "gemini-free" ? "Gemini 3.8 Flash (Free $0)" : "Groq Llama 3.3 (Free $0)";
+          Dom.chatEngineSubtitle.textContent = `${lbl} + Grounded EBM & PubMed`;
+          Dom.chatModeBadge.textContent = "AI $0 TIER";
+        } else {
+          Dom.chatEngineSubtitle.textContent = "EBM 10 Trụ cột + Live NCBI PubMed • Miễn phí 100%";
+          Dom.chatModeBadge.textContent = "FREE $0";
+        }
+      },
+
+      bindEvents() {
+        const toggle = () => this.togglePanel();
+        if (Dom.btnFloatingChat) Dom.btnFloatingChat.addEventListener("click", toggle);
+        if (Dom.btnOpenChatHeader) Dom.btnOpenChatHeader.addEventListener("click", toggle);
+        Dom.btnCloseChat.addEventListener("click", () => this.togglePanel(false));
+
+        Dom.btnExpandChat.addEventListener("click", () => {
+          Dom.ebmChatPanel.classList.toggle("expanded");
+        });
+
+        Dom.btnToggleChatSettings.addEventListener("click", () => {
+          Dom.chatSettingsDrawer.classList.toggle("open");
+        });
+
+        Dom.chatProviderSelect.addEventListener("change", () => {
+          Dom.chatKeyRow.style.display = Dom.chatProviderSelect.value === "ebm-pubmed" ? "none" : "block";
+        });
+
+        Dom.btnSaveChatSettings.addEventListener("click", () => this.saveSettings());
+
+        Dom.btnClearChat.addEventListener("click", () => {
+          this.messages = [];
+          Dom.chatMessagesList.innerHTML = "";
+          this.pushWelcomeMessage();
+        });
+
+        Dom.chatQuickPrompts.addEventListener("click", (e) => {
+          const chip = e.target.closest(".chat-quick-chip");
+          if (!chip || this.isBusy) return;
+          const q = chip.dataset.q || chip.textContent.trim();
+          Dom.chatInputField.value = q;
+          this.sendQuestion(q);
+        });
+
+        Dom.chatInputForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const q = (Dom.chatInputField.value || "").trim();
+          if (!q || this.isBusy) return;
+          this.sendQuestion(q);
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && this.isOpen) {
+            this.togglePanel(false);
+          }
+        });
+      },
+
+      togglePanel(forceState) {
+        this.isOpen = typeof forceState === "boolean" ? forceState : !this.isOpen;
+        Dom.ebmChatPanel.classList.toggle("open", this.isOpen);
+        Dom.ebmChatPanel.setAttribute("aria-hidden", this.isOpen ? "false" : "true");
+        if (this.isOpen) {
+          this.updateContext();
+          setTimeout(() => Dom.chatInputField.focus(), 60);
+        }
+      },
+
+      updateContext() {
+        const isVi = App.currentLang === "vi";
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = b ? b.pillar_id : App.todayPillarId;
+        const pName = getPillarDisplayName(pid, isVi);
+        const curYr = b?.guideline_evolution?.current_guideline?.year || "08–11/2026";
+        Dom.chatActiveContextBar.textContent = isVi
+          ? `Bám sát: Trụ cột #${pid} (${pName}) • ${curYr}`
+          : `Context: Pillar #${pid} (${pName}) • ${curYr}`;
+
+        const prompts = isVi ? [
+          `Điểm mới nhất 08–11/2026 của Trụ cột #${pid} là gì?`,
+          "So sánh thay đổi so với Guideline cũ?",
+          "Lưu ý an toàn & chống chỉ định trên lâm sàng?",
+          "Tóm tắt các thử nghiệm RCT bản lề (HR, CI, p)?",
+          "Khi nào rút ngắn DAPT xuống 1–3 tháng sau PCI?"
+        ] : [
+          `What is new in Aug–Nov 2026 for Pillar #${pid}?`,
+          "Compare prior vs. current guideline shifts?",
+          "Key bedside safety rules & contraindications?",
+          "Summarize landmark RCT metrics (HR, CI, p)?",
+          "When can DAPT be abbreviated to 1–3 months?"
+        ];
+
+        Dom.chatQuickPrompts.innerHTML = prompts
+          .map((q) => `<button type="button" class="chat-quick-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`)
+          .join("");
+      },
+
+      pushWelcomeMessage() {
+        const isVi = App.currentLang === "vi";
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = b ? b.pillar_id : App.todayPillarId;
+        const pName = getPillarDisplayName(pid, isVi);
+        const text = isVi
+          ? `Xin chào Bác sĩ! Tôi là **Trợ lý Hỏi–Đáp EBM ($0)** hoạt động hoàn toàn miễn phí.\n\nBạn có thể hỏi bất kỳ vấn đề nào về bài **Trụ cột #${pid} (${pName})** hoặc tra chéo toàn bộ **10 Trụ cột (08–11/2026)** & **NCBI PubMed trực tiếp**. Chọn nhanh một câu hỏi gợi ý ở trên hoặc gõ câu hỏi bên dưới!`
+          : `Hello Doctor! I am your **$0 Free EBM Assistant** grounded across all **10 Cardiology Pillars (Aug–Nov 2026)** and live **NCBI PubMed** abstracts. Ask any clinical question below!`;
+        this.appendMessage("assistant", text, [], "EBM RAG + Live PubMed ($0)");
+      },
+
+      appendMessage(role, markdownText, sources = [], engineLabel = "") {
+        const id = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        this.messages.push({ id, role, markdownText, sources, engineLabel });
+
+        const wrap = document.createElement("div");
+        wrap.className = `chat-msg ${role}`;
+        wrap.id = id;
+
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble";
+        if (role === "assistant" && window.marked) {
+          bubble.innerHTML = marked.parse(markdownText || "");
+        } else {
+          bubble.textContent = markdownText || "";
+        }
+        wrap.appendChild(bubble);
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          const srcRow = document.createElement("div");
+          srcRow.className = "chat-sources-row";
+          srcRow.innerHTML = sources.slice(0, 5).map((s) => {
+            const url = s.url || (s.doi ? `https://doi.org/${encodeURIComponent(s.doi)}` : `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(s.pmid)}/`);
+            return `<a class="chat-source-pill" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.title || "")}">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> PMID ${escapeHtml(s.pmid)}${s.pubdate ? ` • ${escapeHtml(s.pubdate)}` : ""}
+            </a>`;
+          }).join("");
+          wrap.appendChild(srcRow);
+        }
+
+        if (role === "assistant") {
+          const meta = document.createElement("div");
+          meta.className = "chat-msg-meta";
+          meta.innerHTML = `<span>${escapeHtml(engineLabel || "EBM $0")}</span>`;
+          const cpBtn = document.createElement("button");
+          cpBtn.type = "button";
+          cpBtn.className = "chat-copy-btn";
+          cpBtn.innerHTML = `<i class="fa-regular fa-copy"></i> Sao chép`;
+          cpBtn.addEventListener("click", () => {
+            navigator.clipboard.writeText(markdownText || "").then(() => showToast("Đã sao chép câu trả lời."));
+          });
+          meta.appendChild(cpBtn);
+          wrap.appendChild(meta);
+        }
+
+        Dom.chatMessagesList.appendChild(wrap);
+        Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
+        return wrap;
+      },
+
+      expandQueryTokens(query) {
+        const qLow = (query || "").toLowerCase();
+        const tokens = new Set((qLow.match(/[\p{L}\p{N}\-]{2,}/gu) || []));
+        Object.entries(CHAT_SYNONYMS).forEach(([k, syns]) => {
+          if (qLow.includes(k)) {
+            syns.forEach((s) => tokens.add(s));
+          }
+        });
+        return Array.from(tokens);
+      },
+
+      scoreBriefing(b, query) {
+        const tokens = this.expandQueryTokens(query);
+        const hayHead = [
+          b.title_vi, b.title_en, b.topic_focus_vi, b.pillar_vi, b.pillar_name,
+          JSON.stringify(b.guideline_evolution || {}),
+          JSON.stringify(b.landmark_trials || []),
+          JSON.stringify(b.pearls || [])
+        ].join(" ").toLowerCase();
+        const hayBody = `${b.part1_vi_markdown || ""} ${b.part2_en_markdown || ""}`.toLowerCase();
+
+        let score = 0;
+        for (const t of tokens) {
+          if (hayHead.includes(t)) score += 6;
+          else if (hayBody.includes(t)) score += 2;
+        }
+        if (App.selected && b.id === App.selected.id) score += 4;
+        else if (App.selected && Number(b.pillar_id) === Number(App.selected.pillar_id)) score += 2;
+        return score;
+      },
+
+      async fetchLivePubMedAbstracts(query, primaryBriefing) {
+        try {
+          const qLow = (query || "").toLowerCase();
+          const terms = [];
+          Object.entries(CHAT_SYNONYMS).forEach(([k, syns]) => {
+            if (qLow.includes(k)) terms.push(...syns.slice(0, 3));
+          });
+          const ascii = (query || "").match(/[a-zA-Z0-9][a-zA-Z0-9\-/+]{2,}/g) || [];
+          const stop = new Set(["the", "and", "for", "with", "what", "when", "how", "moi", "nhat", "guideline"]);
+          ascii.forEach((w) => { if (!stop.has(w.toLowerCase())) terms.push(w); });
+          const uniqueTerms = Array.from(new Set(terms)).slice(0, 5);
+          const pid = Number(primaryBriefing?.pillar_id || App.todayPillarId || 1);
+          const fallbackQ = CLIENT_GUIDELINE_QUERIES[pid] || "cardiology";
+          const pmTerm = uniqueTerms.length > 0
+            ? `(${uniqueTerms.map((t) => (t.includes(" ") || t.includes("-") ? `"${t}"` : t)).join(" OR ")}) AND (cardiology OR cardiovascular OR heart) AND 2026[dp]`
+            : `${fallbackQ} AND 2026[dp]`;
+
+          const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(pmTerm)}&retmode=json&retmax=3&sort=relevance`;
+          const sRes = await fetch(sUrl);
+          if (!sRes.ok) return [];
+          const sData = await sRes.json();
+          const ids = sData.esearchresult?.idlist || [];
+          if (ids.length === 0) return [];
+
+          const efUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(",")}&retmode=xml`;
+          const efRes = await fetch(efUrl);
+          if (!efRes.ok) return [];
+          const xmlText = await efRes.text();
+          const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+
+          const hits = [];
+          doc.querySelectorAll("PubmedArticle").forEach((art) => {
+            const pmid = (art.querySelector("MedlineCitation > PMID")?.textContent || "").trim();
+            const title = (art.querySelector("ArticleTitle")?.textContent || "").trim().replace(/\.$/, "");
+            if (!pmid || !title) return;
+            const journal = (art.querySelector("MedlineJournalInfo > MedlineTA")?.textContent || "PubMed").trim();
+            const yr = (art.querySelector("PubDate > Year")?.textContent || "").trim();
+            const mo = (art.querySelector("PubDate > Month")?.textContent || "").trim();
+            const pubdate = [yr, mo].filter(Boolean).join(" ") || "2026";
+            let doi = "";
+            art.querySelectorAll("ArticleIdList > ArticleId").forEach((aid) => {
+              if (!doi && aid.getAttribute("IdType") === "doi") doi = (aid.textContent || "").trim();
+            });
+            let snippet = "";
+            const absNodes = Array.from(art.querySelectorAll("AbstractText"));
+            const concl = absNodes.find((n) => (n.getAttribute("Label") || n.getAttribute("NlmCategory") || "").toUpperCase().includes("CONCL"));
+            const resNode = absNodes.find((n) => (n.getAttribute("Label") || n.getAttribute("NlmCategory") || "").toUpperCase().includes("RESULT"));
+            const pick = concl || resNode || absNodes[absNodes.length - 1];
+            if (pick) {
+              snippet = (pick.textContent || "").trim();
+              if (snippet.length > 320) snippet = snippet.slice(0, 317) + "...";
+            }
+            hits.push({
+              pmid,
+              title,
+              source: journal,
+              pubdate,
+              doi,
+              url: doi ? `https://doi.org/${doi}` : `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
+              snippet
+            });
+          });
+          return hits;
+        } catch (_) {
+          return [];
+        }
+      },
+
+      composeClientDeterministicAnswer(query, primary, pubmedHits, lang) {
+        const isEn = lang === "en";
+        const ge = primary.guideline_evolution || {};
+        const priorG = ge.prior_guideline || {};
+        const curG = ge.current_guideline || {};
+        const steps = ge.steps || [];
+        const trials = primary.landmark_trials || [];
+        const pearls = primary.pearls || [];
+        const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
+
+        const parts = [];
+        if (isEn) {
+          parts.push(`### EBM Answer — Pillar #${primary.pillar_id}: ${primary.pillar_name}`);
+          parts.push(`**Current Guideline (${curG.year || "Aug–Nov 2026"}):** ${curG.name || primary.title_en} *(Prior: ${priorG.name || "—"})*.`);
+        } else {
+          parts.push(`### Giải đáp Chứng cứ — Trụ cột #${primary.pillar_id}: ${primary.pillar_vi || primary.pillar_name}`);
+          parts.push(`**Khuyến cáo Hiện hành (${curG.year || "08–11/2026"}):** ${curG.name || primary.title_vi} *(Tiền nhiệm: ${priorG.name || "—"})*.`);
+        }
+
+        const rawMd = (isEn ? primary.part2_en_markdown : primary.part1_vi_markdown) || primary.part1_vi_markdown || "";
+        const bodyLines = rawMd.split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith("#") && !l.startsWith("⚠️") && !l.includes("[END OF PART"));
+
+        const rankedLines = bodyLines
+          .map((line) => ({
+            line,
+            hits: tokens.reduce((acc, tok) => acc + (line.toLowerCase().includes(tok) ? 1 : 0), 0)
+          }))
+          .filter((x) => x.hits > 0)
+          .sort((a, b) => b.hits - a.hits)
+          .slice(0, 4);
+
+        if (rankedLines.length > 0) {
+          parts.push(isEn ? "#### Direct Clinical Evidence Match" : "#### Trọng tâm Trực tiếp cho Câu hỏi");
+          rankedLines.forEach(({ line }) => {
+            parts.push(line.startsWith("-") ? line : `- ${line}`);
+          });
+        } else if (steps.length > 0) {
+          parts.push(isEn ? "#### Guideline Evolution Summary" : "#### Diễn tiến Khuyến cáo (Tiền nhiệm ➔ Hiện hành)");
+          steps.forEach((s) => {
+            parts.push(`- **${isEn ? s.title_en : s.title_vi}:** ${isEn ? s.desc_en : s.desc_vi}`);
+          });
+        }
+
+        if (trials.length > 0) {
+          parts.push(isEn ? "#### Landmark RCTs & Bedside Safety Caveats" : "#### Thử nghiệm Bản lề & Cảnh báo An toàn tại Giường bệnh");
+          trials.slice(0, 3).forEach((tr) => {
+            const chg = isEn ? tr.changes_en : tr.changes_vi;
+            const caut = isEn ? tr.caution_en : tr.caution_vi;
+            parts.push(`- **${tr.name}** (*${tr.journal}* — **${tr.value}**, ${tr.ci}, ${tr.p}): ${chg}\n  - *${isEn ? "Safety Caveat" : "Lưu ý an toàn"}:* ${caut}`);
+          });
+        }
+
+        if (pearls.length > 0) {
+          parts.push(isEn ? "#### Take-Home Clinical Pearls" : "#### Điểm Nhấn Đi Buồng");
+          pearls.slice(0, 3).forEach((p) => parts.push(`- ${isEn ? p.en : p.vi}`));
+        }
+
+        if (pubmedHits.length > 0) {
+          parts.push(isEn ? "#### Live NCBI PubMed References ($0)" : "#### Tham chiếu Trực tiếp từ NCBI PubMed ($0)");
+          pubmedHits.forEach((ph) => {
+            parts.push(`- **${ph.title}** (*${ph.source}*, ${ph.pubdate} — PMID \`${ph.pmid}\`)${ph.snippet ? ` — *${ph.snippet}*` : ""}`);
+          });
+        }
+
+        const seen = new Set();
+        const sources = [];
+        [...pubmedHits, ...(primary.pubmed_anchors || [])].forEach((src) => {
+          const pm = String(src.pmid || "").trim();
+          if (pm && !seen.has(pm) && sources.length < 6) {
+            seen.add(pm);
+            sources.push(src);
+          }
+        });
+        return { markdown: parts.join("\n\n"), sources };
+      },
+
+      async callOptionalFreeLLM(query, primary, pubmedHits, lang) {
+        const key = (this.settings.apiKey || "").trim();
+        const prov = this.settings.provider;
+        if (!key || prov === "ebm-pubmed") return null;
+
+        const sysPrompt = `You are a senior Cardiology EBM Assistant inside 'Xem Tim Mỗi Ngày'. Answer strictly using the provided 2026 guidelines, RCT metrics, and live PubMed citations. Never invent PMIDs/DOIs/HRs. Respond concisely in ${lang === "en" ? "academic English" : "clear clinical Vietnamese with bullet points"}.`;
+        const ctx = `PILLAR #${primary.pillar_id}: ${primary.pillar_vi}
+TITLE: ${primary.title_vi}
+GUIDELINE_EVOLUTION: ${JSON.stringify(primary.guideline_evolution || {})}
+TRIALS: ${JSON.stringify(primary.landmark_trials || [])}
+LIVE_PUBMED: ${JSON.stringify(pubmedHits)}
+BODY_EXCERPT: ${(primary.part1_vi_markdown || "").slice(0, 3200)}`;
+        const userInput = `CONTEXT:\n${ctx}\n\nQUESTION:\n${query}`;
+
+        if (prov === "gemini-free") {
+          const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": key,
+              "Api-Revision": "2026-05-20"
+            },
+            body: JSON.stringify({
+              model: "gemini-3.8-flash",
+              system_instruction: sysPrompt,
+              input: userInput,
+              generation_config: { max_output_tokens: 1100 }
+            })
+          });
+          if (!res.ok) return null;
+          const d = await res.json();
+          const txt = d.output_text || (d.steps || [])
+            .filter((s) => s.type === "model_output")
+            .flatMap((s) => s.content || [])
+            .filter((c) => c.type === "text")
+            .map((c) => c.text)
+            .join("\n");
+          return txt ? { markdown: txt.trim(), engine: "Gemini 3.8 Flash ($0 Free Tier)" } : null;
+        }
+
+        if (prov === "groq-free") {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${key}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [
+                { role: "system", content: sysPrompt },
+                { role: "user", content: userInput }
+              ],
+              max_tokens: 1100
+            })
+          });
+          if (!res.ok) return null;
+          const d = await res.json();
+          const txt = d.choices?.[0]?.message?.content;
+          return txt ? { markdown: txt.trim(), engine: "Groq Llama 3.3 70B ($0 Free Tier)" } : null;
+        }
+        return null;
+      },
+
+      async sendQuestion(query) {
+        this.isBusy = true;
+        Dom.btnSendChat.disabled = true;
+        Dom.chatInputField.value = "";
+        this.appendMessage("user", query);
+
+        const typingEl = document.createElement("div");
+        typingEl.className = "chat-msg assistant";
+        typingEl.innerHTML = `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tổng hợp Guideline &amp; tra cứu PubMed ($0)...</div>`;
+        Dom.chatMessagesList.appendChild(typingEl);
+        Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
+
+        const lang = App.currentLang || "vi";
+        const activeB = App.selected || getTodaySingleBriefing();
+
+        try {
+          if (App.serverAvailable && !isFileOrigin()) {
+            try {
+              const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: getAuthHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({
+                  query,
+                  pillar_id: activeB ? activeB.pillar_id : App.todayPillarId,
+                  briefing_id: activeB ? activeB.id : "",
+                  lang,
+                  include_pubmed: this.settings.includePubMed,
+                  provider: this.settings.provider,
+                  api_key: this.settings.apiKey
+                })
+              });
+              const ct = res.headers.get("content-type") || "";
+              if (res.ok && ct.includes("application/json")) {
+                const data = await res.json();
+                if (data.ok && data.answer_markdown) {
+                  typingEl.remove();
+                  this.appendMessage("assistant", data.answer_markdown, data.sources || [], data.engine_used || "EBM Server ($0)");
+                  return;
+                }
+              }
+            } catch (_) {}
+          }
+
+          // Client-side $0 Dual Engine (works seamlessly on GitHub Pages / Mobile PWA)
+          const pool = Array.isArray(App.briefings) && App.briefings.length > 0 ? App.briefings : (activeB ? [activeB] : []);
+          const ranked = [...pool].sort((a, b) => this.scoreBriefing(b, query) - this.scoreBriefing(a, query));
+          const primary = ranked[0] || activeB;
+          if (!primary) {
+            typingEl.remove();
+            this.appendMessage("assistant", "Chưa có dữ liệu bản tin để tra cứu.", [], "EBM $0");
+            return;
+          }
+
+          const pubmedHits = this.settings.includePubMed ? await this.fetchLivePubMedAbstracts(query, primary) : [];
+          const det = this.composeClientDeterministicAnswer(query, primary, pubmedHits, lang);
+          let finalMd = det.markdown;
+          let engineLabel = "EBM RAG + Live NCBI PubMed ($0)";
+
+          const llmOut = await this.callOptionalFreeLLM(query, primary, pubmedHits, lang).catch(() => null);
+          if (llmOut && llmOut.markdown) {
+            finalMd = llmOut.markdown;
+            engineLabel = llmOut.engine;
+          }
+
+          typingEl.remove();
+          this.appendMessage("assistant", finalMd, det.sources, engineLabel);
+        } catch (err) {
+          typingEl.remove();
+          this.appendMessage("assistant", `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], "EBM $0");
+        } finally {
+          this.isBusy = false;
+          Dom.btnSendChat.disabled = false;
+          Dom.chatInputField.focus();
+        }
+      }
+    };
+
+    window.EbmChat = EbmChat;
+    document.addEventListener("DOMContentLoaded", () => EbmChat.init());
   </script>
 </body>
 </html>
