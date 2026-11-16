@@ -1994,10 +1994,10 @@ def _compose_deterministic_ebm_answer(
 
 def _default_daily_llm_limit() -> int:
     try:
-        val = int(os.environ.get("MAX_DAILY_LLM_CALLS", "100") or "100")
+        val = int(os.environ.get("MAX_DAILY_LLM_CALLS", "500") or "500")
         return max(1, min(val, 2000))
     except ValueError:
-        return 100
+        return 500
 
 
 def _load_chat_quota_unlocked() -> dict:

@@ -6809,8 +6809,8 @@
     const EbmChat = {
       isOpen: false,
       isBusy: false,
-      dailyLimit: 100,
-      quota: { date: "", used: 0, limit: 100, exhausted: false, stop_reason: "" },
+      dailyLimit: 500,
+      quota: { date: "", used: 0, limit: 500, exhausted: false, stop_reason: "" },
       messages: [],
 
       _k() {
@@ -6835,14 +6835,16 @@
           if (rawQ) {
             const q = JSON.parse(rawQ);
             if (q && q.date === todayStr) {
-              const lim = parseInt(q.limit || this.dailyLimit, 10) || this.dailyLimit;
+              const lim = Math.max(this.dailyLimit, parseInt(q.limit || this.dailyLimit, 10) || this.dailyLimit);
               const used = Math.max(0, parseInt(q.used || 0, 10) || 0);
+              const capReached = used >= lim;
+              const wasCapStop = String(q.stop_reason || "") === "Daily cap reached";
               this.quota = {
                 date: todayStr,
                 used,
                 limit: lim,
-                exhausted: Boolean(q.exhausted) || used >= lim,
-                stop_reason: String(q.stop_reason || "")
+                exhausted: wasCapStop ? capReached : (Boolean(q.exhausted) || capReached),
+                stop_reason: wasCapStop && !capReached ? "" : String(q.stop_reason || "")
               };
             }
           }
@@ -6869,7 +6871,7 @@
 
       renderQuotaBadge() {
         if (!Dom.chatModeBadge) return;
-        const rem = Math.max(0, (this.quota.limit || 100) - (this.quota.used || 0));
+        const rem = Math.max(0, (this.quota.limit || 500) - (this.quota.used || 0));
         if (this.quota.exhausted || rem <= 0) {
           Dom.chatModeBadge.textContent = "Đã ngắt AI hôm nay";
           Dom.chatModeBadge.style.background = "var(--color-danger-soft)";
@@ -7301,7 +7303,7 @@
 
         const todayStr = getLocalIsoDate();
         if (this.quota.date !== todayStr) {
-          this.quota = { date: todayStr, used: 0, limit: this.dailyLimit || 100, exhausted: false, stop_reason: "" };
+          this.quota = { date: todayStr, used: 0, limit: this.dailyLimit || 500, exhausted: false, stop_reason: "" };
         }
         if (this.quota.exhausted || this.quota.used >= this.quota.limit) {
           const banner = lang === "en"
