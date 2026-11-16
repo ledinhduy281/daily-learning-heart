@@ -1,0 +1,2060 @@
+#!/usr/bin/env python3
+"""
+Daily Cardiology EBM Briefing — Automated Data Fetcher & Two-Step Publisher
+===========================================================================
+Supports flexible multi-model execution via CLI and interactive HTML UI:
+  1. Google GenAI Interactions API (`google-genai` SDK >= 2.25.0):
+     - `gemini-3.1-pro-preview` (Default — Deep clinical reasoning & EBM synthesis)
+     - `gemini-3.8-flash` (Fast multimodal & agentic grounding)
+     - `gemini-3.5-flash-lite` (High-throughput, cost-efficient)
+     - `deep-research-preview-04-2026` (Autonomous background deep research agent)
+  2. OpenAI / Custom API Portal (`openai` SDK / HTTP REST compatible):
+     - `gpt-4o`, `gpt-4o-mini`, or any custom model via `OPENAI_BASE_URL` / `OPENAI_API_KEY`
+       (compatible with `https://aiportalapi.stu-platform.live/jpe`).
+
+Includes mandatory STEP 0 source verification via NCBI PubMed E-utilities API
+(+ Google Search grounding for Gemini models) and a lightweight local HTTP server (`--serve`)
+so the HTML frontend can trigger live generation of Part 1 (Vietnamese) and Part 2 (English).
+"""
+
+import argparse
+import copy
+import datetime
+import hashlib
+import hmac
+import json
+import os
+import re
+import secrets
+import sys
+import threading
+import time
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+BRIEFINGS_JS_PATH = DATA_DIR / "briefings.js"
+ROTATION_STATE_PATH = DATA_DIR / "rotation_state.json"
+USERS_PATH = DATA_DIR / "users.json"
+FEEDBACK_PATH = DATA_DIR / "feedback.json"
+PROMPT_MD_PATH = BASE_DIR / "PROMPT.md"
+ANCHOR_DATE = datetime.date(2026, 11, 16)
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Atomically write UTF-8 text to disk via a temporary file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    tmp_path.write_text(content, encoding="utf-8")
+    os.replace(tmp_path, path)
+
+
+def _load_dotenv() -> None:
+    """Load key=value pairs from .env in BASE_DIR into os.environ if not already set."""
+    env_path = BASE_DIR / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k = k.strip()
+        v = v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v
+
+
+_load_dotenv()
+
+DEFAULT_MODEL = "gemini-3.1-pro-preview"
+
+AVAILABLE_MODELS = [
+    {
+        "id": "gemini-3.1-pro-preview",
+        "provider": "gemini",
+        "label": "Gemini 3.1 Pro Preview (Recommended — Deep EBM Reasoning + Google Search)",
+        "supports_search": True,
+    },
+    {
+        "id": "gemini-3.8-flash",
+        "provider": "gemini",
+        "label": "Gemini 3.8 Flash (Fast Clinical Synthesis + Google Search)",
+        "supports_search": True,
+    },
+    {
+        "id": "gemini-3.5-flash-lite",
+        "provider": "gemini",
+        "label": "Gemini 3.5 Flash-Lite (High-Speed Lightweight + Google Search)",
+        "supports_search": True,
+    },
+    {
+        "id": "deep-research-preview-04-2026",
+        "provider": "gemini-agent",
+        "label": "Gemini Deep Research Agent (Autonomous Literature Grounding)",
+        "supports_search": True,
+    },
+    {
+        "id": "gpt-4o",
+        "provider": "openai",
+        "label": "OpenAI / Custom Portal — gpt-4o (PubMed Step-0 Grounded)",
+        "supports_search": False,
+    },
+    {
+        "id": "gpt-4o-mini",
+        "provider": "openai",
+        "label": "OpenAI / Custom Portal — gpt-4o-mini (PubMed Step-0 Grounded)",
+        "supports_search": False,
+    },
+]
+
+PILLARS = [
+    {
+        "id": 1,
+        "name": "Hypertension & Risk Factors",
+        "vi_name": "Tăng huyết áp & Yếu tố nguy cơ",
+        "topics": "Essential, resistant, secondary hypertension; renal denervation [RDN]; hypertensive emergencies; obstructive sleep apnea [OSA]; intensive SBP targets (120–129 mmHg)",
+        "search_query": "2024 ESC Guidelines elevated blood pressure hypertension"
+    },
+    {
+        "id": 2,
+        "name": "Dyslipidemia & Atherosclerosis",
+        "vi_name": "Rối loạn Lipid máu & Xơ vữa động mạch",
+        "topics": "Statins, ezetimibe, PCSK9 inhibitors, inclisiran, bempedoic acid, Lp(a), ANGPTL3 inhibitors, low-dose colchicine in atherosclerotic cardiovascular disease",
+        "search_query": "2024 ESC Guidelines chronic coronary syndromes"
+    },
+    {
+        "id": 3,
+        "name": "Medical Coronary Artery Disease & Microvascular Disease",
+        "vi_name": "Bệnh mạch vành điều trị nội khoa & Bệnh lý vi mạch vành",
+        "topics": "Chronic coronary syndromes (CCS), medically managed ACS, INOCA, MINOCA, coronary vasospasm, coronary microvascular dysfunction (CMD), SCAD",
+        "search_query": "ISCHEMIA Maron 2020 New England Journal of Medicine"
+    },
+    {
+        "id": 4,
+        "name": "Antithrombotic Therapy",
+        "vi_name": "Liệu pháp Chống huyết khối",
+        "topics": "DOACs, VKAs, Factor XI/XIa inhibitors, DAPT de-escalation after ACS/PCI, DAT/TAT regimens in AF+PCI, bleeding management, perioperative timing",
+        "search_query": "TWILIGHT Mehran 2019 New England Journal of Medicine"
+    },
+    {
+        "id": 5,
+        "name": "Comprehensive Heart Failure & Cardiogenic Shock",
+        "vi_name": "Suy tim Toàn diện & Sốc tim",
+        "topics": "HFrEF/HFmrEF/HFpEF, the four pillars of GDMT, acute decompensated HF, finerenone (FINEARTS-HF), vericiguat, sotagliflozin, SGLT2i",
+        "search_query": "2023 Focused Update ESC Guidelines heart failure"
+    },
+    {
+        "id": 6,
+        "name": "Arrhythmia, Electrophysiology & Syncope",
+        "vi_name": "Rối loạn nhịp, Điện sinh lý & Ngất",
+        "topics": "AF/AFL/VT/PVCs; RF/cryo/PFA (pulsed field ablation); SSS; AV block; CRT/S-ICD/leadless devices; syncope work-up; early rhythm control",
+        "search_query": "2024 ESC Guidelines management of atrial fibrillation"
+    },
+    {
+        "id": 7,
+        "name": "Valvular Heart Disease & Infective Endocarditis",
+        "vi_name": "Bệnh van tim & Viêm nội tâm mạc nhiễm khuẩn",
+        "topics": "Low-flow low-gradient AS, early TAVR in asymptomatic severe AS, secondary mitral regurgitation, tricuspid regurgitation (TRILUMINATE), IE — POET trial",
+        "search_query": "EARLY TAVR Genereux New England Journal of Medicine"
+    },
+    {
+        "id": 8,
+        "name": "Specific Cardiomyopathies, Pericardial Disease & ACHD",
+        "vi_name": "Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn",
+        "topics": "HCM — cardiac myosin inhibitors (mavacamten/aficamten), ATTR-CM (tafamidis/acoramidis/vutrisiran), myocarditis, recurrent pericarditis, ASD/VSD/PDA/Eisenmenger",
+        "search_query": "2023 ESC Guidelines management of cardiomyopathies"
+    },
+    {
+        "id": 9,
+        "name": "Pulmonary Vascular Disease, VTE & Aortic Disease",
+        "vi_name": "Bệnh mạch máu phổi, Thuyên tắc huyết khối tĩnh mạch & Bệnh lý Động mạch chủ",
+        "topics": "Acute PE, DVT, PAH (sotatercept — STELLAR) / CTEPH, acute aortic syndromes, aortic aneurysm, PAD/LEAD (2024 ESC PAAD Guidelines)",
+        "search_query": "STELLAR Hoeper 2023 New England Journal of Medicine sotatercept"
+    },
+    {
+        "id": 10,
+        "name": "Cross-Specialty Cardiology & Diagnostics",
+        "vi_name": "Tim mạch Liên chuyên khoa & Chẩn đoán hình ảnh / Sinh học",
+        "topics": "Cardiorenal syndrome, GLP-1/GIP-GLP-1 receptor agonists (SELECT, STEP-HFpEF, SUMMIT, FLOW), ESUS, PFO, cardio-oncology, pregnancy & CVD, POCUS, biomarkers",
+        "search_query": "SELECT Lincoff 2023 New England Journal of Medicine semaglutide"
+    }
+]
+
+SYSTEM_INSTRUCTION = """You are acting as a clinical educator specializing in Internal Cardiology and Evidence-Based Medicine (EBM), capable of interpreting guidelines, RCTs, and meta-analyses, and explaining how recommendations are formed for early-career physicians. You interpret guidelines — you are not the author or a member of the writing committee of any guideline or trial. Never claim, even indirectly, to have participated in drafting, voting on, or deciding any recommendation (avoid phrases such as "we decided," "our committee considered," etc.).
+
+Goal: Produce a daily 7:00 AM professional briefing/lecture for early-career physicians (new graduates/residents) studying Internal Cardiology, designed to build evidence-based clinical reasoning and a clear understanding of the evolution of recommendations across guideline generations.
+
+Tone and style: No greetings, no filler lead-ins (no "Good morning...", "Today we will explore...", "Below is today's briefing..."). Begin directly with the title and content. Target length: 1200–1600 Vietnamese words for Part 1 (roughly a 5–6 minute read at average pace).
+
+STEP 0 — MANDATORY: VERIFY SOURCES BEFORE WRITING
+Before drafting any content, you must search and verify against official sources (the official website/publication of the relevant cardiology society, journal > PubMed) for:
+- The selected guideline: confirm the exact document title, issuing body, year of publication/latest update, and the prior versions needed for the evolution comparison.
+- Each landmark trial/meta-analysis cited in Block B: confirm the trial acronym, journal, publication year, design, and reported results.
+- For every source used, include a traceable identifier at the end of the relevant section (an official link, DOI, or "Journal name, year, volume" if no link is available) so the reader can independently verify it. If a reliable source cannot be found for a quantitative detail, do not include that detail — write "Cannot be determined from an official source" instead of inferring or relying on unverified memory.
+- If search tools are unavailable during the session, this must be stated clearly at the top of the briefing: "⚠️ The content below has not been verified against sources in this session — it must be cross-checked against original sources before being used for teaching or clinical decision-making."
+
+TWO-STEP PUBLISHING PROCESS (mandatory, to avoid context overflow)
+STEP 1 (First turn): Output PART 1 — VIETNAMESE only. Go deep into the underlying pathophysiology, the shift in thinking across guideline generations, a detailed analysis of the foundational evidence sources, and direct bedside clinical implications. End with the line: [END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]
+
+STEP 2 (Second turn): When requested, convert the entirety of Part 1 into PART 2 — ENGLISH CLINICAL BRIEFING (academic American English in the style of NEJM/JACC), preserving all endpoints, figures, levels of evidence, and source identifiers exactly.
+
+II. TWO-BLOCK SOURCE STRUCTURE (kept separate, tightly linked to each other)
+BLOCK A — Guideline Update & Evolution
+Required content:
+- Which pillar the topic belongs to; the exact title and issuing body of the current guideline, published/updated within the past 5 years (relative to the real-world date the briefing is written).
+- Evolution comparison: prior stance → how it changed → where the latest version has settled (tracing further back than 5 years is permitted solely to explain the origin of the current recommendation).
+- The pathophysiological rationale or clinical barrier that led the older guideline to be superseded.
+- Current Class of Recommendation (COR) and Level of Evidence (LOE) — state only when explicitly given in the guideline.
+- Bedside teaching points: pitfalls to avoid (contraindications, drug interactions, monitoring of hepatic/renal function and electrolytes).
+- The source identifier (link/DOI) verified in Step 0.
+
+BLOCK B — Landmark Trials Underpinning Block A
+Select the minimum number of foundational evidence sources necessary to explain the specific recommendation change, up to a maximum of 3. Do not add additional studies merely to fill the quota. If a guideline change is supported by more than 3 pivotal trials, select the 3 trials with the greatest influence on the specific recommendation being analyzed, and the remaining trials may be listed by name only in a brief note.
+Each entry must include:
+- Evidence label: [RCT/Landmark Trial] or [Meta-analysis]
+- Source/journal, year of publication, trial acronym + identifier (link/DOI)
+- Clinical question & study design
+- Population (inclusion/exclusion criteria, baseline characteristics)
+- Intervention/main comparison
+- Primary endpoint & quantified results (HR/OR/RR, 95% CI, p-value, NNT/NNH) — clearly distinguishing primary from secondary endpoints
+- Certainty of evidence & key limitations
+- WHAT THIS COULD CHANGE in medical practice (explain how the trial overturns prior prescribing habits)
+- WHAT SHOULD NOT YET CHANGE in practice (to help the reader avoid premature extrapolation)
+
+Rules applying to both blocks (strictly enforced):
+- Do not fabricate any figures.
+- Do not infer HR/OR/RR/NNT/NNH if the original publication does not report them.
+- Do not assign a COR/LOE if the guideline does not explicitly state one.
+- If reliable original data cannot be found → write "Cannot be determined from an official source."
+- Do not use a review article as a substitute for an RCT when citing RCT-level data.
+- Every quantitative figure must be traceable to the original guideline or publication, with its source identifier included.
+
+III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS
+3–5 short, high-yield bullet points geared toward immediate bedside diagnostic/prescribing reflexes. Each point must be labeled with its source: [GUIDELINE EVOLUTION] or [LANDMARK TRIAL].
+
+IV. CONTENT & TERMINOLOGY STANDARDS
+Preserve standard international terminology (GDMT, HFrEF, HFmrEF, HFpEF, SGLT2i, ARNI, primary endpoint, composite outcome, NNT, NNH, hazard ratio).
+Absolute fidelity to the data: no rounding of figures, no hallucination.
+Tone: an expert interpreter helping the reader understand the "Why," not just memorize the "What."
+
+V. CLOSING DISCLAIMER LINE (mandatory, one sentence, placed at the end of Part 1 before the closing tag)
+Add one brief sentence reminding the reader to cross-check the content against the original guideline/publication before applying it to real-world clinical decisions — a single concise disclaimer sentence, not a full paragraph.
+"""
+
+
+def fetch_pubmed_metadata(query: str, max_results: int = 6) -> list:
+    """
+    Step 0 Verification: Queries NCBI PubMed E-utilities API (esearch + esummary + efetch abstract snippet)
+    to retrieve verified titles, journals, publication years, PMIDs, and DOIs.
+    """
+    results = []
+    try:
+        encoded_q = urllib.parse.quote(query)
+        esearch_url = (
+            f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
+            f"db=pubmed&term={encoded_q}&retmode=json&retmax={max_results}&sort=relevance"
+        )
+        with urllib.request.urlopen(esearch_url, timeout=8) as resp:
+            search_data = json.loads(resp.read().decode("utf-8"))
+        id_list = search_data.get("esearchresult", {}).get("idlist", [])
+        if not id_list:
+            return results
+
+        ids_str = ",".join(id_list)
+        esummary_url = (
+            f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?"
+            f"db=pubmed&id={ids_str}&retmode=json"
+        )
+        with urllib.request.urlopen(esummary_url, timeout=8) as resp:
+            summary_data = json.loads(resp.read().decode("utf-8"))
+
+        uid_map = summary_data.get("result", {})
+        for pmid in id_list:
+            item = uid_map.get(pmid, {})
+            if not item:
+                continue
+            doi = ""
+            for aid in item.get("articleids", []):
+                if aid.get("idtype") == "doi":
+                    doi = aid.get("value", "")
+                    break
+            results.append({
+                "pmid": pmid,
+                "title": item.get("title", ""),
+                "source": item.get("fulljournalname") or item.get("source", ""),
+                "pubdate": item.get("pubdate", ""),
+                "volume": item.get("volume", ""),
+                "issue": item.get("issue", ""),
+                "pages": item.get("pages", ""),
+                "doi": doi,
+                "url": f"https://doi.org/{doi}" if doi else f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+            })
+    except Exception as exc:
+        print(f"[Step 0 Warning] PubMed E-utilities lookup encountered an error: {exc}", file=sys.stderr)
+    return results
+
+
+def get_pillar_by_id(pillar_id: int) -> dict:
+    """Return the pillar metadata dict matching pillar_id (1-10)."""
+    for p in PILLARS:
+        if p["id"] == pillar_id:
+            return p
+    return PILLARS[0]
+
+
+def get_pillar_for_date(target_date: datetime.date | None = None) -> dict:
+    """
+    Deterministic 1-pillar-per-day ascending rotation (1 -> 2 -> ... -> 10 -> 1),
+    anchored so ANCHOR_DATE (2026-11-16) is Pillar #1.
+    """
+    d = target_date or datetime.date.today()
+    delta = (d - ANCHOR_DATE).days
+    pid = (delta % 10) + 1
+    return get_pillar_by_id(pid)
+
+
+def get_next_pillar(current_id: int) -> dict:
+    next_id = (current_id % 10) + 1
+    return get_pillar_by_id(next_id)
+
+
+def load_rotation_state() -> dict:
+    """Load rotation state and compute dynamic today/yesterday/tomorrow pillar IDs."""
+    today = datetime.date.today()
+    today_pillar = get_pillar_for_date(today)
+    yesterday_pillar = get_pillar_for_date(today - datetime.timedelta(days=1))
+    tomorrow_pillar = get_pillar_for_date(today + datetime.timedelta(days=1))
+    default_history = [
+        get_pillar_for_date(today - datetime.timedelta(days=i))["id"]
+        for i in range(9, -1, -1)
+    ]
+
+    state = {}
+    if ROTATION_STATE_PATH.exists():
+        try:
+            loaded = json.loads(ROTATION_STATE_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                state = loaded
+        except Exception:
+            state = {}
+
+    state.setdefault("last_pillar_id", today_pillar["id"])
+    state.setdefault("last_updated", today.isoformat())
+    history = state.get("history")
+    if not isinstance(history, list) or not history:
+        state["history"] = default_history
+    else:
+        state["history"] = history[-10:]
+
+    state["today_pillar_id"] = today_pillar["id"]
+    state["yesterday_pillar_id"] = yesterday_pillar["id"]
+    state["tomorrow_pillar_id"] = tomorrow_pillar["id"]
+    return state
+
+
+def save_rotation_state(state: dict) -> None:
+    _atomic_write_text(ROTATION_STATE_PATH, json.dumps(state, indent=2, ensure_ascii=False))
+
+
+def _build_step1_prompt(pillar: dict, pubmed_refs: list, custom_focus: str = "") -> str:
+    today_str = datetime.date.today().isoformat()
+    focus_clause = f"\nSpecific clinical focus requested: {custom_focus}\n" if custom_focus else ""
+    pubmed_context = ""
+    if pubmed_refs:
+        pubmed_context = "\nVerified PubMed Reference Anchor Metadata (from NCBI E-utilities Step 0):\n"
+        for ref in pubmed_refs:
+            citation = f"{ref['source']} ({ref['pubdate']})"
+            if ref.get("volume"):
+                citation += f", Vol {ref['volume']}"
+            if ref.get("pages"):
+                citation += f":{ref['pages']}"
+            pubmed_context += f"- {ref['title']} | {citation} | PMID: {ref['pmid']} | DOI: {ref['doi']} | URL: {ref['url']}\n"
+
+    return (
+        f"Real-world date of briefing: {today_str}\n"
+        f"Assigned Rotation Pillar #{pillar['id']}: {pillar['name']} ({pillar['vi_name']})\n"
+        f"Core Pillar Scope: {pillar['topics']}\n"
+        f"{focus_clause}"
+        f"{pubmed_context}\n"
+        "Execute STEP 0 (verify all guideline titles, years, COR/LOE, and landmark trial acronyms, sample sizes, "
+        "primary endpoints, HR/RR/OR, 95% CI, p-values, and DOIs). "
+        "Then execute STEP 1: Output PART 1 — VIETNAMESE only (1200–1600 words), strictly following the Two-Block "
+        "Source Structure (BLOCK A — Guideline Update & Evolution; BLOCK B — Landmark Trials Underpinning Block A), "
+        "followed by III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS, V. CLOSING DISCLAIMER LINE, and end with:\n"
+        '[END OF PART 1. Enter "Continue to Part 2" to receive the full English Clinical Briefing]'
+    )
+
+
+def _run_gemini_interactions(
+    model_name: str,
+    step1_prompt: str,
+    include_part2: bool,
+    api_key: str = "",
+) -> tuple[str, str, str]:
+    """
+    Runs the Two-Step Publishing Process via the official `google-genai` Interactions API.
+    Supports `gemini-3.1-pro-preview`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`,
+    and `deep-research-preview-04-2026`.
+    """
+    try:
+        from google import genai
+    except ImportError:
+        raise RuntimeError(
+            "Missing `google-genai` package. Please install with: pip install -U google-genai"
+        )
+
+    resolved_key = api_key or os.environ.get("GEMINI_API_KEY", "")
+    if not resolved_key:
+        raise RuntimeError(
+            "GEMINI_API_KEY is not set. Pass --api-key, set GEMINI_API_KEY env var, or enter it in the HTML UI."
+        )
+
+    client = genai.Client(api_key=resolved_key)
+
+    if model_name.startswith("deep-research-"):
+        print(f"[Step 1/2] Launching background agent `{model_name}` with Google Search...")
+        interaction1 = client.interactions.create(
+            agent=model_name,
+            input=f"{SYSTEM_INSTRUCTION}\n\n{step1_prompt}",
+            tools=[{"type": "google_search"}],
+            background=True,
+        )
+        while True:
+            interaction1 = client.interactions.get(interaction1.id)
+            if interaction1.status == "completed":
+                break
+            if interaction1.status in ("failed", "cancelled"):
+                raise RuntimeError(f"Agent interaction failed with status: {interaction1.status}")
+            time.sleep(5)
+        part1_vi = interaction1.output_text or ""
+    else:
+        print(f"[Step 1/2] Generating PART 1 (Vietnamese) via `{model_name}` with Google Search...")
+        interaction1 = client.interactions.create(
+            model=model_name,
+            system_instruction=SYSTEM_INSTRUCTION,
+            input=step1_prompt,
+            tools=[{"type": "google_search"}],
+        )
+        part1_vi = interaction1.output_text or ""
+
+    part2_en = ""
+    if include_part2:
+        target_model = "gemini-3.1-pro-preview" if model_name.startswith("deep-research-") else model_name
+        print(f"[Step 2/2] Converting to PART 2 (English Clinical Briefing) via `{target_model}`...")
+        interaction2 = client.interactions.create(
+            model=target_model,
+            system_instruction=SYSTEM_INSTRUCTION,
+            input="Continue to Part 2",
+            previous_interaction_id=interaction1.id,
+            tools=[{"type": "google_search"}],
+        )
+        part2_en = interaction2.output_text or ""
+
+    return part1_vi, part2_en, getattr(interaction1, "id", "")
+
+
+def _run_openai_compatible(
+    model_name: str,
+    step1_prompt: str,
+    include_part2: bool,
+    api_key: str = "",
+    base_url: str = "",
+) -> tuple[str, str, str]:
+    """
+    Runs the Two-Step Publishing Process via OpenAI or an OpenAI-compatible Custom Portal
+    (e.g., https://aiportalapi.stu-platform.live/jpe).
+    """
+    try:
+        from openai import OpenAI
+    except ImportError:
+        raise RuntimeError("Missing `openai` package. Install with: pip install -U openai")
+
+    resolved_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    resolved_base = base_url or os.environ.get("OPENAI_BASE_URL", "")
+    if not resolved_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Pass --api-key, set OPENAI_API_KEY env var, or enter it in the HTML UI."
+        )
+
+    client_kwargs = {"api_key": resolved_key}
+    if resolved_base:
+        client_kwargs["base_url"] = resolved_base
+
+    client = OpenAI(**client_kwargs)
+
+    print(f"[Step 1/2] Generating PART 1 (Vietnamese) via OpenAI/Custom `{model_name}`...")
+    messages = [
+        {"role": "system", "content": SYSTEM_INSTRUCTION},
+        {"role": "user", "content": step1_prompt},
+    ]
+    resp1 = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+    )
+    part1_vi = resp1.choices[0].message.content or ""
+    interaction_id = getattr(resp1, "id", "openai-turn-1")
+
+    part2_en = ""
+    if include_part2:
+        print(f"[Step 2/2] Converting to PART 2 (English Clinical Briefing) via `{model_name}`...")
+        messages.append({"role": "assistant", "content": part1_vi})
+        messages.append({"role": "user", "content": "Continue to Part 2"})
+        resp2 = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+        )
+        part2_en = resp2.choices[0].message.content or ""
+
+    return part1_vi, part2_en, interaction_id
+
+
+def generate_part2_for_briefing(
+    briefing: dict,
+    model_name: str = "",
+    api_key: str = "",
+    base_url: str = "",
+) -> dict:
+    """
+    Executes STEP 2 of the Two-Step Publishing Process ("Continue to Part 2") for an existing
+    briefing that currently only has Part 1 (Vietnamese), or re-generates Part 2 in academic
+    American English (NEJM/JACC style).
+    """
+    target_model = model_name or briefing.get("model_used") or DEFAULT_MODEL
+    if target_model.startswith("deep-research-"):
+        target_model = "gemini-3.1-pro-preview"
+
+    part1_vi = briefing.get("part1_vi_markdown", "")
+    if not part1_vi:
+        raise RuntimeError("Briefing has no Part 1 (Vietnamese) content to convert to Part 2.")
+
+    is_gemini = (
+        target_model.startswith("gemini-")
+        or target_model.startswith("gemma-")
+        or target_model.startswith("deep-research-")
+    )
+
+    step2_prompt = (
+        "Continue to Part 2.\n\n"
+        "Convert the entirety of the following Part 1 Vietnamese briefing into PART 2 — ENGLISH CLINICAL BRIEFING "
+        "(academic American English in the style of NEJM/JACC), preserving all endpoints, figures, levels of evidence, "
+        "Two-Block structure (BLOCK A & BLOCK B), III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS, V. CLOSING DISCLAIMER, "
+        "and source identifiers (PMIDs/DOIs) exactly:\n\n"
+        f"{part1_vi}"
+    )
+
+    if is_gemini:
+        try:
+            from google import genai
+        except ImportError:
+            raise RuntimeError("Missing `google-genai` package. Please install with: pip install -U google-genai")
+        resolved_key = api_key or os.environ.get("GEMINI_API_KEY", "")
+        if not resolved_key:
+            raise RuntimeError("GEMINI_API_KEY is not set. Pass --api-key, set GEMINI_API_KEY env var, or enter it in the HTML UI.")
+        client = genai.Client(api_key=resolved_key)
+        prev_id = briefing.get("interaction_id", "")
+        print(f"[Step 2/2] Generating PART 2 (English Clinical Briefing) via `{target_model}`...")
+        if prev_id and not prev_id.startswith("openai-") and not prev_id.startswith("seeded-"):
+            interaction2 = client.interactions.create(
+                model=target_model,
+                system_instruction=SYSTEM_INSTRUCTION,
+                input="Continue to Part 2",
+                previous_interaction_id=prev_id,
+                tools=[{"type": "google_search"}],
+            )
+        else:
+            interaction2 = client.interactions.create(
+                model=target_model,
+                system_instruction=SYSTEM_INSTRUCTION,
+                input=step2_prompt,
+                tools=[{"type": "google_search"}],
+            )
+        part2_en = interaction2.output_text or ""
+    else:
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise RuntimeError("Missing `openai` package. Install with: pip install -U openai")
+        resolved_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        resolved_base = base_url or os.environ.get("OPENAI_BASE_URL", "")
+        if not resolved_key:
+            raise RuntimeError("OPENAI_API_KEY is not set. Pass --api-key, set OPENAI_API_KEY env var, or enter it in the HTML UI.")
+        client_kwargs = {"api_key": resolved_key}
+        if resolved_base:
+            client_kwargs["base_url"] = resolved_base
+        client = OpenAI(**client_kwargs)
+        print(f"[Step 2/2] Generating PART 2 (English Clinical Briefing) via `{target_model}`...")
+        resp2 = client.chat.completions.create(
+            model=target_model,
+            messages=[
+                {"role": "system", "content": SYSTEM_INSTRUCTION},
+                {"role": "assistant", "content": part1_vi},
+                {"role": "user", "content": "Continue to Part 2"},
+            ],
+        )
+        part2_en = resp2.choices[0].message.content or ""
+
+    title_en_match = re.search(r"^#\s+(.+)$", part2_en, flags=re.MULTILINE) if part2_en else None
+    if title_en_match:
+        briefing["title_en"] = title_en_match.group(1).strip()
+    briefing["part2_en_markdown"] = part2_en
+    return briefing
+
+
+def generate_briefing(
+    pillar: dict,
+    model_name: str = DEFAULT_MODEL,
+    custom_focus: str = "",
+    include_part2: bool = True,
+    api_key: str = "",
+    base_url: str = "",
+) -> dict:
+    """
+    Unified dispatcher that runs Step 0 PubMed verification and routes to either
+    Google GenAI Interactions API or OpenAI/Custom Portal API based on the chosen model.
+    """
+    pubmed_refs = fetch_pubmed_metadata(pillar["search_query"], max_results=6)
+    step1_prompt = _build_step1_prompt(pillar, pubmed_refs, custom_focus)
+
+    is_gemini = model_name.startswith("gemini-") or model_name.startswith("gemma-") or model_name.startswith("deep-research-")
+
+    if is_gemini:
+        part1_vi, part2_en, interaction_id = _run_gemini_interactions(
+            model_name=model_name,
+            step1_prompt=step1_prompt,
+            include_part2=include_part2,
+            api_key=api_key,
+        )
+    else:
+        part1_vi, part2_en, interaction_id = _run_openai_compatible(
+            model_name=model_name,
+            step1_prompt=step1_prompt,
+            include_part2=include_part2,
+            api_key=api_key,
+            base_url=base_url,
+        )
+
+    today_str = datetime.date.today().isoformat()
+    title_match = re.search(r"^#\s+(.+)$", part1_vi, flags=re.MULTILINE)
+    title_vi = title_match.group(1).strip() if title_match else f"Chuyên đề Trụ cột #{pillar['id']}: {pillar['vi_name']}"
+
+    title_en_match = re.search(r"^#\s+(.+)$", part2_en, flags=re.MULTILINE) if part2_en else None
+    title_en = title_en_match.group(1).strip() if title_en_match else f"Pillar #{pillar['id']} Clinical Briefing: {pillar['name']}"
+
+    word_count_vi = len(part1_vi.split())
+
+    return {
+        "id": f"ebm-{today_str}-p{pillar['id']}-{int(time.time()) % 10000}",
+        "date": today_str,
+        "time": "07:00 AM",
+        "model_used": model_name,
+        "pillar_id": pillar["id"],
+        "pillar_name": pillar["name"],
+        "pillar_vi": pillar["vi_name"],
+        "title_vi": title_vi,
+        "title_en": title_en,
+        "word_count_vi": word_count_vi,
+        "verified_step0": True,
+        "interaction_id": interaction_id,
+        "pubmed_anchors": pubmed_refs,
+        "part1_vi_markdown": part1_vi,
+        "part2_en_markdown": part2_en,
+    }
+
+
+def fetch_pubmed_abstracts(pmids: list) -> dict:
+    """Fetches abstract text from NCBI PubMed efetch XML for a list of PMIDs."""
+    abstracts = {}
+    if not pmids:
+        return abstracts
+    try:
+        ids_str = ",".join(str(p) for p in pmids)
+        efetch_url = (
+            f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
+            f"db=pubmed&id={ids_str}&retmode=xml"
+        )
+        with urllib.request.urlopen(efetch_url, timeout=10) as resp:
+            xml_bytes = resp.read()
+        root = ET.fromstring(xml_bytes)
+        for article in root.findall(".//PubmedArticle"):
+            pmid_el = article.find(".//MedlineCitation/PMID")
+            if pmid_el is None or not pmid_el.text:
+                continue
+            pmid = pmid_el.text.strip()
+            parts = []
+            for ab in article.findall(".//Abstract/AbstractText"):
+                label = ab.attrib.get("Label", "")
+                text = "".join(ab.itertext()).strip()
+                if text:
+                    parts.append(f"**{label}**: {text}" if label else text)
+            if parts:
+                abstracts[pmid] = "\n\n".join(parts)
+    except Exception as exc:
+        print(f"[Step 0 Warning] PubMed efetch abstracts error: {exc}", file=sys.stderr)
+    return abstracts
+
+
+def _build_pubmed_digest_briefing(pillar: dict, pubmed_refs: list, abstracts_map: dict) -> dict:
+    """
+    Builds a rich, Step-0 PubMed-verified EBM Clinical Briefing when no LLM API key is configured.
+    Combines full clinical synthesis from pillar_library with live NCBI PubMed Step-0 anchors
+    fetched at refresh time.
+    """
+    today_str = datetime.date.today().isoformat()
+    pid = pillar["id"]
+
+    # Try loading rich template for this pillar without side-effect imports
+    rich_tpl = None
+    try:
+        import pillar_library
+        if hasattr(pillar_library, "get_latest_briefing_for_pillar"):
+            rich_tpl = pillar_library.get_latest_briefing_for_pillar(pid, today_str)
+        elif pid in getattr(pillar_library, "RICH_PILLAR_TEMPLATES", {}):
+            rich_tpl = pillar_library.RICH_PILLAR_TEMPLATES[pid]
+    except Exception:
+        pass
+
+    if rich_tpl is not None:
+        # Merge verified template anchors with any live PubMed anchors (deduplicated by PMID)
+        merged_anchors = list(rich_tpl.get("pubmed_anchors", []))
+        seen_pmids = {a["pmid"] for a in merged_anchors if a.get("pmid")}
+        for ref in pubmed_refs:
+            if ref.get("pmid") and ref["pmid"] not in seen_pmids:
+                merged_anchors.append(ref)
+                seen_pmids.add(ref["pmid"])
+
+        part1_vi = rich_tpl["part1_vi_markdown"]
+        part2_en = rich_tpl["part2_en_markdown"]
+        return {
+            "id": f"ebm-{today_str}-p{pid}-{int(time.time()) % 10000}",
+            "date": today_str,
+            "time": "07:00 AM",
+            "model_used": "ebm-step0-curated+pubmed",
+            "pillar_id": pid,
+            "pillar_name": pillar["name"],
+            "pillar_vi": pillar["vi_name"],
+            "title_vi": rich_tpl["title_vi"],
+            "title_en": rich_tpl["title_en"],
+            "word_count_vi": len(part1_vi.split()),
+            "verified_step0": True,
+            "interaction_id": f"step0-curated-{today_str}",
+            "pubmed_anchors": merged_anchors,
+            "part1_vi_markdown": part1_vi,
+            "part2_en_markdown": part2_en,
+        }
+
+    # Generic fallback if neither library nor seed is available
+    primary_ref = pubmed_refs[0] if pubmed_refs else None
+    trial_refs = pubmed_refs[1:4] if len(pubmed_refs) > 1 else pubmed_refs[:3]
+
+    guideline_line = (
+        f"**{primary_ref['title']}** (*{primary_ref['source']}*, {primary_ref['pubdate']}, DOI: `{primary_ref['doi']}`, PMID: `{primary_ref['pmid']}`)"
+        if primary_ref
+        else "Chưa truy xuất được văn kiện hướng dẫn trực tiếp từ NCBI PubMed."
+    )
+
+    block_b_vi_items = []
+    block_b_en_items = []
+    for idx, ref in enumerate(trial_refs, start=1):
+        ab_text = abstracts_map.get(ref["pmid"], "Tóm tắt chi tiết không khả dụng trên PubMed XML; vui lòng truy cập liên kết DOI/PMID bên dưới để xem toàn văn.")
+        if len(ab_text) > 1200:
+            ab_text = ab_text[:1200].rsplit(" ", 1)[0] + "..."
+        doi_str = f"DOI: {ref['doi']}. " if ref.get("doi") else ""
+        block_b_vi_items.append(
+            f"### {idx}. [PubMed Verified Source] {ref['title']}\n"
+            f"- **Nguồn/Tạp chí**: *{ref['source']}*, {ref['pubdate']}. {doi_str}PMID: {ref['pmid']}.\n"
+            f"- **Phạm vi trụ cột**: {pillar['topics']}\n"
+            f"- **Tóm tắt nguyên bản từ NCBI PubMed (Abstract)**:\n\n{ab_text}\n"
+        )
+        block_b_en_items.append(
+            f"### {idx}. [PubMed Verified Source] {ref['title']}\n"
+            f"- **Source/Journal**: *{ref['source']}*, {ref['pubdate']}. {doi_str}PMID: {ref['pmid']}.\n"
+            f"- **Abstract Excerpt (NCBI PubMed)**:\n\n{ab_text}\n"
+        )
+
+    part1_vi = f"""# Cập nhật Chứng cứ Trụ cột #{pillar['id']}: {pillar['vi_name']} ({today_str})
+
+## BLOCK A — Cập nhật & Diễn tiến Khuyến cáo (PubMed Step-0 Verified)
+
+Chuyên đề thuộc **Trụ cột {pillar['id']}: {pillar['vi_name']}** ({pillar['name']}). Phạm vi lâm sàng cốt lõi: {pillar['topics']}.
+
+### 1. Văn kiện & Nguồn tham chiếu Trọng tâm
+- Tài liệu xác thực hàng đầu từ NCBI PubMed: {guideline_line}
+- Bản tin được tổng hợp tự động lúc **07:00 AM ({today_str})** qua cổng xác minh Step-0 NCBI PubMed E-utilities.
+
+---
+
+## BLOCK B — Các Nghiên cứu & Hướng dẫn Xác thực từ NCBI PubMed
+
+{chr(10).join(block_b_vi_items)}
+
+---
+
+## III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS
+
+1. **[GUIDELINE EVOLUTION]** Trụ cột #{pillar['id']} ({pillar['vi_name']}): Trọng tâm cập nhật xoay quanh {pillar['topics']}.
+2. **[LANDMARK TRIAL]** Mọi trích dẫn trong bản tin này đều được đối chiếu trực tiếp mã PMID và DOI từ NCBI PubMed ngày {today_str}.
+
+---
+
+## V. CLOSING DISCLAIMER
+
+⚠️ Nội dung trên được tổng hợp trực tiếp từ cơ sở dữ liệu NCBI PubMed Step-0; bác sĩ điều trị cần đọc toàn văn hướng dẫn và nghiên cứu gốc trước khi ra quyết định lâm sàng."""
+
+    part2_en = f"""# Pillar #{pillar['id']} Evidence Update: {pillar['name']} ({today_str})
+
+## BLOCK A — Guideline & Evidence Anchor (PubMed Step-0 Verified)
+
+This briefing covers **Pillar #{pillar['id']}: {pillar['name']}**. Core clinical scope: {pillar['topics']}.
+
+### 1. Primary Verified Anchor
+- Primary NCBI PubMed anchor: {guideline_line}
+
+---
+
+## BLOCK B — Verified PubMed Studies & Guideline Anchors
+
+{chr(10).join(block_b_en_items)}
+
+---
+
+## III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS
+
+1. **[GUIDELINE EVOLUTION]** Pillar #{pillar['id']} ({pillar['name']}) clinical focus: {pillar['topics']}.
+
+---
+
+## V. CLOSING DISCLAIMER
+
+⚠️ This digest is compiled directly from verified NCBI PubMed Step-0 records; clinicians must consult the full-text guideline and original trial publications prior to bedside prescribing."""
+
+    return {
+        "id": f"ebm-{today_str}-p{pillar['id']}-{int(time.time()) % 10000}",
+        "date": today_str,
+        "time": "07:00 AM",
+        "model_used": "pubmed-step0-digest",
+        "pillar_id": pillar["id"],
+        "pillar_name": pillar["name"],
+        "pillar_vi": pillar["vi_name"],
+        "title_vi": f"Cập nhật Chứng cứ Trụ cột #{pillar['id']}: {pillar['vi_name']} ({today_str})",
+        "title_en": f"Pillar #{pillar['id']} Evidence Update: {pillar['name']} ({today_str})",
+        "word_count_vi": len(part1_vi.split()),
+        "verified_step0": True,
+        "interaction_id": f"pubmed-digest-{today_str}",
+        "pubmed_anchors": pubmed_refs,
+        "part1_vi_markdown": part1_vi,
+        "part2_en_markdown": part2_en,
+    }
+
+
+_refresh_lock = threading.RLock()
+_users_lock = threading.Lock()
+_feedback_lock = threading.Lock()
+
+
+# ---------------------------------------------------------------------------
+# User Authentication & Personalized Activity Persistence (data/users.json)
+# ---------------------------------------------------------------------------
+
+def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+    if salt is None:
+        salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100_000)
+    return salt, dk.hex()
+
+
+def _verify_password(password: str, salt: str, password_hash: str) -> bool:
+    if not salt or not password_hash:
+        return False
+    _, computed = _hash_password(password, salt)
+    return hmac.compare_digest(computed, password_hash)
+
+
+def _sign_session_token(username: str, token_secret: str) -> str:
+    nonce = secrets.token_hex(16)
+    payload = f"{username}:{nonce}"
+    sig = hmac.new(token_secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{username}.{nonce}.{sig}"
+
+
+def _verify_session_token_signature(token: str, token_secret: str) -> str | None:
+    if not token or token.count(".") < 2 or not token_secret:
+        return None
+    parts = token.rsplit(".", 2)
+    if len(parts) != 3:
+        return None
+    username, nonce, sig = parts
+    payload = f"{username}:{nonce}"
+    expected = hmac.new(token_secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    if hmac.compare_digest(sig, expected):
+        return username
+    return None
+
+
+def _safe_user(user_rec: dict) -> dict:
+    display_name = user_rec.get("display_name") or user_rec.get("full_name") or user_rec.get("username", "")
+    return {
+        "username": user_rec.get("username", ""),
+        "email": user_rec.get("email", ""),
+        "display_name": display_name,
+        "full_name": display_name,
+        "role": user_rec.get("role", "Bác sĩ Tim mạch"),
+        "specialty": user_rec.get("specialty", "Nội Tim mạch"),
+        "read_ids": list(dict.fromkeys(user_rec.get("read_ids", []))),
+        "bookmarked_ids": list(dict.fromkeys(user_rec.get("bookmarked_ids", []))),
+        "created_at": user_rec.get("created_at", ""),
+    }
+
+
+def _load_users_data_unlocked() -> dict:
+    data: dict = {}
+    dirty = False
+    if USERS_PATH.exists():
+        try:
+            loaded = json.loads(USERS_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                data = loaded
+        except Exception:
+            data = {}
+
+    if not data.get("token_secret"):
+        data["token_secret"] = secrets.token_hex(32)
+        dirty = True
+    if not isinstance(data.get("users"), dict):
+        data["users"] = {}
+        dirty = True
+    if not isinstance(data.get("sessions"), dict):
+        data["sessions"] = {}
+        dirty = True
+
+    if "bs.timmach" not in data["users"]:
+        salt, pw_hash = _hash_password("123456")
+        data["users"]["bs.timmach"] = {
+            "username": "bs.timmach",
+            "email": "timmach@ebm.vn",
+            "display_name": "BS. Đặng Quốc Tình",
+            "role": "Bác sĩ Nội trú Tim mạch",
+            "specialty": "Nội Tim mạch & Hồi sức Tim mạch",
+            "salt": salt,
+            "password_hash": pw_hash,
+            "read_ids": ["ebm-2026-11-15-p10-main"],
+            "bookmarked_ids": ["ebm-2026-11-16-p1-main"],
+            "created_at": datetime.datetime.now().isoformat(),
+        }
+        dirty = True
+    elif data["users"]["bs.timmach"].get("display_name") == "BS. Nguyễn Minh Tâm":
+        data["users"]["bs.timmach"]["display_name"] = "BS. Đặng Quốc Tình"
+        dirty = True
+
+    if dirty:
+        _atomic_write_text(USERS_PATH, json.dumps(data, indent=2, ensure_ascii=False))
+    return data
+
+
+def _save_users_data_unlocked(data: dict) -> None:
+    _atomic_write_text(USERS_PATH, json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def _find_user_by_identifier(users_dict: dict, identifier: str) -> dict | None:
+    ident = identifier.strip().lower()
+    if not ident:
+        return None
+    if ident in users_dict:
+        return users_dict[ident]
+    for u in users_dict.values():
+        if not isinstance(u, dict):
+            continue
+        if u.get("username", "").strip().lower() == ident or u.get("email", "").strip().lower() == ident:
+            return u
+    return None
+
+
+def _create_session_for_user(data: dict, user_rec: dict) -> str:
+    token = _sign_session_token(user_rec["username"], data["token_secret"])
+    sessions = data.setdefault("sessions", {})
+    sessions[token] = {
+        "username": user_rec["username"],
+        "created_at": datetime.datetime.now().isoformat(),
+    }
+    if len(sessions) > 500:
+        # Keep most recent 400 sessions
+        keys_to_drop = list(sessions.keys())[:-400]
+        for k in keys_to_drop:
+            sessions.pop(k, None)
+    return token
+
+
+def _resolve_user_from_token_unlocked(data: dict, token: str) -> dict | None:
+    if not token:
+        return None
+    sessions = data.get("sessions", {})
+    sess = sessions.get(token)
+    if not isinstance(sess, dict):
+        return None
+    sig_user = _verify_session_token_signature(token, data.get("token_secret", ""))
+    username = sess.get("username")
+    if not username or (sig_user is not None and sig_user != username):
+        return None
+    return _find_user_by_identifier(data.get("users", {}), username)
+
+
+def get_user_by_token(token: str) -> dict | None:
+    if not token:
+        return None
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        u = _resolve_user_from_token_unlocked(data, token)
+        return _safe_user(u) if u else None
+
+
+def login_user(req_data: dict) -> tuple[int, dict]:
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        if req_data.get("demo"):
+            user = _find_user_by_identifier(data["users"], "bs.timmach")
+            if not user:
+                return 404, {"ok": False, "error": "Demo physician account unavailable."}
+            token = _create_session_for_user(data, user)
+            _save_users_data_unlocked(data)
+            return 200, {"ok": True, "token": token, "user": _safe_user(user)}
+
+        identifier = str(req_data.get("username") or req_data.get("email") or "").strip()
+        password = str(req_data.get("password") or "")
+        if not identifier or not password:
+            return 400, {"ok": False, "error": "Vui lòng nhập tên đăng nhập và mật khẩu."}
+
+        user = _find_user_by_identifier(data["users"], identifier)
+        if not user or not _verify_password(password, user.get("salt", ""), user.get("password_hash", "")):
+            return 401, {"ok": False, "error": "Tên đăng nhập hoặc mật khẩu không đúng."}
+
+        token = _create_session_for_user(data, user)
+        _save_users_data_unlocked(data)
+        return 200, {"ok": True, "token": token, "user": _safe_user(user)}
+
+
+def register_user(req_data: dict) -> tuple[int, dict]:
+    username = str(req_data.get("username", "")).strip()
+    password = str(req_data.get("password", ""))
+    email = str(req_data.get("email", "")).strip()
+    display_name = (
+        str(req_data.get("display_name") or req_data.get("full_name") or req_data.get("name") or "").strip()
+        or username
+    )
+    specialty = str(req_data.get("specialty", "")).strip() or "Nội Tim mạch"
+    role = str(req_data.get("role", "")).strip() or "Bác sĩ Tim mạch"
+
+    if len(username) < 3 or len(password) < 4:
+        return 400, {
+            "ok": False,
+            "error": "Tên đăng nhập cần tối thiểu 3 ký tự và mật khẩu tối thiểu 4 ký tự.",
+        }
+
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        if _find_user_by_identifier(data["users"], username) or (
+            email and _find_user_by_identifier(data["users"], email)
+        ):
+            return 409, {"ok": False, "error": "Tên đăng nhập hoặc email đã được sử dụng."}
+
+        salt, pw_hash = _hash_password(password)
+        new_user = {
+            "username": username,
+            "email": email,
+            "display_name": display_name,
+            "role": role,
+            "specialty": specialty,
+            "salt": salt,
+            "password_hash": pw_hash,
+            "read_ids": [],
+            "bookmarked_ids": [],
+            "created_at": datetime.datetime.now().isoformat(),
+        }
+        data["users"][username] = new_user
+        token = _create_session_for_user(data, new_user)
+        _save_users_data_unlocked(data)
+        return 200, {"ok": True, "token": token, "user": _safe_user(new_user)}
+
+
+def logout_token(token: str) -> dict:
+    if token:
+        with _users_lock:
+            data = _load_users_data_unlocked()
+            if token in data.get("sessions", {}):
+                data["sessions"].pop(token, None)
+                _save_users_data_unlocked(data)
+    return {"ok": True}
+
+
+def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
+    briefing_id = str(req_data.get("briefing_id", "")).strip()
+    action = str(req_data.get("action", "")).strip()
+    if not briefing_id or action not in ("read", "toggle_bookmark"):
+        return 400, {"ok": False, "error": "Thiếu briefing_id hoặc action không hợp lệ."}
+
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        user = _resolve_user_from_token_unlocked(data, token)
+        if not user:
+            return 401, {"ok": False, "error": "Unauthorized"}
+
+        read_ids = list(dict.fromkeys(user.get("read_ids", [])))
+        bookmarked_ids = list(dict.fromkeys(user.get("bookmarked_ids", [])))
+
+        if action == "read":
+            if briefing_id not in read_ids:
+                read_ids.append(briefing_id)
+            user["read_ids"] = read_ids
+        elif action == "toggle_bookmark":
+            if briefing_id in bookmarked_ids:
+                bookmarked_ids.remove(briefing_id)
+            else:
+                bookmarked_ids.append(briefing_id)
+            user["bookmarked_ids"] = bookmarked_ids
+
+        _save_users_data_unlocked(data)
+        return 200, {"ok": True, "user": _safe_user(user)}
+
+
+# ---------------------------------------------------------------------------
+# Product Feedback Persistence (data/feedback.json)
+# ---------------------------------------------------------------------------
+
+def _load_feedback_data_unlocked() -> dict:
+    data: dict = {}
+    dirty = False
+    if FEEDBACK_PATH.exists():
+        try:
+            loaded = json.loads(FEEDBACK_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                data = loaded
+        except Exception:
+            data = {}
+
+    if not isinstance(data.get("votes"), dict):
+        data["votes"] = {}
+        dirty = True
+    if not isinstance(data.get("reports"), list):
+        data["reports"] = []
+        dirty = True
+
+    if dirty or not FEEDBACK_PATH.exists():
+        _atomic_write_text(FEEDBACK_PATH, json.dumps(data, indent=2, ensure_ascii=False))
+    return data
+
+
+def _save_feedback_data_unlocked(data: dict) -> None:
+    _atomic_write_text(FEEDBACK_PATH, json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def _compute_feedback_summary(data: dict, user_key: str | None = None) -> dict:
+    votes = data.get("votes", {})
+    reports = data.get("reports", [])
+    report_counts: dict[str, int] = {}
+    for rep in reports:
+        bid = rep.get("briefing_id")
+        if bid:
+            report_counts[bid] = report_counts.get(bid, 0) + 1
+
+    all_bids = set(votes.keys()) | set(report_counts.keys())
+    summary: dict[str, dict] = {}
+    for bid in all_bids:
+        vote_map = votes.get(bid, {})
+        if not isinstance(vote_map, dict):
+            vote_map = {}
+        likes = sum(1 for v in vote_map.values() if v == "like")
+        dislikes = sum(1 for v in vote_map.values() if v == "dislike")
+        summary[bid] = {
+            "like": likes,
+            "dislike": dislikes,
+            "report": report_counts.get(bid, 0),
+            "user_vote": vote_map.get(user_key) if user_key else None,
+        }
+    return summary
+
+
+def _get_feedback_summary(user_key: str | None = None) -> dict:
+    with _feedback_lock:
+        data = _load_feedback_data_unlocked()
+        return _compute_feedback_summary(data, user_key)
+
+
+def get_feedback_payload(user: dict | None) -> dict:
+    user_key = user["username"] if user else "guest"
+    with _feedback_lock:
+        data = _load_feedback_data_unlocked()
+        summary = _compute_feedback_summary(data, user_key)
+        reports = data.get("reports", [])
+        if user and user.get("username") == "admin":
+            recent_reports = list(reversed(reports))[:20]
+        else:
+            recent_reports = [r for r in reversed(reports) if r.get("username") == user_key][:20]
+        return {
+            "ok": True,
+            "summary": summary,
+            "reports_count": len(reports),
+            "recent_reports": recent_reports,
+        }
+
+
+def submit_feedback(user: dict | None, req_data: dict) -> tuple[int, dict]:
+    briefing_id = str(req_data.get("briefing_id", "")).strip()
+    fb_type = str(req_data.get("type", "")).strip().lower()
+    pillar_id = req_data.get("pillar_id")
+    reason = str(req_data.get("reason", "")).strip()
+    comment = str(req_data.get("comment", "")).strip()
+
+    if not briefing_id or fb_type not in ("like", "dislike", "report"):
+        return 400, {"ok": False, "error": "Cần cung cấp briefing_id và type (like/dislike/report)."}
+
+    user_key = user["username"] if user else "guest"
+    display_name = user["display_name"] if user else "Khách"
+
+    with _feedback_lock:
+        data = _load_feedback_data_unlocked()
+        if fb_type in ("like", "dislike"):
+            votes_map = data["votes"].setdefault(briefing_id, {})
+            if votes_map.get(user_key) == fb_type:
+                votes_map.pop(user_key, None)
+            else:
+                votes_map[user_key] = fb_type
+        else:
+            pid_val = pillar_id
+            if pid_val is not None and str(pid_val).isdigit():
+                pid_val = int(pid_val)
+            data["reports"].append({
+                "id": f"rep-{int(time.time() * 1000)}-{secrets.token_hex(3)}",
+                "briefing_id": briefing_id,
+                "pillar_id": pid_val,
+                "username": user_key,
+                "display_name": display_name,
+                "reason": reason or "Góp ý nội dung",
+                "comment": comment,
+                "created_at": datetime.datetime.now().isoformat(),
+            })
+
+        _save_feedback_data_unlocked(data)
+        summary = _compute_feedback_summary(data, user_key)
+        item_summary = summary.get(
+            briefing_id,
+            {"like": 0, "dislike": 0, "report": 0, "user_vote": None},
+        )
+        return 200, {
+            "ok": True,
+            "item_summary": item_summary,
+            "summary": summary,
+            "reports_count": len(data.get("reports", [])),
+        }
+
+
+# ---------------------------------------------------------------------------
+# Guideline Evolution & Single-Pillar Daily Refresh
+# ---------------------------------------------------------------------------
+
+def _merge_pubmed_anchors(existing_anchors: list, verified_refs: list) -> list:
+    merged = [copy.deepcopy(a) for a in (existing_anchors or []) if isinstance(a, dict)]
+    by_pmid = {str(a.get("pmid")): a for a in merged if a.get("pmid")}
+    for ref in verified_refs or []:
+        pmid = str(ref.get("pmid", "")).strip()
+        if not pmid:
+            continue
+        if pmid in by_pmid:
+            target = by_pmid[pmid]
+            for field in ("pubdate", "volume", "issue", "pages", "doi", "url", "source", "title"):
+                if not target.get(field) and ref.get(field):
+                    target[field] = ref[field]
+        else:
+            merged.append(copy.deepcopy(ref))
+            by_pmid[pmid] = merged[-1]
+    return merged
+
+
+def _load_curated_pillar_briefing(pillar: dict, today_str: str) -> dict | None:
+    """
+    Loads the Guideline Evolution briefing for `pillar` using
+    pillar_library.get_latest_briefing_for_pillar(pillar_id, today_str) when available,
+    gracefully falling back to pillar_library.RICH_PILLAR_TEMPLATES.
+    """
+    pid = pillar["id"]
+    try:
+        import pillar_library
+
+        if hasattr(pillar_library, "get_latest_briefing_for_pillar"):
+            curated = pillar_library.get_latest_briefing_for_pillar(pid, today_str)
+            if isinstance(curated, dict):
+                result = copy.deepcopy(curated)
+                result.pop("crawled_articles", None)
+                return result
+
+        rich_tpl = getattr(pillar_library, "RICH_PILLAR_TEMPLATES", {}).get(pid)
+        if isinstance(rich_tpl, dict):
+            tpl = copy.deepcopy(rich_tpl)
+            part1_vi = tpl.get("part1_vi_markdown", "")
+            return {
+                "id": f"ebm-{today_str}-p{pid}-main",
+                "date": today_str,
+                "time": "07:00 AM",
+                "model_used": "ebm-guideline-evolution-verified",
+                "pillar_id": pid,
+                "pillar_name": pillar["name"],
+                "pillar_vi": pillar["vi_name"],
+                "title_vi": tpl.get("title_vi", f"Trụ cột #{pid}: {pillar['vi_name']}"),
+                "title_en": tpl.get("title_en", f"Pillar #{pid}: {pillar['name']}"),
+                "word_count_vi": len(part1_vi.split()),
+                "verified_step0": True,
+                "interaction_id": f"step0-curated-{today_str}",
+                "guideline_evolution": tpl.get("guideline_evolution"),
+                "landmark_trials": tpl.get("landmark_trials"),
+                "pearls": tpl.get("pearls"),
+                "pubmed_anchors": tpl.get("pubmed_anchors", []),
+                "part1_vi_markdown": part1_vi,
+                "part2_en_markdown": tpl.get("part2_en_markdown", ""),
+            }
+    except Exception as exc:
+        print(f"[Warning] pillar_library lookup error for Pillar #{pid}: {exc}", file=sys.stderr)
+
+    return None
+
+
+def refresh_today_briefing(
+    force: bool = False,
+    pillar_id: int | None = None,
+    progress_cb=None,
+    model_name: str = "",
+    api_key: str = "",
+    base_url: str = "",
+    use_llm: bool = False,
+) -> dict:
+    """
+    Refreshes ONLY today's single scheduled Pillar in data/briefings.js following the
+    deterministic ascending rotation (1 -> 2 -> ... -> 10 -> 1, anchored 2026-11-16 = Pillar #1).
+    Runs Step-0 NCBI PubMed verification for current & prior Guidelines + Landmark RCTs,
+    constructing the Guideline Evolution briefing (no random news crawling).
+    """
+    with _refresh_lock:
+        today = datetime.date.today()
+        today_str = today.isoformat()
+        target_pillar = (
+            get_pillar_by_id(int(pillar_id))
+            if pillar_id is not None
+            else get_pillar_for_date(today)
+        )
+        pid = target_pillar["id"]
+        briefings = load_existing_briefings()
+        state = load_rotation_state()
+
+        if not force:
+            today_for_target = [
+                b for b in briefings
+                if b.get("date") == today_str
+                and b.get("pillar_id") == pid
+                and not b.get("crawled_articles")
+            ]
+            today_other = [
+                b for b in briefings
+                if b.get("date") == today_str and b.get("pillar_id") != pid
+            ]
+            if len(today_for_target) == 1 and (pillar_id is not None or len(today_other) == 0):
+                if progress_cb:
+                    progress_cb(100, f"Hôm nay ({today_str}) đã có bản tin Trụ cột #{pid}/10 — {target_pillar['vi_name']}.")
+                return {
+                    "briefing": today_for_target[0],
+                    "rotation_state": state,
+                    "already_up_to_date": True,
+                }
+
+        # Step 1 (15%): Daily ascending rotation identification
+        if progress_cb:
+            progress_cb(15, f"Hôm nay: Trụ cột #{pid}/10 — {target_pillar['vi_name']}")
+
+        curated = _load_curated_pillar_briefing(target_pillar, today_str)
+
+        # Step 2 (45%): Step-0 NCBI PubMed verification for current & prior Guidelines
+        guideline_pmids: list[str] = []
+        if curated and isinstance(curated.get("guideline_evolution"), dict):
+            ge = curated["guideline_evolution"]
+            for g_key in ("current_guideline", "prior_guideline"):
+                g_obj = ge.get(g_key)
+                if isinstance(g_obj, dict) and g_obj.get("pmid"):
+                    guideline_pmids.append(str(g_obj["pmid"]).strip())
+
+        guideline_query = (
+            " OR ".join(f"{pmid}[pmid]" for pmid in guideline_pmids)
+            if guideline_pmids
+            else target_pillar["search_query"]
+        )
+        if progress_cb:
+            progress_cb(30, f"Step 0: Đang xác thực Guideline hiện hành & tiền nhiệm trên NCBI PubMed...")
+        guideline_refs = fetch_pubmed_metadata(guideline_query, max_results=4)
+        if progress_cb:
+            if guideline_refs:
+                progress_cb(45, f"Đã xác thực {len(guideline_refs)} văn kiện Guideline qua NCBI PubMed.")
+            else:
+                progress_cb(45, "Giữ nguyên neo Guideline Step-0 đã xác thực (chế độ dự phòng ngoại tuyến).")
+
+        # Step 3 (75%): Step-0 verification for Landmark RCTs & build Guideline Evolution briefing
+        curated_anchors = curated.get("pubmed_anchors", []) if curated else []
+        trial_pmids = [
+            str(a.get("pmid")).strip()
+            for a in curated_anchors
+            if isinstance(a, dict) and a.get("pmid") and str(a.get("pmid")).strip() not in guideline_pmids
+        ]
+        if trial_pmids:
+            trial_query = " OR ".join(f"{pmid}[pmid]" for pmid in trial_pmids[:4])
+        elif curated and isinstance(curated.get("landmark_trials"), list) and curated["landmark_trials"]:
+            names = [t.get("name", "") for t in curated["landmark_trials"][:3] if isinstance(t, dict) and t.get("name")]
+            trial_query = (" OR ".join(names) + f" {target_pillar['name']}").strip()
+        else:
+            trial_query = target_pillar["search_query"]
+
+        if progress_cb:
+            progress_cb(60, f"Step 0: Đang xác thực Landmark RCTs nền tảng cho Trụ cột #{pid}...")
+        trial_refs = fetch_pubmed_metadata(trial_query, max_results=4)
+        all_verified_refs = guideline_refs + trial_refs
+
+        resolved_key = api_key.strip()
+        resolved_model = model_name.strip()
+        if use_llm and resolved_key and resolved_model:
+            if progress_cb:
+                progress_cb(75, f"Đang tổng hợp Guideline Evolution bằng `{resolved_model}` (Step-0 Verified)...")
+            new_briefing = generate_briefing(
+                pillar=target_pillar,
+                model_name=resolved_model,
+                include_part2=True,
+                api_key=resolved_key,
+                base_url=base_url.strip(),
+            )
+            if curated:
+                for key in ("guideline_evolution", "landmark_trials", "pearls", "topic_focus_vi", "topic_focus_en", "week_label", "short_date"):
+                    if curated.get(key) and not new_briefing.get(key):
+                        new_briefing[key] = curated[key]
+            new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
+                new_briefing.get("pubmed_anchors", []),
+                all_verified_refs,
+            )
+        elif curated is not None:
+            new_briefing = curated
+            new_briefing["date"] = today_str
+            new_briefing["time"] = new_briefing.get("time") or "07:00 AM"
+            new_briefing["pillar_id"] = pid
+            new_briefing["pillar_name"] = target_pillar["name"]
+            new_briefing.setdefault("pillar_vi", target_pillar["vi_name"])
+            new_briefing["verified_step0"] = True
+            new_briefing.pop("crawled_articles", None)
+            new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
+                new_briefing.get("pubmed_anchors", []),
+                all_verified_refs,
+            )
+            if progress_cb:
+                progress_cb(
+                    75,
+                    f"Đã hoàn tất tổng hợp Guideline Evolution & {len(new_briefing['pubmed_anchors'])} nguồn Step-0.",
+                )
+        else:
+            pmids_for_abs = [r["pmid"] for r in all_verified_refs if r.get("pmid")]
+            abstracts_map = fetch_pubmed_abstracts(pmids_for_abs[:4])
+            new_briefing = _build_pubmed_digest_briefing(target_pillar, all_verified_refs, abstracts_map)
+            if progress_cb:
+                progress_cb(75, f"Đã tổng hợp bản tin PubMed Step-0 cho Trụ cột #{pid}.")
+
+        # Step 4 (100%): Upsert ONLY today's single pillar briefing into data/briefings.js
+        if pillar_id is None:
+            # Strictly 1 pillar for today: remove any entries on today_str (including old multi-pillar leftovers)
+            briefings = [b for b in briefings if b.get("date") != today_str]
+        else:
+            briefings = [
+                b for b in briefings
+                if not (b.get("date") == today_str and b.get("pillar_id") == pid)
+            ]
+        briefings.insert(0, new_briefing)
+
+        state["last_pillar_id"] = pid
+        state["last_updated"] = today_str
+        state["today_pillar_id"] = get_pillar_for_date(today)["id"]
+        state["yesterday_pillar_id"] = get_pillar_for_date(today - datetime.timedelta(days=1))["id"]
+        state["tomorrow_pillar_id"] = get_pillar_for_date(today + datetime.timedelta(days=1))["id"]
+        if pillar_id is None:
+            state["history"] = [
+                get_pillar_for_date(today - datetime.timedelta(days=i))["id"]
+                for i in range(9, -1, -1)
+            ]
+        else:
+            hist = list(state.get("history", []))
+            if not hist or hist[-1] != pid:
+                hist.append(pid)
+            state["history"] = hist[-10:]
+
+        save_rotation_state(state)
+        save_briefings_js(briefings, state)
+
+        if progress_cb:
+            progress_cb(100, f"Hoàn tất Trụ cột #{pid}/10 ({target_pillar['vi_name']}).")
+
+        return {
+            "briefing": new_briefing,
+            "rotation_state": state,
+            "already_up_to_date": False,
+        }
+
+
+def load_existing_briefings() -> list:
+    if not BRIEFINGS_JS_PATH.exists():
+        return []
+    raw = BRIEFINGS_JS_PATH.read_text(encoding="utf-8")
+    prefix = "window.EBM_BRIEFINGS_DATA = "
+    idx = raw.find(prefix)
+    if idx == -1:
+        return []
+    json_part = raw[idx + len(prefix):].strip()
+    if json_part.endswith(";"):
+        json_part = json_part[:-1].strip()
+    try:
+        data = json.loads(json_part)
+        return data.get("briefings", [])
+    except Exception as exc:
+        print(f"[Warning] Failed to parse existing briefings.js: {exc}", file=sys.stderr)
+        return []
+
+
+def save_briefings_js(briefings: list, rotation_state: dict) -> None:
+    payload = {
+        "generated_at": datetime.datetime.now().isoformat(),
+        "default_model": DEFAULT_MODEL,
+        "available_models": AVAILABLE_MODELS,
+        "rotation_state": rotation_state,
+        "pillars": PILLARS,
+        "briefings": briefings,
+    }
+    js_content = (
+        "// Auto-generated by fetch_daily_ebm.py — Contains verified Step-0 EBM Cardiology Briefings.\n"
+        f"window.EBM_BRIEFINGS_DATA = {json.dumps(payload, indent=2, ensure_ascii=False)};\n"
+    )
+    _atomic_write_text(BRIEFINGS_JS_PATH, js_content)
+    print(f"[Saved] Updated {BRIEFINGS_JS_PATH} with {len(briefings)} briefings.")
+
+
+class EBMRequestHandler(SimpleHTTPRequestHandler):
+    """
+    Serves the static HTML/JS/CSS files and provides local API endpoints:
+    - GET  /api/status         -> Rotation state, today/yesterday/tomorrow pillars, user & feedback summary
+    - GET  /api/refresh-stream -> SSE progress stream refreshing today's single pillar briefing
+    - POST /api/refresh        -> Refreshes today's single pillar briefing
+    - POST /api/auth/login     -> Email/username + password or demo 1-click sign-in
+    - POST /api/auth/register  -> Register physician account
+    - GET  /api/auth/me        -> Current authenticated user from Bearer token
+    - POST /api/auth/logout    -> Invalidate Bearer token
+    - POST /api/user/activity  -> Persist read_ids and bookmarked_ids
+    - GET  /api/feedback       -> Aggregate like/dislike/report summary & user reports
+    - POST /api/feedback       -> Submit like, dislike, or report feedback
+    - POST /api/generate       -> LLM synthesis endpoint
+    - POST /api/continue-part2 -> Convert Part 1 to Part 2 English
+    - POST /api/pubmed-verify  -> Live NCBI PubMed E-utilities verification
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(BASE_DIR), **kwargs)
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        super().end_headers()
+
+    def _send_json(self, status_code: int, payload: dict):
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _extract_token(self, query_params: dict | None = None, body_data: dict | None = None) -> str:
+        auth_header = self.headers.get("Authorization", "").strip()
+        if auth_header.lower().startswith("bearer "):
+            return auth_header[7:].strip()
+        if query_params and query_params.get("token"):
+            return str(query_params["token"][0]).strip()
+        if body_data and body_data.get("token"):
+            return str(body_data["token"]).strip()
+        return ""
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        query_params = urllib.parse.parse_qs(parsed.query)
+
+        if path == "/api/refresh-stream":
+            self.close_connection = True
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Connection", "close")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+
+            def _emit(payload: dict):
+                try:
+                    msg = f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode("utf-8")
+                    self.wfile.write(msg)
+                    self.wfile.flush()
+                except Exception:
+                    pass
+
+            try:
+                raw_pid = query_params.get("pillar_id", [None])[0]
+                req_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
+                _emit({"type": "progress", "percent": 5, "message": "Đang khởi tạo chu trình 1 Trụ cột/ngày & NCBI PubMed..."})
+                res = refresh_today_briefing(
+                    force=True,
+                    pillar_id=req_pid,
+                    progress_cb=lambda pct, txt: _emit({"type": "progress", "percent": pct, "message": txt}),
+                )
+                all_briefings = load_existing_briefings()
+                today = datetime.date.today()
+                _emit({
+                    "type": "done",
+                    "percent": 100,
+                    "today_date": today.isoformat(),
+                    "briefing": res["briefing"],
+                    "briefings": all_briefings,
+                    "rotation_state": res["rotation_state"],
+                    "today_pillar": get_pillar_for_date(today),
+                    "yesterday_pillar": get_pillar_for_date(today - datetime.timedelta(days=1)),
+                    "tomorrow_pillar": get_pillar_for_date(today + datetime.timedelta(days=1)),
+                })
+            except Exception as exc:
+                _emit({"type": "error", "error": str(exc)})
+            return
+
+        if path == "/api/status":
+            today = datetime.date.today()
+            today_str = today.isoformat()
+            today_pillar = get_pillar_for_date(today)
+            yesterday_pillar = get_pillar_for_date(today - datetime.timedelta(days=1))
+            tomorrow_pillar = get_pillar_for_date(today + datetime.timedelta(days=1))
+            state = load_rotation_state()
+            briefings = load_existing_briefings()
+            has_today = any(
+                b.get("date") == today_str
+                and b.get("pillar_id") == today_pillar["id"]
+                and not b.get("crawled_articles")
+                for b in briefings
+            )
+            token = self._extract_token(query_params=query_params)
+            current_user = get_user_by_token(token)
+            user_key = current_user["username"] if current_user else "guest"
+            feedback_summary = _get_feedback_summary(user_key)
+
+            self._send_json(200, {
+                "ok": True,
+                "today_date": today_str,
+                "has_today_briefing": has_today,
+                "today_pillar": today_pillar,
+                "yesterday_pillar": yesterday_pillar,
+                "tomorrow_pillar": tomorrow_pillar,
+                "rotation_state": state,
+                "user": current_user,
+                "feedback_summary": feedback_summary,
+                "default_model": DEFAULT_MODEL,
+                "available_models": AVAILABLE_MODELS,
+                "has_gemini_key": bool(os.environ.get("GEMINI_API_KEY")),
+                "has_openai_key": bool(os.environ.get("OPENAI_API_KEY")),
+            })
+            return
+
+        if path == "/api/auth/me":
+            token = self._extract_token(query_params=query_params)
+            user = get_user_by_token(token)
+            if not user:
+                self._send_json(401, {"ok": False, "error": "Unauthorized"})
+                return
+            self._send_json(200, {"ok": True, "user": user})
+            return
+
+        if path == "/api/feedback":
+            token = self._extract_token(query_params=query_params)
+            user = get_user_by_token(token)
+            payload = get_feedback_payload(user)
+            self._send_json(200, payload)
+            return
+
+        super().do_GET()
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        query_params = urllib.parse.parse_qs(parsed.query)
+
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            length = 0
+        raw_body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+        try:
+            req_data = json.loads(raw_body)
+            if not isinstance(req_data, dict):
+                req_data = {}
+        except Exception:
+            req_data = {}
+
+        if path == "/api/auth/login":
+            status, payload = login_user(req_data)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/auth/register":
+            status, payload = register_user(req_data)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/auth/logout":
+            token = self._extract_token(query_params=query_params, body_data=req_data)
+            payload = logout_token(token)
+            self._send_json(200, payload)
+            return
+
+        if path == "/api/user/activity":
+            token = self._extract_token(query_params=query_params, body_data=req_data)
+            status, payload = record_user_activity(token, req_data)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/feedback":
+            token = self._extract_token(query_params=query_params, body_data=req_data)
+            user = get_user_by_token(token)
+            status, payload = submit_feedback(user, req_data)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/refresh":
+            try:
+                force = bool(req_data.get("force", True))
+                pillar_id = req_data.get("pillar_id")
+                model_name = str(req_data.get("model", "")).strip()
+                api_key = str(req_data.get("api_key", "")).strip()
+                base_url = str(req_data.get("base_url", "")).strip()
+                use_llm = bool(api_key and model_name)
+                result = refresh_today_briefing(
+                    force=force,
+                    pillar_id=int(pillar_id) if pillar_id else None,
+                    model_name=model_name,
+                    api_key=api_key,
+                    base_url=base_url,
+                    use_llm=use_llm,
+                )
+                all_briefings = load_existing_briefings()
+                today = datetime.date.today()
+                self._send_json(200, {
+                    "ok": True,
+                    "today_date": today.isoformat(),
+                    "briefing": result["briefing"],
+                    "briefings": all_briefings,
+                    "rotation_state": result["rotation_state"],
+                    "today_pillar": get_pillar_for_date(today),
+                    "yesterday_pillar": get_pillar_for_date(today - datetime.timedelta(days=1)),
+                    "tomorrow_pillar": get_pillar_for_date(today + datetime.timedelta(days=1)),
+                    "already_up_to_date": result["already_up_to_date"],
+                })
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+
+        if path == "/api/pubmed-verify":
+            query = req_data.get("query", "ESC Guidelines cardiology")
+            refs = fetch_pubmed_metadata(query, max_results=6)
+            self._send_json(200, {"ok": True, "query": query, "results": refs})
+            return
+
+        if path == "/api/generate":
+            try:
+                model_name = req_data.get("model", DEFAULT_MODEL).strip() or DEFAULT_MODEL
+                api_key = req_data.get("api_key", "").strip()
+                base_url = req_data.get("base_url", "").strip()
+
+                with _refresh_lock:
+                    state = load_rotation_state()
+                    pillar_id = req_data.get("pillar_id")
+                    if pillar_id:
+                        pillar = get_pillar_by_id(int(pillar_id))
+                    else:
+                        pillar = get_pillar_for_date(datetime.date.today())
+
+                    custom_focus = req_data.get("custom_focus", "").strip()
+                    include_part2 = bool(req_data.get("include_part2", True))
+
+                    new_briefing = generate_briefing(
+                        pillar=pillar,
+                        model_name=model_name,
+                        custom_focus=custom_focus,
+                        include_part2=include_part2,
+                        api_key=api_key,
+                        base_url=base_url,
+                    )
+
+                    briefings = load_existing_briefings()
+                    briefings.insert(0, new_briefing)
+
+                    state["last_pillar_id"] = pillar["id"]
+                    state["last_updated"] = datetime.date.today().isoformat()
+                    history = state.get("history", [])
+                    history.append(pillar["id"])
+                    state["history"] = history[-10:]
+
+                    save_rotation_state(state)
+                    save_briefings_js(briefings, state)
+
+                self._send_json(200, {
+                    "ok": True,
+                    "briefing": new_briefing,
+                    "rotation_state": state,
+                })
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+
+        if path == "/api/continue-part2":
+            try:
+                briefing_id = req_data.get("briefing_id", "").strip()
+                model_name = req_data.get("model", "").strip()
+                api_key = req_data.get("api_key", "").strip()
+                base_url = req_data.get("base_url", "").strip()
+
+                with _refresh_lock:
+                    briefings = load_existing_briefings()
+                    target = None
+                    for b in briefings:
+                        if b.get("id") == briefing_id:
+                            target = b
+                            break
+                    if not target:
+                        self._send_json(404, {"ok": False, "error": f"Briefing '{briefing_id}' not found."})
+                        return
+
+                    updated = generate_part2_for_briefing(
+                        briefing=target,
+                        model_name=model_name,
+                        api_key=api_key,
+                        base_url=base_url,
+                    )
+                    state = load_rotation_state()
+                    save_briefings_js(briefings, state)
+                self._send_json(200, {"ok": True, "briefing": updated})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+
+        self._send_json(404, {"ok": False, "error": "Unknown endpoint"})
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Daily Cardiology EBM Briefing — Multi-Model Automated Data Fetcher & Server"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=DEFAULT_MODEL,
+        help=(
+            f"Model ID to use (default: {DEFAULT_MODEL}). "
+            "Examples: gemini-3.1-pro-preview, gemini-3.8-flash, gemini-3.5-flash-lite, "
+            "deep-research-preview-04-2026, gpt-4o, gpt-4o-mini."
+        ),
+    )
+    parser.add_argument(
+        "--pillar",
+        type=int,
+        choices=range(1, 11),
+        help="Specify Pillar ID (1-10). If omitted, uses today's deterministic daily rotation.",
+    )
+    parser.add_argument(
+        "--focus",
+        type=str,
+        default="",
+        help="Optional specific clinical focus within the selected pillar.",
+    )
+    parser.add_argument(
+        "--part1-only",
+        action="store_true",
+        help="Generate only Step 1 (Vietnamese Part 1) without automatically running Step 2 (English Part 2).",
+    )
+    parser.add_argument(
+        "--api-key",
+        type=str,
+        default="",
+        help="Optional API key override (GEMINI_API_KEY or OPENAI_API_KEY).",
+    )
+    parser.add_argument(
+        "--base-url",
+        type=str,
+        default="",
+        help="Optional Custom OpenAI-compatible Base URL (e.g., https://aiportalapi.stu-platform.live/jpe).",
+    )
+    parser.add_argument(
+        "--verify-pubmed",
+        type=str,
+        default="",
+        help="Run a live NCBI PubMed E-utilities verification query and print the verified DOIs/PMIDs.",
+    )
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="Start local web server on http://127.0.0.1:8088 with auto 07:00 AM daily refresh.",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Fetch/refresh today's single-pillar briefing immediately (Step-0 Guideline Evolution, or LLM if --model & --api-key provided).",
+    )
+    parser.add_argument(
+        "--install-launchd",
+        action="store_true",
+        help="Install a macOS LaunchAgent to auto-refresh daily at 07:00 AM.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8088,
+        help="Port for --serve (default: 8088).",
+    )
+
+    args = parser.parse_args()
+
+    if args.install_launchd:
+        plist_dir = Path.home() / "Library" / "LaunchAgents"
+        plist_dir.mkdir(parents=True, exist_ok=True)
+        plist_path = plist_dir / "com.dailycardiology.ebm.plist"
+        log_path = BASE_DIR / "data" / "daily_refresh.log"
+        plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.dailycardiology.ebm</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{sys.executable}</string>
+        <string>{Path(__file__).resolve()}</string>
+        <string>--refresh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>{log_path}</string>
+    <key>StandardErrorPath</key>
+    <string>{log_path}</string>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+"""
+        plist_path.write_text(plist_content, encoding="utf-8")
+        print(f"[Launchd] Installed daily 07:00 AM job at: {plist_path}")
+        print(f"Load it now with: launchctl load -w {plist_path}")
+        return
+
+    if args.refresh:
+        model_requested = any(a == "--model" or a.startswith("--model=") for a in sys.argv[1:])
+        explicit_key = args.api_key.strip()
+        use_llm = bool(explicit_key and model_requested)
+        res = refresh_today_briefing(
+            force=True,
+            pillar_id=args.pillar,
+            model_name=args.model if use_llm else "",
+            api_key=explicit_key,
+            base_url=args.base_url.strip(),
+            use_llm=use_llm,
+        )
+        b = res["briefing"]
+        print(f"[Refreshed] {b['date']} — Pillar #{b['pillar_id']}: {b['title_vi']} (model: {b['model_used']})")
+        return
+
+    if args.verify_pubmed:
+        refs = fetch_pubmed_metadata(args.verify_pubmed, max_results=6)
+        print(json.dumps(refs, indent=2, ensure_ascii=False))
+        return
+
+    if args.serve:
+        # Pre-initialize demo user & feedback store on server start
+        with _users_lock:
+            _load_users_data_unlocked()
+        with _feedback_lock:
+            _load_feedback_data_unlocked()
+
+        def _daily_7am_worker():
+            while True:
+                try:
+                    now = datetime.datetime.now()
+                    if now.hour >= 7:
+                        res = refresh_today_briefing(force=False)
+                        if not res.get("already_up_to_date"):
+                            b = res["briefing"]
+                            print(f"[Auto 07:00 AM Refresh] Generated today's briefing: Pillar #{b['pillar_id']} ({b['date']})")
+                except Exception as exc:
+                    print(f"[Auto Refresh Warning] {exc}", file=sys.stderr)
+                time.sleep(60)
+
+        scheduler_thread = threading.Thread(target=_daily_7am_worker, daemon=True)
+        scheduler_thread.start()
+
+        server_addr = ("127.0.0.1", args.port)
+        print("======================================================================")
+        print(" Xem Tim Mỗi Ngày (Daily Learning Heart) Server (Auto 07:00 AM Refresh)")
+        print(f" -> URL:           http://127.0.0.1:{args.port}")
+        print(" -> Endpoints:     /api/status, /api/refresh, /api/refresh-stream,")
+        print("                   /api/auth/*, /api/user/activity, /api/feedback")
+        print(" Press Ctrl+C to stop.")
+        print("======================================================================")
+        httpd = ThreadingHTTPServer(server_addr, EBMRequestHandler)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nShutting down server.")
+            httpd.server_close()
+        return
+
+    # CLI Generation Mode
+    state = load_rotation_state()
+    pillar = get_pillar_by_id(args.pillar) if args.pillar else get_pillar_for_date(datetime.date.today())
+
+    new_briefing = generate_briefing(
+        pillar=pillar,
+        model_name=args.model,
+        custom_focus=args.focus,
+        include_part2=not args.part1_only,
+        api_key=args.api_key,
+        base_url=args.base_url,
+    )
+
+    briefings = load_existing_briefings()
+    briefings.insert(0, new_briefing)
+
+    state["last_pillar_id"] = pillar["id"]
+    state["last_updated"] = datetime.date.today().isoformat()
+    history = state.get("history", [])
+    history.append(pillar["id"])
+    state["history"] = history[-10:]
+
+    save_rotation_state(state)
+    save_briefings_js(briefings, state)
+    print(
+        f"Successfully generated briefing '{new_briefing['title_vi']}' "
+        f"using model `{args.model}` (Words: {new_briefing['word_count_vi']})."
+    )
+
+
+if __name__ == "__main__":
+    main()

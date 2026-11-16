@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.DS_Store
+data/daily_refresh.log
+data/server.log
+data/users.json
+data/feedback.json

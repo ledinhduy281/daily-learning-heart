@@ -1,0 +1,40 @@
+name: Daily 07:00 AM Cardiology Pillar Refresh
+
+on:
+  schedule:
+    # 00:00 UTC = 07:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-daily-pillar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Refresh today's single pillar briefing (Step-0 PubMed Verified)
+        env:
+          TZ: Asia/Ho_Chi_Minh
+        run: |
+          python3 fetch_daily_ebm.py --refresh
+
+      - name: Commit and push updated briefings.js
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/briefings.js data/rotation_state.json
+          if git diff --staged --quiet; then
+            echo "No briefing changes to commit."
+          else
+            git commit -m "chore(daily): refresh single pillar briefing ($(TZ=Asia/Ho_Chi_Minh date +%F))"
+            git push
+          fi

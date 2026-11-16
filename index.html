@@ -1,0 +1,5354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Xem Tim Mỗi Ngày (Daily Learning Heart)</title>
+  <meta name="description" content="Xem Tim Mỗi Ngày (Daily Learning Heart) — Bản tin Chứng cứ Tim mạch 7:00 AM theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Xem Tim Mỗi Ngày">
+
+  <!-- Inter (Circular analogue per design.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- KaTeX CSS & JS for LaTeX Math Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Seeded Briefings Data -->
+  <script src="data/briefings.js"></script>
+
+  <style>
+    /* ==========================================================================
+       SUPABASE DESIGN SYSTEM IMPLEMENTATION (per design.md)
+       - Canvas: #ffffff (Pure white commitment, ZERO atmospheric gradients)
+       - Canvas Soft: #fafafa (Alternating surface & composited panels)
+       - Canvas Night: #1c1c1c (Stat containers, code blocks, toasts)
+       - Hairlines: #dfdfdf, #c7c7c7, #ededed
+       - Ink: #171717 (Near-black, never pure black)
+       - Ink Mute: #707070, #9a9a9a
+       - Primary: #3ecf8e (Emerald CTA & indicator dot)
+       - On Primary: #171717 (Near-black text on emerald fill)
+       - Display font weight: 500 with tight negative tracking
+       - Radii: 6px buttons (never pill-shaped), 12px cards, 4px tags
+       ========================================================================== */
+
+    :root {
+      --color-canvas: #ffffff;
+      --color-canvas-soft: #fafafa;
+      --color-canvas-night: #1c1c1c;
+      --color-canvas-night-soft: #202020;
+
+      --color-hairline: #dfdfdf;
+      --color-hairline-strong: #c7c7c7;
+      --color-hairline-cool: #ededed;
+      --color-hairline-cool-2: #efefef;
+
+      --color-ink: #171717;
+      --color-ink-secondary: #212121;
+      --color-ink-mute: #707070;
+      --color-ink-mute-2: #9a9a9a;
+      --color-ink-faint: #b2b2b2;
+
+      --color-primary: #3ecf8e;
+      --color-primary-deep: #24b47e;
+      --color-primary-soft: #4ade80;
+      --color-on-primary: #171717;
+      --color-on-dark: #ffffff;
+
+      --color-danger: #ef4444;
+      --color-danger-soft: #fef2f2;
+      --color-danger-border: #fecaca;
+      --color-warning: #f59e0b;
+
+      --rounded-xs: 4px;
+      --rounded-sm: 6px;
+      --rounded-md: 8px;
+      --rounded-lg: 12px;
+      --rounded-xl: 16px;
+      --rounded-full: 9999px;
+
+      --shadow-0: none;
+      --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+
+      --content-scale: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.auth-locked {
+      overflow: hidden;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-primary-deep);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       BUTTONS (6px signature radius, NEVER pill-shaped)
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--rounded-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      text-decoration: none;
+      line-height: 1.0;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-height: 36px;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary-green {
+      background-color: var(--color-primary);
+      color: var(--color-on-primary);
+      border-color: var(--color-primary);
+    }
+    .btn-primary-green:hover:not(:disabled) {
+      background-color: var(--color-primary-deep);
+      border-color: var(--color-primary-deep);
+      transform: translateY(-1px);
+    }
+    .btn-primary-green:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary-outline {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      border: 1px solid var(--color-hairline-strong);
+    }
+    .btn-secondary-outline:hover:not(:disabled) {
+      background-color: var(--color-canvas-soft);
+      border-color: var(--color-ink);
+      transform: translateY(-1px);
+    }
+    .btn-secondary-outline.is-active {
+      background-color: var(--color-canvas-soft);
+      border-color: var(--color-primary-deep);
+      color: var(--color-ink);
+    }
+
+    .btn-icon-only {
+      padding: 8px 10px;
+      min-width: 36px;
+      min-height: 36px;
+    }
+
+    .btn-view-source {
+      padding: 6px 12px;
+      font-size: 12px;
+      min-height: 32px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       NAVBAR (nav-bar-light per design.md)
+       ========================================================================== */
+    header.nav-bar-light {
+      background-color: var(--color-canvas);
+      border-bottom: 1px solid var(--color-hairline-cool);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 28px;
+    }
+
+    .nav-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--color-ink);
+      flex-shrink: 0;
+    }
+
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-mark svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+    }
+
+    .brand-text {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.42px;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-tag-briefing {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-ink-mute);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      padding: 2px 6px;
+      border-radius: var(--rounded-xs);
+      letter-spacing: 0;
+    }
+
+    .nav-center-status {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 13px;
+      color: var(--color-ink-mute);
+      border-left: 1px solid var(--color-hairline);
+      padding-left: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-dot-emerald {
+      width: 7px;
+      height: 7px;
+      border-radius: var(--rounded-full);
+      background-color: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    /* User Profile Workspace Strip in Navbar */
+    .user-workspace-controls {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      padding-right: 0.5rem;
+      border-right: 1px solid var(--color-hairline);
+    }
+
+    .user-workspace-controls.visible {
+      display: flex;
+    }
+
+    .user-profile-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px 4px 6px;
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-full);
+      font-size: 12px;
+      color: var(--color-ink);
+      min-height: 36px;
+    }
+
+    .user-avatar-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--rounded-full);
+      background-color: var(--color-canvas-night);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .user-name-label {
+      font-weight: 500;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-read-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      padding: 2px 7px;
+      border-radius: var(--rounded-full);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+      .nav-center-status {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header.nav-bar-light {
+        padding: 12px 16px;
+      }
+      .user-workspace-controls {
+        border-right: none;
+        padding-right: 0;
+      }
+    }
+
+    /* ==========================================================================
+       HERO STRIP & MODE SWITCHER + DAILY ASCENDING ROTATION BANNER
+       ========================================================================== */
+    .hero-strip {
+      padding: 28px 28px 16px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-top-flex {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-headline {
+      font-size: 36px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.72px;
+      color: var(--color-ink);
+      margin-bottom: 6px;
+    }
+
+    .hero-lead {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--color-ink-mute);
+      max-width: 780px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .hero-strip {
+        padding: 20px 16px 12px;
+      }
+      .hero-headline {
+        font-size: 28px;
+        letter-spacing: -0.42px;
+      }
+    }
+
+    /* Mode Switcher & Daily Rotation Strip */
+    .mode-rotation-section {
+      max-width: 1440px;
+      margin: 0 auto 16px;
+      padding: 0 28px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .mode-rotation-section {
+        padding: 0 16px;
+      }
+    }
+
+    .mode-switcher-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 6px 8px;
+    }
+
+    .mode-tabs-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mode-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--rounded-sm);
+      border: 1px solid transparent;
+      background-color: transparent;
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      min-height: 36px;
+    }
+
+    .mode-tab-btn:hover {
+      color: var(--color-ink);
+    }
+
+    .mode-tab-btn.active {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      border-color: var(--color-hairline-strong);
+      box-shadow: var(--shadow-1);
+    }
+
+    .mode-tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--rounded-full);
+      background-color: var(--color-hairline-strong);
+    }
+
+    .mode-tab-btn.active .mode-tab-dot {
+      background-color: var(--color-primary);
+    }
+
+    .mode-meta-caption {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-ink-mute);
+      padding-right: 6px;
+    }
+
+    /* Daily Ascending Rotation Banner */
+    .daily-rotation-banner {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto 1.4fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-1);
+    }
+
+    @media (max-width: 960px) {
+      .daily-rotation-banner {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .rotation-banner-arrow {
+        display: none;
+      }
+    }
+
+    .rotation-slot-card {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .rotation-slot-card:hover {
+      border-color: var(--color-hairline-strong);
+      background-color: var(--color-canvas);
+    }
+
+    .rotation-slot-card.today {
+      background-color: var(--color-canvas);
+      border-color: var(--color-primary);
+      border-left: 3px solid var(--color-primary);
+      box-shadow: var(--shadow-1);
+    }
+
+    .rotation-slot-kicker {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .rotation-slot-card.today .rotation-slot-kicker {
+      color: var(--color-primary-deep);
+      font-weight: 600;
+    }
+
+    .rotation-slot-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rotation-banner-arrow {
+      color: var(--color-hairline-strong);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       10 CORE PILLARS MAP (ONLY TODAY'S PILLAR LIT IN DAILY MODE)
+       ========================================================================== */
+    .pillars-strip {
+      max-width: 1440px;
+      margin: 0 auto 20px;
+      padding: 0 28px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .pillars-strip {
+        padding: 0 16px;
+      }
+    }
+
+    .pillars-grid-container {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-1);
+    }
+
+    .pillars-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-hairline-cool);
+    }
+
+    .pillars-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pillars-indicator-text {
+      font-size: 12px;
+      color: var(--color-ink-mute);
+    }
+
+    .pillars-tiles-track {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 1200px) {
+      .pillars-tiles-track {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pillars-tiles-track {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .pillar-tile-btn {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 10px 11px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-family: inherit;
+      min-width: 0;
+    }
+
+    .pillar-tile-btn.muted-scheduled {
+      background-color: var(--color-canvas-soft);
+      color: var(--color-ink-mute);
+    }
+
+    .pillar-tile-btn:hover {
+      border-color: var(--color-ink);
+      background-color: var(--color-canvas);
+    }
+
+    .pillar-tile-btn.active {
+      border-color: var(--color-ink);
+      background-color: var(--color-canvas);
+      box-shadow: var(--shadow-1);
+    }
+
+    .pillar-tile-btn.is-today {
+      border-top: 3px solid var(--color-primary);
+      background-color: var(--color-canvas);
+    }
+
+    .tile-num-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+    }
+
+    .tile-badge-today {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-on-primary);
+      background-color: var(--color-primary);
+      padding: 1px 6px;
+      border-radius: var(--rounded-full);
+      white-space: nowrap;
+    }
+
+    .tile-badge-scheduled {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--color-ink-mute-2);
+      white-space: nowrap;
+    }
+
+    .tile-dot-active {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--rounded-full);
+      background-color: var(--color-ink);
+    }
+
+    .tile-title-main {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pillar-tile-btn.muted-scheduled .tile-title-main {
+      color: var(--color-ink-mute);
+    }
+
+    .tile-sub-status {
+      font-size: 11px;
+      color: var(--color-ink-mute-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ==========================================================================
+       PER-PILLAR HISTORY DIAGRAM (STRICTLY SCOPED TO ONE SELECTED PILLAR)
+       ========================================================================== */
+    .history-diagram-strip {
+      max-width: 1440px;
+      margin: 0 auto 20px;
+      padding: 0 28px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .history-diagram-strip {
+        padding: 0 16px;
+      }
+    }
+
+    .history-diagram-card {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-2);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .history-diagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-hairline-cool);
+    }
+
+    .history-diagram-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.2px;
+    }
+
+    .history-scope-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-strong);
+      padding: 3px 10px;
+      border-radius: var(--rounded-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .history-diagram-track {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px 2px 8px;
+    }
+
+    .history-node-card {
+      flex: 0 0 250px;
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .history-node-card:hover {
+      border-color: var(--color-hairline-strong);
+      background-color: var(--color-canvas-soft);
+      transform: translateY(-1px);
+    }
+
+    .history-node-card.active {
+      background-color: var(--color-canvas-soft);
+      border-color: var(--color-primary);
+      border-top: 3px solid var(--color-primary);
+      box-shadow: var(--shadow-1);
+    }
+
+    .history-node-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+    }
+
+    .history-node-card.active .history-node-top {
+      color: var(--color-ink);
+      font-weight: 500;
+    }
+
+    .history-node-topic {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .history-node-transition {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      padding: 3px 8px;
+      border-radius: var(--rounded-xs);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      width: fit-content;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-node-card.active .history-node-transition {
+      background-color: var(--color-canvas);
+      border-color: var(--color-primary);
+      color: var(--color-primary-deep);
+    }
+
+    .history-node-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary-deep);
+      font-size: 14px;
+      flex-shrink: 0;
+      padding: 0 2px;
+    }
+
+    /* ==========================================================================
+       MAIN WORKSPACE (TWO-COLUMN SUPABASE CONSOLE LAYOUT)
+       ========================================================================== */
+    .app-workspace {
+      max-width: 1440px;
+      margin: 0 auto 64px;
+      padding: 0 28px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    @media (max-width: 1024px) {
+      .app-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-workspace {
+        padding: 0 16px;
+      }
+    }
+
+    /* ==========================================================================
+       LEFT SIDEBAR: TODAY FOCUS / HISTORY SELECTOR
+       ========================================================================== */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .search-filter-card {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-1);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-mode-box {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-mode-title {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .sidebar-mode-desc {
+      font-size: 12px;
+      color: var(--color-ink-mute);
+      line-height: 1.45;
+    }
+
+    .supa-select-input {
+      width: 100%;
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline-strong);
+      border-radius: var(--rounded-sm);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .supa-select-input:focus {
+      border-color: var(--color-ink);
+    }
+
+    .search-input-shell {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-shell i {
+      position: absolute;
+      left: 12px;
+      color: var(--color-ink-mute);
+      font-size: 13px;
+    }
+
+    .search-text-input {
+      width: 100%;
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 8px 12px 8px 32px;
+      font-size: 13px;
+      color: var(--color-ink);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+      min-height: 36px;
+    }
+
+    .search-text-input:focus {
+      border-color: var(--color-ink);
+    }
+
+    .filter-tags-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tag-chip {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: var(--rounded-sm);
+      border: 1px solid var(--color-hairline);
+      background-color: var(--color-canvas);
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .filter-tag-chip:hover,
+    .filter-tag-chip.active {
+      background-color: var(--color-ink);
+      color: var(--color-canvas);
+      border-color: var(--color-ink);
+    }
+
+    .briefings-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: calc(100vh - 300px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .briefing-card-item {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: var(--shadow-1);
+    }
+
+    .briefing-card-item:hover {
+      border-color: var(--color-hairline-strong);
+      transform: translateY(-1px);
+    }
+
+    .briefing-card-item.selected {
+      border-color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .card-pillar-tag {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      padding: 2px 6px;
+      border-radius: var(--rounded-xs);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-date-info {
+      font-family: var(--font-mono);
+      color: var(--color-ink-mute);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .card-title-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-ink);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      letter-spacing: -0.2px;
+    }
+
+    .card-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      border-top: 1px solid var(--color-hairline-cool);
+      padding-top: 8px;
+      gap: 6px;
+    }
+
+    .card-badges-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-verified-tiny {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--color-primary-deep);
+      font-weight: 500;
+    }
+
+    .badge-read-tiny {
+      color: var(--color-ink-mute);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    /* ==========================================================================
+       RIGHT MAIN: READING CONSOLE
+       ========================================================================== */
+    .reading-console {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 34px 38px;
+      box-shadow: var(--shadow-1);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-height: 700px;
+      min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+      .reading-console {
+        padding: 20px;
+      }
+    }
+
+    .article-top-header {
+      border-bottom: 1px solid var(--color-hairline);
+      padding-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .article-identity-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .article-identity-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pillar-name-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-strong);
+      padding: 4px 10px;
+      border-radius: var(--rounded-xs);
+    }
+
+    .week-edition-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-ink-mute);
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      padding: 4px 8px;
+      border-radius: var(--rounded-xs);
+    }
+
+    .article-header-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .article-title-display {
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -0.42px;
+      color: var(--color-ink);
+    }
+
+    .article-metadata-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--color-ink-mute);
+    }
+
+    .article-meta-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ==========================================================================
+       ICON-ONLY PRODUCT FEEDBACK BAR (Like / Dislike / Report Flag)
+       ========================================================================== */
+    .feedback-icon-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-feedback-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 36px;
+      height: 34px;
+      padding: 0 9px;
+      border-radius: var(--rounded-sm);
+      border: 1px solid var(--color-hairline);
+      background-color: var(--color-canvas);
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-feedback-icon:hover {
+      border-color: var(--color-hairline-strong);
+      color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+    }
+
+    .btn-feedback-icon.active-like {
+      border-color: var(--color-primary);
+      background-color: #ecfdf5;
+      color: #065f46;
+    }
+    .btn-feedback-icon.active-like i {
+      color: var(--color-primary-deep);
+    }
+
+    .btn-feedback-icon.active-dislike {
+      border-color: #f59e0b;
+      background-color: #fffbeb;
+      color: #92400e;
+    }
+    .btn-feedback-icon.active-dislike i {
+      color: #d97706;
+    }
+
+    .btn-feedback-icon.active-report {
+      border-color: var(--color-danger-border);
+      background-color: var(--color-danger-soft);
+      color: #991b1b;
+    }
+    .btn-feedback-icon.active-report i {
+      color: var(--color-danger);
+    }
+
+    .fb-count {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .bottom-feedback-prompt {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .bottom-feedback-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bottom-feedback-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-ink);
+    }
+
+    .bottom-feedback-sub {
+      font-size: 12px;
+      color: var(--color-ink-mute);
+    }
+
+    /* ==========================================================================
+       LANGUAGE TOGGLE & FONT SCALE
+       ========================================================================== */
+    .lang-segmented-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 6px 8px;
+    }
+
+    .segmented-control {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .segmented-btn {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--rounded-sm);
+      border: 1px solid transparent;
+      background-color: transparent;
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .segmented-btn:hover {
+      color: var(--color-ink);
+    }
+
+    .segmented-btn.active {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      border-color: var(--color-hairline);
+      box-shadow: var(--shadow-1);
+    }
+
+    .reading-scale-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .scale-btn {
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: var(--rounded-xs);
+      border: 1px solid var(--color-hairline);
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      cursor: pointer;
+      min-height: 28px;
+    }
+
+    /* ==========================================================================
+       GUIDELINE EVOLUTION PIPELINE + COMPARISON BANNER
+       ========================================================================== */
+    .summary-card-feature {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .summary-title-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .guideline-comparison-banner {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    @media (max-width: 820px) {
+      .guideline-comparison-banner {
+        grid-template-columns: 1fr;
+      }
+      .comparison-arrow-mid {
+        transform: rotate(90deg);
+        justify-content: center;
+      }
+    }
+
+    .guideline-ref-box {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .guideline-ref-box.current {
+      border-color: var(--color-primary);
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .guideline-ref-kicker {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-ink-mute);
+    }
+
+    .guideline-ref-box.current .guideline-ref-kicker {
+      color: var(--color-primary-deep);
+    }
+
+    .guideline-ref-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+      line-height: 1.35;
+    }
+
+    .guideline-ref-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .guideline-ref-meta a {
+      color: var(--color-ink);
+      text-decoration: underline;
+    }
+
+    .comparison-arrow-mid {
+      display: flex;
+      align-items: center;
+      color: var(--color-ink-mute);
+      font-size: 13px;
+    }
+
+    .evolution-pipeline {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1.15fr;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .evolution-pipeline {
+        grid-template-columns: 1fr;
+      }
+      .pipeline-arrow {
+        transform: rotate(90deg);
+        justify-content: center;
+      }
+    }
+
+    .pipeline-step-box {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pipeline-step-box.current {
+      border-color: var(--color-primary);
+      border-top: 3px solid var(--color-primary);
+    }
+
+    .step-tag-text {
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--font-mono);
+      color: var(--color-ink-mute);
+    }
+
+    .step-name-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-ink);
+      line-height: 1.35;
+    }
+
+    .step-desc-text {
+      font-size: 13px;
+      color: var(--color-ink-mute);
+      line-height: 1.45;
+    }
+
+    .pipeline-arrow {
+      display: flex;
+      align-items: center;
+      color: var(--color-hairline-strong);
+      font-size: 14px;
+    }
+
+    /* ==========================================================================
+       LANDMARK TRIALS MATRIX (Canvas-Night Stat Containers)
+       ========================================================================== */
+    .section-block-heading {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: -10px;
+    }
+
+    .trials-grid-deck {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .trial-box-card {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-1);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .trial-box-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .trial-title-h3 {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-ink);
+      letter-spacing: -0.2px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .trial-journal-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      padding: 2px 6px;
+      border-radius: var(--rounded-xs);
+      white-space: normal;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+    }
+
+    .stat-container-night {
+      background-color: var(--color-canvas-night);
+      border-radius: var(--rounded-sm);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      color: var(--color-on-dark);
+      min-width: 0;
+    }
+
+    .stat-metric-primary {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .stat-endpoint-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--color-ink-mute-2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.35;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-value-emerald {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .stat-metric-secondary {
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #d4d4d4;
+      line-height: 1.45;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .impact-dual-columns {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      font-size: 12px;
+      min-width: 0;
+    }
+
+    .impact-cell {
+      border-radius: var(--rounded-xs);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      line-height: 1.45;
+      min-width: 0;
+    }
+
+    .impact-cell .cell-text {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .impact-cell.change {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+    .impact-cell.change .cell-label {
+      color: #166534;
+      font-weight: 500;
+    }
+    .impact-cell.change .cell-text {
+      color: #14532d;
+    }
+
+    .impact-cell.caution {
+      background-color: var(--color-danger-soft);
+      border: 1px solid var(--color-danger-border);
+    }
+    .impact-cell.caution .cell-label {
+      color: #991b1b;
+      font-weight: 500;
+    }
+    .impact-cell.caution .cell-text {
+      color: #7f1d1d;
+    }
+
+    /* ==========================================================================
+       TAKE-HOME CLINICAL PEARLS
+       ========================================================================== */
+    .pearls-card-supa {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-left: 4px solid var(--color-primary);
+      border-radius: var(--rounded-md);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-1);
+    }
+
+    .pearls-header-title {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pearls-items-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pearl-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--color-ink);
+      line-height: 1.5;
+    }
+
+    .pearl-type-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: var(--rounded-xs);
+      white-space: nowrap;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .pearl-type-tag.guideline {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-strong);
+      color: var(--color-ink);
+    }
+
+    .pearl-type-tag.trial {
+      background-color: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+    }
+
+    /* ==========================================================================
+       ARTICLE MARKDOWN BODY
+       ========================================================================== */
+    .article-rendered-body {
+      font-size: calc(15px * var(--content-scale));
+      line-height: 1.65;
+      color: var(--color-ink);
+      margin-top: 4px;
+      overflow-wrap: break-word;
+    }
+
+    .article-rendered-body h1 {
+      display: none;
+    }
+
+    .article-rendered-body h2 {
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.25;
+      color: var(--color-ink);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-hairline-cool);
+    }
+
+    .article-rendered-body h3 {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.4;
+      color: var(--color-ink);
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .article-rendered-body p {
+      margin-bottom: 14px;
+      color: var(--color-ink);
+    }
+
+    .article-rendered-body ul,
+    .article-rendered-body ol {
+      margin-left: 24px;
+      margin-bottom: 14px;
+      color: var(--color-ink);
+    }
+
+    .article-rendered-body li {
+      margin-bottom: 6px;
+    }
+
+    .article-rendered-body strong {
+      color: var(--color-ink);
+      font-weight: 600;
+    }
+
+    .article-rendered-body blockquote {
+      border-left: 3px solid var(--color-ink);
+      background-color: var(--color-canvas-soft);
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      color: var(--color-ink-mute);
+    }
+
+    .article-rendered-body code {
+      font-family: var(--font-mono);
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-ink);
+      padding: 2px 6px;
+      border-radius: var(--rounded-xs);
+      font-size: 13px;
+    }
+
+    .article-rendered-body pre {
+      background-color: var(--color-canvas-night);
+      color: var(--color-on-dark);
+      border-radius: var(--rounded-sm);
+      padding: 16px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+    }
+
+    .article-rendered-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .article-rendered-body th,
+    .article-rendered-body td {
+      border: 1px solid var(--color-hairline);
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .article-rendered-body th {
+      background-color: var(--color-canvas-soft);
+      font-weight: 500;
+    }
+
+    .article-rendered-body hr {
+      border: none;
+      height: 1px;
+      background-color: var(--color-hairline);
+      margin: 28px 0;
+    }
+
+    /* ==========================================================================
+       TRACEABLE SOURCES ANCHORS
+       ========================================================================== */
+    .sources-console-card {
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      padding: 20px;
+      margin-top: 8px;
+    }
+
+    .sources-title-row {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-ink);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sources-list-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .source-entry-item {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .source-entry-item > div:first-child {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .source-entry-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+    }
+
+    .source-entry-citation {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+      margin-top: 2px;
+      word-break: break-word;
+    }
+
+    /* ==========================================================================
+       AUTHENTICATION GATE OVERLAY (SUPABASE WHITE CARD, LEVEL 3 SHADOW)
+       ========================================================================== */
+    .auth-gate-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(250, 250, 250, 0.94);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+      overflow-y: auto;
+    }
+
+    .auth-gate-overlay.active {
+      display: flex;
+    }
+
+    .auth-gate-card {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline-strong);
+      border-radius: var(--rounded-lg);
+      box-shadow: var(--shadow-3);
+      max-width: 440px;
+      width: 100%;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .auth-card-brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .auth-card-title {
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.42px;
+      color: var(--color-ink);
+      margin-bottom: 4px;
+    }
+
+    .auth-card-subtitle {
+      font-size: 13px;
+      color: var(--color-ink-mute);
+      line-height: 1.45;
+    }
+
+    .auth-tabs-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 4px;
+    }
+
+    .auth-tab-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      border-radius: var(--rounded-xs);
+      background-color: transparent;
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .auth-tab-btn.active {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      border-color: var(--color-hairline);
+      box-shadow: var(--shadow-1);
+    }
+
+    .auth-form-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-ink);
+    }
+
+    .supa-text-input {
+      width: 100%;
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      font-size: 14px;
+      font-family: inherit;
+      padding: 8px 12px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      min-height: 38px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .supa-text-input:focus {
+      border-color: var(--color-ink);
+    }
+
+    .auth-error-alert {
+      display: none;
+      background-color: var(--color-danger-soft);
+      border: 1px solid var(--color-danger-border);
+      color: #991b1b;
+      border-radius: var(--rounded-sm);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .auth-error-alert.show {
+      display: block;
+    }
+
+    .auth-divider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--color-ink-mute);
+    }
+
+    .auth-divider-row::before,
+    .auth-divider-row::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background-color: var(--color-hairline-cool);
+    }
+
+    .auth-offline-note {
+      display: none;
+      background-color: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--color-ink-mute);
+      line-height: 1.45;
+    }
+
+    .auth-offline-note.show {
+      display: block;
+    }
+
+    /* ==========================================================================
+       MODALS (PUBMED VERIFIER & FEEDBACK REPORT)
+       ========================================================================== */
+    .modal-backdrop-supa {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(23, 23, 23, 0.58);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      padding: 20px;
+    }
+
+    .modal-backdrop-supa.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog-supa {
+      background-color: var(--color-canvas);
+      border: 1px solid var(--color-hairline-strong);
+      border-radius: var(--rounded-lg);
+      max-width: 660px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-3);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(10px);
+      transition: transform 0.15s ease;
+    }
+
+    .modal-backdrop-supa.active .modal-dialog-supa {
+      transform: translateY(0);
+    }
+
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-head-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-close-supa {
+      background: none;
+      border: none;
+      color: var(--color-ink-mute);
+      font-size: 16px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--rounded-sm);
+    }
+    .btn-close-supa:hover {
+      color: var(--color-ink);
+      background-color: var(--color-canvas-soft);
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pubmed-query-bar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pubmed-input-text {
+      flex: 1;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      min-height: 36px;
+    }
+    .pubmed-input-text:focus {
+      border-color: var(--color-ink);
+    }
+
+    .pubmed-results-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    /* Feedback Report Reason Selector */
+    .report-reasons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 560px) {
+      .report-reasons-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .report-reason-btn {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      border-radius: var(--rounded-sm);
+      border: 1px solid var(--color-hairline);
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .report-reason-btn:hover {
+      background-color: var(--color-canvas-soft);
+      border-color: var(--color-hairline-strong);
+    }
+
+    .report-reason-btn.active {
+      border-color: var(--color-primary-deep);
+      background-color: #ecfdf5;
+      color: #065f46;
+    }
+
+    .supa-textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--color-ink);
+      resize: vertical;
+      outline: none;
+    }
+
+    .supa-textarea:focus {
+      border-color: var(--color-ink);
+    }
+
+    /* Toast */
+    .toast-supa {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--color-canvas-night);
+      border: 1px solid var(--color-canvas-night-soft);
+      color: var(--color-on-dark);
+      padding: 10px 16px;
+      border-radius: var(--rounded-sm);
+      box-shadow: var(--shadow-2);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .toast-supa.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Footer */
+    footer.footer-light {
+      background-color: var(--color-canvas);
+      border-top: 1px solid var(--color-hairline-cool);
+      padding: 40px 28px;
+      color: var(--color-ink-mute);
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    @media print {
+      header.nav-bar-light,
+      .mode-rotation-section,
+      .pillars-strip,
+      .history-diagram-strip,
+      aside.sidebar-panel,
+      .lang-segmented-bar,
+      .article-header-tools,
+      .bottom-feedback-prompt,
+      .auth-gate-overlay,
+      .modal-backdrop-supa,
+      .toast-supa,
+      #refreshProgressStrip {
+        display: none !important;
+      }
+      .app-workspace {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
+      .reading-console {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       AUTHENTICATION GATE OVERLAY (Supabase Card, Level 3 Shadow)
+       ======================================================================== -->
+  <div class="auth-gate-overlay" id="authGateOverlay" role="dialog" aria-modal="true" aria-labelledby="authGateTitle">
+    <div class="auth-gate-card">
+      <div class="auth-card-brand">
+        <div class="brand-logo">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13.2 2L3 14.4h8.4L9.6 22 21 9.6h-8.4L13.2 2z" fill="#3ecf8e" />
+            </svg>
+          </div>
+          <span class="brand-text">
+            Xem Tim Mỗi Ngày
+            <span class="brand-tag-briefing">Daily Learning Heart</span>
+          </span>
+        </div>
+        <span class="brand-tag-briefing">Xác thực Bác sĩ</span>
+      </div>
+
+      <div>
+        <h2 class="auth-card-title" id="authGateTitle">Cổng Lâm sàng Cá nhân hóa</h2>
+        <p class="auth-card-subtitle">
+          Đăng nhập để đồng bộ lịch sử đọc, danh sách bản tin đã lưu và phản hồi đóng góp cải tiến sản phẩm.
+        </p>
+      </div>
+
+      <div class="auth-tabs-bar" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="authTabLogin" role="tab" aria-selected="true">Đăng nhập</button>
+        <button type="button" class="auth-tab-btn" id="authTabRegister" role="tab" aria-selected="false">Đăng ký</button>
+      </div>
+
+      <div class="auth-error-alert" id="authErrorBox" role="alert"></div>
+
+      <!-- LOGIN FORM -->
+      <form class="auth-form-stack" id="loginForm">
+        <div class="form-field-group">
+          <label class="form-field-label" for="loginUsername">Tên đăng nhập</label>
+          <input type="text" id="loginUsername" class="supa-text-input" placeholder="VD: bs.timmach" autocomplete="username" required>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label" for="loginPassword">Mật khẩu</label>
+          <input type="password" id="loginPassword" class="supa-text-input" placeholder="Nhập mật khẩu" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary-green" id="btnLoginSubmit" style="width: 100%;">
+          <span>Đăng nhập</span>
+        </button>
+
+        <div class="auth-divider-row">hoặc trải nghiệm nhanh</div>
+
+        <button type="button" class="btn btn-secondary-outline" id="btnDemoLogin" style="width: 100%; white-space: normal; line-height: 1.3; padding: 10px 14px;">
+          <i class="fa-solid fa-user-doctor" style="color: var(--color-primary-deep);"></i>
+          <span>Đăng nhập nhanh: Bác sĩ Đặng Quốc Tình (bs.timmach)</span>
+        </button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form class="auth-form-stack" id="registerForm" style="display: none;">
+        <div class="form-field-group">
+          <label class="form-field-label" for="regUsername">Tên đăng nhập</label>
+          <input type="text" id="regUsername" class="supa-text-input" placeholder="VD: bs.an.nguyen" autocomplete="username" required>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label" for="regFullName">Họ tên Bác sĩ</label>
+          <input type="text" id="regFullName" class="supa-text-input" placeholder="VD: BS. Nguyễn Văn An" autocomplete="name" required>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label" for="regSpecialty">Chuyên khoa</label>
+          <input type="text" id="regSpecialty" class="supa-text-input" placeholder="VD: Nội Tim mạch / Hồi sức Tim mạch" value="Nội Tim mạch" required>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label" for="regPassword">Mật khẩu</label>
+          <input type="password" id="regPassword" class="supa-text-input" placeholder="Tối thiểu 4 ký tự" autocomplete="new-password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary-green" id="btnRegisterSubmit" style="width: 100%;">
+          <span>Đăng ký &amp; Vào Workspace</span>
+        </button>
+      </form>
+
+      <div class="auth-offline-note" id="authOfflineNote">
+        <i class="fa-solid fa-cloud-check" style="color: var(--color-primary-deep);"></i>
+        <span id="authOfflineNoteText">Đang chạy ở chế độ Độc lập 24/7 — tài khoản, lịch sử đọc và phản hồi được lưu ngay trên thiết bị của bạn.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       TOP NAVBAR
+       ======================================================================== -->
+  <header class="nav-bar-light">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="#" class="brand-logo" id="brandHomeLink">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13.2 2L3 14.4h8.4L9.6 22 21 9.6h-8.4L13.2 2z" fill="#3ecf8e" />
+            </svg>
+          </div>
+          <span class="brand-text">
+            Xem Tim Mỗi Ngày
+            <span class="brand-tag-briefing">Daily Learning Heart</span>
+          </span>
+        </a>
+
+        <div class="nav-center-status" id="navRotationStatus">
+          <span class="status-dot-emerald"></span>
+          <span>Đang đồng bộ chu trình 1 Trụ cột/ngày...</span>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <!-- Authenticated User Workspace Controls -->
+        <div class="user-workspace-controls" id="userWorkspaceControls">
+          <div class="user-profile-pill" id="userProfilePill" title="Bác sĩ">
+            <div class="user-avatar-dot" id="userAvatarInitials">BS</div>
+            <span class="user-name-label" id="userDisplayName">BS. Đặng Quốc Tình</span>
+            <span class="user-read-badge" id="userReadCountBadge">Đã đọc: 0</span>
+          </div>
+
+          <button type="button" class="btn btn-secondary-outline" id="btnNavBookmarks" title="Lọc danh sách bản tin đã lưu">
+            <i class="fa-regular fa-bookmark"></i>
+            <span id="labelNavBookmarks">Đã lưu (0)</span>
+          </button>
+
+          <button type="button" class="btn btn-secondary-outline btn-icon-only" id="btnLogout" title="Đăng xuất" aria-label="Đăng xuất">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenPubMedModal">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span id="labelPubMedBtn">Tra Cứu PubMed</span>
+        </button>
+
+        <button type="button" class="btn btn-primary-green" id="btnRefreshToday" title="Cập nhật và xác thực PubMed Step-0 cho đúng 1 Trụ cột hôm nay">
+          <i class="fa-solid fa-rotate" id="iconRefreshToday"></i>
+          <span id="labelRefreshToday">Cập nhật Trụ cột hôm nay</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Refresh Progress Bar -->
+  <div id="refreshProgressStrip" style="display: none; background: var(--color-canvas-soft); border-bottom: 1px solid var(--color-hairline); padding: 10px 28px;">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+        <span id="refreshProgressMsg" style="color: var(--color-ink); font-weight: 500;">Đang chuẩn bị xác thực Guideline &amp; RCTs...</span>
+        <span id="refreshProgressPct" style="font-family: var(--font-mono); font-weight: 600; color: var(--color-ink);">0%</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: var(--color-hairline-cool); border-radius: 4px; overflow: hidden;">
+        <div id="refreshProgressBar" style="width: 0%; height: 100%; background: var(--color-primary); transition: width 0.25s ease;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       HERO STRIP (PURE WHITE CANVAS)
+       ======================================================================== -->
+  <section class="hero-strip">
+    <div class="hero-top-flex">
+      <div>
+        <h1 class="hero-headline" id="heroHeadlineText">Xem Tim Mỗi Ngày (Daily Learning Heart)</h1>
+        <p class="hero-lead" id="heroLeadText">
+          Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       MODE SWITCHER & DAILY ASCENDING ROTATION BANNER
+       ======================================================================== -->
+  <section class="mode-rotation-section">
+    <div class="mode-switcher-bar">
+      <div class="mode-tabs-group" role="tablist">
+        <button type="button" class="mode-tab-btn active" id="tabModeToday" role="tab" aria-selected="true">
+          <span class="mode-tab-dot"></span>
+          <span id="labelModeToday">Bản tin Hôm nay (1 Trụ cột)</span>
+        </button>
+        <button type="button" class="mode-tab-btn" id="tabModeHistory" role="tab" aria-selected="false">
+          <span class="mode-tab-dot"></span>
+          <span id="labelModeHistory">Lịch sử &amp; Sơ đồ Trụ cột</span>
+        </button>
+      </div>
+      <div class="mode-meta-caption" id="modeMetaCaption">
+        Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu
+      </div>
+    </div>
+
+    <div class="daily-rotation-banner" id="dailyRotationBanner">
+      <!-- Rendered by JS: Yesterday -> Today -> Tomorrow -->
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       10 CORE PILLARS MAP
+       ======================================================================== -->
+  <section class="pillars-strip">
+    <div class="pillars-grid-container">
+      <div class="pillars-header-row">
+        <div class="pillars-label">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span id="pillarsSectionTitle">Lịch Luân Phiên 10 Trụ Cột Nội Khoa Tim Mạch</span>
+        </div>
+        <div class="pillars-indicator-text" id="pillarsSummaryText">
+          Hôm nay chỉ xuất bản 1 Trụ cột theo lịch; bấm các trụ cột khác để mở Lịch sử &amp; Sơ đồ riêng
+        </div>
+      </div>
+
+      <div class="pillars-tiles-track" id="pillarsTilesDeck">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       PER-PILLAR HISTORY DIAGRAM (STRICTLY SCOPED TO ONE SELECTED PILLAR)
+       ======================================================================== -->
+  <section class="history-diagram-strip" id="pillarHistoryDiagramPanel" style="display: none;">
+    <div class="history-diagram-card">
+      <div class="history-diagram-header">
+        <div class="history-diagram-title" id="historyDiagramTitle">
+          <i class="fa-solid fa-code-branch" style="color: var(--color-primary-deep);"></i>
+          <span>Sơ đồ Lịch sử Phát triển — Trụ cột #1</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span class="history-scope-badge" id="historyDiagramScopeBadge">
+            Phạm vi riêng Trụ cột #1 • Không trộn trụ cột khác
+          </span>
+        </div>
+      </div>
+
+      <div class="history-diagram-track" id="historyDiagramTrack">
+        <!-- Rendered by JS: Strictly nodes of App.historyPillarId -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       MAIN CLINICAL WORKSPACE (DUAL-PANE LAYOUT)
+       ======================================================================== -->
+  <main class="app-workspace">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar-panel">
+      <div class="search-filter-card">
+        <!-- Today Mode Sidebar Context -->
+        <div class="sidebar-mode-box" id="todaySidebarContext">
+          <div class="sidebar-mode-title">
+            <span id="todaySidebarHeading">Trọng tâm Hôm nay (1 Trụ cột)</span>
+            <span class="badge-verified-tiny" id="todaySidebarDateChip">16/11</span>
+          </div>
+          <p class="sidebar-mode-desc" id="todaySidebarDesc">
+            Chế độ Hôm nay chỉ hiển thị đúng 1 bản tin Trụ cột được phân bổ theo lịch số tiến.
+          </p>
+          <button type="button" class="btn btn-secondary-outline" id="btnOpenTodayPillarHistory" style="width: 100%; font-size: 13px;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span id="labelOpenTodayPillarHistory">Xem Lịch sử &amp; Sơ đồ Trụ cột #1</span>
+          </button>
+        </div>
+
+        <!-- History Mode Controls -->
+        <div id="historySidebarControls" style="display: none; flex-direction: column; gap: 10px;">
+          <div class="form-field-group">
+            <label class="form-field-label" for="historyPillarSelect" id="labelHistoryPillarSelect" style="font-size: 12px; color: var(--color-ink-mute);">Chọn Trụ cột xem Lịch sử</label>
+            <select id="historyPillarSelect" class="supa-select-input">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <div class="search-input-shell">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              id="searchBriefingInput"
+              class="search-text-input"
+              placeholder="Tìm theo thử nghiệm, khuyến cáo..."
+            >
+          </div>
+
+          <div class="filter-tags-strip" id="historyFilterStrip">
+            <button type="button" class="filter-tag-chip active" data-hfilter="all">Tất cả kỳ</button>
+            <button type="button" class="filter-tag-chip" data-hfilter="saved">Đã lưu</button>
+            <button type="button" class="filter-tag-chip" data-hfilter="read">Đã đọc</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Briefings List Deck -->
+      <div class="briefings-deck" id="briefingsListDeck">
+        <!-- Rendered by JS -->
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN: READING CONSOLE -->
+    <section class="reading-console" id="readingConsole">
+
+      <!-- Article Top Header -->
+      <div class="article-top-header">
+        <div class="article-identity-row">
+          <div class="article-identity-badges">
+            <span class="pillar-name-badge" id="articlePillarBadge">Trụ cột #1: Tăng huyết áp</span>
+            <span class="week-edition-badge" id="articleWeekBadge">Tuần 46 • 16/11/2026</span>
+          </div>
+
+          <div class="article-header-tools">
+            <!-- Synchronized Icon-Only Product Feedback Toolbar -->
+            <div class="feedback-icon-bar" data-feedback-bar="header">
+              <button type="button" class="btn-feedback-icon" data-fb-type="like" title="Thích nội dung này" aria-label="Thích nội dung này">
+                <i class="fa-regular fa-thumbs-up"></i>
+                <span class="fb-count">0</span>
+              </button>
+              <button type="button" class="btn-feedback-icon" data-fb-type="dislike" title="Không thích / Chưa hữu ích" aria-label="Không thích / Chưa hữu ích">
+                <i class="fa-regular fa-thumbs-down"></i>
+                <span class="fb-count">0</span>
+              </button>
+              <button type="button" class="btn-feedback-icon" data-fb-type="report" title="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm" aria-label="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm">
+                <i class="fa-regular fa-flag"></i>
+                <span class="fb-count">0</span>
+              </button>
+            </div>
+
+            <button type="button" class="btn btn-secondary-outline btn-icon-only" id="btnToggleBookmark" title="Lưu bản tin vào mục cá nhân" aria-label="Lưu bản tin">
+              <i class="fa-regular fa-bookmark"></i>
+            </button>
+
+            <button type="button" class="btn btn-secondary-outline btn-icon-only" id="btnCopyArticle" title="Sao chép nội dung Markdown" aria-label="Sao chép Markdown">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+
+            <button type="button" class="btn btn-secondary-outline btn-icon-only" id="btnPrintArticle" title="In hoặc Xuất PDF" aria-label="In hoặc Xuất PDF">
+              <i class="fa-solid fa-print"></i>
+            </button>
+          </div>
+        </div>
+
+        <h2 class="article-title-display" id="articleTitleDisplay">
+          Đang tải nội dung bản tin...
+        </h2>
+
+        <div class="article-metadata-strip">
+          <div class="article-meta-left">
+            <div class="meta-item-box">
+              <i class="fa-regular fa-calendar"></i>
+              <span id="articleDateDisplay">2026-11-16 07:00 AM</span>
+            </div>
+            <div class="meta-item-box">
+              <span class="badge-verified-tiny" id="articleVerifiedBadge"><i class="fa-solid fa-check"></i> Xác thực NCBI PubMed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segmented Bar (Dual-Language & Typography Scale) -->
+      <div class="lang-segmented-bar">
+        <div class="segmented-control">
+          <button type="button" class="segmented-btn active" id="btnLangVi">Phần 1: Tiếng Việt (Chuyên Sâu)</button>
+          <button type="button" class="segmented-btn" id="btnLangEn">Part 2: English (Academic Style)</button>
+        </div>
+
+        <div class="reading-scale-controls">
+          <button type="button" class="scale-btn" id="btnFontDec" aria-label="Giảm cỡ chữ">A-</button>
+          <button type="button" class="scale-btn" id="btnFontReset" aria-label="Cỡ chữ mặc định">100%</button>
+          <button type="button" class="scale-btn" id="btnFontInc" aria-label="Tăng cỡ chữ">A+</button>
+        </div>
+      </div>
+
+      <!-- 1. GUIDELINE EVOLUTION PIPELINE (Directive A -> Landmark RCTs -> Directive B) -->
+      <div class="summary-card-feature">
+        <div class="summary-title-line">
+          <span id="guidelinePipelineTitle">Diễn Tiến Khuyến Cáo Thực Hành Qua Các Thế Hệ</span>
+          <span style="color: var(--color-ink-mute); font-family: var(--font-mono); font-size: 11px;">ESC / ACC</span>
+        </div>
+
+        <div class="guideline-comparison-banner" id="guidelineComparisonBanner">
+          <!-- Rendered by JS: Prior Guideline <-> Current Guideline -->
+        </div>
+
+        <div class="evolution-pipeline" id="evolutionPipelineRow">
+          <!-- Rendered by JS: Guideline Evolution 3 Steps -->
+        </div>
+      </div>
+
+      <!-- 2. LANDMARK TRIALS COMPOSITED CARDS -->
+      <div class="section-block-heading">
+        <span id="trialsSectionTitle">Các Thử Nghiệm Lâm Sàng Bản Lề</span>
+      </div>
+      <div class="trials-grid-deck" id="trialsGridDeck">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- 3. TAKE-HOME CLINICAL PEARLS -->
+      <div class="pearls-card-supa">
+        <div class="pearls-header-title">
+          <i class="fa-solid fa-stethoscope" style="color: var(--color-primary-deep);"></i>
+          <span id="pearlsHeaderTitle">Điểm Nhấn Lâm Sàng Khi Đi Buồng</span>
+        </div>
+        <div class="pearls-items-stack" id="pearlsStackDeck">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- 4. FULL MARKDOWN TEXT BODY -->
+      <div class="article-rendered-body" id="articleRenderedBody">
+        <!-- Rendered by Marked.js -->
+      </div>
+
+      <!-- 5. PRODUCT FEEDBACK BAR (BOTTOM ARTICLE PROMPT) -->
+      <div class="bottom-feedback-prompt" id="bottomFeedbackPrompt">
+        <div class="bottom-feedback-text">
+          <div class="bottom-feedback-title" id="bottomFeedbackTitle">Đánh giá &amp; Góp ý Nhà làm sản phẩm</div>
+          <div class="bottom-feedback-sub" id="bottomFeedbackSub">
+            Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.
+          </div>
+        </div>
+
+        <div class="feedback-icon-bar" data-feedback-bar="bottom">
+          <button type="button" class="btn-feedback-icon" data-fb-type="like" title="Thích nội dung này" aria-label="Thích nội dung này">
+            <i class="fa-regular fa-thumbs-up"></i>
+            <span class="fb-count">0</span>
+          </button>
+          <button type="button" class="btn-feedback-icon" data-fb-type="dislike" title="Không thích / Chưa hữu ích" aria-label="Không thích / Chưa hữu ích">
+            <i class="fa-regular fa-thumbs-down"></i>
+            <span class="fb-count">0</span>
+          </button>
+          <button type="button" class="btn-feedback-icon" data-fb-type="report" title="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm" aria-label="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm">
+            <i class="fa-regular fa-flag"></i>
+            <span class="fb-count">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 6. TRACEABLE SOURCE ANCHORS -->
+      <div class="sources-console-card">
+        <div class="sources-title-row">
+          <i class="fa-solid fa-link"></i>
+          <span id="sourcesSectionTitle">Nguồn Trích Dẫn Xác Thực (NCBI PubMed &amp; DOI)</span>
+        </div>
+        <div class="sources-list-stack" id="sourcesListStack">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       MODAL: PUBMED STEP-0 LIVE VERIFIER
+       ======================================================================== -->
+  <div class="modal-backdrop-supa" id="pubMedModal" role="dialog" aria-modal="true" aria-labelledby="pubMedModalTitle">
+    <div class="modal-dialog-supa">
+      <div class="modal-head">
+        <div class="modal-head-title" id="pubMedModalTitle">
+          <i class="fa-solid fa-microscope" style="color: var(--color-primary-deep);"></i>
+          <span>Tra Cứu Đối Chiếu NCBI PubMed E-Utilities</span>
+        </div>
+        <button type="button" class="btn-close-supa" id="btnClosePubMedModal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="pubmed-query-bar">
+          <input
+            type="text"
+            id="pubMedQueryInput"
+            class="pubmed-input-text"
+            placeholder="Nhập tên guideline hoặc thử nghiệm (VD: 2024 ESC hypertension, SPRINT, BPROAD)..."
+            value="2024 ESC Guidelines elevated blood pressure hypertension"
+          >
+          <button type="button" class="btn btn-primary-green" id="btnExecutePubMedQuery">
+            <span>Tra Cứu</span>
+          </button>
+        </div>
+
+        <div class="pubmed-results-scroll" id="pubMedResultsScroll">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: PRODUCT FEEDBACK / REPORT
+       ======================================================================== -->
+  <div class="modal-backdrop-supa" id="feedbackReportModal" role="dialog" aria-modal="true" aria-labelledby="feedbackReportTitle">
+    <div class="modal-dialog-supa" style="max-width: 520px;">
+      <div class="modal-head">
+        <div class="modal-head-title" id="feedbackReportTitle">
+          <i class="fa-regular fa-flag" style="color: var(--color-danger);"></i>
+          <span id="labelReportModalHeader">Báo cáo &amp; Gửi Góp ý tới Nhà làm sản phẩm</span>
+        </div>
+        <button type="button" class="btn-close-supa" id="btnCloseFeedbackModal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-field-group">
+          <label class="form-field-label" id="labelReportReasonPrompt">Chọn nhóm vấn đề hoặc đề xuất:</label>
+          <div class="report-reasons-grid" id="feedbackReasonGroup">
+            <button type="button" class="report-reason-btn active" data-reason="Sai lệch số liệu / Guideline">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Sai lệch số liệu / Guideline</span>
+            </button>
+            <button type="button" class="report-reason-btn" data-reason="Thiếu phiên bản đối chiếu">
+              <i class="fa-solid fa-code-compare"></i>
+              <span>Thiếu phiên bản đối chiếu</span>
+            </button>
+            <button type="button" class="report-reason-btn" data-reason="Lỗi hiển thị / Dịch thuật">
+              <i class="fa-solid fa-language"></i>
+              <span>Lỗi hiển thị / Dịch thuật</span>
+            </button>
+            <button type="button" class="report-reason-btn" data-reason="Đề xuất cải tiến sản phẩm">
+              <i class="fa-regular fa-lightbulb"></i>
+              <span>Đề xuất cải tiến sản phẩm</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label" for="feedbackReportComment" id="labelReportCommentPrompt">Nội dung chi tiết gửi Nhà làm sản phẩm:</label>
+          <textarea
+            id="feedbackReportComment"
+            class="supa-textarea"
+            placeholder="Mô tả số liệu cần kiểm chứng, đề xuất bổ sung RCT hoặc góp ý trải nghiệm..."
+          ></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary-outline" id="btnCancelFeedbackReport">Hủy</button>
+          <button type="button" class="btn btn-primary-green" id="btnSubmitFeedbackReport">
+            <i class="fa-regular fa-paper-plane"></i>
+            <span id="labelReportSubmitBtn">Gửi Phản hồi</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-supa" id="toastBox" role="status" aria-live="polite">
+    <i class="fa-solid fa-circle-check" style="color: var(--color-primary);"></i>
+    <span id="toastMsg">Thành công!</span>
+  </div>
+
+  <!-- ========================================================================
+       FOOTER
+       ======================================================================== -->
+  <footer class="footer-light">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <p style="color: var(--color-ink); font-weight: 500; margin-bottom: 6px;" id="footerTitleText">
+        Xem Tim Mỗi Ngày (Daily Learning Heart)
+      </p>
+      <p style="margin-bottom: 10px;" id="footerDescText">
+        Thiết kế chuẩn mực rõ ràng Supabase: Luân phiên 1 Trụ cột mỗi ngày theo số tiến, đối chiếu tiến hóa Guideline qua từng thế hệ và xác thực nguồn NCBI PubMed Step-0.
+      </p>
+      <p style="font-size: 11px; color: var(--color-ink-mute-2);" id="footerSubText">
+        Phục vụ đào tạo sau đại học, giao ban sáng và thực hành y khoa dựa trên chứng cứ.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       JAVASCRIPT APPLICATION LOGIC
+       ======================================================================== -->
+  <script>
+    const AUTH_TOKEN_KEY = "ebm_auth_token";
+    const OFFLINE_ACTIVITY_KEY = "ebm_offline_user_activity";
+    const OFFLINE_FEEDBACK_KEY = "ebm_offline_feedback";
+    const CLOUD_USERS_KEY = "ebm_cloud_users_db";
+    const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
+    const ANCHOR_DATE_STR = "2026-11-16";
+
+    const DEFAULT_PILLARS_CATALOG = [
+      { id: 1, name: "Hypertension & Risk Factors", vi_name: "Tăng huyết áp & Yếu tố nguy cơ" },
+      { id: 2, name: "Dyslipidemia & Atherosclerosis", vi_name: "Rối loạn Lipid & Xơ vữa" },
+      { id: 3, name: "Medical CAD & Microvascular", vi_name: "Bệnh mạch vành & Vi mạch" },
+      { id: 4, name: "Antithrombotic Therapy", vi_name: "Điều trị Chống huyết khối" },
+      { id: 5, name: "Comprehensive Heart Failure", vi_name: "Suy tim Toàn diện" },
+      { id: 6, name: "Arrhythmia & Electrophysiology", vi_name: "Rối loạn nhịp & Điện sinh lý" },
+      { id: 7, name: "Valvular Heart Disease & IE", vi_name: "Bệnh van tim & Viêm nội tâm mạc" },
+      { id: 8, name: "Cardiomyopathies & ACHD", vi_name: "Bệnh cơ tim & Tim bẩm sinh" },
+      { id: 9, name: "Pulmonary Vascular & Aorta", vi_name: "Mạch máu phổi & Động mạch chủ" },
+      { id: 10, name: "Cross-Specialty & Diagnostics", vi_name: "Liên chuyên khoa & Chẩn đoán" }
+    ];
+
+    const I18N = {
+      vi: {
+        heroHeadline: "Xem Tim Mỗi Ngày (Daily Learning Heart)",
+        heroLead: "Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
+        modeToday: "Bản tin Hôm nay (1 Trụ cột)",
+        modeHistory: "Lịch sử & Sơ đồ Trụ cột",
+        modeMeta: "Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu",
+        pillarsSectionTitle: "Lịch Luân Phiên 10 Trụ Cột Nội Khoa Tim Mạch",
+        pillarsSummaryToday: "Hôm nay chỉ xuất bản 1 Trụ cột theo lịch; bấm các trụ cột khác để mở Lịch sử & Sơ đồ riêng",
+        pillarsSummaryHistory: "Đang ở chế độ Lịch sử: chọn bất kỳ Trụ cột nào để xem chuỗi phát triển theo tuần",
+        todayBadge: "HÔM NAY",
+        scheduledBadge: "Theo lịch",
+        yesterdayLabel: "Hôm qua",
+        todayLabel: "Hôm nay",
+        tomorrowLabel: "Ngày mai",
+        pillarWord: "Trụ cột",
+        verifiedPubMed: "Xác thực NCBI PubMed",
+        guidelinePipelineTitle: "Diễn Tiến Khuyến Cáo Thực Hành Qua Các Thế Hệ",
+        priorGuideline: "Khuyến cáo tiền nhiệm",
+        currentGuideline: "Khuyến cáo hiện hành",
+        trialsSectionTitle: "Các Thử Nghiệm Lâm Sàng Bản Lề",
+        pearlsHeaderTitle: "Điểm Nhấn Lâm Sàng Khi Đi Buồng",
+        pearlGuidelineTag: "KHUYẾN CÁO",
+        pearlTrialTag: "THỬ NGHIỆM BẢN LỀ",
+        whatChangesLabel: "Nên thay đổi trong thực hành:",
+        whatNotChangeLabel: "Chưa nên vội thay đổi / Lưu ý:",
+        sourcesSectionTitle: "Nguồn Trích Dẫn Xác Thực (NCBI PubMed & DOI)",
+        viewSource: "Xem Nguồn",
+        bottomFeedbackTitle: "Đánh giá & Góp ý Nhà làm sản phẩm",
+        bottomFeedbackSub: "Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.",
+        pubMedBtn: "Tra Cứu PubMed",
+        refreshBtn: "Cập nhật Trụ cột hôm nay",
+        updatingLabel: "Đang cập nhật",
+        todaySidebarHeading: "Trọng tâm Hôm nay (1 Trụ cột)",
+        todaySidebarDesc: "Chế độ Hôm nay chỉ hiển thị đúng 1 bản tin Trụ cột được phân bổ theo lịch số tiến.",
+        historySelectLabel: "Chọn Trụ cột xem Lịch sử",
+        searchPlaceholder: "Tìm theo thử nghiệm, khuyến cáo...",
+        filterAll: "Tất cả kỳ",
+        filterSaved: "Đã lưu",
+        filterRead: "Đã đọc",
+        savedNavBtn: "Đã lưu",
+        readPrefix: "Đã đọc",
+        wordsUnit: "từ",
+        footerTitle: "Xem Tim Mỗi Ngày (Daily Learning Heart)",
+        footerDesc: "Thiết kế chuẩn mực rõ ràng Supabase: Luân phiên 1 Trụ cột mỗi ngày theo số tiến, đối chiếu tiến hóa Guideline qua từng thế hệ và xác thực nguồn NCBI PubMed Step-0.",
+        footerSub: "Phục vụ đào tạo sau đại học, giao ban sáng và thực hành y khoa dựa trên chứng cứ.",
+        scopeRuleSuffix: "Không trộn trụ cột khác",
+        diagramTitlePrefix: "Sơ đồ Lịch sử Phát triển",
+        noAnchors: "Chưa có dữ liệu nguồn tham chiếu.",
+        noBriefingsMatch: "Chưa có bản tin phù hợp trong phạm vi lọc hiện tại.",
+        savedGlobalHeading: "Danh sách Bản tin Đã lưu (Tất cả Trụ cột)",
+        switchPart2Hint: "Chuyển sang Phần 2 (English)"
+      },
+      en: {
+        heroHeadline: "Daily Learning Heart (Xem Tim Mỗi Ngày)",
+        heroLead: "Updated daily at 07:00 AM on a 1-pillar-per-day ascending rotation. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
+        modeToday: "Today's Briefing (1 Pillar)",
+        modeHistory: "History & Pillar Roadmap",
+        modeMeta: "Ascending Cycle 1 → 10 • Strictly 1 Pillar / Day",
+        pillarsSectionTitle: "10 Core Cardiology Pillars Rotation",
+        pillarsSummaryToday: "Only today's scheduled pillar is published today; click any other pillar to inspect its history roadmap",
+        pillarsSummaryHistory: "History mode active: click any pillar to explore its weekly evolution timeline",
+        todayBadge: "TODAY",
+        scheduledBadge: "Scheduled",
+        yesterdayLabel: "Yesterday",
+        todayLabel: "Today",
+        tomorrowLabel: "Tomorrow",
+        pillarWord: "Pillar",
+        verifiedPubMed: "Verified NCBI PubMed",
+        guidelinePipelineTitle: "Guideline Evolution Across Generations",
+        priorGuideline: "Prior Guideline",
+        currentGuideline: "Current Guideline",
+        trialsSectionTitle: "Landmark Clinical Trials",
+        pearlsHeaderTitle: "Take-Home Clinical Pearls for Rounds",
+        pearlGuidelineTag: "GUIDELINE",
+        pearlTrialTag: "LANDMARK RCT",
+        whatChangesLabel: "What Changes in Practice:",
+        whatNotChangeLabel: "What Should NOT Change:",
+        sourcesSectionTitle: "Verified Traceable Sources (NCBI PubMed & DOI)",
+        viewSource: "View Source",
+        bottomFeedbackTitle: "Rate Briefing Quality & Send Product Feedback",
+        bottomFeedbackSub: "Your clinical feedback helps refine guideline precision and daily reading experience.",
+        pubMedBtn: "PubMed Lookup",
+        refreshBtn: "Refresh Today's Pillar",
+        updatingLabel: "Updating",
+        todaySidebarHeading: "Today's Focus (1 Pillar)",
+        todaySidebarDesc: "Today mode focuses strictly on the single scheduled pillar in the ascending rotation.",
+        historySelectLabel: "Select Pillar History",
+        searchPlaceholder: "Search trials, guidelines, drug classes...",
+        filterAll: "All editions",
+        filterSaved: "Saved",
+        filterRead: "Read",
+        savedNavBtn: "Saved",
+        readPrefix: "Read",
+        wordsUnit: "words",
+        footerTitle: "Daily Learning Heart — Xem Tim Mỗi Ngày",
+        footerDesc: "Engineered with Supabase clarity: 1-pillar-per-day ascending rotation, generational guideline evolution, and Step-0 NCBI PubMed verification.",
+        footerSub: "Built for postgraduate cardiology rounds and evidence-based clinical practice.",
+        scopeRuleSuffix: "Strictly single-pillar scope",
+        diagramTitlePrefix: "Historical Evolution Diagram",
+        noAnchors: "No PubMed anchor metadata recorded.",
+        noBriefingsMatch: "No briefings match the current filter.",
+        savedGlobalHeading: "Saved Bookmarks (All Pillars)",
+        switchPart2Hint: "View Part 1 (Vietnamese)"
+      }
+    };
+
+    const App = {
+      briefings: [],
+      pillars: DEFAULT_PILLARS_CATALOG.map(p => ({ ...p })),
+      rotation: { last_pillar_id: 1, last_updated: ANCHOR_DATE_STR, history: [1] },
+      todayDate: ANCHOR_DATE_STR,
+      todayPillarId: 1,
+      yesterdayPillar: null,
+      todayPillar: null,
+      tomorrowPillar: null,
+      mode: "today", // "today" | "history"
+      historyPillarId: 1,
+      historyFilter: "all", // "all" | "saved" | "read"
+      savedGlobalMode: false,
+      searchQuery: "",
+      selected: null,
+      currentLang: "vi",
+      fontScale: 1.0,
+      user: null,
+      token: null,
+      offlineDemo: false,
+      serverAvailable: false,
+      feedbackMap: {}, // briefingId -> { likes, dislikes, reports, user_reaction }
+      selectedReportReason: "Sai lệch số liệu / Guideline"
+    };
+
+    const Dom = {
+      authGateOverlay: document.getElementById("authGateOverlay"),
+      authTabLogin: document.getElementById("authTabLogin"),
+      authTabRegister: document.getElementById("authTabRegister"),
+      loginForm: document.getElementById("loginForm"),
+      registerForm: document.getElementById("registerForm"),
+      loginUsername: document.getElementById("loginUsername"),
+      loginPassword: document.getElementById("loginPassword"),
+      btnLoginSubmit: document.getElementById("btnLoginSubmit"),
+      btnDemoLogin: document.getElementById("btnDemoLogin"),
+      regUsername: document.getElementById("regUsername"),
+      regFullName: document.getElementById("regFullName"),
+      regSpecialty: document.getElementById("regSpecialty"),
+      regPassword: document.getElementById("regPassword"),
+      btnRegisterSubmit: document.getElementById("btnRegisterSubmit"),
+      authErrorBox: document.getElementById("authErrorBox"),
+      authOfflineNote: document.getElementById("authOfflineNote"),
+
+      navRotationStatus: document.getElementById("navRotationStatus"),
+      userWorkspaceControls: document.getElementById("userWorkspaceControls"),
+      userProfilePill: document.getElementById("userProfilePill"),
+      userAvatarInitials: document.getElementById("userAvatarInitials"),
+      userDisplayName: document.getElementById("userDisplayName"),
+      userReadCountBadge: document.getElementById("userReadCountBadge"),
+      btnNavBookmarks: document.getElementById("btnNavBookmarks"),
+      labelNavBookmarks: document.getElementById("labelNavBookmarks"),
+      btnLogout: document.getElementById("btnLogout"),
+
+      tabModeToday: document.getElementById("tabModeToday"),
+      tabModeHistory: document.getElementById("tabModeHistory"),
+      dailyRotationBanner: document.getElementById("dailyRotationBanner"),
+
+      pillarsTilesDeck: document.getElementById("pillarsTilesDeck"),
+      pillarsSummaryText: document.getElementById("pillarsSummaryText"),
+
+      pillarHistoryDiagramPanel: document.getElementById("pillarHistoryDiagramPanel"),
+      historyDiagramTitle: document.getElementById("historyDiagramTitle"),
+      historyDiagramScopeBadge: document.getElementById("historyDiagramScopeBadge"),
+      historyDiagramTrack: document.getElementById("historyDiagramTrack"),
+
+      todaySidebarContext: document.getElementById("todaySidebarContext"),
+      btnOpenTodayPillarHistory: document.getElementById("btnOpenTodayPillarHistory"),
+      historySidebarControls: document.getElementById("historySidebarControls"),
+      historyPillarSelect: document.getElementById("historyPillarSelect"),
+      searchBriefingInput: document.getElementById("searchBriefingInput"),
+      historyFilterStrip: document.getElementById("historyFilterStrip"),
+      briefingsListDeck: document.getElementById("briefingsListDeck"),
+
+      articlePillarBadge: document.getElementById("articlePillarBadge"),
+      articleWeekBadge: document.getElementById("articleWeekBadge"),
+      articleTitleDisplay: document.getElementById("articleTitleDisplay"),
+      articleDateDisplay: document.getElementById("articleDateDisplay"),
+      btnToggleBookmark: document.getElementById("btnToggleBookmark"),
+      btnLangVi: document.getElementById("btnLangVi"),
+      btnLangEn: document.getElementById("btnLangEn"),
+
+      guidelineComparisonBanner: document.getElementById("guidelineComparisonBanner"),
+      evolutionPipelineRow: document.getElementById("evolutionPipelineRow"),
+      trialsGridDeck: document.getElementById("trialsGridDeck"),
+      pearlsStackDeck: document.getElementById("pearlsStackDeck"),
+      articleRenderedBody: document.getElementById("articleRenderedBody"),
+      sourcesListStack: document.getElementById("sourcesListStack"),
+
+      btnCopyArticle: document.getElementById("btnCopyArticle"),
+      btnPrintArticle: document.getElementById("btnPrintArticle"),
+      btnRefreshToday: document.getElementById("btnRefreshToday"),
+      iconRefreshToday: document.getElementById("iconRefreshToday"),
+      labelRefreshToday: document.getElementById("labelRefreshToday"),
+      btnFontDec: document.getElementById("btnFontDec"),
+      btnFontReset: document.getElementById("btnFontReset"),
+      btnFontInc: document.getElementById("btnFontInc"),
+
+      modalPubMed: document.getElementById("pubMedModal"),
+      btnOpenPubMed: document.getElementById("btnOpenPubMedModal"),
+      btnClosePubMed: document.getElementById("btnClosePubMedModal"),
+      pubMedQueryInput: document.getElementById("pubMedQueryInput"),
+      btnExecutePubMed: document.getElementById("btnExecutePubMedQuery"),
+      pubMedResultsScroll: document.getElementById("pubMedResultsScroll"),
+
+      feedbackReportModal: document.getElementById("feedbackReportModal"),
+      btnCloseFeedbackModal: document.getElementById("btnCloseFeedbackModal"),
+      feedbackReasonGroup: document.getElementById("feedbackReasonGroup"),
+      feedbackReportComment: document.getElementById("feedbackReportComment"),
+      btnCancelFeedbackReport: document.getElementById("btnCancelFeedbackReport"),
+      btnSubmitFeedbackReport: document.getElementById("btnSubmitFeedbackReport"),
+
+      toastBox: document.getElementById("toastBox"),
+      toastMsg: document.getElementById("toastMsg")
+    };
+
+    /* ========================================================================
+       UTILITIES
+       ======================================================================== */
+    function t(key) {
+      const pack = I18N[App.currentLang] || I18N.vi;
+      return pack[key] || I18N.vi[key] || key;
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatInlineRich(str) {
+      if (!str) return "";
+      return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    function cleanHeadline(raw) {
+      if (!raw) return "";
+      return String(raw)
+        .replace(/^\[[^\]]+\]\s*(Trụ cột|Pillar)\s*#\d+\s*\([^)]+\):\s*/i, "")
+        .replace(/\.$/, "")
+        .trim();
+    }
+
+    function getLocalIsoDate(dateObj = new Date()) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseIsoDateUtc(iso) {
+      const parts = (iso || ANCHOR_DATE_STR).split("-").map(n => parseInt(n, 10));
+      return Date.UTC(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+    }
+
+    function addDaysIso(iso, deltaDays) {
+      const ms = parseIsoDateUtc(iso) + deltaDays * 86400000;
+      const dt = new Date(ms);
+      const y = dt.getUTCFullYear();
+      const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(dt.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatShortDdMm(iso) {
+      if (!iso || !iso.includes("-")) return iso || "";
+      const parts = iso.split("-");
+      if (parts.length < 3) return iso;
+      return `${parts[2]}/${parts[1]}`;
+    }
+
+    function formatFullDdMmYyyy(iso) {
+      if (!iso || !iso.includes("-")) return iso || "";
+      const parts = iso.split("-");
+      if (parts.length < 3) return iso;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function getPillarIdForDate(iso) {
+      const diffDays = Math.round((parseIsoDateUtc(iso) - parseIsoDateUtc(ANCHOR_DATE_STR)) / 86400000);
+      return (((diffDays % 10) + 10) % 10) + 1;
+    }
+
+    function getPillarInfo(pid) {
+      return App.pillars.find(p => Number(p.id) === Number(pid)) || {
+        id: Number(pid) || 1,
+        name: `Pillar #${pid}`,
+        vi_name: `Trụ cột #${pid}`
+      };
+    }
+
+    function getPillarDisplayName(pid, isVi = (App.currentLang === "vi")) {
+      const p = getPillarInfo(pid);
+      return isVi ? (p.vi_name || p.name) : (p.name || p.vi_name);
+    }
+
+    function isFileOrigin() {
+      return window.location.protocol === "file:";
+    }
+
+    function getAuthHeaders(extra = {}) {
+      const headers = { ...extra };
+      if (App.token) {
+        headers["Authorization"] = `Bearer ${App.token}`;
+      }
+      return headers;
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      Dom.toastMsg.textContent = msg;
+      Dom.toastBox.classList.add("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => Dom.toastBox.classList.remove("show"), 2600);
+    }
+
+    /* ========================================================================
+       INITIALIZATION & AUTHENTICATION GATE
+       ======================================================================== */
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSeedData();
+      populatePillarSelect();
+      bindAppEvents();
+      bootstrapSessionAndStatus();
+      schedule7AmAutoRefresh();
+    });
+
+    function loadSeedData() {
+      if (window.EBM_BRIEFINGS_DATA) {
+        App.briefings = Array.isArray(window.EBM_BRIEFINGS_DATA.briefings)
+          ? window.EBM_BRIEFINGS_DATA.briefings
+          : [];
+        if (window.EBM_BRIEFINGS_DATA.rotation_state) {
+          App.rotation = window.EBM_BRIEFINGS_DATA.rotation_state;
+        }
+        if (Array.isArray(window.EBM_BRIEFINGS_DATA.pillars) && window.EBM_BRIEFINGS_DATA.pillars.length > 0) {
+          App.pillars = window.EBM_BRIEFINGS_DATA.pillars.map(src => {
+            const def = DEFAULT_PILLARS_CATALOG.find(d => d.id === Number(src.id)) || {};
+            return {
+              ...def,
+              ...src,
+              id: Number(src.id),
+              vi_name: src.vi_name || def.vi_name || src.name,
+              name: src.name || def.name || src.vi_name
+            };
+          });
+        }
+      }
+
+      // Compute deterministic default today state before server status responds
+      const localToday = getLocalIsoDate();
+      const seedDate = (App.rotation && App.rotation.last_updated) || localToday;
+      App.todayDate = App.briefings.some(b => b.date === localToday) ? localToday : seedDate;
+      computeRotationPillarsFromDate(App.todayDate);
+      App.historyPillarId = App.todayPillarId;
+    }
+
+    function computeRotationPillarsFromDate(todayIso) {
+      const tdPid = getPillarIdForDate(todayIso);
+      const ydIso = addDaysIso(todayIso, -1);
+      const tmIso = addDaysIso(todayIso, 1);
+      const ydPid = getPillarIdForDate(ydIso);
+      const tmPid = getPillarIdForDate(tmIso);
+
+      App.todayPillarId = tdPid;
+      App.yesterdayPillar = { date: ydIso, id: ydPid, ...getPillarInfo(ydPid) };
+      App.todayPillar = { date: todayIso, id: tdPid, ...getPillarInfo(tdPid) };
+      App.tomorrowPillar = { date: tmIso, id: tmPid, ...getPillarInfo(tmPid) };
+    }
+
+    function getCloudUsersDb() {
+      let db = {};
+      try {
+        const raw = localStorage.getItem(CLOUD_USERS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") db = parsed;
+        }
+      } catch (_) {}
+      if (!db["bs.timmach"]) {
+        db["bs.timmach"] = {
+          username: "bs.timmach",
+          email: "timmach@ebm.vn",
+          password: "123456",
+          full_name: "BS. Đặng Quốc Tình",
+          display_name: "BS. Đặng Quốc Tình",
+          specialty: "Nội Tim mạch & Hồi sức Tim mạch",
+          read_ids: ["ebm-2026-11-15-p10-main"],
+          bookmarked_ids: ["ebm-2026-11-16-p1-main"]
+        };
+        saveCloudUsersDb(db);
+      }
+      return db;
+    }
+
+    function saveCloudUsersDb(db) {
+      try {
+        localStorage.setItem(CLOUD_USERS_KEY, JSON.stringify(db));
+      } catch (_) {}
+    }
+
+    function activateCloudSession(userRec) {
+      App.offlineDemo = true;
+      localStorage.setItem(CLOUD_SESSION_KEY, userRec.username);
+      setAuthenticatedUser(userRec, `cloud-${userRec.username}`);
+      loadOfflineFeedbackStore();
+      hideAuthGate();
+      renderAllViewsAfterAuth();
+    }
+
+    async function bootstrapSessionAndStatus() {
+      App.token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+      if (isFileOrigin()) {
+        App.serverAvailable = false;
+        Dom.authOfflineNote.classList.add("show");
+        const savedUserKey = localStorage.getItem(CLOUD_SESSION_KEY);
+        if (savedUserKey) {
+          const db = getCloudUsersDb();
+          if (db[savedUserKey]) {
+            activateCloudSession(db[savedUserKey]);
+            return;
+          }
+        }
+        showAuthGate();
+        renderShellViews();
+        return;
+      }
+
+      let statusData = null;
+      try {
+        const res = await fetch("/api/status", { headers: getAuthHeaders() });
+        const ct = res.headers.get("content-type") || "";
+        if (res.ok && ct.includes("application/json")) {
+          statusData = await res.json();
+        }
+      } catch (_) {
+        statusData = null;
+      }
+
+      if (statusData && statusData.ok) {
+        App.serverAvailable = true;
+        applyServerStatus(statusData);
+      } else {
+        App.serverAvailable = false;
+        // Static / GitHub Pages / PWA cloud mode
+        const savedUserKey = localStorage.getItem(CLOUD_SESSION_KEY);
+        if (savedUserKey) {
+          const db = getCloudUsersDb();
+          if (db[savedUserKey]) {
+            activateCloudSession(db[savedUserKey]);
+            return;
+          }
+        }
+        Dom.authOfflineNote.classList.add("show");
+        showAuthGate();
+        renderShellViews();
+        return;
+      }
+
+      // Local Python Server mode: check user session from /api/status or /api/auth/me
+      let authedUser = statusData && (statusData.user || statusData.current_user);
+      if (!authedUser && App.token) {
+        try {
+          const meRes = await fetch("/api/auth/me", { headers: getAuthHeaders() });
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.ok && meData.user) {
+              authedUser = meData.user;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (authedUser) {
+        App.offlineDemo = false;
+        setAuthenticatedUser(authedUser, App.token);
+        hideAuthGate();
+        renderAllViewsAfterAuth();
+        const now = new Date();
+        if (statusData && statusData.has_today_briefing === false && now.getHours() >= 7) {
+          refreshTodayData(false, true);
+        }
+      } else {
+        if (App.token) {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          App.token = null;
+        }
+        showAuthGate();
+        renderShellViews();
+      }
+    }
+
+    function applyServerStatus(d) {
+      if (d.rotation_state) App.rotation = d.rotation_state;
+      if (d.today_date) App.todayDate = d.today_date;
+      computeRotationPillarsFromDate(App.todayDate);
+
+      if (d.today_pillar && d.today_pillar.id) {
+        App.todayPillarId = Number(d.today_pillar.id);
+        App.todayPillar = { date: App.todayDate, ...getPillarInfo(App.todayPillarId), ...d.today_pillar };
+      }
+      if (d.yesterday_pillar && d.yesterday_pillar.id) {
+        App.yesterdayPillar = { date: addDaysIso(App.todayDate, -1), ...getPillarInfo(d.yesterday_pillar.id), ...d.yesterday_pillar };
+      }
+      if (d.tomorrow_pillar && d.tomorrow_pillar.id) {
+        App.tomorrowPillar = { date: addDaysIso(App.todayDate, 1), ...getPillarInfo(d.tomorrow_pillar.id), ...d.tomorrow_pillar };
+      }
+      if (d.feedback_summary && typeof d.feedback_summary === "object") {
+        Object.entries(d.feedback_summary).forEach(([bid, entry]) => {
+          syncFeedbackFromPayload(entry, bid);
+        });
+      }
+      if (Array.isArray(d.briefings) && d.briefings.length > 0) {
+        App.briefings = d.briefings;
+      }
+    }
+
+    function showAuthGate() {
+      Dom.authGateOverlay.classList.add("active");
+      document.body.classList.add("auth-locked");
+      Dom.authErrorBox.classList.remove("show");
+    }
+
+    function hideAuthGate() {
+      Dom.authGateOverlay.classList.remove("active");
+      document.body.classList.remove("auth-locked");
+      Dom.authErrorBox.classList.remove("show");
+    }
+
+    function showAuthError(msg) {
+      Dom.authErrorBox.textContent = msg;
+      Dom.authErrorBox.classList.add("show");
+    }
+
+    function setAuthenticatedUser(userObj, token) {
+      const normalized = {
+        username: userObj.username || "bs.timmach",
+        full_name: userObj.display_name || userObj.full_name || userObj.name || userObj.username || "BS. Tim mạch",
+        specialty: userObj.specialty || "Nội Tim mạch",
+        read_ids: Array.isArray(userObj.read_ids) ? [...new Set(userObj.read_ids)] : [],
+        bookmarked_ids: Array.isArray(userObj.bookmarked_ids) ? [...new Set(userObj.bookmarked_ids)] : []
+      };
+      App.user = normalized;
+      if (token) {
+        App.token = token;
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+      }
+      renderUserWorkspace();
+    }
+
+    function activateOfflineDemoSession() {
+      App.offlineDemo = true;
+      let stored = { read_ids: [], bookmarked_ids: [] };
+      try {
+        const raw = localStorage.getItem(OFFLINE_ACTIVITY_KEY);
+        if (raw) stored = JSON.parse(raw);
+      } catch (_) {}
+      setAuthenticatedUser({
+        username: "bs.timmach",
+        full_name: "BS. Đặng Quốc Tình",
+        specialty: "Nội Tim mạch (Chế độ ngoại tuyến)",
+        read_ids: stored.read_ids || [],
+        bookmarked_ids: stored.bookmarked_ids || []
+      }, "offline-demo-token");
+      loadOfflineFeedbackStore();
+      hideAuthGate();
+      renderAllViewsAfterAuth();
+      showToast("Đã vào workspace Bác sĩ Đặng Quốc Tình (chế độ chỉ đọc ngoại tuyến).");
+    }
+
+    function loadOfflineFeedbackStore() {
+      try {
+        const raw = localStorage.getItem(OFFLINE_FEEDBACK_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            App.feedbackMap = { ...App.feedbackMap, ...parsed };
+          }
+        }
+      } catch (_) {}
+    }
+
+    function saveOfflineFeedbackStore() {
+      try {
+        localStorage.setItem(OFFLINE_FEEDBACK_KEY, JSON.stringify(App.feedbackMap));
+      } catch (_) {}
+    }
+
+    function saveOfflineActivityStore() {
+      if (!App.user) return;
+      try {
+        const db = getCloudUsersDb();
+        const key = (App.user.username || "bs.timmach").toLowerCase();
+        if (db[key]) {
+          db[key].read_ids = App.user.read_ids || [];
+          db[key].bookmarked_ids = App.user.bookmarked_ids || [];
+          saveCloudUsersDb(db);
+        }
+        localStorage.setItem(OFFLINE_ACTIVITY_KEY, JSON.stringify({
+          read_ids: App.user.read_ids || [],
+          bookmarked_ids: App.user.bookmarked_ids || []
+        }));
+      } catch (_) {}
+    }
+
+    function cloudLoginFallback(payload) {
+      const db = getCloudUsersDb();
+      if (payload.demo) {
+        activateCloudSession(db["bs.timmach"]);
+        showToast(`Chào mừng ${db["bs.timmach"].full_name}!`);
+        return;
+      }
+      const ident = (payload.username || "").trim().toLowerCase();
+      const rec = Object.values(db).find(
+        u => (u.username || "").toLowerCase() === ident || (u.email || "").toLowerCase() === ident
+      );
+      if (!rec || rec.password !== payload.password) {
+        showAuthError("Tên đăng nhập hoặc mật khẩu không chính xác (tài khoản mẫu: bs.timmach / 123456).");
+        return;
+      }
+      activateCloudSession(rec);
+      showToast(`Chào mừng ${rec.full_name || rec.username}!`);
+    }
+
+    function cloudRegisterFallback(payload) {
+      const uname = (payload.username || "").trim().toLowerCase();
+      const fullName = (payload.full_name || "").trim() || uname;
+      const spec = (payload.specialty || "").trim() || "Nội Tim mạch";
+      const pw = payload.password || "";
+      if (uname.length < 3 || pw.length < 4) {
+        showAuthError("Tên đăng nhập tối thiểu 3 ký tự và mật khẩu tối thiểu 4 ký tự.");
+        return;
+      }
+      const db = getCloudUsersDb();
+      if (db[uname]) {
+        showAuthError(`Tài khoản '${uname}' đã tồn tại trên thiết bị này.`);
+        return;
+      }
+      const newRec = {
+        username: uname,
+        email: "",
+        password: pw,
+        full_name: fullName,
+        display_name: fullName,
+        specialty: spec,
+        read_ids: [],
+        bookmarked_ids: []
+      };
+      db[uname] = newRec;
+      saveCloudUsersDb(db);
+      activateCloudSession(newRec);
+      showToast(`Đã tạo tài khoản ${fullName}!`);
+    }
+
+    function renderUserWorkspace() {
+      if (!App.user) {
+        Dom.userWorkspaceControls.classList.remove("visible");
+        return;
+      }
+      Dom.userWorkspaceControls.classList.add("visible");
+      const name = App.user.full_name || App.user.username;
+      const parts = name.trim().split(/\s+/);
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase();
+
+      Dom.userAvatarInitials.textContent = initials;
+      Dom.userDisplayName.textContent = name;
+      Dom.userProfilePill.title = `${name} • ${App.user.specialty || "Nội Tim mạch"}`;
+      Dom.userReadCountBadge.textContent = `${t("readPrefix")}: ${(App.user.read_ids || []).length}`;
+      const savedCount = (App.user.bookmarked_ids || []).length;
+      Dom.labelNavBookmarks.textContent = `${t("savedNavBtn")} (${savedCount})`;
+      Dom.btnNavBookmarks.classList.toggle("is-active", App.savedGlobalMode);
+      const iconEl = Dom.btnNavBookmarks.querySelector("i");
+      if (iconEl) {
+        iconEl.className = App.savedGlobalMode ? "fa-solid fa-bookmark" : "fa-regular fa-bookmark";
+      }
+    }
+
+    async function handleAuthLoginRequest(payload) {
+      Dom.authErrorBox.classList.remove("show");
+      if (isFileOrigin() || !App.serverAvailable) {
+        cloudLoginFallback(payload);
+        return;
+      }
+
+      Dom.btnLoginSubmit.disabled = true;
+      Dom.btnDemoLogin.disabled = true;
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          App.serverAvailable = false;
+          cloudLoginFallback(payload);
+          return;
+        }
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          showAuthError(data.error || "Tên đăng nhập hoặc mật khẩu không chính xác.");
+          return;
+        }
+        App.offlineDemo = false;
+        setAuthenticatedUser(data.user, data.token || data.auth_token);
+        hideAuthGate();
+        // Refresh /api/status with new token to pull personalized summary
+        try {
+          const stRes = await fetch("/api/status", { headers: getAuthHeaders() });
+          if (stRes.ok) applyServerStatus(await stRes.json());
+        } catch (_) {}
+        renderAllViewsAfterAuth();
+        showToast(`Chào mừng ${App.user.full_name}!`);
+      } catch (err) {
+        App.serverAvailable = false;
+        cloudLoginFallback(payload);
+      } finally {
+        Dom.btnLoginSubmit.disabled = false;
+        Dom.btnDemoLogin.disabled = false;
+      }
+    }
+
+    async function handleAuthRegisterRequest(payload) {
+      Dom.authErrorBox.classList.remove("show");
+      if (isFileOrigin() || !App.serverAvailable) {
+        cloudRegisterFallback(payload);
+        return;
+      }
+
+      Dom.btnRegisterSubmit.disabled = true;
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          App.serverAvailable = false;
+          cloudRegisterFallback(payload);
+          return;
+        }
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          showAuthError(data.error || "Không thể đăng ký tài khoản.");
+          return;
+        }
+        App.offlineDemo = false;
+        setAuthenticatedUser(data.user, data.token || data.auth_token);
+        hideAuthGate();
+        renderAllViewsAfterAuth();
+        showToast(`Đã tạo tài khoản ${App.user.full_name}!`);
+      } catch (err) {
+        App.serverAvailable = false;
+        cloudRegisterFallback(payload);
+      } finally {
+        Dom.btnRegisterSubmit.disabled = false;
+      }
+    }
+
+    function handleLogout() {
+      if (App.token && !App.offlineDemo && App.serverAvailable && !isFileOrigin()) {
+        fetch("/api/auth/logout", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({})
+        }).catch(() => {});
+      }
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(CLOUD_SESSION_KEY);
+      App.token = null;
+      App.user = null;
+      App.offlineDemo = false;
+      App.savedGlobalMode = false;
+      renderUserWorkspace();
+      showAuthGate();
+      showToast("Đã đăng xuất tài khoản.");
+    }
+
+    /* ========================================================================
+       USER ACTIVITY (READ + BOOKMARK)
+       ======================================================================== */
+    async function recordBriefingRead(briefingId) {
+      if (!App.user || !briefingId) return;
+      if (!App.user.read_ids.includes(briefingId)) {
+        App.user.read_ids.push(briefingId);
+        renderUserWorkspace();
+      }
+
+      if (App.offlineDemo || isFileOrigin()) {
+        saveOfflineActivityStore();
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/user/activity", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ briefing_id: briefingId, action: "read" })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.user) {
+            setAuthenticatedUser(data.user, null);
+          }
+        }
+      } catch (_) {}
+    }
+
+    async function toggleBriefingBookmark() {
+      if (!App.user || !App.selected) return;
+      const bid = App.selected.id;
+      const idx = App.user.bookmarked_ids.indexOf(bid);
+      const adding = idx === -1;
+      if (adding) {
+        App.user.bookmarked_ids.push(bid);
+      } else {
+        App.user.bookmarked_ids.splice(idx, 1);
+      }
+
+      updateBookmarkButtonUI();
+      renderUserWorkspace();
+      renderBriefingsList();
+      showToast(adding ? "Đã lưu bản tin vào mục cá nhân." : "Đã bỏ lưu bản tin.");
+
+      if (App.offlineDemo || isFileOrigin()) {
+        saveOfflineActivityStore();
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/user/activity", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ briefing_id: bid, action: "toggle_bookmark" })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.user) {
+            setAuthenticatedUser(data.user, null);
+            updateBookmarkButtonUI();
+            renderBriefingsList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    function updateBookmarkButtonUI() {
+      const isSaved = Boolean(App.user && App.selected && App.user.bookmarked_ids.includes(App.selected.id));
+      Dom.btnToggleBookmark.classList.toggle("is-active", isSaved);
+      Dom.btnToggleBookmark.innerHTML = isSaved
+        ? `<i class="fa-solid fa-bookmark" style="color: var(--color-primary-deep);"></i>`
+        : `<i class="fa-regular fa-bookmark"></i>`;
+      Dom.btnToggleBookmark.title = isSaved ? "Bỏ lưu bản tin" : "Lưu bản tin vào mục cá nhân";
+    }
+
+    /* ========================================================================
+       SHELL & FULL WORKSPACE RENDERING
+       ======================================================================== */
+    function renderShellViews() {
+      applyLocalizationChrome();
+      renderDailyRotationBanner();
+      renderPillarsTiles();
+      renderModeSpecificPanels();
+      const target = getTodaySingleBriefing();
+      if (target) {
+        App.selected = target;
+        renderBriefingsList();
+        displayCurrentBriefing();
+      }
+    }
+
+    function renderAllViewsAfterAuth() {
+      applyLocalizationChrome();
+      renderUserWorkspace();
+      renderDailyRotationBanner();
+      renderPillarsTiles();
+      renderModeSpecificPanels();
+
+      if (App.mode === "today") {
+        const b = getTodaySingleBriefing();
+        if (b) {
+          selectBriefing(b);
+        } else {
+          renderBriefingsList();
+        }
+      } else {
+        const list = getHistoryScopeBriefings();
+        if (list.length > 0) {
+          selectBriefing(list[0]);
+        } else {
+          renderBriefingsList();
+        }
+      }
+    }
+
+    function getTodaySingleBriefing() {
+      const pid = Number(App.todayPillarId);
+      const exactToday = App.briefings.find(
+        b => b.date === App.todayDate && Number(b.pillar_id) === pid
+      );
+      if (exactToday) return exactToday;
+      const byPillar = App.briefings
+        .filter(b => Number(b.pillar_id) === pid)
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      return byPillar[0] || App.briefings[0] || null;
+    }
+
+    function getHistoryScopeBriefings() {
+      let list = [];
+      if (App.savedGlobalMode && App.user) {
+        const savedSet = new Set(App.user.bookmarked_ids || []);
+        list = App.briefings.filter(b => savedSet.has(b.id));
+      } else {
+        list = App.briefings.filter(b => Number(b.pillar_id) === Number(App.historyPillarId));
+      }
+
+      if (!App.savedGlobalMode && App.user) {
+        if (App.historyFilter === "saved") {
+          const savedSet = new Set(App.user.bookmarked_ids || []);
+          list = list.filter(b => savedSet.has(b.id));
+        } else if (App.historyFilter === "read") {
+          const readSet = new Set(App.user.read_ids || []);
+          list = list.filter(b => readSet.has(b.id));
+        }
+      }
+
+      if (App.searchQuery.trim() !== "") {
+        const q = App.searchQuery.toLowerCase();
+        list = list.filter(b => {
+          return (
+            (b.title_vi && b.title_vi.toLowerCase().includes(q)) ||
+            (b.title_en && b.title_en.toLowerCase().includes(q)) ||
+            (b.topic_focus_vi && b.topic_focus_vi.toLowerCase().includes(q)) ||
+            (b.topic_focus_en && b.topic_focus_en.toLowerCase().includes(q)) ||
+            (b.part1_vi_markdown && b.part1_vi_markdown.toLowerCase().includes(q)) ||
+            (b.part2_en_markdown && b.part2_en_markdown.toLowerCase().includes(q))
+          );
+        });
+      }
+
+      return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    function applyLocalizationChrome() {
+      const isVi = App.currentLang === "vi";
+      document.getElementById("heroHeadlineText").textContent = t("heroHeadline");
+      document.getElementById("heroLeadText").textContent = t("heroLead");
+      document.getElementById("labelModeToday").textContent = t("modeToday");
+      document.getElementById("labelModeHistory").textContent = t("modeHistory");
+      document.getElementById("modeMetaCaption").textContent = t("modeMeta");
+      document.getElementById("pillarsSectionTitle").textContent = t("pillarsSectionTitle");
+      document.getElementById("pillarsSummaryText").textContent =
+        App.mode === "today" ? t("pillarsSummaryToday") : t("pillarsSummaryHistory");
+
+      document.getElementById("guidelinePipelineTitle").textContent = t("guidelinePipelineTitle");
+      document.getElementById("trialsSectionTitle").textContent = t("trialsSectionTitle");
+      document.getElementById("pearlsHeaderTitle").textContent = t("pearlsHeaderTitle");
+      document.getElementById("sourcesSectionTitle").textContent = t("sourcesSectionTitle");
+      document.getElementById("bottomFeedbackTitle").textContent = t("bottomFeedbackTitle");
+      document.getElementById("bottomFeedbackSub").textContent = t("bottomFeedbackSub");
+      document.getElementById("labelPubMedBtn").textContent = t("pubMedBtn");
+      if (!Dom.btnRefreshToday.disabled) {
+        Dom.labelRefreshToday.textContent = t("refreshBtn");
+      }
+
+      document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
+      document.getElementById("todaySidebarDesc").textContent = t("todaySidebarDesc");
+      document.getElementById("labelOpenTodayPillarHistory").textContent =
+        isVi
+          ? `Xem Lịch sử & Sơ đồ Trụ cột #${App.todayPillarId}`
+          : `Open Pillar #${App.todayPillarId} History & Diagram`;
+
+      document.getElementById("labelHistoryPillarSelect").textContent = App.savedGlobalMode
+        ? t("savedGlobalHeading")
+        : t("historySelectLabel");
+      Dom.searchBriefingInput.placeholder = t("searchPlaceholder");
+
+      const chips = Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip");
+      chips.forEach(chip => {
+        if (chip.dataset.hfilter === "all") chip.textContent = t("filterAll");
+        if (chip.dataset.hfilter === "saved") chip.textContent = t("filterSaved");
+        if (chip.dataset.hfilter === "read") chip.textContent = t("filterRead");
+      });
+
+      document.getElementById("footerTitleText").textContent = t("footerTitle");
+      document.getElementById("footerDescText").textContent = t("footerDesc");
+      document.getElementById("footerSubText").textContent = t("footerSub");
+
+      // Localize icon-only feedback tooltips & Report modal labels
+      document.querySelectorAll('.btn-feedback-icon[data-fb-type="like"]').forEach(el => {
+        const lbl = isVi ? "Thích nội dung này" : "Like this briefing";
+        el.title = lbl;
+        el.setAttribute("aria-label", lbl);
+      });
+      document.querySelectorAll('.btn-feedback-icon[data-fb-type="dislike"]').forEach(el => {
+        const lbl = isVi ? "Không thích / Chưa hữu ích" : "Dislike / Needs improvement";
+        el.title = lbl;
+        el.setAttribute("aria-label", lbl);
+      });
+      document.querySelectorAll('.btn-feedback-icon[data-fb-type="report"]').forEach(el => {
+        const lbl = isVi ? "Báo cáo / Gửi góp ý tới Nhà làm sản phẩm" : "Report issue / Send product feedback";
+        el.title = lbl;
+        el.setAttribute("aria-label", lbl);
+      });
+      document.getElementById("labelReportModalHeader").textContent = isVi
+        ? "Báo cáo & Gửi Góp ý tới Nhà làm sản phẩm"
+        : "Report Issue & Product Feedback";
+      document.getElementById("labelReportReasonPrompt").textContent = isVi
+        ? "Chọn nhóm vấn đề hoặc đề xuất:"
+        : "Select feedback category:";
+      document.getElementById("labelReportCommentPrompt").textContent = isVi
+        ? "Nội dung chi tiết gửi Nhà làm sản phẩm:"
+        : "Details for the product team:";
+      document.getElementById("labelReportSubmitBtn").textContent = isVi ? "Gửi Phản hồi" : "Submit Feedback";
+      Dom.btnCancelFeedbackReport.textContent = isVi ? "Hủy" : "Cancel";
+
+      populatePillarSelect();
+      renderUserWorkspace();
+    }
+
+    function populatePillarSelect() {
+      const currentVal = String(App.historyPillarId);
+      Dom.historyPillarSelect.innerHTML = App.pillars.map(p => {
+        const label = App.currentLang === "vi"
+          ? `Trụ cột #${p.id}: ${p.vi_name}`
+          : `Pillar #${p.id}: ${p.name}`;
+        return `<option value="${p.id}" ${String(p.id) === currentVal ? "selected" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
+    }
+
+    function renderModeSpecificPanels() {
+      const isToday = App.mode === "today";
+      Dom.tabModeToday.classList.toggle("active", isToday);
+      Dom.tabModeToday.setAttribute("aria-selected", String(isToday));
+      Dom.tabModeHistory.classList.toggle("active", !isToday);
+      Dom.tabModeHistory.setAttribute("aria-selected", String(!isToday));
+
+      Dom.dailyRotationBanner.style.display = isToday ? "grid" : "none";
+      Dom.todaySidebarContext.style.display = isToday ? "flex" : "none";
+      Dom.historySidebarControls.style.display = isToday ? "none" : "flex";
+      Dom.pillarHistoryDiagramPanel.style.display = isToday ? "none" : "block";
+
+      if (!isToday) {
+        renderPerPillarHistoryDiagram();
+      }
+    }
+
+    function renderDailyRotationBanner() {
+      const isVi = App.currentLang === "vi";
+      const yd = App.yesterdayPillar;
+      const td = App.todayPillar;
+      const tm = App.tomorrowPillar;
+      if (!yd || !td || !tm) return;
+
+      const tdName = getPillarDisplayName(td.id, isVi);
+      const ydName = getPillarDisplayName(yd.id, isVi);
+      const tmName = getPillarDisplayName(tm.id, isVi);
+
+      Dom.navRotationStatus.innerHTML = `
+        <span class="status-dot-emerald"></span>
+        <span>${t("todayLabel")} (<strong>${formatShortDdMm(App.todayDate)}</strong>): <strong>${t("pillarWord")} #${td.id}</strong> — ${escapeHtml(tdName)}</span>
+      `;
+
+      Dom.dailyRotationBanner.innerHTML = `
+        <button type="button" class="rotation-slot-card" onclick="openPillarHistory(${yd.id})" title="${escapeHtml(ydName)}">
+          <div class="rotation-slot-kicker">
+            <span>${t("yesterdayLabel")} (${formatShortDdMm(yd.date)})</span>
+            <span>#${yd.id}</span>
+          </div>
+          <div class="rotation-slot-label">${t("pillarWord")} #${yd.id}: ${escapeHtml(ydName)}</div>
+        </button>
+
+        <div class="rotation-banner-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <button type="button" class="rotation-slot-card today" onclick="switchMode('today')">
+          <div class="rotation-slot-kicker">
+            <span><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 4px;"></i>${t("todayLabel")} (${formatShortDdMm(App.todayDate)})</span>
+            <span>#${td.id} / 10</span>
+          </div>
+          <div class="rotation-slot-label">${t("pillarWord")} #${td.id} — ${escapeHtml(tdName)}</div>
+        </button>
+
+        <div class="rotation-banner-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <button type="button" class="rotation-slot-card" onclick="openPillarHistory(${tm.id})" title="${escapeHtml(tmName)}">
+          <div class="rotation-slot-kicker">
+            <span>${t("tomorrowLabel")} (${formatShortDdMm(tm.date)})</span>
+            <span>#${tm.id}</span>
+          </div>
+          <div class="rotation-slot-label">${t("pillarWord")} #${tm.id}: ${escapeHtml(tmName)}</div>
+        </button>
+      `;
+
+      document.getElementById("todaySidebarDateChip").textContent = formatShortDdMm(App.todayDate);
+    }
+
+    function renderPillarsTiles() {
+      const isVi = App.currentLang === "vi";
+      const isTodayMode = App.mode === "today";
+
+      Dom.pillarsTilesDeck.innerHTML = App.pillars.map(p => {
+        const isTodayPillar = Number(p.id) === Number(App.todayPillarId);
+        const isActiveTile = isTodayMode
+          ? isTodayPillar
+          : Number(p.id) === Number(App.historyPillarId);
+
+        let cls = "pillar-tile-btn";
+        if (isTodayPillar) cls += " is-today";
+        if (isActiveTile) cls += " active";
+        if (isTodayMode && !isTodayPillar) cls += " muted-scheduled";
+
+        const titleText = isVi ? p.vi_name : p.name;
+        const statusSub = isTodayPillar
+          ? (isVi ? "Xuất bản hôm nay" : "Published today")
+          : (isVi ? "Bấm xem lịch sử" : "View history");
+
+        return `
+          <button type="button" class="${cls}" onclick="onPillarTileClick(${p.id})">
+            <div class="tile-num-row">
+              <span>#${p.id}</span>
+              ${isTodayPillar
+                ? `<span class="tile-badge-today">${t("todayBadge")}</span>`
+                : `<span class="tile-badge-scheduled">${t("scheduledBadge")}</span>`
+              }
+            </div>
+            <div class="tile-title-main" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</div>
+            <div class="tile-sub-status">${escapeHtml(statusSub)}</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    window.switchMode = function(mode) {
+      App.mode = mode === "history" ? "history" : "today";
+      if (App.mode === "today") {
+        App.savedGlobalMode = false;
+      } else if (App.selected) {
+        App.historyPillarId = Number(App.selected.pillar_id) || App.todayPillarId;
+      }
+      applyLocalizationChrome();
+      renderPillarsTiles();
+      renderModeSpecificPanels();
+
+      if (App.mode === "today") {
+        const b = getTodaySingleBriefing();
+        if (b) selectBriefing(b);
+      } else {
+        const list = getHistoryScopeBriefings();
+        if (list.length > 0) {
+          if (!App.selected || (!App.savedGlobalMode && Number(App.selected.pillar_id) !== Number(App.historyPillarId))) {
+            selectBriefing(list[0]);
+          } else {
+            renderBriefingsList();
+            renderPerPillarHistoryDiagram();
+          }
+        } else {
+          renderBriefingsList();
+          renderPerPillarHistoryDiagram();
+        }
+      }
+    };
+
+    window.openPillarHistory = function(pillarId) {
+      App.mode = "history";
+      App.savedGlobalMode = false;
+      App.historyFilter = "all";
+      App.historyPillarId = Number(pillarId);
+      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.hfilter === "all");
+      });
+      applyLocalizationChrome();
+      renderPillarsTiles();
+      renderModeSpecificPanels();
+
+      const list = getHistoryScopeBriefings();
+      if (list.length > 0) {
+        selectBriefing(list[0]);
+      } else {
+        renderBriefingsList();
+        renderPerPillarHistoryDiagram();
+        showToast(
+          App.currentLang === "vi"
+            ? `Trụ cột #${pillarId} chưa có bản tin lịch sử.`
+            : `No historical briefings yet for Pillar #${pillarId}.`
+        );
+      }
+    };
+
+    window.onPillarTileClick = function(pillarId) {
+      if (App.mode === "today" && Number(pillarId) === Number(App.todayPillarId)) {
+        const b = getTodaySingleBriefing();
+        if (b) selectBriefing(b);
+        return;
+      }
+      openPillarHistory(pillarId);
+    };
+
+    /* ========================================================================
+       PER-PILLAR HISTORY DIAGRAM (STRICTLY SINGLE PILLAR, CHRONOLOGICAL)
+       ======================================================================== */
+    function formatGuidelineTransitionChip(b) {
+      const ge = b.guideline_evolution;
+      if (ge && ge.prior_guideline && ge.current_guideline) {
+        const pYr = ge.prior_guideline.year || "";
+        const cYr = ge.current_guideline.year || "";
+        const extractSoc = (name) => {
+          if (!name) return "Guideline";
+          if (/ESC\/ESH/i.test(name)) return "ESC/ESH";
+          if (/ESC\/EACTS/i.test(name)) return "ESC/EACTS";
+          if (/ACC\/AHA/i.test(name)) return "ACC/AHA";
+          if (/ESC/i.test(name)) return "ESC";
+          if (/KDIGO/i.test(name)) return "KDIGO";
+          return "Guideline";
+        };
+        const pSoc = extractSoc(ge.prior_guideline.name);
+        const cSoc = extractSoc(ge.current_guideline.name);
+        if (pYr && cYr) return `${pSoc} ${pYr} ➔ ${cSoc} ${cYr}`;
+      }
+      return b.week_label || b.date;
+    }
+
+    function renderPerPillarHistoryDiagram() {
+      const pid = Number(App.historyPillarId);
+      const isVi = App.currentLang === "vi";
+      const pName = getPillarDisplayName(pid, isVi);
+
+      Dom.historyDiagramTitle.innerHTML = `
+        <i class="fa-solid fa-code-branch" style="color: var(--color-primary-deep);"></i>
+        <span>${t("diagramTitlePrefix")} — ${t("pillarWord")} #${pid}: ${escapeHtml(pName)}</span>
+      `;
+      Dom.historyDiagramScopeBadge.innerHTML = `
+        <i class="fa-solid fa-filter" style="color: var(--color-primary-deep);"></i>
+        <span>${isVi ? `Phạm vi riêng Trụ cột #${pid}` : `Pillar #${pid} Only`} &bull; ${t("scopeRuleSuffix")}</span>
+      `;
+
+      // STRICT RULE: Filter ONLY briefings whose pillar_id matches App.historyPillarId
+      const nodes = App.briefings
+        .filter(b => Number(b.pillar_id) === pid)
+        .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+      if (nodes.length === 0) {
+        Dom.historyDiagramTrack.innerHTML = `
+          <div style="padding: 12px; color: var(--color-ink-mute); font-size: 13px;">
+            ${t("noBriefingsMatch")}
+          </div>
+        `;
+        return;
+      }
+
+      const htmlParts = [];
+      nodes.forEach((b, idx) => {
+        const isActive = App.selected && App.selected.id === b.id;
+        const shortDt = b.short_date || formatShortDdMm(b.date);
+        const isTodayEd = b.date === App.todayDate;
+        const topic = isVi
+          ? (b.topic_focus_vi || cleanHeadline(b.title_vi))
+          : (b.topic_focus_en || cleanHeadline(b.title_en || b.title_vi));
+        const chip = formatGuidelineTransitionChip(b);
+        const isRead = App.user && App.user.read_ids.includes(b.id);
+
+        htmlParts.push(`
+          <button type="button" class="history-node-card ${isActive ? "active" : ""}" data-node-id="${escapeHtml(b.id)}" onclick="onSelectHistoryNode('${escapeHtml(b.id)}')">
+            <div>
+              <div class="history-node-top">
+                <span>${t("pillarWord")} #${pid} &bull; ${escapeHtml(shortDt)}${isTodayEd ? ` (${t("todayLabel")})` : ""}</span>
+                <span>
+                  ${isActive
+                    ? `<i class="fa-solid fa-circle-check" style="color: var(--color-primary-deep);"></i>`
+                    : (isRead ? `<i class="fa-solid fa-check" style="color: var(--color-ink-mute-2);"></i>` : "")
+                  }
+                </span>
+              </div>
+              <div class="history-node-topic" style="margin-top: 6px;">${escapeHtml(topic)}</div>
+            </div>
+            <div class="history-node-transition">${escapeHtml(chip)}</div>
+          </button>
+        `);
+
+        if (idx < nodes.length - 1) {
+          htmlParts.push(`<div class="history-node-arrow"><i class="fa-solid fa-arrow-right"></i></div>`);
+        }
+      });
+
+      Dom.historyDiagramTrack.innerHTML = htmlParts.join("");
+
+      const activeNode = Dom.historyDiagramTrack.querySelector(".history-node-card.active");
+      if (activeNode && typeof activeNode.scrollIntoView === "function") {
+        activeNode.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+
+    window.onSelectHistoryNode = function(id) {
+      const match = App.briefings.find(b => b.id === id);
+      if (match) {
+        App.historyPillarId = Number(match.pillar_id);
+        selectBriefing(match);
+      }
+    };
+
+    /* ========================================================================
+       SIDEBAR BRIEFINGS LIST & SELECTION
+       ======================================================================== */
+    function renderBriefingsList() {
+      const isVi = App.currentLang === "vi";
+      let list = [];
+
+      if (App.mode === "today") {
+        const single = getTodaySingleBriefing();
+        if (single) list = [single];
+      } else {
+        list = getHistoryScopeBriefings();
+      }
+
+      if (list.length === 0) {
+        Dom.briefingsListDeck.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--color-ink-mute); font-size: 13px; border: 1px dashed var(--color-hairline); border-radius: var(--rounded-md);">
+            ${t("noBriefingsMatch")}
+          </div>
+        `;
+        return;
+      }
+
+      Dom.briefingsListDeck.innerHTML = list.map(b => {
+        const isSel = App.selected && App.selected.id === b.id;
+        const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
+        const title = cleanHeadline(rawTitle);
+        const pName = getPillarDisplayName(b.pillar_id, isVi);
+        const dateTag = formatFullDdMmYyyy(b.date);
+        const isRead = App.user && App.user.read_ids.includes(b.id);
+        const isBookmarked = App.user && App.user.bookmarked_ids.includes(b.id);
+
+        return `
+          <div class="briefing-card-item ${isSel ? "selected" : ""}" onclick="onSelectBriefingItem('${escapeHtml(b.id)}')">
+            <div class="card-top-row">
+              <span class="card-pillar-tag">#${b.pillar_id} ${escapeHtml(pName)}</span>
+              <span class="card-date-info">${escapeHtml(dateTag)}</span>
+            </div>
+            <div class="card-title-text">${escapeHtml(title)}</div>
+            <div class="card-bottom-row">
+              <div class="card-badges-left">
+                <span class="badge-verified-tiny"><i class="fa-solid fa-check"></i> PubMed</span>
+                ${isRead ? `<span class="badge-read-tiny">&bull; ${t("filterRead")}</span>` : ""}
+                ${isBookmarked ? `<i class="fa-solid fa-bookmark" style="color: var(--color-primary-deep);"></i>` : ""}
+              </div>
+              <div>${b.word_count_vi || "~1400"} ${t("wordsUnit")}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.onSelectBriefingItem = function(id) {
+      const match = App.briefings.find(b => b.id === id);
+      if (match) {
+        if (App.mode === "history" && App.savedGlobalMode) {
+          App.historyPillarId = Number(match.pillar_id);
+        }
+        selectBriefing(match);
+      }
+    };
+
+    function selectBriefing(briefing) {
+      if (!briefing) return;
+      App.selected = briefing;
+      if (App.mode === "history") {
+        App.historyPillarId = Number(briefing.pillar_id);
+        populatePillarSelect();
+        renderPerPillarHistoryDiagram();
+      }
+      renderBriefingsList();
+      renderPillarsTiles();
+      displayCurrentBriefing();
+
+      if (App.user) {
+        recordBriefingRead(briefing.id);
+      }
+      fetchFeedbackForBriefing(briefing.id);
+    }
+
+    /* ========================================================================
+       READING CONSOLE: HEADER, GUIDELINE EVOLUTION, TRIALS, PEARLS, MARKDOWN
+       ======================================================================== */
+    function displayCurrentBriefing() {
+      const b = App.selected;
+      if (!b) return;
+
+      const isVi = App.currentLang === "vi";
+      const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
+      const title = cleanHeadline(rawTitle);
+      const markdownRaw = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || b.part1_vi_markdown || "");
+      const markdownClean = markdownRaw.replace(/\[END OF PART [12][\s\S]*?\]\s*$/i, "").trim();
+
+      const pName = getPillarDisplayName(b.pillar_id, isVi);
+      Dom.articleTitleDisplay.textContent = title;
+      Dom.articlePillarBadge.textContent = `${t("pillarWord")} #${b.pillar_id}: ${pName}`;
+      Dom.articleWeekBadge.textContent = b.week_label || `${formatFullDdMmYyyy(b.date)}`;
+      Dom.articleDateDisplay.textContent = `${formatFullDdMmYyyy(b.date)} • ${b.time || "07:00 AM"}`;
+      document.getElementById("articleVerifiedBadge").innerHTML = `<i class="fa-solid fa-check"></i> ${t("verifiedPubMed")}`;
+
+      updateBookmarkButtonUI();
+      renderFeedbackBars(b.id);
+      renderEvolutionPipeline(b, isVi);
+      renderTrialsMatrix(b, isVi);
+      renderPearls(b, isVi);
+
+      if (window.marked) {
+        Dom.articleRenderedBody.innerHTML = marked.parse(markdownClean);
+        if (window.renderMathInElement) {
+          renderMathInElement(Dom.articleRenderedBody, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+              { left: "\\(", right: "\\)", display: false },
+              { left: "\\[", right: "\\]", display: true }
+            ],
+            throwOnError: false
+          });
+        }
+      } else {
+        Dom.articleRenderedBody.innerText = markdownClean;
+      }
+
+      renderSources(b);
+    }
+
+    function renderGuidelineRefBox(g, roleLabel, isCurrent) {
+      if (!g) return "";
+      const links = [];
+      if (g.doi) {
+        links.push(`<a href="https://doi.org/${encodeURIComponent(g.doi)}" target="_blank" rel="noopener noreferrer">DOI: ${escapeHtml(g.doi)}</a>`);
+      }
+      if (g.pmid) {
+        links.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(g.pmid)}/" target="_blank" rel="noopener noreferrer">PMID: ${escapeHtml(g.pmid)}</a>`);
+      }
+      return `
+        <div class="guideline-ref-box ${isCurrent ? "current" : ""}">
+          <div class="guideline-ref-kicker">${escapeHtml(roleLabel)} ${g.year ? `&bull; ${escapeHtml(g.year)}` : ""}</div>
+          <div class="guideline-ref-name">${escapeHtml(g.name || "")}</div>
+          ${links.length > 0 ? `<div class="guideline-ref-meta">${links.join(" &bull; ")}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function renderEvolutionPipeline(b, isVi) {
+      const ge = b.guideline_evolution;
+
+      if (ge && Array.isArray(ge.steps) && ge.steps.length >= 3) {
+        const hasComp = Boolean(ge.prior_guideline || ge.current_guideline);
+        Dom.guidelineComparisonBanner.style.display = hasComp ? "grid" : "none";
+        if (hasComp) {
+          Dom.guidelineComparisonBanner.innerHTML = `
+            ${renderGuidelineRefBox(ge.prior_guideline, t("priorGuideline"), false)}
+            <div class="comparison-arrow-mid"><i class="fa-solid fa-arrow-right"></i></div>
+            ${renderGuidelineRefBox(ge.current_guideline, t("currentGuideline"), true)}
+          `;
+        }
+
+        const s0 = ge.steps[0];
+        const s1 = ge.steps[1];
+        const s2 = ge.steps[2];
+
+        const getStep = (s) => ({
+          tag: isVi ? (s.era_label_vi || s.era_label_en || "") : (s.era_label_en || s.era_label_vi || ""),
+          title: isVi ? (s.title_vi || s.title_en || "") : (s.title_en || s.title_vi || ""),
+          desc: isVi ? (s.desc_vi || s.desc_en || "") : (s.desc_en || s.desc_vi || "")
+        });
+
+        const st0 = getStep(s0);
+        const st1 = getStep(s1);
+        const st2 = getStep(s2);
+
+        Dom.evolutionPipelineRow.innerHTML = `
+          <div class="pipeline-step-box">
+            <div class="step-tag-text">${escapeHtml(st0.tag)}</div>
+            <div class="step-name-text">${escapeHtml(st0.title)}</div>
+            <div class="step-desc-text">${formatInlineRich(st0.desc)}</div>
+          </div>
+          <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+          <div class="pipeline-step-box">
+            <div class="step-tag-text">${escapeHtml(st1.tag)}</div>
+            <div class="step-name-text">${escapeHtml(st1.title)}</div>
+            <div class="step-desc-text">${formatInlineRich(st1.desc)}</div>
+          </div>
+          <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+          <div class="pipeline-step-box current">
+            <div class="step-tag-text" style="color: var(--color-primary-deep);"><i class="fa-solid fa-check"></i> ${escapeHtml(st2.tag)}</div>
+            <div class="step-name-text">${escapeHtml(st2.title)}</div>
+            <div class="step-desc-text">${formatInlineRich(st2.desc)}</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Clean Guideline Evolution fallback (NEVER crawl steps!)
+      Dom.guidelineComparisonBanner.style.display = "none";
+      const s1 = isVi
+        ? { tag: "Chỉ dẫn A • Thế hệ cũ", title: "Ngưỡng can thiệp bảo thủ", desc: "Phác đồ trước đây dựa vào ngưỡng phân tầng truyền thống hoặc điều trị triệu chứng đơn lẻ." }
+        : { tag: "Directive A • Prior Era", title: "Conservative Thresholds", desc: "Prior guidelines relied on stepped conservative thresholds or symptom-focused care." };
+      const s2 = isVi
+        ? { tag: "Động lực chuyển dịch • RCTs Bản lề", title: "Thử nghiệm Lâm sàng Đột phá", desc: "Các thử nghiệm ngẫu nhiên đa trung tâm tháo gỡ rào cản lâm sàng cũ và khẳng định lợi ích cứng." }
+        : { tag: "Paradigm Shift • Landmark RCTs", title: "Pivotal Trial Evidence", desc: "Multicenter randomized trials resolved prior safety barriers and established outcome benefits." };
+      const s3 = isVi
+        ? { tag: "Chỉ dẫn B • Khuyến cáo Hiện hành", title: "Chuẩn mực Thực hành Mới (ESC/ACC)", desc: "Cập nhật phân tầng nguy cơ liên tục, đích điều trị rõ ràng và tối ưu phối hợp sớm." }
+        : { tag: "Directive B • Current Guideline", title: "Modern Standard of Care", desc: "Unified risk-based targets, Class I disease-modifying regimens, and bedside safety guardrails." };
+
+      Dom.evolutionPipelineRow.innerHTML = `
+        <div class="pipeline-step-box">
+          <div class="step-tag-text">${escapeHtml(s1.tag)}</div>
+          <div class="step-name-text">${escapeHtml(s1.title)}</div>
+          <div class="step-desc-text">${escapeHtml(s1.desc)}</div>
+        </div>
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="pipeline-step-box">
+          <div class="step-tag-text">${escapeHtml(s2.tag)}</div>
+          <div class="step-name-text">${escapeHtml(s2.title)}</div>
+          <div class="step-desc-text">${escapeHtml(s2.desc)}</div>
+        </div>
+        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="pipeline-step-box current">
+          <div class="step-tag-text" style="color: var(--color-primary-deep);"><i class="fa-solid fa-check"></i> ${escapeHtml(s3.tag)}</div>
+          <div class="step-name-text">${escapeHtml(s3.title)}</div>
+          <div class="step-desc-text">${escapeHtml(s3.desc)}</div>
+        </div>
+      `;
+    }
+
+    function renderTrialsMatrix(b, isVi) {
+      let cards = [];
+
+      if (Array.isArray(b.landmark_trials) && b.landmark_trials.length > 0) {
+        cards = b.landmark_trials.map(tr => ({
+          name: tr.name || "Landmark Trial",
+          journal: tr.journal || "",
+          endpoint: isVi ? (tr.endpoint_label_vi || tr.endpoint_label || "Kết cục chính") : (tr.endpoint_label_en || tr.endpoint_label || "Primary Endpoint"),
+          value: tr.value || "—",
+          ci: tr.ci || "",
+          p: tr.p || "",
+          nnt: tr.nnt || "",
+          changes: isVi ? (tr.changes_vi || tr.changes_en || "") : (tr.changes_en || tr.changes_vi || ""),
+          caution: isVi ? (tr.caution_vi || tr.caution_en || "") : (tr.caution_en || tr.caution_vi || "")
+        }));
+      } else {
+        const anchors = (b.pubmed_anchors || []).slice(0, 3);
+        cards = anchors.map((a, idx) => ({
+          name: a.title ? (a.title.length > 68 ? a.title.slice(0, 65) + "..." : a.title) : (isVi ? `Nghiên cứu #${idx + 1}` : `Study #${idx + 1}`),
+          journal: `${a.source || "PubMed"} ${a.pubdate || ""}`.trim(),
+          endpoint: isVi ? "Dữ liệu xác thực Step-0" : "Step-0 Verified Anchor",
+          value: `PMID ${a.pmid}`,
+          ci: a.doi ? `DOI: ${a.doi}` : (isVi ? "Hồ sơ NCBI PubMed" : "Verified NCBI Record"),
+          p: b.date || "",
+          nnt: `${t("pillarWord")} #${b.pillar_id}`,
+          changes: isVi
+            ? "Đối chiếu trực tiếp dữ liệu định lượng và kết luận chính trong phần nội dung chi tiết bên dưới."
+            : "Review verified quantitative outcomes and practice implications in Block B below.",
+          caution: isVi
+            ? "Luôn kiểm tra tiêu chuẩn loại trừ, chức năng thận/điện giải trước khi áp dụng cho người bệnh cụ thể."
+            : "Always verify exclusion criteria and renal/electrolyte parameters before applying to individual patients."
+        }));
+      }
+
+      if (cards.length === 0) {
+        Dom.trialsGridDeck.innerHTML = "";
+        return;
+      }
+
+      Dom.trialsGridDeck.innerHTML = cards.map(c => `
+        <div class="trial-box-card">
+          <div class="trial-box-header">
+            <h3 class="trial-title-h3">${escapeHtml(c.name)}</h3>
+            <span class="trial-journal-tag">${escapeHtml(c.journal)}</span>
+          </div>
+
+          <div class="stat-container-night">
+            <div class="stat-metric-primary">
+              <span class="stat-endpoint-label">${escapeHtml(c.endpoint)}</span>
+              <span class="stat-value-emerald">${escapeHtml(c.value)}</span>
+            </div>
+            <div class="stat-metric-secondary">
+              ${c.ci ? `<div>${escapeHtml(c.ci)}</div>` : ""}
+              ${c.p ? `<div style="color: var(--color-primary);">${escapeHtml(c.p)}</div>` : ""}
+              ${c.nnt ? `<div style="color: #9a9a9a;">${escapeHtml(c.nnt)}</div>` : ""}
+            </div>
+          </div>
+
+          <div class="impact-dual-columns">
+            <div class="impact-cell change">
+              <span class="cell-label"><i class="fa-solid fa-check"></i> ${t("whatChangesLabel")}</span>
+              <span class="cell-text">${formatInlineRich(c.changes)}</span>
+            </div>
+            <div class="impact-cell caution">
+              <span class="cell-label"><i class="fa-solid fa-shield-halved"></i> ${t("whatNotChangeLabel")}</span>
+              <span class="cell-text">${formatInlineRich(c.caution)}</span>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPearls(b, isVi) {
+      let pearls = [];
+
+      if (Array.isArray(b.pearls) && b.pearls.length > 0) {
+        pearls = b.pearls.map(p => ({
+          type: p.type === "trial" ? "trial" : "guideline",
+          text: isVi ? (p.text_vi || p.text_en || "") : (p.text_en || p.text_vi || "")
+        }));
+      } else {
+        const md = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || "");
+        const pearlRegex = /^(?:[-*]|\d+\.)\s+\*\*\[(GUIDELINE EVOLUTION|LANDMARK TRIAL)\]\*\*\s+(.+)$/gm;
+        const matches = [...md.matchAll(pearlRegex)];
+        if (matches.length > 0) {
+          pearls = matches.map(m => ({
+            type: m[1].includes("GUIDELINE") ? "guideline" : "trial",
+            text: m[2].trim()
+          }));
+        } else {
+          const pName = getPillarDisplayName(b.pillar_id, isVi);
+          pearls = [
+            {
+              type: "guideline",
+              text: isVi
+                ? `${t("pillarWord")} #${b.pillar_id} (${pName}): Cập nhật khuyến cáo chuẩn hóa ngày ${formatFullDdMmYyyy(b.date)}.`
+                : `Pillar #${b.pillar_id} (${pName}): Standardized guideline update (${b.date}).`
+            },
+            {
+              type: "trial",
+              text: isVi
+                ? "Mọi khuyến cáo và thử nghiệm bản lề trong bản tin đều đã đối chiếu mã PMID/DOI qua NCBI PubMed Step-0."
+                : "All recommendations and landmark trials are verified via NCBI PubMed Step-0 PMID/DOI records."
+            }
+          ];
+        }
+      }
+
+      Dom.pearlsStackDeck.innerHTML = pearls.map(p => {
+        const tagText = p.type === "guideline" ? t("pearlGuidelineTag") : t("pearlTrialTag");
+        return `
+          <div class="pearl-row">
+            <span class="pearl-type-tag ${p.type}">${escapeHtml(tagText)}</span>
+            <div>${formatInlineRich(p.text)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderSources(b) {
+      const anchors = b.pubmed_anchors || [];
+      if (anchors.length === 0) {
+        Dom.sourcesListStack.innerHTML = `<div style="color: var(--color-ink-mute); font-size: 13px;">${t("noAnchors")}</div>`;
+        return;
+      }
+
+      Dom.sourcesListStack.innerHTML = anchors.map(a => {
+        const url = a.url || (a.doi ? `https://doi.org/${encodeURIComponent(a.doi)}` : `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(a.pmid)}/`);
+        return `
+          <div class="source-entry-item">
+            <div>
+              <div class="source-entry-title">${escapeHtml(a.title)}</div>
+              <div class="source-entry-citation">
+                ${escapeHtml(a.source || "NCBI PubMed")}
+                ${a.pmid ? ` &bull; PMID: <strong>${escapeHtml(a.pmid)}</strong>` : ""}
+                ${a.doi ? ` &bull; DOI: <strong>${escapeHtml(a.doi)}</strong>` : ""}
+              </div>
+            </div>
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary-outline btn-view-source">
+              <span>${t("viewSource")}</span>
+            </a>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /* ========================================================================
+       PRODUCT FEEDBACK BAR (ICON-ONLY: LIKE / DISLIKE / REPORT FLAG)
+       ======================================================================== */
+    function getFeedbackState(briefingId) {
+      if (!App.feedbackMap[briefingId]) {
+        App.feedbackMap[briefingId] = {
+          likes: 0,
+          dislikes: 0,
+          reports: 0,
+          user_reaction: null
+        };
+      }
+      return App.feedbackMap[briefingId];
+    }
+
+    function syncFeedbackFromPayload(payload, briefingId) {
+      if (!payload || !briefingId) return;
+      const cur = getFeedbackState(briefingId);
+      if (typeof payload.likes === "number") cur.likes = payload.likes;
+      if (typeof payload.like === "number") cur.likes = payload.like;
+      if (typeof payload.dislikes === "number") cur.dislikes = payload.dislikes;
+      if (typeof payload.dislike === "number") cur.dislikes = payload.dislike;
+      if (typeof payload.reports === "number") cur.reports = payload.reports;
+      if (typeof payload.report === "number") cur.reports = payload.report;
+      if (payload.counts && typeof payload.counts === "object") {
+        if (typeof payload.counts.like === "number") cur.likes = payload.counts.like;
+        if (typeof payload.counts.dislike === "number") cur.dislikes = payload.counts.dislike;
+        if (typeof payload.counts.report === "number") cur.reports = payload.counts.report;
+      }
+      if ("user_reaction" in payload) cur.user_reaction = payload.user_reaction;
+      if ("user_vote" in payload) cur.user_reaction = payload.user_vote;
+      if ("my_reaction" in payload) cur.user_reaction = payload.my_reaction;
+    }
+
+    async function fetchFeedbackForBriefing(briefingId) {
+      if (!briefingId || !App.serverAvailable || isFileOrigin()) return;
+      try {
+        const res = await fetch(`/api/feedback?briefing_id=${encodeURIComponent(briefingId)}`, {
+          headers: getAuthHeaders()
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok) {
+          if (data.summary && data.summary[briefingId]) {
+            syncFeedbackFromPayload(data.summary[briefingId], briefingId);
+          } else {
+            syncFeedbackFromPayload(data, briefingId);
+          }
+          if (App.selected && App.selected.id === briefingId) {
+            renderFeedbackBars(briefingId);
+          }
+        }
+      } catch (_) {}
+    }
+
+    function renderFeedbackBars(briefingId) {
+      const st = getFeedbackState(briefingId);
+      const bars = document.querySelectorAll(".feedback-icon-bar");
+      bars.forEach(bar => {
+        const likeBtn = bar.querySelector('[data-fb-type="like"]');
+        const dislikeBtn = bar.querySelector('[data-fb-type="dislike"]');
+        const reportBtn = bar.querySelector('[data-fb-type="report"]');
+
+        if (likeBtn) {
+          const isLike = st.user_reaction === "like";
+          likeBtn.classList.toggle("active-like", isLike);
+          likeBtn.querySelector("i").className = isLike ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+          likeBtn.querySelector(".fb-count").textContent = String(st.likes || 0);
+        }
+        if (dislikeBtn) {
+          const isDislike = st.user_reaction === "dislike";
+          dislikeBtn.classList.toggle("active-dislike", isDislike);
+          dislikeBtn.querySelector("i").className = isDislike ? "fa-solid fa-thumbs-down" : "fa-regular fa-thumbs-down";
+          dislikeBtn.querySelector(".fb-count").textContent = String(st.dislikes || 0);
+        }
+        if (reportBtn) {
+          const hasRep = (st.reports || 0) > 0 || st.user_reported;
+          reportBtn.classList.toggle("active-report", Boolean(hasRep));
+          reportBtn.querySelector("i").className = hasRep ? "fa-solid fa-flag" : "fa-regular fa-flag";
+          reportBtn.querySelector(".fb-count").textContent = String(st.reports || 0);
+        }
+      });
+    }
+
+    async function submitQuickFeedback(type) {
+      if (!App.selected) return;
+      const bid = App.selected.id;
+      const st = getFeedbackState(bid);
+
+      // Optimistic toggle / switch
+      if (type === "like") {
+        if (st.user_reaction === "like") {
+          st.likes = Math.max(0, st.likes - 1);
+          st.user_reaction = null;
+        } else {
+          if (st.user_reaction === "dislike") st.dislikes = Math.max(0, st.dislikes - 1);
+          st.likes += 1;
+          st.user_reaction = "like";
+        }
+      } else if (type === "dislike") {
+        if (st.user_reaction === "dislike") {
+          st.dislikes = Math.max(0, st.dislikes - 1);
+          st.user_reaction = null;
+        } else {
+          if (st.user_reaction === "like") st.likes = Math.max(0, st.likes - 1);
+          st.dislikes += 1;
+          st.user_reaction = "dislike";
+        }
+      }
+
+      renderFeedbackBars(bid);
+      showToast(type === "like" ? "Đã ghi nhận đánh giá Thích." : "Đã ghi nhận đánh giá Không thích.");
+
+      if (App.offlineDemo || isFileOrigin()) {
+        saveOfflineFeedbackStore();
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/feedback", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            briefing_id: bid,
+            pillar_id: App.selected.pillar_id,
+            type: type
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
+            if (data.item_summary) {
+              syncFeedbackFromPayload(data.item_summary, bid);
+            } else if (data.summary && data.summary[bid]) {
+              syncFeedbackFromPayload(data.summary[bid], bid);
+            } else {
+              syncFeedbackFromPayload(data, bid);
+            }
+            renderFeedbackBars(bid);
+          }
+        }
+      } catch (_) {}
+    }
+
+    function openFeedbackReportModal() {
+      if (!App.selected) return;
+      Dom.feedbackReportModal.classList.add("active");
+      setTimeout(() => Dom.feedbackReportComment.focus(), 60);
+    }
+
+    function closeFeedbackReportModal() {
+      Dom.feedbackReportModal.classList.remove("active");
+    }
+
+    async function submitFeedbackReportModal() {
+      if (!App.selected) return;
+      const bid = App.selected.id;
+      const reason = App.selectedReportReason;
+      const comment = Dom.feedbackReportComment.value.trim();
+
+      if (!comment) {
+        showToast("Vui lòng nhập nội dung góp ý chi tiết.");
+        Dom.feedbackReportComment.focus();
+        return;
+      }
+
+      const st = getFeedbackState(bid);
+      st.reports += 1;
+      st.user_reported = true;
+      renderFeedbackBars(bid);
+
+      if (!App.serverAvailable || App.offlineDemo || isFileOrigin()) {
+        saveOfflineFeedbackStore();
+        Dom.feedbackReportComment.value = "";
+        closeFeedbackReportModal();
+        showToast("Đã ghi nhận góp ý trên thiết bị của bạn!");
+        return;
+      }
+
+      Dom.btnSubmitFeedbackReport.disabled = true;
+      try {
+        const res = await fetch("/api/feedback", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            briefing_id: bid,
+            pillar_id: App.selected.pillar_id,
+            type: "report",
+            reason: reason,
+            comment: comment
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Không gửi được phản hồi.");
+        }
+        if (data.item_summary) {
+          syncFeedbackFromPayload(data.item_summary, bid);
+        } else if (data.summary && data.summary[bid]) {
+          syncFeedbackFromPayload(data.summary[bid], bid);
+        } else {
+          syncFeedbackFromPayload(data, bid);
+        }
+        renderFeedbackBars(bid);
+        Dom.feedbackReportComment.value = "";
+        closeFeedbackReportModal();
+        showToast("Đã gửi báo cáo & góp ý tới Nhà làm sản phẩm!");
+      } catch (err) {
+        showToast("Lỗi gửi góp ý: " + err.message);
+      } finally {
+        Dom.btnSubmitFeedbackReport.disabled = false;
+      }
+    }
+
+    /* ========================================================================
+       DAILY 1-PILLAR REFRESH WITH LIVE SSE % PROGRESS
+       ======================================================================== */
+    function schedule7AmAutoRefresh() {
+      setInterval(() => {
+        if (!App.user || App.offlineDemo || isFileOrigin()) return;
+        const now = new Date();
+        if (now.getHours() >= 7) {
+          const todayIso = getLocalIsoDate(now);
+          const todayPid = getPillarIdForDate(todayIso);
+          const hasToday = App.briefings.some(
+            b => b.date === todayIso && Number(b.pillar_id) === todayPid
+          );
+          if (!hasToday) {
+            refreshTodayData(false, true);
+          }
+        }
+      }, 60000);
+    }
+
+    async function refreshTodayData(force = true, silent = false) {
+      if (Dom.btnRefreshToday.disabled) return;
+      Dom.btnRefreshToday.disabled = true;
+      Dom.iconRefreshToday.classList.add("fa-spin");
+
+      const stripEl = document.getElementById("refreshProgressStrip");
+      const msgEl = document.getElementById("refreshProgressMsg");
+      const pctEl = document.getElementById("refreshProgressPct");
+      const barEl = document.getElementById("refreshProgressBar");
+
+      const setProgress = (pct, msg) => {
+        const clamped = Math.max(0, Math.min(100, pct));
+        Dom.labelRefreshToday.textContent = `${t("updatingLabel")} ${clamped}%`;
+        if (stripEl) stripEl.style.display = "block";
+        if (msgEl && msg) msgEl.textContent = msg;
+        if (pctEl) pctEl.textContent = `${clamped}%`;
+        if (barEl) barEl.style.width = `${clamped}%`;
+      };
+
+      const finishRefresh = () => {
+        Dom.btnRefreshToday.disabled = false;
+        Dom.iconRefreshToday.classList.remove("fa-spin");
+        Dom.labelRefreshToday.textContent = t("refreshBtn");
+        setTimeout(() => {
+          if (stripEl) stripEl.style.display = "none";
+        }, 1200);
+      };
+
+      // GitHub Pages / Static Cloud PWA live NCBI PubMed Step-0 verification mode
+      if (!App.serverAvailable || isFileOrigin()) {
+        const localToday = getLocalIsoDate();
+        const pid = getPillarIdForDate(localToday);
+        App.todayDate = localToday;
+        computeRotationPillarsFromDate(localToday);
+        setProgress(20, `Đang đồng bộ chu kỳ Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}...`);
+        try {
+          const pInfo = getPillarInfo(pid);
+          const q = (pInfo.search_query || pInfo.name || "ESC Guidelines").split(" ").slice(0, 6).join(" ");
+          setProgress(55, `Đang đối chiếu trực tiếp NCBI PubMed Step-0 cho Trụ cột #${pid}...`);
+          const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmode=json&retmax=3`;
+          await fetch(url).catch(() => {});
+          setProgress(90, "Đang dựng lại sơ đồ Guideline Evolution...");
+          const target = getTodaySingleBriefing();
+          renderDailyRotationBanner();
+          renderPillarsTiles();
+          renderModeSpecificPanels();
+          if (target) selectBriefing(target);
+          setProgress(100, `Hoàn tất xác thực Trụ cột #${pid}/10 (100%)!`);
+          if (!silent) showToast(`Đã đồng bộ Trụ cột #${pid} hôm nay qua NCBI PubMed!`);
+        } catch (_) {
+          setProgress(100, "Đã đồng bộ dữ liệu cục bộ.");
+        } finally {
+          finishRefresh();
+        }
+        return;
+      }
+
+      setProgress(1, `Đang xác thực NCBI PubMed Step-0 cho Trụ cột #${App.todayPillarId} hôm nay...`);
+
+      if (window.EventSource) {
+        const es = new EventSource("/api/refresh-stream");
+        es.onmessage = async (evt) => {
+          try {
+            const data = JSON.parse(evt.data);
+            if (data.type === "progress") {
+              setProgress(data.percent || 0, data.message || "");
+            } else if (data.type === "done") {
+              setProgress(100, `Hoàn tất cập nhật Trụ cột #${App.todayPillarId} hôm nay!`);
+              es.close();
+              if (Array.isArray(data.briefings)) App.briefings = data.briefings;
+              if (data.rotation_state) App.rotation = data.rotation_state;
+              if (data.today_date) App.todayDate = data.today_date;
+              computeRotationPillarsFromDate(App.todayDate);
+
+              try {
+                const stRes = await fetch("/api/status", { headers: getAuthHeaders() });
+                if (stRes.ok) applyServerStatus(await stRes.json());
+              } catch (_) {}
+
+              renderDailyRotationBanner();
+              renderPillarsTiles();
+              renderModeSpecificPanels();
+
+              if (App.mode === "today") {
+                const target = data.briefing || getTodaySingleBriefing();
+                if (target) selectBriefing(target);
+              } else {
+                renderBriefingsList();
+              }
+              showToast(`Đã cập nhật xong Trụ cột #${App.todayPillarId} hôm nay (100%)!`);
+              finishRefresh();
+            } else if (data.type === "error") {
+              es.close();
+              if (!silent) showToast("Lỗi cập nhật: " + (data.error || "Unknown error"));
+              finishRefresh();
+            }
+          } catch (_) {}
+        };
+        es.onerror = () => {
+          es.close();
+          if (!silent) showToast("Mất kết nối stream khi cập nhật.");
+          finishRefresh();
+        };
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/refresh", {
+          method: "POST",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ force: force, pillar_id: App.todayPillarId })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "Không thể cập nhật dữ liệu.");
+        if (Array.isArray(data.briefings)) App.briefings = data.briefings;
+        if (data.rotation_state) App.rotation = data.rotation_state;
+        setProgress(100, "Hoàn tất!");
+        renderDailyRotationBanner();
+        renderPillarsTiles();
+        renderModeSpecificPanels();
+        if (data.briefing) selectBriefing(data.briefing);
+        showToast("Đã cập nhật xong Trụ cột hôm nay (100%)!");
+      } catch (err) {
+        if (!silent) showToast("Lỗi cập nhật: " + err.message);
+      } finally {
+        finishRefresh();
+      }
+    }
+
+    /* ========================================================================
+       EVENT BINDINGS
+       ======================================================================== */
+    function bindAppEvents() {
+      // Auth Tabs
+      Dom.authTabLogin.addEventListener("click", () => {
+        Dom.authTabLogin.classList.add("active");
+        Dom.authTabRegister.classList.remove("active");
+        Dom.authTabLogin.setAttribute("aria-selected", "true");
+        Dom.authTabRegister.setAttribute("aria-selected", "false");
+        Dom.loginForm.style.display = "flex";
+        Dom.registerForm.style.display = "none";
+        Dom.authErrorBox.classList.remove("show");
+      });
+
+      Dom.authTabRegister.addEventListener("click", () => {
+        Dom.authTabRegister.classList.add("active");
+        Dom.authTabLogin.classList.remove("active");
+        Dom.authTabRegister.setAttribute("aria-selected", "true");
+        Dom.authTabLogin.setAttribute("aria-selected", "false");
+        Dom.registerForm.style.display = "flex";
+        Dom.loginForm.style.display = "none";
+        Dom.authErrorBox.classList.remove("show");
+      });
+
+      Dom.loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleAuthLoginRequest({
+          username: Dom.loginUsername.value.trim(),
+          password: Dom.loginPassword.value
+        });
+      });
+
+      Dom.btnDemoLogin.addEventListener("click", () => {
+        handleAuthLoginRequest({ demo: true });
+      });
+
+      Dom.registerForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleAuthRegisterRequest({
+          username: Dom.regUsername.value.trim(),
+          full_name: Dom.regFullName.value.trim(),
+          specialty: Dom.regSpecialty.value.trim(),
+          password: Dom.regPassword.value
+        });
+      });
+
+      Dom.btnLogout.addEventListener("click", handleLogout);
+
+      Dom.btnNavBookmarks.addEventListener("click", () => {
+        if (!App.user) return;
+        App.savedGlobalMode = !App.savedGlobalMode;
+        if (App.savedGlobalMode) {
+          App.mode = "history";
+          App.historyFilter = "saved";
+          Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
+            chip.classList.toggle("active", chip.dataset.hfilter === "saved");
+          });
+          applyLocalizationChrome();
+          renderPillarsTiles();
+          renderModeSpecificPanels();
+          const list = getHistoryScopeBriefings();
+          if (list.length > 0) {
+            App.historyPillarId = Number(list[0].pillar_id);
+            selectBriefing(list[0]);
+          } else {
+            renderBriefingsList();
+            showToast("Chưa có bản tin nào được lưu.");
+          }
+        } else {
+          App.historyFilter = "all";
+          Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
+            chip.classList.toggle("active", chip.dataset.hfilter === "all");
+          });
+          applyLocalizationChrome();
+          renderModeSpecificPanels();
+          const list = getHistoryScopeBriefings();
+          if (list.length > 0) selectBriefing(list[0]);
+          else renderBriefingsList();
+        }
+        renderUserWorkspace();
+      });
+
+      // Brand click returns to Today's single pillar mode
+      document.getElementById("brandHomeLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        switchMode("today");
+      });
+
+      // Mode Switcher Tabs
+      Dom.tabModeToday.addEventListener("click", () => switchMode("today"));
+      Dom.tabModeHistory.addEventListener("click", () => switchMode("history"));
+
+      // Quick open today's pillar history from sidebar
+      Dom.btnOpenTodayPillarHistory.addEventListener("click", () => {
+        openPillarHistory(App.todayPillarId);
+      });
+
+      // History Pillar Dropdown
+      Dom.historyPillarSelect.addEventListener("change", (e) => {
+        openPillarHistory(parseInt(e.target.value, 10));
+      });
+
+      // History Filter Chips
+      Dom.historyFilterStrip.addEventListener("click", (e) => {
+        const chip = e.target.closest(".filter-tag-chip");
+        if (!chip) return;
+        Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(b => b.classList.remove("active"));
+        chip.classList.add("active");
+        App.historyFilter = chip.dataset.hfilter || "all";
+        if (App.historyFilter !== "saved") {
+          App.savedGlobalMode = false;
+          renderUserWorkspace();
+        }
+        renderBriefingsList();
+      });
+
+      // Search Input
+      Dom.searchBriefingInput.addEventListener("input", (e) => {
+        App.searchQuery = e.target.value;
+        renderBriefingsList();
+      });
+
+      // Refresh Today
+      Dom.btnRefreshToday.addEventListener("click", () => {
+        refreshTodayData(true, false);
+      });
+
+      // Language Toggle
+      Dom.btnLangVi.addEventListener("click", () => {
+        App.currentLang = "vi";
+        Dom.btnLangVi.classList.add("active");
+        Dom.btnLangEn.classList.remove("active");
+        applyLocalizationChrome();
+        renderDailyRotationBanner();
+        renderPillarsTiles();
+        if (App.mode === "history") renderPerPillarHistoryDiagram();
+        renderBriefingsList();
+        displayCurrentBriefing();
+      });
+
+      Dom.btnLangEn.addEventListener("click", () => {
+        App.currentLang = "en";
+        Dom.btnLangEn.classList.add("active");
+        Dom.btnLangVi.classList.remove("active");
+        applyLocalizationChrome();
+        renderDailyRotationBanner();
+        renderPillarsTiles();
+        if (App.mode === "history") renderPerPillarHistoryDiagram();
+        renderBriefingsList();
+        displayCurrentBriefing();
+      });
+
+      // Bookmark Toggle
+      Dom.btnToggleBookmark.addEventListener("click", toggleBriefingBookmark);
+
+      // Copy & Print
+      Dom.btnCopyArticle.addEventListener("click", () => {
+        const b = App.selected;
+        if (!b) return;
+        const txt = App.currentLang === "vi" ? b.part1_vi_markdown : (b.part2_en_markdown || b.part1_vi_markdown);
+        navigator.clipboard.writeText(txt || "").then(() => {
+          showToast(App.currentLang === "vi" ? "Đã sao chép nội dung Markdown." : "Copied Markdown to clipboard.");
+        });
+      });
+
+      Dom.btnPrintArticle.addEventListener("click", () => window.print());
+
+      // Font Scaler
+      const updateFontScale = () => {
+        document.documentElement.style.setProperty("--content-scale", App.fontScale.toFixed(2));
+        Dom.btnFontReset.textContent = `${Math.round(App.fontScale * 100)}%`;
+      };
+      Dom.btnFontInc.addEventListener("click", () => {
+        if (App.fontScale < 1.25) {
+          App.fontScale += 0.08;
+          updateFontScale();
+        }
+      });
+      Dom.btnFontDec.addEventListener("click", () => {
+        if (App.fontScale > 0.85) {
+          App.fontScale -= 0.08;
+          updateFontScale();
+        }
+      });
+      Dom.btnFontReset.addEventListener("click", () => {
+        App.fontScale = 1.0;
+        updateFontScale();
+      });
+
+      // Delegated Click for Synchronized Product Feedback Icon Bars
+      document.addEventListener("click", (e) => {
+        const fbBtn = e.target.closest(".btn-feedback-icon");
+        if (!fbBtn) return;
+        const fbType = fbBtn.dataset.fbType;
+        if (fbType === "like" || fbType === "dislike") {
+          submitQuickFeedback(fbType);
+        } else if (fbType === "report") {
+          openFeedbackReportModal();
+        }
+      });
+
+      // Feedback Report Modal Events
+      Dom.feedbackReasonGroup.addEventListener("click", (e) => {
+        const btn = e.target.closest(".report-reason-btn");
+        if (!btn) return;
+        Dom.feedbackReasonGroup.querySelectorAll(".report-reason-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        App.selectedReportReason = btn.dataset.reason || "Đề xuất cải tiến sản phẩm";
+      });
+      Dom.btnCloseFeedbackModal.addEventListener("click", closeFeedbackReportModal);
+      Dom.btnCancelFeedbackReport.addEventListener("click", closeFeedbackReportModal);
+      Dom.feedbackReportModal.addEventListener("click", (e) => {
+        if (e.target === Dom.feedbackReportModal) closeFeedbackReportModal();
+      });
+      Dom.btnSubmitFeedbackReport.addEventListener("click", submitFeedbackReportModal);
+
+      // PubMed Modal Events
+      Dom.btnOpenPubMed.addEventListener("click", () => {
+        Dom.modalPubMed.classList.add("active");
+        if (Dom.pubMedResultsScroll.children.length === 0) {
+          executePubMedLookup();
+        }
+      });
+      Dom.btnClosePubMed.addEventListener("click", () => Dom.modalPubMed.classList.remove("active"));
+      Dom.modalPubMed.addEventListener("click", (e) => {
+        if (e.target === Dom.modalPubMed) Dom.modalPubMed.classList.remove("active");
+      });
+      Dom.btnExecutePubMed.addEventListener("click", executePubMedLookup);
+      Dom.pubMedQueryInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") executePubMedLookup();
+      });
+
+      // Escape key closes open dialogs (PubMed / Feedback Report)
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (Dom.feedbackReportModal.classList.contains("active")) {
+            closeFeedbackReportModal();
+          } else if (Dom.modalPubMed.classList.contains("active")) {
+            Dom.modalPubMed.classList.remove("active");
+          }
+        }
+      });
+    }
+
+    async function executePubMedLookup() {
+      const q = Dom.pubMedQueryInput.value.trim();
+      if (!q) return;
+
+      Dom.pubMedResultsScroll.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--color-ink-mute); font-size: 13px;">
+          <i class="fa-solid fa-spinner fa-spin" style="margin-bottom: 6px; display: block; font-size: 16px;"></i>
+          Đang truy vấn trực tiếp cơ sở dữ liệu NCBI PubMed...
+        </div>
+      `;
+
+      try {
+        let results = [];
+        if (App.serverAvailable && !isFileOrigin()) {
+          try {
+            const res = await fetch("/api/pubmed-verify", {
+              method: "POST",
+              headers: getAuthHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ query: q })
+            });
+            const ct = res.headers.get("content-type") || "";
+            if (res.ok && ct.includes("application/json")) {
+              const d = await res.json();
+              if (d.ok && d.results) results = d.results;
+            }
+          } catch (_) {}
+        }
+        if (results.length === 0) {
+          const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmode=json&retmax=5&sort=relevance`;
+          const sRes = await fetch(sUrl);
+          const sData = await sRes.json();
+          const ids = sData.esearchresult?.idlist || [];
+          if (ids.length > 0) {
+            const sumUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`;
+            const sumRes = await fetch(sumUrl);
+            const sumData = await sumRes.json();
+            for (const id of ids) {
+              const item = sumData.result?.[id];
+              if (!item) continue;
+              let doi = "";
+              for (const aid of (item.articleids || [])) {
+                if (aid.idtype === "doi") { doi = aid.value; break; }
+              }
+              results.push({
+                pmid: id,
+                title: item.title,
+                source: item.fulljournalname || item.source,
+                pubdate: item.pubdate,
+                doi: doi,
+                url: doi ? `https://doi.org/${doi}` : `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+              });
+            }
+          }
+        }
+
+        if (results.length === 0) {
+          Dom.pubMedResultsScroll.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--color-ink-mute); font-size: 13px;">Không tìm thấy bài báo khớp.</div>`;
+          return;
+        }
+
+        Dom.pubMedResultsScroll.innerHTML = results.map(r => `
+          <div class="source-entry-item">
+            <div>
+              <div class="source-entry-title">${escapeHtml(r.title)}</div>
+              <div class="source-entry-citation">
+                ${escapeHtml(r.source)} (${escapeHtml(r.pubdate)}) &bull; PMID: <strong>${escapeHtml(r.pmid)}</strong>
+                ${r.doi ? `&bull; DOI: <strong>${escapeHtml(r.doi)}</strong>` : ""}
+              </div>
+            </div>
+            <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary-outline btn-view-source">
+              <span>PubMed</span>
+            </a>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        Dom.pubMedResultsScroll.innerHTML = `<div style="color: var(--color-danger); padding: 1rem; font-size: 13px;">Lỗi: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

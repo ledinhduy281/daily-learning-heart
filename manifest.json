@@ -1,0 +1,19 @@
+{
+  "name": "Xem Tim Mỗi Ngày (Daily Learning Heart)",
+  "short_name": "Xem Tim Mỗi Ngày",
+  "description": "Bản tin Chứng cứ Tim mạch 07:00 AM theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC và Landmark RCTs.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3ecf8e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
