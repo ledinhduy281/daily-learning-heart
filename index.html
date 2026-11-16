@@ -2707,6 +2707,47 @@
       font-weight: 600;
       transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
     }
+    .back-to-top-btn {
+      position: fixed;
+      right: 22px;
+      bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+      z-index: 115;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 13px;
+      border-radius: 9999px;
+      background: var(--color-canvas);
+      color: var(--color-ink);
+      border: 1px solid var(--color-hairline);
+      box-shadow: var(--shadow-2);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .back-to-top-btn.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .back-to-top-btn:hover {
+      border-color: var(--color-primary-deep);
+      color: var(--color-primary-deep);
+      background: var(--color-canvas-soft);
+      transform: translateY(-2px);
+    }
+    body:has(.ebm-chat-panel.open) .back-to-top-btn {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     .chat-fab-btn:hover {
       transform: translateY(-2px);
       background: #000000;
@@ -3159,6 +3200,11 @@
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         padding: 10px 14px;
       }
+      .back-to-top-btn {
+        right: 14px;
+        bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+        padding: 7px 11px;
+      }
       .ebm-chat-panel:not(.expanded) {
         inset: auto 0 0 0;
         width: 100vw;
@@ -3185,6 +3231,7 @@
       .modal-backdrop-supa,
       .toast-supa,
       #refreshProgressStrip,
+      .back-to-top-btn,
       .chat-fab-btn,
       .ebm-chat-panel {
         display: none !important;
@@ -3880,6 +3927,11 @@
   <!-- ========================================================================
        SOÁI CA Y KHOA — TRỢ LÝ HỎI ĐÁP EBM TIM MẠCH (FAB + DRAWER)
        ======================================================================== -->
+  <button type="button" class="back-to-top-btn" id="btnBackToTop" title="Về đầu trang" aria-label="Về đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+    <span>Đầu trang</span>
+  </button>
+
   <button type="button" class="chat-fab-btn" id="btnFloatingChat" aria-label="Trò chuyện cùng Soái ca Y khoa">
     <span class="chat-fab-dot" aria-hidden="true"></span>
     <i class="fa-solid fa-user-doctor"></i>
@@ -7869,7 +7921,20 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
     };
 
     window.EbmChat = EbmChat;
-    document.addEventListener("DOMContentLoaded", () => EbmChat.init());
+    document.addEventListener("DOMContentLoaded", () => {
+      EbmChat.init();
+      const btnTop = document.getElementById("btnBackToTop");
+      if (btnTop) {
+        const updateBackToTop = () => {
+          btnTop.classList.toggle("visible", window.scrollY > 300 && !EbmChat.isOpen);
+        };
+        window.addEventListener("scroll", updateBackToTop, { passive: true });
+        btnTop.addEventListener("click", () => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+        updateBackToTop();
+      }
+    });
   </script>
 </body>
 </html>
