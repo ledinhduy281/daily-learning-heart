@@ -3301,34 +3301,196 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .socratic-progress-dash {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      border-radius: var(--rounded-md);
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      flex-wrap: wrap;
+    }
+    .socratic-ring-box {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .socratic-ring-svg {
+      width: 72px;
+      height: 72px;
+      transform: rotate(-90deg);
+    }
+    .socratic-ring-track {
+      fill: none;
+      stroke: var(--color-hairline-cool);
+      stroke-width: 6;
+    }
+    .socratic-ring-fill {
+      fill: none;
+      stroke: var(--color-primary-deep);
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.35s ease, stroke 0.25s ease;
+    }
+    .socratic-ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.1;
+    }
+    .socratic-ring-pct {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+    .socratic-ring-pts {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--color-ink-mute);
+      margin-top: 2px;
+    }
+    .socratic-dash-main {
+      flex: 1;
+      min-width: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .socratic-dash-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .socratic-dash-heading {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .socratic-eval-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid var(--color-hairline);
+      background: var(--color-canvas);
+      color: var(--color-ink-mute);
+    }
+    .socratic-eval-pill.is-correct {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+    .socratic-eval-pill.is-wrong {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #9a3412;
+    }
+    .socratic-stage-stepper {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .socratic-stage-step {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 5px 7px;
+      border-radius: var(--rounded-xs);
+      border: 1px solid var(--color-hairline-cool);
+      background: var(--color-canvas);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-ink-mute);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .socratic-stage-step.done {
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+      color: #065f46;
+      font-weight: 600;
+    }
+    .socratic-stage-step.active {
+      border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.12);
+      color: #065f46;
+      font-weight: 700;
+    }
+    .socratic-stat-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .socratic-stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: var(--rounded-xs);
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline-cool);
+      font-size: 11.5px;
+      color: var(--color-ink-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .socratic-stat-chip strong {
+      font-family: var(--font-mono);
+      color: var(--color-ink);
+    }
     .socratic-subskills-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
     .socratic-subskill-item {
-      padding: 10px 12px;
+      padding: 11px 13px;
       border: 1px solid var(--color-hairline);
       border-radius: var(--rounded-sm);
-      background: var(--color-canvas-soft);
+      background: var(--color-canvas);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       cursor: pointer;
       text-align: left;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
+      transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     }
     .socratic-subskill-item:hover {
       border-color: var(--color-primary-deep);
     }
     .socratic-subskill-item.active-focus {
       border-color: var(--color-primary-deep);
-      background: rgba(62, 207, 142, 0.08);
+      background: rgba(62, 207, 142, 0.06);
       box-shadow: 0 0 0 1px rgba(36, 180, 126, 0.25);
     }
     .socratic-subskill-item.mastered {
       border-color: #10b981;
       background: #ecfdf5;
+    }
+    .socratic-subskill-item.just-updated-up {
+      box-shadow: 0 0 0 2px rgba(36, 180, 126, 0.28);
+    }
+    .socratic-subskill-item.just-updated-down {
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.28);
     }
     .socratic-subskill-top {
       display: flex;
@@ -3339,39 +3501,108 @@
       font-weight: 600;
       color: var(--color-ink);
     }
+    .socratic-subskill-name {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+    .socratic-subskill-ico {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-cool);
+      color: var(--color-primary-deep);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .socratic-subskill-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .socratic-delta-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+    .socratic-delta-tag.up {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .socratic-delta-tag.down {
+      background: #ffedd5;
+      color: #9a3412;
+    }
     .socratic-lvl-pill {
       font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 700;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: 4px;
-      background: var(--color-canvas);
+      background: var(--color-canvas-soft);
       border: 1px solid var(--color-hairline);
       color: var(--color-ink-secondary);
       flex-shrink: 0;
     }
-    .socratic-bar-track {
-      height: 6px;
+    .socratic-seg-track {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .socratic-seg-cell {
+      height: 7px;
       border-radius: 999px;
       background: var(--color-hairline-cool);
-      overflow: hidden;
+      position: relative;
+      transition: background-color 0.25s ease;
     }
-    .socratic-bar-fill {
-      height: 100%;
+    .socratic-seg-cell.target-mark {
+      box-shadow: inset 0 -2px 0 rgba(6, 95, 70, 0.25);
+    }
+    .socratic-seg-cell.filled {
       background: var(--color-primary-deep);
-      transition: width 0.25s ease;
     }
-    .socratic-ascii-box {
-      margin: 0;
-      padding: 12px 14px;
+    .socratic-seg-cell.filled.mastered {
+      background: #059669;
+    }
+    .socratic-subskill-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--color-ink-mute);
+    }
+    .socratic-scale-legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
       border-radius: var(--rounded-sm);
-      background: var(--color-canvas-night);
-      color: #a7f3d0;
-      font-family: var(--font-mono);
-      font-size: 11.5px;
-      line-height: 1.45;
-      overflow-x: auto;
-      border: 1px solid #262626;
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-cool);
+      font-size: 11px;
+      color: var(--color-ink-mute);
+    }
+    .socratic-scale-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .socratic-scale-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      display: inline-block;
     }
     .socratic-cmd-strip {
       display: flex;
@@ -3524,9 +3755,12 @@
       min-width: 0;
     }
 
-    @media (max-width: 640px) {
+      @media (max-width: 640px) {
       .socratic-card-supa {
         padding: 16px 14px;
+      }
+      .socratic-stage-stepper {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .socratic-subskills-grid,
       .socratic-choices-grid {
@@ -4062,9 +4296,11 @@
           </div>
         </div>
 
+        <div class="socratic-progress-dash" id="socraticProgressDashboard"></div>
+
         <div class="socratic-subskills-grid" id="socraticSubskillsGrid"></div>
 
-        <pre class="socratic-ascii-box" id="socraticAsciiMap"></pre>
+        <div class="socratic-scale-legend" id="socraticScaleLegend"></div>
 
         <div class="socratic-cmd-strip" id="socraticCmdStrip">
           <button type="button" class="socratic-cmd-btn" data-soc-cmd="show_progress" id="btnSocCmdProgress">📊 Xem tiến độ</button>
@@ -8824,11 +9060,17 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             focus_idx: 0,
             difficulty: "normal",
             attempts_on_current: 0,
+            answered_count: 0,
+            correct_count: 0,
+            streak: 0,
+            last_updated_idx: -1,
+            last_delta: 0,
+            last_eval: "",
             last_question: "",
             current_options: [],
             correct_key: "",
             options_lang: App.currentLang || "vi",
-            subskills: defs.map((d) => ({ id: d.id, label: d.label, level: 0, checks: 0 })),
+            subskills: defs.map((d) => ({ id: d.id, label: d.label, level: 0, checks: 0, answered: 0, correct: 0 })),
             messages: []
           };
         } else {
@@ -8839,9 +9081,17 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               id: d.id,
               label: d.label,
               level: Math.max(0, Math.min(5, Number(prev.level || 0))),
-              checks: Math.max(0, Number(prev.checks || 0))
+              checks: Math.max(0, Number(prev.checks || 0)),
+              answered: Math.max(0, Number(prev.answered || 0)),
+              correct: Math.max(0, Number(prev.correct || 0))
             };
           });
+          s.answered_count = Math.max(0, Number(s.answered_count || 0));
+          s.correct_count = Math.max(0, Number(s.correct_count || 0));
+          s.streak = Math.max(0, Number(s.streak || 0));
+          if (typeof s.last_updated_idx !== "number") s.last_updated_idx = -1;
+          s.last_delta = Number(s.last_delta || 0);
+          s.last_eval = String(s.last_eval || "");
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
@@ -8971,34 +9221,122 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         }
       },
 
-      renderAsciiSkillMap(sess = this.getSession()) {
-        const isEn = App.currentLang === "en";
-        const pid = Number(this.curPillarId || 1);
-        const pTitle = getPillarDisplayName(pid, !isEn);
+      getLevelName(lvl, isVi) {
+        const viNames = ["Chưa biết", "Nghe qua", "Hiểu theo", "Cần gợi ý", "Độc lập", "Giảng được"];
+        const enNames = ["Unaware", "Heard", "Follow", "W/ Help", "Independent", "Mastery"];
+        const i = Math.max(0, Math.min(5, Number(lvl || 0)));
+        return isVi ? viNames[i] : enNames[i];
+      },
+
+      renderProgressSummaryMarkdown(sess = this.getSession()) {
+        const isVi = App.currentLang === "vi";
         const subs = sess.subskills || [];
         const totalLvl = subs.reduce((acc, s) => acc + Number(s.level || 0), 0);
         const pct = Math.round((totalLvl / 20) * 100);
-        const bar = (n, total = 10) => "\u2588".repeat(Math.max(0, Math.min(total, n))) + "\u2591".repeat(Math.max(0, total - Math.min(total, n)));
-        const overallSlots = Math.round((pct / 100) * 10);
+        const ans = Number(sess.answered_count || 0);
+        const cor = Number(sess.correct_count || 0);
+        const accPct = ans > 0 ? Math.round((cor / ans) * 100) : 0;
+        const header = isVi
+          ? `**Báo cáo Tiến độ Trụ cột #${this.curPillarId}** — Tổng mức làm chủ: **${pct}%** (${totalLvl}/20 bậc) • Đúng: **${cor}/${ans}** (${accPct}%)\n\n| Mảng kiến thức | Bậc | Đã làm | Đúng |\n|---|---:|---:|---:|`
+          : `**Pillar #${this.curPillarId} Mastery Summary** — Overall: **${pct}%** (${totalLvl}/20) • Accuracy: **${cor}/${ans}** (${accPct}%)\n\n| Subskill | Level | Answered | Correct |\n|---|---:|---:|---:|`;
+        const rows = subs.map((s) => `| ${s.label} | **${Number(s.level || 0)}/5** | ${Number(s.answered || 0)} | ${Number(s.correct || 0)} |`);
+        return [header, ...rows].join("\n");
+      },
 
-        const header = isEn
-          ? `Topic: Pillar #${pid} (${pTitle.slice(0, 26)})    overall: ${bar(overallSlots)} ${pct}%`
-          : `Chủ đề: Trụ cột #${pid} (${pTitle.slice(0, 24)})  tổng thể: ${bar(overallSlots)} ${pct}%`;
-        const sep = "-".repeat(66);
-        const rows = subs.map((s, idx) => {
-          const lvl = Number(s.level || 0);
-          const lbl = String(s.label || "").slice(0, 29).padEnd(30, " ");
-          const bStr = `[${bar(lvl * 2)}]  ${lvl}/5`;
-          let tag = "";
-          if (lvl >= 5) tag = isEn ? " * mastery" : " * tinh thông";
-          else if (lvl >= 4) tag = isEn ? " * independent" : " * làm chủ";
-          else if (idx === Number(sess.focus_idx || 0)) tag = isEn ? " <- current focus" : " <- trọng tâm";
-          return `${lbl}${bStr}${tag}`;
-        });
-        const scaleNote = isEn
-          ? "Scale: 0 unaware . 1 heard . 2 follow . 3 w/ help . 4 independent . 5 teach/edge"
-          : "Thang: 0 chưa biết . 1 nghe qua . 2 hiểu theo . 3 cần gợi ý . 4 độc lập . 5 giảng được";
-        return [header, sep, ...rows, sep, scaleNote].join("\n");
+      renderProgressDashboard(sess = this.getSession()) {
+        const dash = document.getElementById("socraticProgressDashboard");
+        const legend = document.getElementById("socraticScaleLegend");
+        const isVi = App.currentLang === "vi";
+        const subs = sess.subskills || [];
+        const totalLvl = subs.reduce((acc, s) => acc + Number(s.level || 0), 0);
+        const pct = Math.round((totalLvl / 20) * 100);
+        const masteredCount = subs.filter((s) => Number(s.level || 0) >= 4).length;
+        const answered = Number(sess.answered_count || 0);
+        const correct = Number(sess.correct_count || 0);
+        const streak = Number(sess.streak || 0);
+        const accPct = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+
+        if (dash) {
+          const r = 28;
+          const circ = 2 * Math.PI * r;
+          const offset = circ * (1 - pct / 100);
+
+          let evalCls = "";
+          let evalTxt = "";
+          const lastEv = String(sess.last_eval || "");
+          const delta = Number(sess.last_delta || 0);
+          if (!sess.started || answered === 0) {
+            evalTxt = isVi ? "Chờ câu trả lời đầu tiên" : "Ready for Q1";
+          } else if (lastEv === "correct") {
+            evalCls = "is-correct";
+            const dStr = delta > 0 ? ` (+${delta})` : "";
+            evalTxt = isVi ? `✓ Câu vừa rồi: Chính xác${dStr}` : `✓ Last answer: Correct${dStr}`;
+          } else if (lastEv === "wrong") {
+            evalCls = "is-wrong";
+            const dStr = delta !== 0 ? ` (${delta})` : "";
+            evalTxt = isVi ? `⚠ Câu vừa rồi: Chưa đúng${dStr}` : `⚠ Last answer: Missed${dStr}`;
+          } else {
+            evalTxt = isVi ? "Đã cập nhật gợi ý" : "Updated with hint";
+          }
+
+          const phaseOrder = ["diagnostic", "loop", "final_exam", "mastered"];
+          const curStageIdx = Math.max(0, phaseOrder.indexOf(sess.started ? sess.phase : "diagnostic"));
+          const stageLabels = isVi
+            ? ["1. Chẩn đoán", "2. Luyện sâu", "3. Thi tổng hợp", "4. Làm chủ"]
+            : ["1. Diagnostic", "2. Deep Loop", "3. Final Exam", "4. Mastered"];
+
+          const stagesHtml = stageLabels.map((lbl, i) => {
+            let cls = "socratic-stage-step";
+            let ico = "";
+            if (sess.started && (i < curStageIdx || (sess.phase === "mastered" && i === 3))) {
+              cls += " done";
+              ico = `<i class="fa-solid fa-check"></i>`;
+            } else if (sess.started && i === curStageIdx) {
+              cls += " active";
+              ico = `<i class="fa-solid fa-circle-dot"></i>`;
+            }
+            return `<div class="${cls}">${ico}<span>${lbl}</span></div>`;
+          }).join("");
+
+          dash.innerHTML = `
+            <div class="socratic-ring-box" aria-label="${pct}%">
+              <svg class="socratic-ring-svg" viewBox="0 0 72 72">
+                <circle class="socratic-ring-track" cx="36" cy="36" r="${r}"></circle>
+                <circle class="socratic-ring-fill" cx="36" cy="36" r="${r}" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"></circle>
+              </svg>
+              <div class="socratic-ring-center">
+                <span class="socratic-ring-pct">${pct}%</span>
+                <span class="socratic-ring-pts">${totalLvl}/20</span>
+              </div>
+            </div>
+            <div class="socratic-dash-main">
+              <div class="socratic-dash-top">
+                <div class="socratic-dash-heading">
+                  <i class="fa-solid fa-chart-line" style="color: var(--color-primary-deep);"></i>
+                  <span>${isVi ? `Tiến độ Trụ cột #${this.curPillarId}` : `Pillar #${this.curPillarId} Live Mastery`}</span>
+                </div>
+                <span class="socratic-eval-pill ${evalCls}">${escapeHtml(evalTxt)}</span>
+              </div>
+              <div class="socratic-stage-stepper">${stagesHtml}</div>
+              <div class="socratic-stat-chips">
+                <span class="socratic-stat-chip">${isVi ? "Đã làm" : "Answered"}: <strong>${answered}</strong></span>
+                <span class="socratic-stat-chip">${isVi ? "Chính xác" : "Accuracy"}: <strong>${correct}/${answered} (${accPct}%)</strong></span>
+                <span class="socratic-stat-chip">${streak >= 2 ? "🔥 " : ""}${isVi ? "Chuỗi đúng" : "Streak"}: <strong>${streak}</strong></span>
+                <span class="socratic-stat-chip">${isVi ? "Đạt chuẩn (≥4/5)" : "At Target (≥4/5)"}: <strong>${masteredCount}/4</strong></span>
+              </div>
+            </div>
+          `;
+        }
+
+        if (legend) {
+          const dots = ["#cbd5e1", "#93c5fd", "#6ee7b7", "#3ecf8e", "#24b47e", "#047857"];
+          const items = isVi
+            ? ["0 Chưa biết", "1 Nghe qua", "2 Hiểu theo", "3 Cần gợi ý", "4 Độc lập (Chuẩn)", "5 Giảng được"]
+            : ["0 Unaware", "1 Heard", "2 Follow", "3 W/ Help", "4 Independent (Goal)", "5 Teach/Edge"];
+          legend.innerHTML = `<strong style="color: var(--color-ink-secondary);">${isVi ? "Thang bậc:" : "Scale:"}</strong> ` + items.map((t, i) => `
+            <span class="socratic-scale-item"><span class="socratic-scale-dot" style="background:${dots[i]};"></span>${escapeHtml(t)}</span>
+          `).join("");
+        }
       },
 
       renderUI() {
@@ -9011,8 +9349,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         };
         setEl("socraticTitleText", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
         setEl("socraticSubText", isVi
-          ? "Ôn tập trắc nghiệm Socratic sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & củng cố Guideline, RCT."
-          : "Active multiple-choice Socratic review: 4-question diagnostic placement (levels 0–5) with A/B/C/D clinical challenges probing Guidelines & RCTs.");
+          ? "Ôn tập trắc nghiệm Socratic sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & cập nhật tiến độ tức thì sau mỗi câu."
+          : "Active multiple-choice Socratic review: 4-question diagnostic (levels 0–5), A/B/C/D clinical challenges, and real-time mastery tracking after every answer.");
 
         const phaseMapVi = {
           diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
@@ -9054,27 +9392,64 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           ? "Chọn 1 đáp án đúng nhất (A, B, C hoặc D):"
           : "Select the best clinical answer (A, B, C, or D):");
 
-        // Render 4 Subskill Cards
+        // Render Supabase-themed Visual Dashboard & Scale Legend
+        this.renderProgressDashboard(sess);
+
+        // Render 4 Segmented Subskill Cards
         const grid = document.getElementById("socraticSubskillsGrid");
+        const icons = ["fa-scale-balanced", "fa-flask-vial", "fa-heart-pulse", "fa-shield-halved"];
         if (grid) {
           grid.innerHTML = (sess.subskills || []).map((s, idx) => {
-            const isFocus = idx === Number(sess.focus_idx || 0) && s.level < 4;
-            const isMast = Number(s.level || 0) >= 4;
-            return `<button type="button" class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}" data-sub-idx="${idx}">
+            const lvl = Number(s.level || 0);
+            const ans = Number(s.answered || 0);
+            const cor = Number(s.correct || 0);
+            const isFocus = idx === Number(sess.focus_idx || 0) && lvl < 4 && sess.phase !== "mastered";
+            const isMast = lvl >= 4;
+            const isJust = idx === Number(sess.last_updated_idx);
+            const dVal = Number(sess.last_delta || 0);
+            let updateCls = "";
+            let deltaHtml = "";
+            if (isJust) {
+              if (dVal > 0) {
+                updateCls = " just-updated-up";
+                deltaHtml = `<span class="socratic-delta-tag up">+${dVal} ▲</span>`;
+              } else if (dVal < 0) {
+                updateCls = " just-updated-down";
+                deltaHtml = `<span class="socratic-delta-tag down">${dVal} ▼</span>`;
+              } else if (sess.last_eval === "correct") {
+                updateCls = " just-updated-up";
+                deltaHtml = `<span class="socratic-delta-tag up">✓</span>`;
+              } else if (sess.last_eval === "wrong") {
+                updateCls = " just-updated-down";
+                deltaHtml = `<span class="socratic-delta-tag down">!</span>`;
+              }
+            }
+            const segs = [1, 2, 3, 4, 5].map((n) => {
+              const filled = n <= lvl ? " filled" : "";
+              const mastCls = isMast ? " mastered" : "";
+              const mark = n === 4 ? " target-mark" : "";
+              return `<span class="socratic-seg-cell${filled}${mastCls}${mark}"></span>`;
+            }).join("");
+            const statsLabel = isVi ? `Đã làm: ${ans} • Đúng: ${cor}` : `Done: ${ans} • Correct: ${cor}`;
+            return `<button type="button" class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}${updateCls}" data-sub-idx="${idx}">
               <div class="socratic-subskill-top">
-                <span>${escapeHtml(s.label)}</span>
-                <span class="socratic-lvl-pill">${Number(s.level || 0)}/5</span>
+                <span class="socratic-subskill-name">
+                  <span class="socratic-subskill-ico"><i class="fa-solid ${icons[idx] || "fa-book-medical"}"></i></span>
+                  <span>${escapeHtml(s.label)}</span>
+                </span>
+                <span class="socratic-subskill-right">
+                  ${deltaHtml}
+                  <span class="socratic-lvl-pill">${lvl}/5</span>
+                </span>
               </div>
-              <div class="socratic-bar-track">
-                <div class="socratic-bar-fill" style="width: ${Math.min(100, Number(s.level || 0) * 20)}%;"></div>
+              <div class="socratic-seg-track">${segs}</div>
+              <div class="socratic-subskill-meta">
+                <span>${escapeHtml(this.getLevelName(lvl, isVi))}${isFocus ? (isVi ? " • Trọng tâm" : " • Focus") : ""}</span>
+                <span>${escapeHtml(statsLabel)}</span>
               </div>
             </button>`;
           }).join("");
         }
-
-        // Render ASCII Map
-        const pre = document.getElementById("socraticAsciiMap");
-        if (pre) pre.textContent = this.renderAsciiSkillMap(sess);
 
         // Render Dialogue Messages
         const box = document.getElementById("socraticMessagesList");
@@ -9126,6 +9501,13 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         sess.diag_step = 0;
         sess.focus_idx = 0;
         sess.attempts_on_current = 0;
+        sess.answered_count = 0;
+        sess.correct_count = 0;
+        sess.streak = 0;
+        sess.last_updated_idx = -1;
+        sess.last_delta = 0;
+        sess.last_eval = "";
+        sess.subskills = sess.subskills.map((s) => ({ ...s, level: 0, checks: 0, answered: 0, correct: 0 }));
         sess.current_options = [];
         sess.correct_key = "";
         sess.options_lang = App.currentLang || "vi";
@@ -9139,8 +9521,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
         if (cmd === "show_progress") {
-          const mapTxt = "```text\n" + this.renderAsciiSkillMap(sess) + "\n```";
-          sess.messages.push({ role: "assistant", text: mapTxt });
+          sess.messages.push({ role: "assistant", text: this.renderProgressSummaryMarkdown(sess) });
           this.saveStore();
           this.renderUI();
           return;
@@ -9175,7 +9556,10 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             diag_step: sess.diag_step,
             focus_idx: sess.focus_idx,
             difficulty: sess.difficulty,
-            subskills: sess.subskills.map((s) => ({ id: s.id, level: s.level, checks: s.checks }))
+            answered_count: sess.answered_count,
+            correct_count: sess.correct_count,
+            streak: sess.streak,
+            subskills: sess.subskills.map((s) => ({ id: s.id, level: s.level, checks: s.checks, answered: s.answered, correct: s.correct }))
           };
           const block = `[SOCRATIC_STATE]${JSON.stringify(statePayload)}[/SOCRATIC_STATE]`;
           sess.messages.push({
@@ -9213,10 +9597,18 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           sess.diag_step = Number(parsed.diag_step || 0);
           sess.focus_idx = Number(parsed.focus_idx || 0);
           sess.difficulty = parsed.difficulty || "normal";
+          sess.answered_count = Number(parsed.answered_count || 0);
+          sess.correct_count = Number(parsed.correct_count || 0);
+          sess.streak = Number(parsed.streak || 0);
+          sess.last_updated_idx = -1;
+          sess.last_delta = 0;
+          sess.last_eval = "";
           sess.subskills = sess.subskills.map((s, idx) => ({
             ...s,
             level: Number(parsed.subskills[idx]?.level ?? s.level),
-            checks: Number(parsed.subskills[idx]?.checks ?? 0)
+            checks: Number(parsed.subskills[idx]?.checks ?? 0),
+            answered: Number(parsed.subskills[idx]?.answered ?? 0),
+            correct: Number(parsed.subskills[idx]?.correct ?? 0)
           }));
           const b = App.selected || getTodaySingleBriefing();
           const mcq = this.buildDeterministicMcq(b, sess.focus_idx, sess.attempts_on_current || 0, App.currentLang || "vi", sess.difficulty);
@@ -9231,7 +9623,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           }
           sess.messages.push({
             role: "assistant",
-            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n```text\n" : "State restored!\n\n```text\n") + this.renderAsciiSkillMap(sess) + "\n```" + (sess.phase !== "mastered" ? `\n\n${mcq.question}` : "")
+            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n" : "State restored!\n\n") + this.renderProgressSummaryMarkdown(sess) + (sess.phase !== "mastered" ? `\n\n${mcq.question}` : "")
           });
           this.saveStore();
           this.renderUI();
@@ -9300,6 +9692,12 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                     focus_idx: sess.focus_idx,
                     difficulty: sess.difficulty,
                     attempts_on_current: sess.attempts_on_current,
+                    answered_count: sess.answered_count,
+                    correct_count: sess.correct_count,
+                    streak: sess.streak,
+                    last_updated_idx: sess.last_updated_idx,
+                    last_delta: sess.last_delta,
+                    last_eval: sess.last_eval,
                     last_question: sess.last_question,
                     current_options: sess.current_options,
                     correct_key: sess.correct_key,
@@ -9315,15 +9713,12 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                     EbmChat.quota = d.quota;
                     EbmChat.renderQuotaBadge();
                   }
-                  const oldLevels = sess.subskills.map((s) => s.level);
                   Object.assign(sess, d.state);
                   if (Array.isArray(d.options)) sess.current_options = d.options;
                   if (typeof d.correct_key === "string") sess.correct_key = d.correct_key;
                   sess.options_lang = lang;
                   sess.started = true;
-                  const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
-                  const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
-                  sess.messages.push({ role: "assistant", text: d.reply_markdown + suffixMap });
+                  sess.messages.push({ role: "assistant", text: d.reply_markdown });
                   this.saveStore();
                   typing.remove();
                   return;
@@ -9334,13 +9729,10 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
 
           // Client-side engine (GitHub Pages / standalone): Groq API MCQ + Deterministic MCQ fallback
           const out = await this.runClientSocratic(b, sess, action, userAnswer, lang, selectedChoice);
-          const oldLevels = sess.subskills.map((s) => s.level);
           Object.assign(sess, out.state);
           sess.options_lang = lang;
           sess.started = true;
-          const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
-          const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
-          sess.messages.push({ role: "assistant", text: out.reply + suffixMap });
+          sess.messages.push({ role: "assistant", text: out.reply });
           this.saveStore();
           typing.remove();
         } catch (err) {
@@ -9498,50 +9890,96 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           }
         }
 
-        const nextSubs = sess.subskills.map((s) => ({ ...s }));
-        let { phase, diag_step, focus_idx, attempts_on_current } = sess;
+        const nextSubs = sess.subskills.map((s) => ({
+          ...s,
+          level: Math.max(0, Math.min(5, Number(s.level || 0))),
+          checks: Math.max(0, Number(s.checks || 0)),
+          answered: Math.max(0, Number(s.answered || 0)),
+          correct: Math.max(0, Number(s.correct || 0))
+        }));
+        let { phase, diag_step, focus_idx, attempts_on_current, answered_count, correct_count, streak, last_updated_idx, last_delta, last_eval } = sess;
+        answered_count = Math.max(0, Number(answered_count || 0));
+        correct_count = Math.max(0, Number(correct_count || 0));
+        streak = Math.max(0, Number(streak || 0));
+        last_updated_idx = -1;
+        last_delta = 0;
+
         let ev = String(meta.eval || "partial").toLowerCase();
         if (action === "answer" && ["A", "B", "C", "D"].includes(prevCorrectKey) && ["A", "B", "C", "D"].includes(choice)) {
           ev = isChoiceCorrect ? "correct" : "wrong";
         }
 
         if (action === "answer") {
-          if (phase === "diagnostic") {
-            const placed = Math.max(0, Math.min(3, Number(meta.new_level || (ev === "correct" ? 2 : 1))));
-            nextSubs[diag_step].level = placed;
-            nextSubs[diag_step].checks = placed >= 2 ? 1 : 0;
-            if (diag_step < 3) {
-              diag_step += 1;
-              focus_idx = diag_step;
-            } else {
-              phase = "loop";
-              focus_idx = nextSubs.reduce((best, item, idx, arr) => (item.level < arr[best].level ? idx : best), 0);
+          const targetIdx = phase === "diagnostic" ? diag_step : focus_idx;
+          const cur = nextSubs[targetIdx];
+          const oldLvl = cur.level;
+          answered_count += 1;
+          cur.answered += 1;
+
+          const pickLowestNext = (avoidIdx) => {
+            let best = 0;
+            for (let i = 1; i < 4; i++) {
+              if (nextSubs[i].level < nextSubs[best].level || (nextSubs[i].level === nextSubs[best].level && best === avoidIdx && i !== avoidIdx)) {
+                best = i;
+              }
             }
+            return best;
+          };
+
+          if (ev === "correct") {
+            correct_count += 1;
+            streak += 1;
+            cur.correct += 1;
+            cur.checks += 1;
             attempts_on_current = 0;
-          } else {
-            const cur = nextSubs[focus_idx];
-            if (ev === "correct") {
-              cur.checks += 1;
-              attempts_on_current = 0;
-              if (phase === "loop" && cur.checks >= 2 && cur.level < 5) {
-                cur.level += 1;
-                cur.checks = 0;
-              } else if (phase === "final_exam") {
-                cur.level = Math.max(4, Math.min(5, cur.level + 1));
-                if (nextSubs.every((s) => s.level >= 5) || meta.phase === "mastered") phase = "mastered";
+            if (phase === "diagnostic") {
+              cur.level = 2;
+              if (diag_step < 3) {
+                diag_step += 1;
+                focus_idx = diag_step;
+              } else {
+                phase = "loop";
+                focus_idx = pickLowestNext(-1);
               }
-              if (phase === "loop" && nextSubs.every((s) => s.level >= 4)) phase = "final_exam";
-              focus_idx = Math.abs(Number(meta.next_focus ?? ((focus_idx + 1) % 4))) % 4;
-            } else {
-              attempts_on_current += 1;
-              if (ev === "wrong") {
-                cur.checks = 0;
-                if (attempts_on_current >= 3 && cur.level > 0 && phase === "loop") cur.level -= 1;
-              }
+            } else if (phase === "loop") {
+              cur.level = Math.min(5, Math.max(2, oldLvl + 1));
+              if (nextSubs.every((s) => s.level >= 4)) phase = "final_exam";
+              focus_idx = pickLowestNext(targetIdx);
+            } else if (phase === "final_exam") {
+              cur.level = 5;
+              if (nextSubs.every((s) => s.level >= 4)) phase = "mastered";
+              focus_idx = pickLowestNext(targetIdx);
             }
+          } else if (ev === "wrong") {
+            streak = 0;
+            cur.checks = 0;
+            attempts_on_current += 1;
+            if (phase === "diagnostic") {
+              cur.level = 1;
+              if (diag_step < 3) {
+                diag_step += 1;
+                focus_idx = diag_step;
+              } else {
+                phase = "loop";
+                focus_idx = pickLowestNext(-1);
+              }
+              attempts_on_current = 0;
+            } else {
+              if (oldLvl > 1) cur.level = oldLvl - 1;
+              else if (oldLvl === 0) cur.level = 1;
+            }
+          } else {
+            streak = 0;
+            attempts_on_current += 1;
           }
+
+          last_updated_idx = targetIdx;
+          last_delta = cur.level - oldLvl;
+          last_eval = ev;
         } else if (action === "just_tell_me") {
           attempts_on_current = 0;
+          streak = 0;
+          last_eval = "partial";
           if (phase === "diagnostic") {
             if (diag_step < 3) {
               diag_step += 1;
@@ -9551,6 +9989,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               focus_idx = nextSubs.reduce((best, item, idx, arr) => (item.level < arr[best].level ? idx : best), 0);
             }
           }
+        } else if (action === "start_diagnostic") {
+          last_eval = "";
         }
 
         let nextOptions = this.normalizeMcqOptions(meta.options);
@@ -9572,6 +10012,12 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             focus_idx,
             difficulty: sess.difficulty,
             attempts_on_current,
+            answered_count,
+            correct_count,
+            streak,
+            last_updated_idx,
+            last_delta,
+            last_eval,
             last_question: reply.slice(0, 360),
             current_options: nextOptions,
             correct_key: nextCorrect,

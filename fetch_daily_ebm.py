@@ -2882,6 +2882,8 @@ def handle_socratic_turn(req_data: dict) -> dict:
             "label": sdef["label"],
             "level": max(0, min(5, int(prev.get("level", 0) or 0))),
             "checks": max(0, int(prev.get("checks", 0) or 0)),
+            "answered": max(0, int(prev.get("answered", 0) or 0)),
+            "correct": max(0, int(prev.get("correct", 0) or 0)),
         })
 
     phase = str(state.get("phase") or "diagnostic")
@@ -2891,6 +2893,12 @@ def handle_socratic_turn(req_data: dict) -> dict:
     focus_idx = max(0, min(3, int(state.get("focus_idx", 0) or 0)))
     difficulty = str(state.get("difficulty") or "normal")
     attempts = max(0, int(state.get("attempts_on_current", 0) or 0))
+    answered_count = max(0, int(state.get("answered_count", 0) or 0))
+    correct_count = max(0, int(state.get("correct_count", 0) or 0))
+    streak = max(0, int(state.get("streak", 0) or 0))
+    last_updated_idx = int(state.get("last_updated_idx", -1) if state.get("last_updated_idx") is not None else -1)
+    last_delta = int(state.get("last_delta", 0) or 0)
+    last_eval = str(state.get("last_eval") or "")
     last_question = str(state.get("last_question", ""))
     prev_options = _normalize_mcq_options(state.get("current_options"))
     prev_correct_key = str(state.get("correct_key") or "").strip().upper()
@@ -2902,11 +2910,19 @@ def handle_socratic_turn(req_data: dict) -> dict:
         diag_step = 0
         focus_idx = 0
         attempts = 0
+        answered_count = 0
+        correct_count = 0
+        streak = 0
+        last_updated_idx = -1
+        last_delta = 0
+        last_eval = ""
         prev_options = []
         prev_correct_key = ""
         for s in subskills:
             s["level"] = 0
             s["checks"] = 0
+            s["answered"] = 0
+            s["correct"] = 0
 
     is_choice_correct = bool(
         action == "answer"
@@ -2921,6 +2937,9 @@ def handle_socratic_turn(req_data: dict) -> dict:
         "focus_idx": focus_idx,
         "difficulty": difficulty,
         "attempts_on_current": attempts,
+        "answered_count": answered_count,
+        "correct_count": correct_count,
+        "streak": streak,
         "last_question": last_question,
         "current_options": prev_options,
         "correct_key": prev_correct_key,
@@ -3092,50 +3111,74 @@ def handle_socratic_turn(req_data: dict) -> dict:
     if not reply_text:
         reply_text, meta = _socratic_deterministic_fallback(primary, state_clean, lang, action, user_answer, selected_choice)
 
-    # Apply strict level & deterministic MCQ state machine progression
+    # Apply per-answer level & live telemetry progression
     ev = str(meta.get("eval", "partial")).lower()
     if action == "answer" and prev_correct_key in ("A", "B", "C", "D") and selected_choice in ("A", "B", "C", "D"):
         ev = "correct" if is_choice_correct else "wrong"
         meta["eval"] = ev
 
     if action == "answer":
-        if phase == "diagnostic":
-            placed = max(0, min(3, int(meta.get("new_level", 2 if ev == "correct" else 1) or (2 if ev == "correct" else 1))))
-            subskills[diag_step]["level"] = placed
-            subskills[diag_step]["checks"] = 1 if placed >= 2 else 0
-            if diag_step < 3:
-                diag_step += 1
-                focus_idx = diag_step
-                phase = "diagnostic"
-            else:
-                phase = "loop"
-                focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+        target_idx = diag_step if phase == "diagnostic" else focus_idx
+        cur_sub = subskills[target_idx]
+        old_lvl = int(cur_sub.get("level", 0) or 0)
+        answered_count += 1
+        cur_sub["answered"] = int(cur_sub.get("answered", 0) or 0) + 1
+
+        if ev == "correct":
+            correct_count += 1
+            streak += 1
+            cur_sub["correct"] = int(cur_sub.get("correct", 0) or 0) + 1
+            cur_sub["checks"] = int(cur_sub.get("checks", 0) or 0) + 1
             attempts = 0
-        elif phase in ("loop", "final_exam"):
-            cur_sub = subskills[focus_idx]
-            if ev == "correct":
-                cur_sub["checks"] += 1
-                attempts = 0
-                if phase == "loop" and cur_sub["checks"] >= 2 and cur_sub["level"] < 5:
-                    cur_sub["level"] += 1
-                    cur_sub["checks"] = 0
-                elif phase == "final_exam":
-                    cur_sub["level"] = max(4, min(5, cur_sub["level"] + 1))
-                    if str(meta.get("phase", "")).lower() == "mastered" or all(s["level"] >= 5 for s in subskills):
-                        phase = "mastered"
-                if all(s["level"] >= 4 for s in subskills) and phase == "loop":
+            if phase == "diagnostic":
+                cur_sub["level"] = 2
+                if diag_step < 3:
+                    diag_step += 1
+                    focus_idx = diag_step
+                else:
+                    phase = "loop"
+                    focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+            elif phase == "loop":
+                cur_sub["level"] = min(5, max(2, old_lvl + 1))
+                if all(s["level"] >= 4 for s in subskills):
                     phase = "final_exam"
-                nxt = int(meta.get("next_focus", (focus_idx + 1) % 4) or 0) % 4
-                focus_idx = nxt
-            elif ev == "wrong":
-                attempts += 1
-                cur_sub["checks"] = 0
-                if attempts >= 3 and cur_sub["level"] > 0 and phase == "loop":
-                    cur_sub["level"] -= 1
+                focus_idx = min(range(4), key=lambda idx: (subskills[idx]["level"], idx == target_idx))
+            elif phase == "final_exam":
+                cur_sub["level"] = 5
+                if all(s["level"] >= 4 for s in subskills):
+                    phase = "mastered"
+                focus_idx = min(range(4), key=lambda idx: (subskills[idx]["level"], idx == target_idx))
+        elif ev == "wrong":
+            streak = 0
+            cur_sub["checks"] = 0
+            attempts += 1
+            if phase == "diagnostic":
+                cur_sub["level"] = 1
+                if diag_step < 3:
+                    diag_step += 1
+                    focus_idx = diag_step
+                else:
+                    phase = "loop"
+                    focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+                attempts = 0
             else:
-                attempts += 1
+                if old_lvl > 1:
+                    cur_sub["level"] = old_lvl - 1
+                elif old_lvl == 0:
+                    cur_sub["level"] = 1
+        else:
+            streak = 0
+            attempts += 1
+
+        last_updated_idx = target_idx
+        last_delta = int(cur_sub["level"]) - old_lvl
+        last_eval = ev
     elif action == "just_tell_me":
         attempts = 0
+        streak = 0
+        last_updated_idx = -1
+        last_delta = 0
+        last_eval = "partial"
         if phase == "diagnostic":
             if diag_step < 3:
                 diag_step += 1
@@ -3143,6 +3186,10 @@ def handle_socratic_turn(req_data: dict) -> dict:
             else:
                 phase = "loop"
                 focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+    else:
+        last_updated_idx = -1
+        last_delta = 0
+        last_eval = "" if action == "start_diagnostic" else last_eval
 
     next_options = _normalize_mcq_options(meta.get("options"))
     next_correct = str(meta.get("correct_key") or "").strip().upper()[:1]
@@ -3160,6 +3207,12 @@ def handle_socratic_turn(req_data: dict) -> dict:
         "focus_idx": focus_idx,
         "difficulty": difficulty,
         "attempts_on_current": attempts,
+        "answered_count": answered_count,
+        "correct_count": correct_count,
+        "streak": streak,
+        "last_updated_idx": last_updated_idx,
+        "last_delta": last_delta,
+        "last_eval": last_eval,
         "last_question": reply_text[:360],
         "current_options": next_options,
         "correct_key": next_correct,
