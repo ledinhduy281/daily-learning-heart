@@ -1914,7 +1914,7 @@ def _compose_deterministic_ebm_answer(
 
     parts: list[str] = []
     if is_en:
-        parts.append(f"### Soái ca Y khoa — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
+        parts.append(f"### Med Bro — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
         parts.append(f"**Current Guideline ({cur_g.get('year', '2026')}):** {cur_g.get('name', primary.get('title_en', ''))} *(Prior: {prior_g.get('name', '—')})*.")
     else:
         parts.append(f"### Soái ca Y khoa — Giải đáp Trụ cột #{primary.get('pillar_id')}: {primary.get('pillar_vi', primary.get('pillar_name', ''))}")
@@ -2225,8 +2225,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             "Tôi xin phép **từ chối trả lời** các câu hỏi ngoài phạm vi y khoa để tiết kiệm tài nguyên hệ thống.\n\n"
             "*Bác sĩ có thể hỏi về: Guideline Tim mạch 08–11/2026, 10 Trụ cột chuyên khoa, thử nghiệm RCT bản lề, liều dùng – chống chỉ định thuốc tim mạch hoặc tra cứu bài báo PubMed.*"
             if lang != "en" else
-            "### Soái ca Y khoa — Clinical Scope Notice\n\n"
-            "I am **Soái ca Y khoa**, dedicated strictly to **Cardiology & Evidence-Based Medicine**. "
+            "### Med Bro — Clinical Scope Notice\n\n"
+            "I am **Med Bro**, dedicated strictly to **Cardiology & Evidence-Based Medicine**. "
             "I politely decline off-topic non-medical requests to conserve system tokens."
         )
         return {
@@ -2234,7 +2234,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             "rejected_offtopic": True,
             "answer_markdown": refusal,
             "sources": [],
-            "engine_used": "Soái ca Y khoa • Bộ lọc Y khoa",
+            "engine_used": "Med Bro • Medical Scope Filter" if lang == "en" else "Soái ca Y khoa • Bộ lọc Y khoa",
             "matched_pillar_id": active_pid or 1,
             "matched_briefing_id": active_bid,
             "quota": quota,
@@ -2310,8 +2310,10 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                 f"OPENFDA: {json.dumps(fda_note, ensure_ascii=False)}\n"
                 f"EXCERPT:\n{(primary.get('part1_vi_markdown' if lang != 'en' else 'part2_en_markdown') or '')[:1400]}"
             )
+            bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
+            site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
             sys_prompt = (
-                "You are 'Soái ca Y khoa', a Cardiology EBM clinical assistant inside 'Xem Tim Mỗi Ngày'. "
+                f"You are '{bot_name}', a Cardiology EBM clinical assistant inside '{site_name}'. "
                 "STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions "
                 "(including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). "
                 "If the user asks anything unrelated to medicine/cardiology (coding, entertainment, politics, sports, general chit-chat), "
@@ -2350,7 +2352,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         resp_j = json.loads(r.read().decode("utf-8"))
                     llm_text = resp_j["choices"][0]["message"]["content"]
                     llm_text = re.sub(r"<think>[\s\S]*?</think>", "", llm_text).strip()
-                    engine_name = "Soái ca Y khoa • AI + EBM"
+                    engine_name = f"{bot_name} • AI + EBM"
                 else:
                     payload = json.dumps({
                         "model": "gemini-3.8-flash",
@@ -2375,7 +2377,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
                         for c in (s.get("content") or []) if c.get("type") == "text"
                     )
-                    engine_name = "Soái ca Y khoa • Gemini AI + EBM"
+                    engine_name = f"{bot_name} • Gemini AI + EBM"
 
                 if llm_text and llm_text.strip():
                     return {
@@ -2412,7 +2414,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     )
     if quota_banner:
         answer_md = quota_banner + answer_md
-    engine_lbl = "Soái ca Y khoa • EBM, PubMed & OpenFDA" if fda_note else "Soái ca Y khoa • EBM & PubMed"
+    bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
+    engine_lbl = f"{bot_name} • EBM, PubMed & OpenFDA" if fda_note else f"{bot_name} • EBM & PubMed"
     return {
         "ok": True,
         "answer_markdown": answer_md,
