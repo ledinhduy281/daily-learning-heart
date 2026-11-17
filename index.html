@@ -8524,23 +8524,119 @@
         }
       },
 
+      extractPastedMcqOptions(query) {
+        const q = String(query || "").trim();
+        if (!q || q.length < 12) return null;
+        const patPunct = /(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+([\s\S]+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|$)/g;
+        const opts = {};
+        let m;
+        while ((m = patPunct.exec(q)) !== null) {
+          const k = m[1].toUpperCase();
+          const val = m[2].replace(/\s+/g, " ").trim();
+          if (val && !opts[k]) opts[k] = val;
+        }
+        if (["A", "B", "C", "D"].every((k) => Boolean(opts[k]))) return opts;
+
+        const patNl = /(?:^|\n)\s*([ABCD])\s*\n\s*([\s\S]+?)(?=(?:\n\s*[ABCD]\s*\n)|$)/g;
+        const optsNl = {};
+        while ((m = patNl.exec(q)) !== null) {
+          const k = m[1].toUpperCase();
+          const val = m[2].replace(/\s+/g, " ").trim();
+          if (val && !optsNl[k]) optsNl[k] = val;
+        }
+        if (["A", "B", "C", "D"].every((k) => Boolean(optsNl[k]))) return optsNl;
+        return null;
+      },
+
+      wantsDetailedExplanation(query) {
+        return /(giải thích thêm|giải thích kỹ|giải thích rõ|chi tiết|phân tích kỹ|cụ thể hơn|tại sao|vì sao|dễ hiểu|đơn giản|chưa hiểu|không biết gì về y khoa|explain more|in detail|elaborate|why is that|simpler|simple words|break down)/i.test(String(query || ""));
+      },
+
+      ensureCompleteSentence(text) {
+        let cleaned = String(text || "")
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .replace(/<think>[\s\S]*$/gi, "")
+          .trim();
+        if (!cleaned) return "";
+        if (/[.!?…]["'\)\]\*`]*$/.test(cleaned)) return cleaned;
+        const matches = Array.from(cleaned.matchAll(/[.!?](?=\s|\n|$)/g)).filter((m) => {
+          const pos = m.index || 0;
+          return pos === 0 || !/\d/.test(cleaned[pos - 1]);
+        });
+        if (matches.length > 0) {
+          const last = matches[matches.length - 1];
+          const cutPos = (last.index || 0) + 1;
+          if (cutPos >= Math.max(24, Math.floor(cleaned.length * 0.4))) {
+            return cleaned.slice(0, cutPos).trim();
+          }
+        }
+        return `${cleaned}.`;
+      },
+
+      firstCleanSentence(text, maxLen = 180) {
+        const clean = String(text || "").replace(/\s+/g, " ").trim();
+        if (!clean) return "";
+        const m = clean.match(/^(.+?[.!?])(?:\s|$)/);
+        if (m && m[1].length <= maxLen) return m[1].trim();
+        if (clean.length <= maxLen) return `${clean.replace(/\.+$/, "")}.`;
+        return `${clean.slice(0, maxLen).replace(/\s+\S*$/, "").replace(/[,;:\s]+$/, "")}.`;
+      },
+
       async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang) {
         const isEn = lang === "en";
         const ge = primary.guideline_evolution || {};
-        const priorG = ge.prior_guideline || {};
         const curG = ge.current_guideline || {};
         const steps = ge.steps || [];
         const trials = primary.landmark_trials || [];
         const pearls = primary.pearls || [];
         const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
 
-        const parts = [];
-        if (isEn) {
-          parts.push(`### Med Bro — Pillar #${primary.pillar_id}: ${primary.pillar_name}`);
-          parts.push(`**Current Guideline (${curG.year || "Aug–Nov 2026"}):** ${curG.name || primary.title_en} *(Prior: ${priorG.name || "—"})*.`);
-        } else {
-          parts.push(`### Soái ca Y khoa — Giải đáp Trụ cột #${primary.pillar_id}: ${primary.pillar_vi || primary.pillar_name}`);
-          parts.push(`**Khuyến cáo Hiện hành (${curG.year || "08–11/2026"}):** ${curG.name || primary.title_vi} *(Tiền nhiệm: ${priorG.name || "—"})*.`);
+        const seen = new Set();
+        const sources = [];
+        [...pubmedHits, ...(primary.pubmed_anchors || [])].forEach((src) => {
+          const pm = String(src.pmid || "").trim();
+          if (pm && !seen.has(pm) && sources.length < 5) {
+            seen.add(pm);
+            sources.push(src);
+          }
+        });
+
+        const wantsDetail = this.wantsDetailedExplanation(query);
+        const mcqOpts = this.extractPastedMcqOptions(query);
+
+        // 1) Pasted Multiple-Choice -> strictly "X, vì <1 câu ngắn gọn>."
+        if (mcqOpts && !wantsDetail) {
+          const evidBlob = [
+            curG.name || "",
+            steps.map((s) => `${s.title_vi || ""} ${s.desc_vi || ""} ${s.title_en || ""} ${s.desc_en || ""}`).join(" "),
+            trials.map((t) => `${t.name || ""} ${t.changes_vi || ""} ${t.caution_vi || ""} ${t.changes_en || ""} ${t.caution_en || ""}`).join(" "),
+            pearls.map((p) => `${p.text_vi || ""} ${p.text_en || ""}`).join(" "),
+            (primary.part1_vi_markdown || "").slice(0, 3000),
+            (primary.part2_en_markdown || "").slice(0, 3000)
+          ].join(" ").toLowerCase();
+
+          const trapRe = /(giữ nguyên ngưỡng.*cũ|trì hoãn.*12 tháng|chỉ dùng.*sốc tim|ngưng toàn bộ|không cần lưu ý|tăng gấp đôi liều.*suy thận|chỉ dựa vào ngưỡng tuổi|bỏ qua bệnh đồng mắc|đơn trị liệu.*vượt trội|p\s*>\s*0[,\.]2|trung tính|maintain the legacy|defer therapy.*12 months|reserve.*strictly for inpatients|discontinue background therapy|rely solely on isolated age|none — intensive targets|double the initiating bolus|stop all cardioprotective|showed neutral primary outcomes)/i;
+          let bestK = "A";
+          let bestSc = -1e9;
+          for (const k of ["A", "B", "C", "D"]) {
+            const oLow = (mcqOpts[k] || "").toLowerCase();
+            const toks = Array.from(new Set(oLow.match(/[\p{L}\p{N}\-]{3,}/gu) || []));
+            let sc = toks.reduce((acc, tok) => acc + (evidBlob.includes(tok) ? 2 : 0), 0);
+            if (trapRe.test(oLow)) sc -= 20;
+            if (sc > bestSc) {
+              bestSc = sc;
+              bestK = k;
+            }
+          }
+          const rawReason = (steps.length ? steps[steps.length - 1][isEn ? "desc_en" : "desc_vi"] : "")
+            || (pearls.length ? (isEn ? pearls[0].text_en : pearls[0].text_vi) : "")
+            || mcqOpts[bestK];
+          let oneReason = this.firstCleanSentence(rawReason, 150).replace(/\.$/, "");
+          if (oneReason.length > 2 && oneReason[0] === oneReason[0].toUpperCase() && oneReason.slice(0, 3) !== oneReason.slice(0, 3).toUpperCase()) {
+            oneReason = oneReason[0].toLowerCase() + oneReason.slice(1);
+          }
+          const ans = isEn ? `**${bestK}**, because ${oneReason}.` : `**${bestK}**, vì ${oneReason}.`;
+          return { markdown: this.ensureCompleteSentence(ans), sources };
         }
 
         const rawMd = (isEn ? primary.part2_en_markdown : primary.part1_vi_markdown) || primary.part1_vi_markdown || "";
@@ -8550,66 +8646,52 @@
 
         const rankedLines = bodyLines
           .map((line) => ({
-            line,
+            line: line.replace(/^[-*•]\s*/, ""),
             hits: tokens.reduce((acc, tok) => acc + (line.toLowerCase().includes(tok) ? 1 : 0), 0)
           }))
           .filter((x) => x.hits > 0)
-          .sort((a, b) => b.hits - a.hits)
-          .slice(0, 4);
+          .sort((a, b) => b.hits - a.hits);
 
+        // 2) Concise direct answer by default (1–3 complete sentences)
+        if (!wantsDetail) {
+          const bits = [];
+          if (rankedLines.length > 0) {
+            bits.push(this.firstCleanSentence(rankedLines[0].line, 190));
+            if (rankedLines.length > 1 && bits.join(" ").length < 200) {
+              bits.push(this.firstCleanSentence(rankedLines[1].line, 160));
+            }
+          } else if (steps.length > 0) {
+            bits.push(this.firstCleanSentence(isEn ? steps[steps.length - 1].desc_en : steps[steps.length - 1].desc_vi, 200));
+          } else if (pearls.length > 0) {
+            bits.push(this.firstCleanSentence((isEn ? pearls[0].text_en : pearls[0].text_vi) || "", 200));
+          }
+          if (fdaNote && fdaNote.text) {
+            const noteTxt = isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220));
+            bits.push(this.firstCleanSentence(`${fdaNote.drug}: ${noteTxt}`, 170));
+          } else if (trials.length > 0 && rankedLines.length === 0) {
+            const tr = trials[0];
+            bits.push(this.firstCleanSentence(`${tr.name} (${tr.value}): ${isEn ? tr.changes_en : tr.changes_vi}`, 170));
+          }
+          if (!bits.length) bits.push(`${curG.name || (isEn ? primary.title_en : primary.title_vi)}.`);
+          return { markdown: this.ensureCompleteSentence(bits.filter(Boolean).join(" ")), sources };
+        }
+
+        // 3) Explicit detailed explanation (3–4 concise complete bullets)
+        const parts = [];
         if (rankedLines.length > 0) {
-          parts.push(isEn ? "#### Direct Clinical Evidence Match" : "#### Trọng tâm Trực tiếp cho Câu hỏi");
-          rankedLines.forEach(({ line }) => {
-            parts.push(line.startsWith("-") ? line : `- ${line}`);
-          });
-        } else if (steps.length > 0) {
-          parts.push(isEn ? "#### Guideline Evolution Summary" : "#### Diễn tiến Khuyến cáo (Tiền nhiệm ➔ Hiện hành)");
-          steps.forEach((s) => {
-            parts.push(`- **${isEn ? s.title_en : s.title_vi}:** ${isEn ? s.desc_en : s.desc_vi}`);
-          });
+          rankedLines.slice(0, 3).forEach(({ line }) => parts.push(`- ${this.firstCleanSentence(line, 180)}`));
+        } else {
+          steps.slice(0, 2).forEach((s) => parts.push(`- **${isEn ? s.title_en : s.title_vi}:** ${this.firstCleanSentence(isEn ? s.desc_en : s.desc_vi, 160)}`));
         }
-
         if (trials.length > 0) {
-          parts.push(isEn ? "#### Landmark RCTs & Bedside Safety Caveats" : "#### Thử nghiệm Bản lề & Cảnh báo An toàn tại Giường bệnh");
-          trials.slice(0, 3).forEach((tr) => {
-            const chg = isEn ? tr.changes_en : tr.changes_vi;
-            const caut = isEn ? tr.caution_en : tr.caution_vi;
-            parts.push(`- **${tr.name}** (*${tr.journal}* — **${tr.value}**, ${tr.ci}, ${tr.p}): ${chg}\n  - *${isEn ? "Safety Caveat" : "Lưu ý an toàn"}:* ${caut}`);
-          });
+          const tr = trials[0];
+          parts.push(`- **${tr.name}** (${tr.value}, ${tr.p}): ${this.firstCleanSentence(isEn ? tr.changes_en : tr.changes_vi, 140)} ${this.firstCleanSentence(isEn ? tr.caution_en : tr.caution_vi, 130)}`);
         }
-
         if (fdaNote && fdaNote.text) {
-          const noteTxt = isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text);
-          parts.push(isEn ? `#### Official Drug Label Data (${fdaNote.drug})` : `#### Dữ liệu Dược lâm sàng Chính thức (${fdaNote.drug})`);
-          parts.push(`- **${fdaNote.label}:** ${noteTxt}`);
+          const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text), 150);
+          parts.push(`- **${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
         }
-
-        if (pearls.length > 0) {
-          parts.push(isEn ? "#### Take-Home Clinical Pearls" : "#### Điểm Nhấn Đi Buồng");
-          pearls.slice(0, 3).forEach((p) => {
-            const pTxt = (isEn ? p.text_en : p.text_vi) || (isEn ? p.en : p.vi) || "";
-            if (pTxt) parts.push(`- ${pTxt}`);
-          });
-        }
-
-        if (pubmedHits.length > 0) {
-          parts.push(isEn ? "#### Live NCBI PubMed References" : "#### Bằng chứng Mới Truy xuất từ NCBI PubMed");
-          for (const ph of pubmedHits) {
-            const snipTxt = ph.snippet ? (isEn ? ph.snippet : await this.translateSnippetToVi(ph.snippet)) : "";
-            parts.push(`- **${ph.title}** (*${ph.source}*, ${ph.pubdate} — PMID \`${ph.pmid}\`)${snipTxt ? ` — *${snipTxt}*` : ""}`);
-          }
-        }
-
-        const seen = new Set();
-        const sources = [];
-        [...pubmedHits, ...(primary.pubmed_anchors || [])].forEach((src) => {
-          const pm = String(src.pmid || "").trim();
-          if (pm && !seen.has(pm) && sources.length < 6) {
-            seen.add(pm);
-            sources.push(src);
-          }
-        });
-        return { markdown: parts.join("\n\n"), sources };
+        return { markdown: this.ensureCompleteSentence(parts.slice(0, 4).join("\n")), sources };
       },
 
       async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory = []) {
@@ -8637,19 +8719,37 @@
 
         const botName = lang === "en" ? "Med Bro" : "Soái ca Y khoa";
         const siteName = lang === "en" ? "Daily Learning Heart" : "Xem Tim Mỗi Ngày";
-        const sysPrompt = `You are '${botName}', a Cardiology EBM clinical assistant inside '${siteName}'. STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions (including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). If off-topic (coding, entertainment, politics, sports, chit-chat), politely refuse in 1 short sentence to save tokens. NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a question about a Cardiology Pillar (Trụ cột 1..10). If the user says they know nothing about medicine ('không biết gì về y khoa', 'giải thích đơn giản', 'dễ hiểu', 'chưa hiểu'), act as a warm, patient doctor explaining to a non-medical person using everyday life metaphors, short simple sentences, and zero unexplained jargon (unpack ISH, SPRINT, ESPRIT, PREVENT, CKD in plain language). TERMINOLOGY RULE: Translate 'white-coat hypertension/effect' accurately as 'tăng huyết áp áo choàng trắng' (huyết áp tăng giả tạo tại phòng khám do hồi hộp khi gặp bác sĩ) — NEVER translate it as 'sốt nóng do y bác sĩ'. Synthesize accurately using the provided 2026 guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in ${lang === "en" ? "academic English" : "clear, concise clinical Vietnamese"}.`;
-        const trialsCompact = (primary.landmark_trials || []).slice(0, 2).map((t) => ({
-          name: t.name, value: t.value, p: t.p, caution: (lang === "en" ? t.caution_en : t.caution_vi || "").slice(0, 180)
+        const mcqOpts = this.extractPastedMcqOptions(query);
+        const wantsDetail = this.wantsDetailedExplanation(query);
+        const mcqRule = (mcqOpts && !wantsDetail)
+          ? `MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Reply in STRICTLY 1 short sentence using ONLY: ${lang === "en" ? "'<Letter>, because <1 crisp reason sentence>.'" : "'<Chữ cái A/B/C/D>, vì <1 câu ngắn gọn nêu lý do cốt lõi>.'"} No intro, headings, or extra bullets.\n`
+          : (wantsDetail
+            ? "EXPLANATION REQUESTED: Expand on the prior point WITHOUT repeating it verbatim — explain the mechanism, RCT metrics, or bedside reasoning in 3-5 short sentences or bullets (max 150 words), ending on a complete sentence.\n"
+            : "DEFAULT BREVITY: Put the exact core answer in sentence 1. Reply in 1-3 short complete sentences (max 70 words). No rambling intros; expand ONLY if the user asks later.\n");
+
+        const sysPrompt = `You are '${botName}', a direct-first Cardiology EBM assistant inside '${siteName}'.\n${mcqRule}STRICT SCOPE: Answer cardiology, medicine, pharmacology, guidelines, or medical follow-ups; decline off-topic in 1 short sentence. NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a Cardiology Pillar question. If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain simply in under 150 words. TERMINOLOGY: Translate 'white-coat' = 'tăng huyết áp áo choàng trắng'. Never invent PMIDs/stats. Reply in ${lang === "en" ? "concise academic English. /no_think" : "clear, direct clinical Vietnamese. /no_think"}`;
+
+        const stepsCompact = (primary.guideline_evolution?.steps || []).slice(-3).map((s) => ({
+          title: lang === "en" ? s.title_en : s.title_vi,
+          desc: ((lang === "en" ? s.desc_en : s.desc_vi) || "").slice(0, 150)
         }));
+        const trialsCompact = (primary.landmark_trials || []).slice(0, 2).map((t) => ({
+          name: t.name, value: t.value, p: t.p,
+          changes: ((lang === "en" ? t.changes_en : t.changes_vi) || "").slice(0, 150),
+          caution: ((lang === "en" ? t.caution_en : t.caution_vi) || "").slice(0, 150)
+        }));
+        const pearlsCompact = (primary.pearls || []).slice(0, 3).map((p) => ((lang === "en" ? p.text_en : p.text_vi) || "").slice(0, 150));
         const pmCompact = (pubmedHits || []).map((p) => ({
-          pmid: p.pmid, title: p.title, pubdate: p.pubdate, snippet: (p.snippet || "").slice(0, 180)
+          pmid: p.pmid, title: p.title, pubdate: p.pubdate, snippet: (p.snippet || "").slice(0, 150)
         }));
         const ctx = `PILLAR #${primary.pillar_id}: ${primary.pillar_vi}
 GUIDELINE: ${JSON.stringify(primary.guideline_evolution?.current_guideline || {})}
+STEPS: ${JSON.stringify(stepsCompact)}
 TRIALS: ${JSON.stringify(trialsCompact)}
+PEARLS: ${JSON.stringify(pearlsCompact)}
 OPENFDA: ${JSON.stringify(fdaNote)}
 PUBMED: ${JSON.stringify(pmCompact)}
-EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdown) || "").slice(0, 1400)}`;
+EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdown) || "").slice(0, 900)}`;
         const userInput = `CONTEXT:\n${ctx}\n\nQUESTION:\n${query}`;
 
         try {
@@ -8666,7 +8766,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 ...(Array.isArray(priorHistory) ? priorHistory : []),
                 { role: "user", content: userInput }
               ],
-              max_tokens: 700
+              temperature: 0.15,
+              max_tokens: 1024
             })
           });
           if (res.status === 429 || res.status === 402 || res.status === 403) {
@@ -8687,7 +8788,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           }
           if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
           const d = await res.json();
-          const txt = String(d.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+          const txt = this.ensureCompleteSentence(d.choices?.[0]?.message?.content || "");
           return { text: txt, engine: `${botName} • AI + EBM`, blockedBanner: "" };
         } catch (_) {
           return { text: "", engine: "", blockedBanner: "" };
@@ -9787,7 +9888,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
             caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
           }));
-          const sysPrompt = `You are '${botName}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Output feedback + ONE sharp MCQ stem in the prose body; NEVER list A/B/C/D options in prose because the UI renders meta.options as buttons. 3) When ACTION=='answer' and PREV_CORRECT_KEY is given, trust IS_CHOICE_CORRECT (true->eval:'correct', false->eval:'wrong'). 4) Diagnostic phase: place previous choice briefly, ask 1 probing MCQ for subskills[diag_step], transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong and action!='just_tell_me' and attempts<2, explain why the chosen trap fails WITHOUT revealing PREV_CORRECT_KEY, then ask a narrower MCQ; only reveal PREV_CORRECT_KEY when action=='just_tell_me' or attempts>=2, then re-test from a new angle. If right, play devil's advocate with an edge-case MCQ. 6) When all 4 subskills>=4 run final_exam MCQ; if passed set phase:'mastered' and options:[]. 7) Vary correct_key across A/B/C/D. Translate white-coat = áo choàng trắng. Last line MUST be exact JSON: <socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta>`;
+          const sysPrompt = `You are '${botName}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Output feedback + ONE sharp MCQ stem in the prose body; NEVER list A/B/C/D options in prose because the UI renders meta.options as buttons. 3) When ACTION=='answer' and PREV_CORRECT_KEY is given, trust IS_CHOICE_CORRECT (true->eval:'correct', false->eval:'wrong'). 4) Diagnostic phase: place previous choice briefly, ask 1 probing MCQ for subskills[diag_step], transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong and action!='just_tell_me' and attempts<2, explain why the chosen trap fails WITHOUT revealing PREV_CORRECT_KEY, then ask a narrower MCQ; only reveal PREV_CORRECT_KEY when action=='just_tell_me' or attempts>=2, then re-test from a new angle. If right, play devil's advocate with an edge-case MCQ. 6) When all 4 subskills>=4 run final_exam MCQ; if passed set phase:'mastered' and options:[]. 7) Vary correct_key across A/B/C/D. Translate white-coat = áo choàng trắng. Last line MUST be exact JSON: <socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta> /no_think`;
           const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nUSER_SELECTED_CHOICE:${choice || "(none)"}\nPREV_CORRECT_KEY:${prevCorrectKey || "(none)"}\nIS_CHOICE_CORRECT:${JSON.stringify(isChoiceCorrect)}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 700)}`;
           try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -9797,7 +9898,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 model: "qwen/qwen3.8-27b",
                 messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
                 temperature: 0.2,
-                max_tokens: 750
+                max_tokens: 900
               })
             });
             if (res.ok) {

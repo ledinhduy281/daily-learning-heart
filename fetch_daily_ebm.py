@@ -1886,6 +1886,82 @@ def _fetch_openfda_drug_note(query: str) -> dict | None:
         return None
 
 
+_MCQ_PASTE_PAT_PUNCT = re.compile(
+    r"(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+(.+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|\Z)",
+    re.DOTALL,
+)
+_MCQ_PASTE_PAT_NEWLINE = re.compile(
+    r"(?:^|\n)\s*([ABCD])\s*\n\s*(.+?)(?=(?:\n\s*[ABCD]\s*\n)|\Z)",
+    re.DOTALL,
+)
+_DETAIL_REQ_RE = re.compile(
+    r"(giải thích thêm|giải thích kỹ|giải thích rõ|chi tiết|phân tích kỹ|cụ thể hơn|"
+    r"tại sao|vì sao|dễ hiểu|đơn giản|chưa hiểu|không biết gì về y khoa|"
+    r"explain more|in detail|elaborate|why is that|simpler|simple words|break down)",
+    re.IGNORECASE,
+)
+
+
+def _extract_pasted_mcq_options(query: str) -> dict[str, str]:
+    """Extract A/B/C/D options when a user pastes a multiple-choice question into chat."""
+    q = (query or "").strip()
+    if not q or len(q) < 12:
+        return {}
+    matches = _MCQ_PASTE_PAT_PUNCT.findall(q)
+    opts: dict[str, str] = {}
+    for k, val in matches:
+        clean_v = re.sub(r"\s+", " ", val).strip()
+        if clean_v and k.upper() not in opts:
+            opts[k.upper()] = clean_v
+    if all(k in opts for k in ("A", "B", "C", "D")):
+        return {k: opts[k] for k in ("A", "B", "C", "D")}
+
+    matches_nl = _MCQ_PASTE_PAT_NEWLINE.findall(q)
+    opts_nl: dict[str, str] = {}
+    for k, val in matches_nl:
+        clean_v = re.sub(r"\s+", " ", val).strip()
+        if clean_v and k.upper() not in opts_nl:
+            opts_nl[k.upper()] = clean_v
+    if all(k in opts_nl for k in ("A", "B", "C", "D")):
+        return {k: opts_nl[k] for k in ("A", "B", "C", "D")}
+    return {}
+
+
+def _wants_detailed_explanation(query: str) -> bool:
+    """True only when user explicitly asks for a fuller explanation."""
+    return bool(_DETAIL_REQ_RE.search(query or ""))
+
+
+def _ensure_complete_sentence(text: str) -> str:
+    """Strip think blocks (closed or unclosed) and trim dangling partial fragments after a token cutoff."""
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", text or "", flags=re.IGNORECASE)
+    cleaned = re.sub(r"<think>[\s\S]*$", "", cleaned, flags=re.IGNORECASE).strip()
+    if not cleaned:
+        return ""
+    # If already ends cleanly on sentence-ending punctuation or markdown quote/paren after punctuation
+    if re.search(r"[.!?…][\"'\)\]\*`]*$", cleaned):
+        return cleaned
+    # Try cutting back to the last genuine sentence boundary (period/!/? followed by space or newline)
+    m_all = list(re.finditer(r"(?<!\d)[.!?](?=\s|\n|$)", cleaned))
+    if m_all:
+        cut_pos = m_all[-1].end()
+        if cut_pos >= max(24, int(len(cleaned) * 0.4)):
+            return cleaned[:cut_pos].strip()
+    return cleaned + "."
+
+
+def _first_clean_sentence(text: str, max_len: int = 180) -> str:
+    clean = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not clean:
+        return ""
+    m = re.match(r"^(.+?[.!?])(?:\s|$)", clean)
+    if m and len(m.group(1)) <= max_len:
+        return m.group(1).strip()
+    if len(clean) <= max_len:
+        return clean.rstrip(".") + "."
+    return clean[:max_len].rsplit(" ", 1)[0].rstrip(" ,;:") + "."
+
+
 def _compose_deterministic_ebm_answer(
     query: str,
     briefings: list[dict],
@@ -1893,7 +1969,7 @@ def _compose_deterministic_ebm_answer(
     lang: str = "vi",
     fda_note: dict | None = None,
 ) -> tuple[str, list[dict]]:
-    """Build Soái ca Y khoa structured clinical response grounded on 2026 Guidelines, RCTs, PubMed & OpenFDA."""
+    """Build concise, direct-first clinical response grounded on 2026 Guidelines, RCTs, PubMed & OpenFDA."""
     primary = briefings[0]
     is_en = lang == "en"
     q_low = (query or "").lower()
@@ -1912,91 +1988,6 @@ def _compose_deterministic_ebm_answer(
         except Exception:
             translate_fn = None
 
-    parts: list[str] = []
-    if is_en:
-        parts.append(f"### Med Bro — Pillar #{primary.get('pillar_id')}: {primary.get('pillar_name', '')}")
-        parts.append(f"**Current Guideline ({cur_g.get('year', '2026')}):** {cur_g.get('name', primary.get('title_en', ''))} *(Prior: {prior_g.get('name', '—')})*.")
-    else:
-        parts.append(f"### Soái ca Y khoa — Giải đáp Trụ cột #{primary.get('pillar_id')}: {primary.get('pillar_vi', primary.get('pillar_name', ''))}")
-        parts.append(f"**Khuyến cáo Hiện hành ({cur_g.get('year', '08–11/2026')}):** {cur_g.get('name', primary.get('title_vi', ''))} *(Tiền nhiệm: {prior_g.get('name', '—')})*.")
-
-    # Match relevant sentences inside markdown body
-    raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
-    query_terms = set(re.findall(r"[\w\-]{3,}", q_low))
-    for k, syns in _CHAT_SYNONYM_MAP.items():
-        if k in q_low:
-            query_terms.update(syns)
-
-    lines = [
-        ln.strip() for ln in raw_md.splitlines()
-        if ln.strip() and not ln.strip().startswith("#") and not ln.strip().startswith("⚠️") and "[END OF PART" not in ln
-    ]
-    scored_lines: list[tuple[int, str]] = []
-    for ln in lines:
-        low_ln = ln.lower()
-        hits = sum(1 for t in query_terms if t in low_ln)
-        if hits > 0:
-            scored_lines.append((hits, ln))
-    scored_lines.sort(key=lambda x: x[0], reverse=True)
-
-    if scored_lines:
-        parts.append("#### Trọng tâm Trực tiếp cho Câu hỏi" if not is_en else "#### Direct Evidence Match")
-        for _, ln in scored_lines[:4]:
-            cleaned = ln if ln.startswith("-") else f"- {ln}"
-            parts.append(cleaned)
-    elif steps:
-        parts.append("#### Diễn tiến Khuyến cáo (Tiền nhiệm ➔ Hiện hành)" if not is_en else "#### Guideline Evolution")
-        for st in steps:
-            t_lbl = st.get("title_en" if is_en else "title_vi", "")
-            d_lbl = st.get("desc_en" if is_en else "desc_vi", "")
-            parts.append(f"- **{t_lbl}:** {d_lbl}")
-
-    if trials:
-        parts.append("#### Thử nghiệm Lâm sàng & Lưu ý An toàn tại Giường bệnh" if not is_en else "#### Landmark Trials & Bedside Safety Caveats")
-        for tr in trials[:3]:
-            chg = tr.get("changes_en" if is_en else "changes_vi", "")
-            caut = tr.get("caution_en" if is_en else "caution_vi", "")
-            parts.append(
-                f"- **{tr.get('name')}** (*{tr.get('journal')}* — **{tr.get('value')}**, {tr.get('ci')}, {tr.get('p')}): {chg}\n"
-                f"  - *Cảnh báo an toàn:* {caut}" if not is_en else
-                f"- **{tr.get('name')}** (*{tr.get('journal')}* — **{tr.get('value')}**, {tr.get('ci')}, {tr.get('p')}): {chg}\n"
-                f"  - *Safety Caveat:* {caut}"
-            )
-
-    if fda_note and fda_note.get("text"):
-        note_txt = fda_note["text"]
-        if not is_en and translate_fn:
-            try:
-                tr_txt = translate_fn(note_txt[:300])
-                if tr_txt:
-                    note_txt = tr_txt
-            except Exception:
-                pass
-        hdr_fda = f"#### Dữ liệu Dược lâm sàng Chính thức ({fda_note['drug']})" if not is_en else f"#### Official Drug Label Data ({fda_note['drug']})"
-        parts.append(hdr_fda)
-        parts.append(f"- **{fda_note['label']}:** {note_txt}")
-
-    if pearls:
-        parts.append("#### Điểm Nhấn Đi Buồng (Take-Home)" if not is_en else "#### Take-Home Clinical Pearls")
-        for p in pearls[:3]:
-            p_txt = p.get("text_en" if is_en else "text_vi") or p.get("en" if is_en else "vi", "")
-            if p_txt:
-                parts.append(f"- {p_txt}")
-
-    if pubmed_hits:
-        parts.append("#### Bằng chứng Mới Truy xuất từ NCBI PubMed" if not is_en else "#### Live NCBI PubMed References")
-        for ph in pubmed_hits:
-            snip_txt = ph.get("snippet", "")
-            if snip_txt and not is_en and translate_fn:
-                try:
-                    tr_s = translate_fn(snip_txt[:280])
-                    if tr_s:
-                        snip_txt = tr_s
-                except Exception:
-                    pass
-            snip = f" — *{snip_txt}*" if snip_txt else ""
-            parts.append(f"- **{ph['title']}** (*{ph['source']}*, {ph['pubdate']} — PMID `{ph['pmid']}`){snip}")
-
     sources: list[dict] = []
     seen_p: set[str] = set()
     for src in (pubmed_hits + (primary.get("pubmed_anchors") or [])):
@@ -2012,10 +2003,141 @@ def _compose_deterministic_ebm_answer(
             "doi": src.get("doi", ""),
             "url": src.get("url") or (f"https://doi.org/{src['doi']}" if src.get("doi") else f"https://pubmed.ncbi.nlm.nih.gov/{pm}/"),
         })
-        if len(sources) >= 6:
+        if len(sources) >= 5:
             break
 
-    return "\n\n".join(parts), sources
+    wants_detail = _wants_detailed_explanation(query)
+    mcq_opts = _extract_pasted_mcq_options(query)
+
+    # 1) Pasted Multiple-Choice Mode -> "C, vì <1 câu ngắn gọn>."
+    if mcq_opts and not wants_detail:
+        evid_blob = " ".join([
+            cur_g.get("name", ""),
+            " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
+            " ".join(f"{tr.get('name','')} {tr.get('changes_vi','')} {tr.get('caution_vi','')} {tr.get('changes_en','')} {tr.get('caution_en','')}" for tr in trials),
+            " ".join(f"{p.get('text_vi','')} {p.get('text_en','')}" for p in pearls),
+            (primary.get("part1_vi_markdown") or "")[:3000],
+            (primary.get("part2_en_markdown") or "")[:3000],
+        ]).lower()
+        trap_re = re.compile(
+            r"(giữ nguyên ngưỡng.*cũ|trì hoãn.*12 tháng|chỉ dùng.*sốc tim|ngưng toàn bộ|không cần lưu ý|"
+            r"tăng gấp đôi liều.*suy thận|chỉ dựa vào ngưỡng tuổi|bỏ qua bệnh đồng mắc|đơn trị liệu.*vượt trội|"
+            r"p\s*>\s*0[,\.]2|trung tính|maintain the legacy|defer therapy.*12 months|reserve.*strictly for inpatients|"
+            r"discontinue background therapy|rely solely on isolated age|none — intensive targets|double the initiating bolus|"
+            r"stop all cardioprotective|showed neutral primary outcomes)",
+            re.IGNORECASE,
+        )
+        best_k = "A"
+        best_sc = -10**9
+        for k, opt_txt in mcq_opts.items():
+            o_low = opt_txt.lower()
+            toks = set(re.findall(r"[\w\-]{3,}", o_low))
+            sc = sum(2 for t in toks if t in evid_blob)
+            if trap_re.search(o_low):
+                sc -= 20
+            if sc > best_sc:
+                best_sc = sc
+                best_k = k
+
+        reason_src = ""
+        if steps:
+            reason_src = steps[-1].get("desc_en" if is_en else "desc_vi", "")
+        if not reason_src and pearls:
+            reason_src = pearls[0].get("text_en" if is_en else "text_vi", "")
+        if not reason_src:
+            reason_src = mcq_opts[best_k]
+        one_reason = _first_clean_sentence(reason_src, 150).rstrip(".")
+        # Lowercase leading word nicely for "X, vì ..."
+        if one_reason and len(one_reason) > 2 and one_reason[0].isupper() and not one_reason[:3].isupper():
+            one_reason = one_reason[0].lower() + one_reason[1:]
+        ans = (
+            f"**{best_k}**, because {one_reason}."
+            if is_en else
+            f"**{best_k}**, vì {one_reason}."
+        )
+        return _ensure_complete_sentence(ans), sources
+
+    # Match relevant sentences inside markdown body + structured evidence
+    raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
+    query_terms = set(re.findall(r"[\w\-]{3,}", q_low))
+    for k, syns in _CHAT_SYNONYM_MAP.items():
+        if k in q_low:
+            query_terms.update(syns)
+
+    lines = [
+        ln.strip() for ln in raw_md.splitlines()
+        if ln.strip() and not ln.strip().startswith("#") and not ln.strip().startswith("⚠️") and "[END OF PART" not in ln
+    ]
+    scored_lines: list[tuple[int, str]] = []
+    for ln in lines:
+        low_ln = ln.lower()
+        hits = sum(1 for t in query_terms if t in low_ln)
+        if hits > 0:
+            scored_lines.append((hits, re.sub(r"^[-*•]\s*", "", ln)))
+    scored_lines.sort(key=lambda x: x[0], reverse=True)
+
+    # 2) Concise default direct answer (1–3 sentences)
+    if not wants_detail:
+        direct_bits: list[str] = []
+        if scored_lines:
+            direct_bits.append(_first_clean_sentence(scored_lines[0][1], 190))
+            if len(scored_lines) > 1 and len(" ".join(direct_bits)) < 200:
+                direct_bits.append(_first_clean_sentence(scored_lines[1][1], 160))
+        elif steps:
+            s_last = steps[-1]
+            direct_bits.append(_first_clean_sentence(s_last.get("desc_en" if is_en else "desc_vi", ""), 200))
+        elif pearls:
+            p0 = pearls[0].get("text_en" if is_en else "text_vi") or pearls[0].get("en" if is_en else "vi", "")
+            direct_bits.append(_first_clean_sentence(p0, 200))
+
+        if fda_note and fda_note.get("text"):
+            note_txt = fda_note["text"]
+            if not is_en and translate_fn:
+                try:
+                    tr_txt = translate_fn(note_txt[:220])
+                    if tr_txt:
+                        note_txt = tr_txt
+                except Exception:
+                    pass
+            direct_bits.append(_first_clean_sentence(f"{fda_note['drug']}: {note_txt}", 170))
+        elif trials and not scored_lines:
+            tr = trials[0]
+            chg = tr.get("changes_en" if is_en else "changes_vi", "")
+            direct_bits.append(_first_clean_sentence(f"{tr.get('name')} ({tr.get('value')}): {chg}", 170))
+
+        if not direct_bits:
+            direct_bits.append(f"{cur_g.get('name', primary.get('title_vi' if not is_en else 'title_en', ''))}.")
+        return _ensure_complete_sentence(" ".join(b for b in direct_bits if b)), sources
+
+    # 3) Explicit "explain more" mode -> concise 3–4 bullets, complete sentences
+    parts: list[str] = []
+    if scored_lines:
+        for _, ln in scored_lines[:3]:
+            parts.append(f"- {_first_clean_sentence(ln, 180)}")
+    elif steps:
+        for st in steps[:2]:
+            t_lbl = st.get("title_en" if is_en else "title_vi", "")
+            d_lbl = _first_clean_sentence(st.get("desc_en" if is_en else "desc_vi", ""), 160)
+            parts.append(f"- **{t_lbl}:** {d_lbl}")
+
+    if trials:
+        tr = trials[0]
+        chg = _first_clean_sentence(tr.get("changes_en" if is_en else "changes_vi", ""), 140)
+        caut = _first_clean_sentence(tr.get("caution_en" if is_en else "caution_vi", ""), 130)
+        parts.append(f"- **{tr.get('name')}** ({tr.get('value')}, {tr.get('p')}): {chg} {caut}")
+
+    if fda_note and fda_note.get("text"):
+        note_txt = _first_clean_sentence(fda_note["text"], 150)
+        if not is_en and translate_fn:
+            try:
+                tr_txt = translate_fn(note_txt)
+                if tr_txt:
+                    note_txt = _first_clean_sentence(tr_txt, 150)
+            except Exception:
+                pass
+        parts.append(f"- **{fda_note['label']} ({fda_note['drug']}):** {note_txt}")
+
+    return _ensure_complete_sentence("\n".join(parts[:4])), sources
 
 
 def _default_daily_llm_limit() -> int:
@@ -2287,43 +2409,64 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                     quota["stop_reason"] = "Daily cap reached"
                 _save_chat_quota_unlocked(quota)
 
-            # Token-optimized compact clinical context (~1,600 chars)
             trials_compact = [
                 {
                     "name": t.get("name"),
                     "value": t.get("value"),
                     "p": t.get("p"),
-                    "caution": t.get("caution_vi" if lang != "en" else "caution_en", "")[:180],
+                    "changes": (t.get("changes_vi" if lang != "en" else "changes_en") or "")[:150],
+                    "caution": (t.get("caution_vi" if lang != "en" else "caution_en") or "")[:150],
                 }
                 for t in (primary.get("landmark_trials") or [])[:2]
             ]
+            steps_compact = [
+                {
+                    "title": s.get("title_vi" if lang != "en" else "title_en", ""),
+                    "desc": (s.get("desc_vi" if lang != "en" else "desc_en") or "")[:150],
+                }
+                for s in ((primary.get("guideline_evolution") or {}).get("steps") or [])[-3:]
+            ]
+            pearls_compact = [
+                (p.get("text_vi" if lang != "en" else "text_en") or "")[:150]
+                for p in (primary.get("pearls") or [])[:3]
+            ]
             pm_compact = [
-                {"pmid": p.get("pmid"), "title": p.get("title"), "pubdate": p.get("pubdate"), "snippet": (p.get("snippet") or "")[:180]}
+                {"pmid": p.get("pmid"), "title": p.get("title"), "pubdate": p.get("pubdate"), "snippet": (p.get("snippet") or "")[:150]}
                 for p in pubmed_hits
             ]
             ctx_blob = (
                 f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_vi')}\n"
                 f"GUIDELINE: {json.dumps(primary.get('guideline_evolution', {}).get('current_guideline', {}), ensure_ascii=False)}\n"
-                f"PRIOR: {json.dumps(primary.get('guideline_evolution', {}).get('prior_guideline', {}), ensure_ascii=False)}\n"
+                f"STEPS: {json.dumps(steps_compact, ensure_ascii=False)}\n"
                 f"TRIALS: {json.dumps(trials_compact, ensure_ascii=False)}\n"
-                f"PUBMED: {json.dumps(pm_compact, ensure_ascii=False)}\n"
+                f"PEARLS: {json.dumps(pearls_compact, ensure_ascii=False)}\n"
                 f"OPENFDA: {json.dumps(fda_note, ensure_ascii=False)}\n"
-                f"EXCERPT:\n{(primary.get('part1_vi_markdown' if lang != 'en' else 'part2_en_markdown') or '')[:1400]}"
+                f"PUBMED: {json.dumps(pm_compact, ensure_ascii=False)}\n"
+                f"EXCERPT:\n{(primary.get('part1_vi_markdown' if lang != 'en' else 'part2_en_markdown') or '')[:900]}"
             )
             bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
             site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
+            mcq_opts = _extract_pasted_mcq_options(query)
+            wants_detail = _wants_detailed_explanation(query)
+            mcq_rule = (
+                "MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Reply in STRICTLY 1 short sentence using ONLY the exact format: "
+                + ("'<Letter>, because <1 crisp reason sentence>.'" if lang == "en" else "'<Chữ cái A/B/C/D>, vì <1 câu ngắn gọn nêu lý do cốt lõi>.'")
+                + " Do NOT write any intro, headings, bullets, or extra explanation.\n"
+                if (mcq_opts and not wants_detail)
+                else (
+                    "EXPLANATION REQUESTED: Expand on the prior point WITHOUT repeating it verbatim — explain the mechanism, RCT metrics, or bedside reasoning in 3-5 short sentences or bullets (max 150 words), ending on a complete sentence.\n"
+                    if wants_detail
+                    else "DEFAULT BREVITY: Put the exact core answer directly in sentence 1. Reply in 1-3 short, complete sentences (max 70 words). NO rambling intros, NO multi-section walls; expand ONLY if the user later asks for more explanation.\n"
+                )
+            )
             sys_prompt = (
-                f"You are '{bot_name}', a Cardiology EBM clinical assistant inside '{site_name}'. "
-                "STRICT RULE: ONLY answer cardiology, medicine, pharmacology, clinical guidelines, or medical study questions "
-                "(including multi-turn follow-up clarifications like 'chưa hiểu', 'giải thích dễ hiểu hơn', 'ví dụ cụ thể' about medical content). "
-                "If the user asks anything unrelated to medicine/cardiology (coding, entertainment, politics, sports, general chit-chat), "
-                "politely refuse in 1 short sentence to save tokens. "
-                "NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a question about a Cardiology Pillar (Trụ cột 1..10). "
-                "If the user says they know nothing about medicine ('không biết gì về y khoa', 'giải thích đơn giản', 'dễ hiểu', 'chưa hiểu'), "
-                "act as a warm, patient doctor explaining to a non-medical person using everyday life metaphors, short simple sentences, and zero unexplained jargon (unpack ISH, SPRINT, ESPRIT, PREVENT, CKD in plain language). "
-                "TERMINOLOGY RULE: Translate 'white-coat hypertension/effect' accurately as 'tăng huyết áp áo choàng trắng' (huyết áp tăng giả tạo tại phòng khám do hồi hộp khi gặp bác sĩ) — NEVER translate it as 'sốt nóng do y bác sĩ'. "
-                "Answer accurately using the provided 2026 Guidelines, RCT stats, OpenFDA, and PubMed hits (never invent PMIDs/numbers). Reply in "
-                + ("academic English." if lang == "en" else "clear, concise clinical Vietnamese.")
+                f"You are '{bot_name}', a direct-first Cardiology EBM assistant inside '{site_name}'.\n"
+                f"{mcq_rule}"
+                "STRICT SCOPE: Answer cardiology, medicine, pharmacology, guidelines, or medical follow-ups; decline off-topic in 1 short sentence. "
+                "NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a Cardiology Pillar question. "
+                "If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain simply using everyday words while keeping under 150 words. "
+                "TERMINOLOGY: Translate 'white-coat' = 'tăng huyết áp áo choàng trắng'. Never invent PMIDs/stats. Reply in "
+                + ("concise academic English. /no_think" if lang == "en" else "clear, direct clinical Vietnamese. /no_think")
             )
             user_prompt = f"CONTEXT:\n{ctx_blob}\n\nQUESTION:\n{query}"
             try:
@@ -2336,7 +2479,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                             *clean_history,
                             {"role": "user", "content": user_prompt},
                         ],
-                        "max_tokens": 700,
+                        "temperature": 0.15,
+                        "max_tokens": 1024,
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://api.groq.com/openai/v1/chat/completions",
@@ -2350,15 +2494,14 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                     )
                     with urllib.request.urlopen(req, timeout=20) as r:
                         resp_j = json.loads(r.read().decode("utf-8"))
-                    llm_text = resp_j["choices"][0]["message"]["content"]
-                    llm_text = re.sub(r"<think>[\s\S]*?</think>", "", llm_text).strip()
+                    llm_text = _ensure_complete_sentence(resp_j["choices"][0]["message"]["content"])
                     engine_name = f"{bot_name} • AI + EBM"
                 else:
                     payload = json.dumps({
                         "model": "gemini-3.8-flash",
                         "system_instruction": sys_prompt,
                         "input": user_prompt,
-                        "generation_config": {"max_output_tokens": 700},
+                        "generation_config": {"max_output_tokens": 1024},
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://generativelanguage.googleapis.com/v1beta/interactions",
@@ -2377,6 +2520,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         for s in (resp_j.get("steps") or []) if s.get("type") == "model_output"
                         for c in (s.get("content") or []) if c.get("type") == "text"
                     )
+                    llm_text = _ensure_complete_sentence(llm_text)
                     engine_name = f"{bot_name} • Gemini AI + EBM"
 
                 if llm_text and llm_text.strip():
@@ -3003,7 +3147,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
             "7. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative clinical vignette MCQ; if passed cleanly, mark `phase` as `'mastered'` and set `options:[]`.\n"
             "8. Vary `correct_key` naturally across A, B, C, D and make all 4 options plausible, concise (1 sentence each), and balanced in length. Translate white-coat = 'áo choàng trắng'.\n"
             "9. MANDATORY VALID JSON ON LAST LINE (MUST contain 4 options A/B/C/D and `correct_key` whenever a question is asked):\n"
-            '<socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta>'
+            '<socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta>\n/no_think'
         )
 
         state_for_prompt = {k: v for k, v in state_clean.items() if k != "current_options"}
