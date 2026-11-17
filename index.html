@@ -1638,6 +1638,54 @@
       color: var(--color-ink);
       text-decoration: underline;
     }
+    .guideline-ref-name a {
+      color: var(--color-ink);
+      text-decoration: none;
+    }
+    .guideline-ref-name a:hover {
+      color: var(--color-primary-deep);
+      text-decoration: underline;
+    }
+    .guideline-subrefs {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--color-hairline-cool);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .guideline-subref-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    .guideline-subref-label {
+      color: var(--color-ink-secondary);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .guideline-subref-label:hover {
+      color: var(--color-primary-deep);
+      text-decoration: underline;
+    }
+    .guideline-subref-links {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .guideline-subref-links a {
+      color: var(--color-ink-mute);
+      text-decoration: underline;
+    }
+    .guideline-subref-links a:hover {
+      color: var(--color-primary-deep);
+    }
 
     .comparison-arrow-mid {
       display: flex;
@@ -4332,6 +4380,12 @@
         .replace(/'/g, "&#39;");
     }
 
+    function formatDoiUrl(doi) {
+      if (!doi) return "";
+      const clean = String(doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, "");
+      return "https://doi.org/" + clean.split("/").map(seg => encodeURIComponent(seg)).join("/");
+    }
+
     function formatInlineRich(str) {
       if (!str) return "";
       return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -5973,21 +6027,43 @@
 
     function renderGuidelineRefBox(g, roleLabel, isCurrent) {
       if (!g) return "";
+      const pmidUrl = g.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(g.pmid)}/` : "";
+      const doiUrl = g.doi ? formatDoiUrl(g.doi) : "";
+      const primaryUrl = pmidUrl || doiUrl;
       const links = [];
-      if (g.doi) {
-        links.push(`<a href="https://doi.org/${encodeURIComponent(g.doi)}" target="_blank" rel="noopener noreferrer">DOI: ${escapeHtml(g.doi)}</a>`);
+      if (pmidUrl) {
+        links.push(`<a href="${escapeHtml(pmidUrl)}" target="_blank" rel="noopener noreferrer">PubMed (${escapeHtml(g.pmid)})</a>`);
       }
-      if (g.pmid) {
-        links.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(g.pmid)}/" target="_blank" rel="noopener noreferrer">PMID: ${escapeHtml(g.pmid)}</a>`);
+      if (doiUrl) {
+        links.push(`<a href="${escapeHtml(doiUrl)}" target="_blank" rel="noopener noreferrer">DOI: ${escapeHtml(g.doi)}</a>`);
       }
+      const subrefsHtml = Array.isArray(g.refs) && g.refs.length > 0
+        ? `<div class="guideline-subrefs">${g.refs.map(r => {
+            const rPmUrl = r.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(r.pmid)}/` : "";
+            const rDoiUrl = r.doi ? formatDoiUrl(r.doi) : "";
+            const rHref = rPmUrl || rDoiUrl;
+            const rBadges = [];
+            if (rPmUrl) rBadges.push(`<a href="${escapeHtml(rPmUrl)}" target="_blank" rel="noopener noreferrer">PMID ${escapeHtml(r.pmid)}</a>`);
+            if (rDoiUrl) rBadges.push(`<a href="${escapeHtml(rDoiUrl)}" target="_blank" rel="noopener noreferrer">DOI</a>`);
+            return `<div class="guideline-subref-row">
+              ${rHref ? `<a class="guideline-subref-label" href="${escapeHtml(rHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.label || "")}</a>` : `<span class="guideline-subref-label">${escapeHtml(r.label || "")}</span>`}
+              <span class="guideline-subref-links">${rBadges.join(" &bull; ")}</span>
+            </div>`;
+          }).join("")}</div>`
+        : "";
       const livePill = isCurrent && g.crawled_live
         ? ` <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.14);color:#047857;border:1px solid rgba(16,185,129,0.3);vertical-align:middle;"><i class="fa-solid fa-satellite-dish"></i> Live Crawl</span>`
         : "";
+      const titleText = escapeHtml(g.name || g.title || "");
+      const titleHtml = primaryUrl
+        ? `<a href="${escapeHtml(primaryUrl)}" target="_blank" rel="noopener noreferrer">${titleText}</a>`
+        : titleText;
       return `
         <div class="guideline-ref-box ${isCurrent ? "current" : ""}">
           <div class="guideline-ref-kicker">${escapeHtml(roleLabel)} ${g.year ? `&bull; ${escapeHtml(g.year)}` : ""}${livePill}</div>
-          <div class="guideline-ref-name">${escapeHtml(g.name || g.title || "")}</div>
+          <div class="guideline-ref-name">${titleHtml}</div>
           ${links.length > 0 ? `<div class="guideline-ref-meta">${links.join(" &bull; ")}</div>` : ""}
+          ${subrefsHtml}
         </div>
       `;
     }
@@ -6202,15 +6278,17 @@
       }
 
       Dom.sourcesListStack.innerHTML = anchors.map(a => {
-        const url = a.url || (a.doi ? `https://doi.org/${encodeURIComponent(a.doi)}` : `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(a.pmid)}/`);
+        const pmidUrl = a.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(a.pmid)}/` : "";
+        const doiUrl = a.doi ? formatDoiUrl(a.doi) : "";
+        const url = pmidUrl || doiUrl || a.url || "#";
         return `
           <div class="source-entry-item">
             <div>
               <div class="source-entry-title">${escapeHtml(a.title)}</div>
               <div class="source-entry-citation">
                 ${escapeHtml(a.source || "NCBI PubMed")}
-                ${a.pmid ? ` &bull; PMID: <strong>${escapeHtml(a.pmid)}</strong>` : ""}
-                ${a.doi ? ` &bull; DOI: <strong>${escapeHtml(a.doi)}</strong>` : ""}
+                ${pmidUrl ? ` &bull; <a href="${escapeHtml(pmidUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">PMID: <strong>${escapeHtml(a.pmid)}</strong></a>` : ""}
+                ${doiUrl ? ` &bull; <a href="${escapeHtml(doiUrl)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">DOI: <strong>${escapeHtml(a.doi)}</strong></a>` : ""}
               </div>
             </div>
             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary-outline btn-view-source">
@@ -7597,7 +7675,8 @@
           const srcRow = document.createElement("div");
           srcRow.className = "chat-sources-row";
           srcRow.innerHTML = sources.slice(0, 5).map((s) => {
-            const url = s.url || (s.doi ? `https://doi.org/${encodeURIComponent(s.doi)}` : `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(s.pmid)}/`);
+            const pmidUrl = s.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(s.pmid)}/` : "";
+            const url = pmidUrl || (s.doi ? formatDoiUrl(s.doi) : (s.url || "#"));
             return `<a class="chat-source-pill" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.title || "")}">
               <i class="fa-solid fa-arrow-up-right-from-square"></i> PMID ${escapeHtml(s.pmid)}${s.pubdate ? ` • ${escapeHtml(s.pubdate)}` : ""}
             </a>`;

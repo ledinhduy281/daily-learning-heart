@@ -123,7 +123,7 @@ def _anchor(
         "source": source,
         "pubdate": pubdate,
         "doi": doi,
-        "url": f"https://doi.org/{doi}" if doi else f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+        "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else f"https://doi.org/{doi}",
     }
     if volume:
         item["volume"] = volume
@@ -1049,6 +1049,11 @@ True resistant hypertension is driven by occult volume/aldosterone excess and he
                 "year": "2026 (09–11/2026)",
                 "doi": "10.1097/HJH.0000000000004451",
                 "pmid": "42909506",
+                "refs": [
+                    {"label": "2026 ISH Global Hypertension", "pmid": "42909506", "doi": "10.1097/HJH.0000000000004451"},
+                    {"label": "2026 THS Older Adults", "pmid": "42926177", "doi": "10.1016/j.jfma.2026.09.040"},
+                    {"label": "Nov 2026 KDOQI PREVENT", "pmid": "42907045", "doi": "10.1053/j.ajkd.2026.07.006"},
+                ],
             },
             "steps": [
                 _step(
@@ -1739,8 +1744,14 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
             "current_guideline": {
                 "name": "2026 ACC/AHA Dyslipidemia Guideline (Aug–Nov 2026 ASCVD Updates) & ESC Sep 2026 Consensus",
                 "year": "2026 (08–11/2026)",
-                "doi": "10.1007/s11883-026-01465-5",
-                "pmid": "42709273",
+                "doi": "10.1161/CIR.0000000000001423",
+                "pmid": "41824552",
+                "refs": [
+                    {"label": "2026 ACC/AHA Guideline (Circulation)", "pmid": "41824552", "doi": "10.1161/CIR.0000000000001423"},
+                    {"label": "Nov 2026 JACC Adv ASCVD Update", "pmid": "43025043", "doi": "10.1016/j.jacadv.2026.103485"},
+                    {"label": "Sep 2026 ASCVD Top 10", "pmid": "42709273", "doi": "10.1007/s11883-026-01465-5"},
+                    {"label": "ESC Sep 2026 Consensus", "pmid": "42712221", "doi": "10.1093/eurjpc/zwag481"},
+                ],
             },
             "steps": [
                 _step(
@@ -1833,6 +1844,7 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
             ),
         ],
         pubmed_anchors=[
+            _anchor("41824552", "2026 ACC/AHA/AACVPR/ABC/ACPM/ADA/AGS/APhA/ASPC/NLA/PCNA Guideline on the Management of Dyslipidemia.", "Circulation (2026)", "2026 Apr 28", "10.1161/CIR.0000000000001423", "153", "e682-e769"),
             _anchor("43025043", "Impact of the 2026 Dyslipidemia Guideline on ASCVD Reclassification and Statin Recommendations in MESA.", "JACC Adv (2026)", "2026 Nov 13", "10.1016/j.jacadv.2026.103485", "", ""),
             _anchor("42709273", "Top 10 Concepts in Secondary ASCVD Prevention From the 2026 ACC/AHA Dyslipidemia Guideline.", "Curr Atheroscler Rep (2026)", "2026 Sep 8", "10.1007/s11883-026-01465-5", "28", ""),
             _anchor("42712221", "Lipid lowering therapy in venous thromboembolism: Clinical Consensus Statement of ESC Working Groups.", "Eur J Prev Cardiol (2026)", "2026 Sep 9", "10.1093/eurjpc/zwag481", "", ""),
@@ -2538,6 +2550,12 @@ Moving away from rigid first-line/second-line anti-anginal hierarchies (2013 ESC
                 "year": "2026 (09–11/2026)",
                 "doi": "10.1161/CIR.0000000000001478",
                 "pmid": "42866888",
+                "refs": [
+                    {"label": "Nov 2026 AHA ACS Statement", "pmid": "42866888", "doi": "10.1161/CIR.0000000000001478"},
+                    {"label": "Nov 2026 ESC-ACVC Follow-Up", "pmid": "43008190", "doi": "10.1093/ehjacc/zuag133"},
+                    {"label": "Sep–Oct 2026 SCCT CCTA Update", "pmid": "42864251", "doi": "10.1016/j.jcct.2026.08.014"},
+                    {"label": "Nov 2026 Complex PCI Paper", "pmid": "43023246", "doi": "10.1002/ccd.70976"},
+                ],
             },
             "steps": [
                 _step(
@@ -2614,8 +2632,8 @@ Moving away from rigid first-line/second-line anti-anginal hierarchies (2013 ESC
         pubmed_anchors=[
             _anchor("42866888", "Multidisciplinary Approach to Antiplatelet Management in Coronary Syndromes: A Scientific Statement From the American Heart Association.", "Circulation (2026)", "2026 Nov 10", "10.1161/CIR.0000000000001478", "", ""),
             _anchor("43008190", "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.", "Eur Heart J Acute Cardiovasc Care (2026)", "2026 Nov 10", "10.1093/ehjacc/zuag133", "", ""),
-            _anchor("42864251", "Interpretation and reporting of coronary computed tomographic angiography (2026 update).", "J Cardiovasc Comput Tomogr (2026)", "2026 Sep-Oct", "", "", ""),
-            _anchor("43023246", "ELCA Utilization in Complex PCI: A Position Paper.", "Catheter Cardiovasc Interv (2026)", "2026 Nov 13", "", "", ""),
+            _anchor("42864251", "Interpretation and reporting of coronary computed tomographic angiography (2026 update).", "J Cardiovasc Comput Tomogr (2026)", "2026 Sep-Oct", "10.1016/j.jcct.2026.08.014", "", ""),
+            _anchor("43023246", "ELCA Utilization in Complex PCI: A Position Paper.", "Catheter Cardiovasc Interv (2026)", "2026 Nov 13", "10.1002/ccd.70976", "", ""),
             _anchor("39210710", "2024 ESC Guidelines for the management of chronic coronary syndromes.", "European Heart Journal (2024)", "2024 Sep 29", "10.1093/eurheartj/ehae177", "45", "3415-3537"),
             _anchor("32227755", "Initial Invasive or Conservative Strategy for Stable Coronary Disease (ISCHEMIA).", "NEJM (2020)", "2020 Apr 9", "10.1056/NEJMoa1915922", "382", "1395-1407"),
             _anchor("30266608", "Stratified Medical Therapy Using Invasive Coronary Function Testing in Angina: The CorMicA Trial.", "JACC (2018)", "2018 Dec 11", "10.1016/j.jacc.2018.09.006", "72", "2841-2855"),
@@ -3340,6 +3358,12 @@ Despite lifelong aspirin monotherapy beyond 12 months, patients with multivessel
                 "year": "2026 (08–11/2026)",
                 "doi": "10.1161/CIR.0000000000001478",
                 "pmid": "42866888",
+                "refs": [
+                    {"label": "Nov 2026 AHA ACS Statement", "pmid": "42866888", "doi": "10.1161/CIR.0000000000001478"},
+                    {"label": "Sep 2026 ACC Antiplatelet Statement", "pmid": "42377293", "doi": "10.1016/j.jacc.2026.05.037"},
+                    {"label": "Oct 2026 APHRS AF Part II", "pmid": "42923502", "doi": "10.1002/joa3.70491"},
+                    {"label": "UKKA CKD Anticoagulation Guideline", "pmid": "43035656", "doi": "10.1186/s12882-026-05270-9"},
+                ],
             },
             "steps": [
                 _step(
@@ -4118,6 +4142,12 @@ Routine intra-aortic balloon pump (IABP) support was downgraded to **Class III, 
                 "year": "2026 (08–11/2026)",
                 "doi": "10.1093/eurheartj/ehag100",
                 "pmid": "42661420",
+                "refs": [
+                    {"label": "Oct 2026 ESC Heart Failure", "pmid": "42661420", "doi": "10.1093/eurheartj/ehag100"},
+                    {"label": "Oct 2026 ACC HFpEF ECDP", "pmid": "42494134", "doi": "10.1016/j.jacc.2026.06.018"},
+                    {"label": "Nov 2026 iCARDIO Implementation", "pmid": "43015148", "doi": "10.1016/j.hlc.2026.10.001"},
+                    {"label": "2026 2nd Universal Definition of HF", "pmid": "42366997", "doi": "10.1161/CIR.0000000000001455"},
+                ],
             },
             "steps": [
                 _step(
@@ -4893,6 +4923,13 @@ Following AFFIRM (2002), pharmacologic rhythm control was deemed prognostically 
                 "year": "2026 (10–11/2026)",
                 "doi": "10.1002/joa3.70495",
                 "pmid": "42923148",
+                "refs": [
+                    {"label": "Oct 2026 APHRS AF (Part I)", "pmid": "42923148", "doi": "10.1002/joa3.70495"},
+                    {"label": "Oct 2026 APHRS AF (Part II)", "pmid": "42923502", "doi": "10.1002/joa3.70491"},
+                    {"label": "Oct 2026 APHRS AF (Part III)", "pmid": "42923076", "doi": "10.1002/joa3.70492"},
+                    {"label": "Oct 2026 APHRS AF (Part IV)", "pmid": "42923086", "doi": "10.1002/joa3.70490"},
+                    {"label": "Nov 2026 ESC-ACVC Follow-Up", "pmid": "43008190", "doi": "10.1093/ehjacc/zuag133"},
+                ],
             },
             "steps": [
                 _step(
@@ -5655,6 +5692,11 @@ Whereas the 2015 guidelines relied predominantly on echocardiography and require
                 "year": "2026 (10–11/2026)",
                 "doi": "10.1016/j.cjca.2026.07.372",
                 "pmid": "42862133",
+                "refs": [
+                    {"label": "Nov 2026 CCS/CSCS/CAIC MV/TV Update", "pmid": "42862133", "doi": "10.1016/j.cjca.2026.07.372"},
+                    {"label": "Oct 2026 EACTS Valve Repair", "pmid": "42839658", "doi": "10.1093/ejcts/ezag182"},
+                    {"label": "Oct 2026 AHA Endocarditis Statement", "pmid": "42708190", "doi": "10.1161/CIR.0000000000001466"},
+                ],
             },
             "steps": [
                 _step(
@@ -6431,6 +6473,11 @@ Early empirical high-dose corticosteroids precipitated steroid-dependent recurre
                 "year": "2026 (08–11/2026)",
                 "doi": "10.1093/eurheartj/ehag766",
                 "pmid": "42867067",
+                "refs": [
+                    {"label": "Oct 2026 ESC Myocarditis Ten Commandments", "pmid": "42867067", "doi": "10.1093/eurheartj/ehag766"},
+                    {"label": "Aug 2026 ESC Inflammatory Arrhythmia", "pmid": "42663246", "doi": "10.1093/ejhf/xuag271"},
+                    {"label": "Nov 2026 ESC-ACVC Follow-Up", "pmid": "43008190", "doi": "10.1093/ehjacc/zuag133"},
+                ],
             },
             "steps": [
                 _step(
@@ -7217,6 +7264,11 @@ For the first time, the **2024 ESC PAAD Guidelines** unify peripheral arterial a
                 "year": "2026 (09–10/2026)",
                 "doi": "10.1016/j.jacadv.2026.103354",
                 "pmid": "42913334",
+                "refs": [
+                    {"label": "Oct 2026 PERT Acute PE Appraisal", "pmid": "42913334", "doi": "10.1016/j.jacadv.2026.103354"},
+                    {"label": "Oct 2026 AHA Aortic Surgery Statement", "pmid": "42910416", "doi": "10.1161/CIR.0000000000001490"},
+                    {"label": "Oct 2026 EACTS Dissection Consensus", "pmid": "42839659", "doi": "10.1093/ejcts/ezag221"},
+                ],
             },
             "steps": [
                 _step(
@@ -7960,6 +8012,12 @@ Obesity-related HFpEF represents a distinct phenotype characterized by epicardia
                 "year": "2026 (08–11/2026)",
                 "doi": "10.1093/eurheartj/ehag768",
                 "pmid": "43024482",
+                "refs": [
+                    {"label": "Nov 2026 ESC/ERA CVD-CKD Ten Commandments", "pmid": "43024482", "doi": "10.1093/eurheartj/ehag768"},
+                    {"label": "Aug 2026 ESC/ERA CVD & CKD Guideline", "pmid": "42661426", "doi": "10.1093/eurheartj/ehag098"},
+                    {"label": "Oct 2026 ESC Cardiac Rehab", "pmid": "42661418", "doi": "10.1093/eurheartj/ehag099"},
+                    {"label": "Oct 2026 ACC Exercise Statement", "pmid": "42878712", "doi": "10.1016/j.jacc.2026.09.008"},
+                ],
             },
             "steps": [
                 _step(
