@@ -3705,11 +3705,6 @@
           <span id="labelSocraticHeaderBtn">Học theo kiểu Socract</span>
         </button>
 
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenChatHeader" title="Trò chuyện cùng Soái ca Y khoa">
-          <i class="fa-solid fa-comments" style="color: var(--color-primary-deep);"></i>
-          <span id="labelChatHeaderBtn">Soái ca Y khoa</span>
-        </button>
-
         <button type="button" class="btn btn-secondary-outline" id="btnOpenPubMedModal">
           <i class="fa-solid fa-magnifying-glass"></i>
           <span id="labelPubMedBtn">Tra Cứu PubMed</span>
@@ -4632,7 +4627,6 @@
       toastBox: document.getElementById("toastBox"),
       toastMsg: document.getElementById("toastMsg"),
 
-      btnOpenChatHeader: document.getElementById("btnOpenChatHeader"),
       btnFloatingChat: document.getElementById("btnFloatingChat"),
       ebmChatPanel: document.getElementById("ebmChatPanel"),
       btnCloseChat: document.getElementById("btnCloseChat"),
@@ -5832,10 +5826,6 @@
         socraticNavBtn.title = isVi ? "Học theo kiểu Socract" : "Socratic Learning";
       }
       setTxt("#labelSocraticHeaderBtn", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
-      if (Dom.btnOpenChatHeader) {
-        Dom.btnOpenChatHeader.title = isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Med Bro";
-      }
-      setTxt("#labelChatHeaderBtn", botName);
       setTxt("#labelFloatingChat", botName);
       if (Dom.btnFloatingChat) {
         Dom.btnFloatingChat.setAttribute("aria-label", isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Med Bro");
@@ -7645,7 +7635,6 @@
       bindEvents() {
         const toggle = () => this.togglePanel();
         if (Dom.btnFloatingChat) Dom.btnFloatingChat.addEventListener("click", toggle);
-        if (Dom.btnOpenChatHeader) Dom.btnOpenChatHeader.addEventListener("click", toggle);
         Dom.btnCloseChat.addEventListener("click", () => this.togglePanel(false));
 
         Dom.btnExpandChat.addEventListener("click", () => this.toggleExpand());
@@ -7899,8 +7888,6 @@
       onLanguageChanged() {
         const isVi = App.currentLang === "vi";
         const botName = isVi ? "Soái ca Y khoa" : "Med Bro";
-        const hBtnLbl = document.getElementById("labelChatHeaderBtn");
-        if (hBtnLbl) hBtnLbl.textContent = botName;
         const fBtnLbl = document.getElementById("labelFloatingChat");
         if (fBtnLbl) fBtnLbl.textContent = botName;
         const cTitle = document.getElementById("chatHeaderTitle");
