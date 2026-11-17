@@ -1950,16 +1950,26 @@ def _ensure_complete_sentence(text: str) -> str:
     return cleaned + "."
 
 
-def _first_clean_sentence(text: str, max_len: int = 180) -> str:
+def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     clean = re.sub(r"\s+", " ", str(text or "")).strip()
     if not clean:
         return ""
-    m = re.match(r"^(.+?[.!?])(?:\s|$)", clean)
-    if m and len(m.group(1)) <= max_len:
-        return m.group(1).strip()
     if len(clean) <= max_len:
-        return clean.rstrip(".") + "."
-    return clean[:max_len].rsplit(" ", 1)[0].rstrip(" ,;:") + "."
+        return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
+    matches = list(re.finditer(r"(?<!\d)[.!?](?=\s|$)", clean))
+    best_end = None
+    for m in matches:
+        if m.end() <= max_len:
+            seg = clean[:m.end()]
+            if seg.count("(") == seg.count(")") and seg.count("**") % 2 == 0:
+                best_end = m.end()
+        else:
+            break
+    if best_end and best_end >= 25:
+        return clean[:best_end].strip()
+    if matches and matches[0].end() <= max(max_len + 220, 640):
+        return clean[:matches[0].end()].strip()
+    return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
 
 
 def _compose_deterministic_ebm_answer(
@@ -2009,7 +2019,7 @@ def _compose_deterministic_ebm_answer(
     wants_detail = _wants_detailed_explanation(query)
     mcq_opts = _extract_pasted_mcq_options(query)
 
-    # 1) Pasted Multiple-Choice Mode -> "C, vì <1 câu ngắn gọn>."
+    # 1) Pasted Multiple-Choice Mode -> direct answer + clear clinical rationale (2–3 sentences)
     if mcq_opts and not wants_detail:
         evid_blob = " ".join([
             cur_g.get("name", ""),
@@ -2046,27 +2056,47 @@ def _compose_deterministic_ebm_answer(
             reason_src = pearls[0].get("text_en" if is_en else "text_vi", "")
         if not reason_src:
             reason_src = mcq_opts[best_k]
-        one_reason = _first_clean_sentence(reason_src, 150).rstrip(".")
-        # Lowercase leading word nicely for "X, vì ..."
+        one_reason = _first_clean_sentence(reason_src, 220).rstrip(".")
         if one_reason and len(one_reason) > 2 and one_reason[0].isupper() and not one_reason[:3].isupper():
             one_reason = one_reason[0].lower() + one_reason[1:]
+        tr_note = ""
+        if trials:
+            tr0 = trials[0]
+            tr_note = " " + _first_clean_sentence(
+                f"{tr0.get('name')} ({tr0.get('value')}, {tr0.get('p')}): {tr0.get('changes_en' if is_en else 'changes_vi', '')}",
+                340,
+            )
         ans = (
-            f"**{best_k}**, because {one_reason}."
+            f"**{best_k}**, because {one_reason}.{tr_note}"
             if is_en else
-            f"**{best_k}**, vì {one_reason}."
+            f"**{best_k}**, vì {one_reason}.{tr_note}"
         )
         return _ensure_complete_sentence(ans), sources
 
     # Match relevant sentences inside markdown body + structured evidence
     raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
-    query_terms = set(re.findall(r"[\w\-]{3,}", q_low))
+    _q_stop = {
+        "được", "mức", "nào", "chính", "như", "thế", "sao", "cho", "với", "của", "các", "những",
+        "trong", "về", "và", "hay", "hoặc", "khi", "nếu", "thì", "tại", "bởi", "theo", "khuyến",
+        "cáo", "lâm", "sàng", "áp", "dụng", "bệnh", "nhân", "giải", "thích", "chi", "tiết",
+        "the", "and", "for", "with", "what", "how", "when", "why", "are", "was", "from", "this",
+    }
+    raw_terms = set(re.findall(r"[\w\-]{3,}", q_low))
+    query_terms = {t for t in raw_terms if t not in _q_stop} or raw_terms
     for k, syns in _CHAT_SYNONYM_MAP.items():
         if k in q_low:
             query_terms.update(syns)
 
     lines = [
         ln.strip() for ln in raw_md.splitlines()
-        if ln.strip() and not ln.strip().startswith("#") and not ln.strip().startswith("⚠️") and "[END OF PART" not in ln
+        if ln.strip()
+        and not ln.strip().startswith("#")
+        and not ln.strip().startswith("⚠️")
+        and not ln.strip().startswith("*Nguồn")
+        and not ln.strip().startswith("*Traceable")
+        and not ln.strip().startswith("*Nội dung")
+        and not ln.strip().startswith("*The clinical evidence")
+        and "[END OF PART" not in ln
     ]
     scored_lines: list[tuple[int, str]] = []
     for ln in lines:
@@ -2076,68 +2106,72 @@ def _compose_deterministic_ebm_answer(
             scored_lines.append((hits, re.sub(r"^[-*•]\s*", "", ln)))
     scored_lines.sort(key=lambda x: x[0], reverse=True)
 
-    # 2) Concise default direct answer (1–3 sentences)
+    # 2) Balanced direct answer with key evidence (~140–220 words)
     if not wants_detail:
-        direct_bits: list[str] = []
+        sections: list[str] = []
         if scored_lines:
-            direct_bits.append(_first_clean_sentence(scored_lines[0][1], 190))
-            if len(scored_lines) > 1 and len(" ".join(direct_bits)) < 200:
-                direct_bits.append(_first_clean_sentence(scored_lines[1][1], 160))
+            sections.append(" ".join(_first_clean_sentence(ln, 420) for _, ln in scored_lines[:2]))
         elif steps:
             s_last = steps[-1]
-            direct_bits.append(_first_clean_sentence(s_last.get("desc_en" if is_en else "desc_vi", ""), 200))
-        elif pearls:
-            p0 = pearls[0].get("text_en" if is_en else "text_vi") or pearls[0].get("en" if is_en else "vi", "")
-            direct_bits.append(_first_clean_sentence(p0, 200))
-
+            sections.append(
+                f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}:** "
+                + _first_clean_sentence(s_last.get("desc_en" if is_en else "desc_vi", ""), 420)
+            )
+        for tr in trials[:2]:
+            chg = _first_clean_sentence(tr.get("changes_en" if is_en else "changes_vi", ""), 340)
+            caut = _first_clean_sentence(tr.get("caution_en" if is_en else "caution_vi", ""), 340)
+            sections.append(f"- **{tr.get('name')}** (*{tr.get('journal')}*, **{tr.get('value')}**, {tr.get('p')}): {chg} {caut}")
         if fda_note and fda_note.get("text"):
-            note_txt = fda_note["text"]
+            note_txt = _first_clean_sentence(fda_note["text"], 360)
             if not is_en and translate_fn:
                 try:
-                    tr_txt = translate_fn(note_txt[:220])
+                    tr_txt = translate_fn(note_txt[:360])
                     if tr_txt:
-                        note_txt = tr_txt
+                        note_txt = _first_clean_sentence(tr_txt, 360)
                 except Exception:
                     pass
-            direct_bits.append(_first_clean_sentence(f"{fda_note['drug']}: {note_txt}", 170))
-        elif trials and not scored_lines:
-            tr = trials[0]
-            chg = tr.get("changes_en" if is_en else "changes_vi", "")
-            direct_bits.append(_first_clean_sentence(f"{tr.get('name')} ({tr.get('value')}): {chg}", 170))
+            sections.append(f"- **{fda_note['label']} ({fda_note['drug']}):** {note_txt}")
+        if pearls:
+            p0 = pearls[0].get("text_en" if is_en else "text_vi") or pearls[0].get("en" if is_en else "vi", "")
+            if p0:
+                sections.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 380)}")
+        return _ensure_complete_sentence("\n\n".join(sections)), sources
 
-        if not direct_bits:
-            direct_bits.append(f"{cur_g.get('name', primary.get('title_vi' if not is_en else 'title_en', ''))}.")
-        return _ensure_complete_sentence(" ".join(b for b in direct_bits if b)), sources
-
-    # 3) Explicit "explain more" mode -> concise 3–4 bullets, complete sentences
-    parts: list[str] = []
+    # 3) Detailed explanation mode (~220–350 words, structured & complete)
+    parts: list[str] = [
+        f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}** *({'Prior' if is_en else 'Tiền nhiệm'}: {prior_g.get('name', '—')})*"
+    ]
     if scored_lines:
         for _, ln in scored_lines[:3]:
-            parts.append(f"- {_first_clean_sentence(ln, 180)}")
-    elif steps:
-        for st in steps[:2]:
+            parts.append(f"- {_first_clean_sentence(ln, 420)}")
+    else:
+        for st in steps[:3]:
             t_lbl = st.get("title_en" if is_en else "title_vi", "")
-            d_lbl = _first_clean_sentence(st.get("desc_en" if is_en else "desc_vi", ""), 160)
+            d_lbl = _first_clean_sentence(st.get("desc_en" if is_en else "desc_vi", ""), 360)
             parts.append(f"- **{t_lbl}:** {d_lbl}")
 
-    if trials:
-        tr = trials[0]
-        chg = _first_clean_sentence(tr.get("changes_en" if is_en else "changes_vi", ""), 140)
-        caut = _first_clean_sentence(tr.get("caution_en" if is_en else "caution_vi", ""), 130)
-        parts.append(f"- **{tr.get('name')}** ({tr.get('value')}, {tr.get('p')}): {chg} {caut}")
+    for tr in trials[:3]:
+        chg = _first_clean_sentence(tr.get("changes_en" if is_en else "changes_vi", ""), 340)
+        caut = _first_clean_sentence(tr.get("caution_en" if is_en else "caution_vi", ""), 340)
+        parts.append(f"- **{tr.get('name')}** ({tr.get('value')}, {tr.get('ci')}, {tr.get('p')}): {chg} *{caut}*")
+
+    for p in pearls[:2]:
+        p_txt = p.get("text_en" if is_en else "text_vi") or p.get("en" if is_en else "vi", "")
+        if p_txt:
+            parts.append(f"- **{'Pearl' if is_en else 'Lưu ý đi buồng'}:** {_first_clean_sentence(p_txt, 380)}")
 
     if fda_note and fda_note.get("text"):
-        note_txt = _first_clean_sentence(fda_note["text"], 150)
+        note_txt = _first_clean_sentence(fda_note["text"], 360)
         if not is_en and translate_fn:
             try:
                 tr_txt = translate_fn(note_txt)
                 if tr_txt:
-                    note_txt = _first_clean_sentence(tr_txt, 150)
+                    note_txt = _first_clean_sentence(tr_txt, 360)
             except Exception:
                 pass
         parts.append(f"- **{fda_note['label']} ({fda_note['drug']}):** {note_txt}")
 
-    return _ensure_complete_sentence("\n".join(parts[:4])), sources
+    return _ensure_complete_sentence("\n".join(parts)), sources
 
 
 def _default_daily_llm_limit() -> int:
@@ -2449,24 +2483,24 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             mcq_opts = _extract_pasted_mcq_options(query)
             wants_detail = _wants_detailed_explanation(query)
             mcq_rule = (
-                "MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Reply in STRICTLY 1 short sentence using ONLY the exact format: "
-                + ("'<Letter>, because <1 crisp reason sentence>.'" if lang == "en" else "'<Chữ cái A/B/C/D>, vì <1 câu ngắn gọn nêu lý do cốt lõi>.'")
-                + " Do NOT write any intro, headings, bullets, or extra explanation.\n"
+                "MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with '<Letter>, vì <reason>.' "
+                + ("('<Letter>, because <core reason>.' in English) " if lang == "en" else "")
+                + "followed by 1-2 short supporting sentences (70-120 words total) explaining why it fits the 2026 Guideline/RCT and briefly why the main distractor falls short.\n"
                 if (mcq_opts and not wants_detail)
                 else (
-                    "EXPLANATION REQUESTED: Expand on the prior point WITHOUT repeating it verbatim — explain the mechanism, RCT metrics, or bedside reasoning in 3-5 short sentences or bullets (max 150 words), ending on a complete sentence.\n"
+                    "EXPLANATION REQUESTED: Build on any prior point WITHOUT repeating verbatim. Write a rich, well-structured clinical explanation (220-350 words) using short bullet points covering mechanism, landmark RCT numbers (HR/CI/p), and bedside safety checks, ending cleanly on a complete sentence.\n"
                     if wants_detail
-                    else "DEFAULT BREVITY: Put the exact core answer directly in sentence 1. Reply in 1-3 short, complete sentences (max 70 words). NO rambling intros, NO multi-section walls; expand ONLY if the user later asks for more explanation.\n"
+                    else "BALANCED CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-5 structured bullet points (140-220 words total) covering guideline changes, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n"
                 )
             )
             sys_prompt = (
-                f"You are '{bot_name}', a direct-first Cardiology EBM assistant inside '{site_name}'.\n"
+                f"You are '{bot_name}', a direct yet thorough Cardiology EBM assistant inside '{site_name}'.\n"
                 f"{mcq_rule}"
                 "STRICT SCOPE: Answer cardiology, medicine, pharmacology, guidelines, or medical follow-ups; decline off-topic in 1 short sentence. "
                 "NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a Cardiology Pillar question. "
-                "If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain simply using everyday words while keeping under 150 words. "
+                "If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain warmly with everyday metaphors (200-320 words) unpacking every acronym in simple terms. "
                 "TERMINOLOGY: Translate 'white-coat' = 'tăng huyết áp áo choàng trắng'. Never invent PMIDs/stats. Reply in "
-                + ("concise academic English. /no_think" if lang == "en" else "clear, direct clinical Vietnamese. /no_think")
+                + ("clear academic English. /no_think" if lang == "en" else "clear, structured clinical Vietnamese. /no_think")
             )
             user_prompt = f"CONTEXT:\n{ctx_blob}\n\nQUESTION:\n{query}"
             try:
@@ -2480,7 +2514,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                             {"role": "user", "content": user_prompt},
                         ],
                         "temperature": 0.15,
-                        "max_tokens": 1024,
+                        "max_tokens": 1500,
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://api.groq.com/openai/v1/chat/completions",
@@ -2501,7 +2535,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         "model": "gemini-3.8-flash",
                         "system_instruction": sys_prompt,
                         "input": user_prompt,
-                        "generation_config": {"max_output_tokens": 1024},
+                        "generation_config": {"max_output_tokens": 1500},
                     }).encode("utf-8")
                     req = urllib.request.Request(
                         "https://generativelanguage.googleapis.com/v1beta/interactions",
