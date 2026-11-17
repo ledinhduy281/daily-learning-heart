@@ -4301,8 +4301,6 @@
           <button type="button" class="socratic-cmd-btn" data-soc-cmd="harder" id="btnSocCmdHarder">🔥 Khó hơn</button>
           <button type="button" class="socratic-cmd-btn" data-soc-cmd="easier" id="btnSocCmdEasier">🌱 Dễ hơn</button>
           <button type="button" class="socratic-cmd-btn" data-soc-cmd="just_tell_me" id="btnSocCmdTellMe">💡 Giải thích luôn</button>
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="save_state" id="btnSocCmdSave">💾 Lưu trạng thái</button>
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="resume_state" id="btnSocCmdResume">📂 Khôi phục</button>
         </div>
 
         <div class="socratic-dialogue-box" id="socraticMessagesList"></div>
@@ -9475,8 +9473,6 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         setEl("btnSocCmdHarder", isVi ? "🔥 Khó hơn" : "🔥 Harder");
         setEl("btnSocCmdEasier", isVi ? "🌱 Dễ hơn" : "🌱 Easier");
         setEl("btnSocCmdTellMe", isVi ? "💡 Giải thích luôn" : "💡 Just tell me");
-        setEl("btnSocCmdSave", isVi ? "💾 Lưu trạng thái" : "💾 Save state");
-        setEl("btnSocCmdResume", isVi ? "📂 Khôi phục" : "📂 Resume state");
 
         const btnHard = document.getElementById("btnSocCmdHarder");
         const btnEasy = document.getElementById("btnSocCmdEasier");
@@ -9639,88 +9635,6 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           this.saveStore();
           this.renderUI();
           this.callSocraticApi("just_tell_me", "just tell me", "");
-          return;
-        }
-        if (cmd === "save_state") {
-          const statePayload = {
-            pid: this.curPillarId,
-            phase: sess.phase,
-            diag_step: sess.diag_step,
-            focus_idx: sess.focus_idx,
-            difficulty: sess.difficulty,
-            answered_count: sess.answered_count,
-            correct_count: sess.correct_count,
-            streak: sess.streak,
-            subskills: sess.subskills.map((s) => ({ id: s.id, level: s.level, checks: s.checks, answered: s.answered, correct: s.correct }))
-          };
-          const block = `[SOCRATIC_STATE]${JSON.stringify(statePayload)}[/SOCRATIC_STATE]`;
-          sess.messages.push({
-            role: "assistant",
-            text: (isVi
-              ? "**Mã trạng thái học tập đã lưu (sao chép để khôi phục bất kỳ lúc nào):**\n\n`resume from: "
-              : "**Saved Socratic state block (paste to resume later):**\n\n`resume from: ") + block + "`"
-          });
-          this.saveStore();
-          this.renderUI();
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(`resume from: ${block}`).catch(() => {});
-          }
-          showToast(isVi ? "Đã lưu & sao chép trạng thái Socratic!" : "Saved & copied Socratic state!");
-          return;
-        }
-        if (cmd === "resume_state") {
-          const pasted = window.prompt(isVi
-            ? "Dán đoạn mã 'resume from: [SOCRATIC_STATE]...' đã lưu:"
-            : "Paste your saved 'resume from: [SOCRATIC_STATE]...' block:");
-          if (pasted) this.resumeFromBlock(pasted);
-        }
-      },
-
-      resumeFromBlock(raw) {
-        const isVi = App.currentLang === "vi";
-        const m = String(raw || "").match(/\[SOCRATIC_STATE\](\{[\s\S]*?\})\[\/SOCRATIC_STATE\]/);
-        const jsonStr = m ? m[1] : String(raw || "").replace(/^resume\s*from:\s*/i, "").trim();
-        try {
-          const parsed = JSON.parse(jsonStr);
-          if (!parsed || !Array.isArray(parsed.subskills)) throw new Error("Invalid");
-          const sess = this.getSession();
-          sess.started = true;
-          sess.phase = parsed.phase || "loop";
-          sess.diag_step = Number(parsed.diag_step || 0);
-          sess.focus_idx = Number(parsed.focus_idx || 0);
-          sess.difficulty = parsed.difficulty || "normal";
-          sess.answered_count = Number(parsed.answered_count || 0);
-          sess.correct_count = Number(parsed.correct_count || 0);
-          sess.streak = Number(parsed.streak || 0);
-          sess.last_updated_idx = -1;
-          sess.last_delta = 0;
-          sess.last_eval = "";
-          sess.subskills = sess.subskills.map((s, idx) => ({
-            ...s,
-            level: Number(parsed.subskills[idx]?.level ?? s.level),
-            checks: Number(parsed.subskills[idx]?.checks ?? 0),
-            answered: Number(parsed.subskills[idx]?.answered ?? 0),
-            correct: Number(parsed.subskills[idx]?.correct ?? 0)
-          }));
-          const b = App.selected || getTodaySingleBriefing();
-          const mcq = this.buildDeterministicMcq(b, sess.focus_idx, sess.attempts_on_current || 0, App.currentLang || "vi", sess.difficulty);
-          if (sess.phase !== "mastered") {
-            sess.current_options = mcq.options;
-            sess.correct_key = mcq.correct_key;
-            sess.options_lang = App.currentLang || "vi";
-            sess.last_question = mcq.question;
-          } else {
-            sess.current_options = [];
-            sess.correct_key = "";
-          }
-          sess.messages.push({
-            role: "assistant",
-            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n" : "State restored!\n\n") + this.renderProgressSummaryMarkdown(sess) + (sess.phase !== "mastered" ? `\n\n${mcq.question}` : "")
-          });
-          this.saveStore();
-          this.renderUI();
-        } catch (_) {
-          showToast(isVi ? "Mã trạng thái không hợp lệ." : "Invalid Socratic state block.");
         }
       },
 
