@@ -3242,7 +3242,242 @@
       border-color: var(--color-primary-deep);
     }
 
+    /* ========================================================================
+       SOCRATIC TUTOR ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING")
+       ======================================================================== */
+    .socratic-card-supa {
+      margin-top: 28px;
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-top: 3px solid var(--color-primary-deep);
+      border-radius: var(--rounded-md);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow-1);
+    }
+    .socratic-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .socratic-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+    .socratic-title-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+    .socratic-target-badge {
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(62, 207, 142, 0.14);
+      border: 1px solid rgba(36, 180, 126, 0.3);
+      color: #065f46;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .socratic-sub-text {
+      font-size: 13px;
+      color: var(--color-ink-secondary);
+      line-height: 1.45;
+    }
+    .socratic-hdr-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .socratic-subskills-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .socratic-subskill-item {
+      padding: 10px 12px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .socratic-subskill-item:hover {
+      border-color: var(--color-primary-deep);
+    }
+    .socratic-subskill-item.active-focus {
+      border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.08);
+      box-shadow: 0 0 0 1px rgba(36, 180, 126, 0.25);
+    }
+    .socratic-subskill-item.mastered {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+    .socratic-subskill-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+    .socratic-lvl-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-ink-secondary);
+      flex-shrink: 0;
+    }
+    .socratic-bar-track {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--color-hairline-cool);
+      overflow: hidden;
+    }
+    .socratic-bar-fill {
+      height: 100%;
+      background: var(--color-primary-deep);
+      transition: width 0.25s ease;
+    }
+    .socratic-ascii-box {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas-night);
+      color: #a7f3d0;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.45;
+      overflow-x: auto;
+      border: 1px solid #262626;
+    }
+    .socratic-cmd-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .socratic-cmd-btn {
+      padding: 5px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--color-hairline);
+      background: var(--color-canvas-soft);
+      color: var(--color-ink-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.14s ease, color 0.14s ease, background-color 0.14s ease;
+    }
+    .socratic-cmd-btn:hover {
+      border-color: var(--color-primary-deep);
+      color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.08);
+    }
+    .socratic-cmd-btn.active {
+      background: var(--color-ink);
+      color: #ffffff;
+      border-color: var(--color-ink);
+    }
+    .socratic-dialogue-box {
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 12px;
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline-cool);
+      border-radius: var(--rounded-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .socratic-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 92%;
+      gap: 4px;
+    }
+    .socratic-msg.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .socratic-msg.assistant {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+    .socratic-msg-bubble {
+      padding: 10px 13px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+    .socratic-msg.user .socratic-msg-bubble {
+      background: var(--color-ink);
+      color: #ffffff;
+      border-bottom-right-radius: 3px;
+    }
+    .socratic-msg.assistant .socratic-msg-bubble {
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-ink);
+      border-bottom-left-radius: 3px;
+    }
+    .socratic-msg-bubble p {
+      margin: 0 0 6px 0;
+    }
+    .socratic-msg-bubble p:last-child {
+      margin-bottom: 0;
+    }
+    .socratic-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .socratic-text-input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas);
+      color: var(--color-ink);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+    }
+    .socratic-text-input:focus {
+      border-color: var(--color-primary-deep);
+    }
+
     @media (max-width: 640px) {
+      .socratic-card-supa {
+        padding: 16px 14px;
+      }
+      .socratic-subskills-grid {
+        grid-template-columns: 1fr;
+      }
       .chat-fab-btn {
         right: 14px;
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -3274,6 +3509,7 @@
       aside.sidebar-panel,
       .lang-segmented-bar,
       .article-header-tools,
+      .socratic-card-supa,
       .bottom-feedback-prompt,
       .auth-gate-overlay,
       .modal-backdrop-supa,
@@ -3463,6 +3699,11 @@
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
+
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Học theo kiểu Socract">
+          <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
+          <span id="labelSocraticHeaderBtn">Học theo kiểu Socract</span>
+        </button>
 
         <button type="button" class="btn btn-secondary-outline" id="btnOpenChatHeader" title="Trò chuyện cùng Soái ca Y khoa">
           <i class="fa-solid fa-comments" style="color: var(--color-primary-deep);"></i>
@@ -3746,6 +3987,55 @@
       <div class="article-rendered-body" id="articleRenderedBody">
         <!-- Rendered by Marked.js -->
       </div>
+
+      <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
+      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText">
+        <div class="socratic-header-row">
+          <div class="socratic-title-block">
+            <div class="socratic-title-line">
+              <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
+              <span id="socraticTitleText">Học theo kiểu Socract</span>
+              <span class="socratic-target-badge" id="socraticPhaseBadge">Mục tiêu: ≥ 4/5</span>
+            </div>
+            <div class="socratic-sub-text" id="socraticSubText">
+              Ôn tập chủ động theo phương pháp gợi mở (Socratic): chẩn đoán 4 mảng kiến thức nền (0–5), truy vấn từng câu hỏi để hiểu bản chất thay đổi Guideline &amp; RCT.
+            </div>
+          </div>
+          <div class="socratic-hdr-actions">
+            <button type="button" class="btn btn-primary-green" id="btnStartSocratic">
+              <i class="fa-solid fa-play"></i>
+              <span id="labelStartSocratic">Bắt đầu Chẩn đoán (4 câu)</span>
+            </button>
+            <button type="button" class="btn btn-secondary-outline" id="btnResetSocratic" title="Làm lại từ đầu" style="display: none;">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span id="labelResetSocratic">Học lại</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="socratic-subskills-grid" id="socraticSubskillsGrid"></div>
+
+        <pre class="socratic-ascii-box" id="socraticAsciiMap"></pre>
+
+        <div class="socratic-cmd-strip" id="socraticCmdStrip">
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="show_progress" id="btnSocCmdProgress">📊 Xem tiến độ</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="harder" id="btnSocCmdHarder">🔥 Khó hơn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="easier" id="btnSocCmdEasier">🌱 Dễ hơn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="just_tell_me" id="btnSocCmdTellMe">💡 Giải thích luôn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="save_state" id="btnSocCmdSave">💾 Lưu trạng thái</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="resume_state" id="btnSocCmdResume">📂 Khôi phục</button>
+        </div>
+
+        <div class="socratic-dialogue-box" id="socraticMessagesList"></div>
+
+        <form class="socratic-input-row" id="socraticInputForm">
+          <input type="text" id="socraticInputField" class="socratic-text-input" placeholder="Nhập câu trả lời, lập luận lâm sàng hoặc lệnh (vd: show progress, harder, just tell me)..." autocomplete="off">
+          <button type="submit" class="btn btn-primary-green" id="btnSendSocratic">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span id="labelSendSocratic">Trả lời</span>
+          </button>
+        </form>
+      </section>
 
       <!-- 5. PRODUCT FEEDBACK BAR (BOTTOM ARTICLE PROMPT) -->
       <div class="bottom-feedback-prompt" id="bottomFeedbackPrompt">
@@ -4082,6 +4372,7 @@
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
     const CHAT_SESSIONS_KEY = "soaica_chat_sessions_v1";
+    const SOCRATIC_STATE_KEY = "ebm_socratic_state_v1";
     const UI_LANG_KEY = "ebm_ui_lang";
     const ANCHOR_DATE_STR = "2026-11-16";
 
@@ -5442,6 +5733,9 @@
         if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
           window.EbmChat.onLanguageChanged();
         }
+        if (window.SocraticTutor && typeof window.SocraticTutor.onLanguageChanged === "function") {
+          window.SocraticTutor.onLanguageChanged();
+        }
         return;
       }
       renderDailyRotationBanner();
@@ -5451,6 +5745,9 @@
       if (App.selected) displayCurrentBriefing();
       if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
         window.EbmChat.onLanguageChanged();
+      }
+      if (window.SocraticTutor && typeof window.SocraticTutor.onLanguageChanged === "function") {
+        window.SocraticTutor.onLanguageChanged();
       }
     }
 
@@ -5530,6 +5827,11 @@
         Dom.btnNavBookmarks.title = isVi ? "Lọc danh sách bản tin đã lưu" : "Filter saved briefings";
       }
       const botName = isVi ? "Soái ca Y khoa" : "Med Bro";
+      const socraticNavBtn = document.getElementById("btnOpenSocraticHeader");
+      if (socraticNavBtn) {
+        socraticNavBtn.title = isVi ? "Học theo kiểu Socract" : "Socratic Learning";
+      }
+      setTxt("#labelSocraticHeaderBtn", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
       if (Dom.btnOpenChatHeader) {
         Dom.btnOpenChatHeader.title = isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Med Bro";
       }
@@ -6004,6 +6306,9 @@
       fetchFeedbackForBriefing(briefing.id);
       if (window.EbmChat && typeof window.EbmChat.updateContext === "function") {
         window.EbmChat.updateContext();
+      }
+      if (window.SocraticTutor && typeof window.SocraticTutor.onBriefingSelected === "function") {
+        window.SocraticTutor.onBriefingSelected(briefing);
       }
     }
 
@@ -8211,8 +8516,661 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
     };
 
     window.EbmChat = EbmChat;
+
+    /* ========================================================================
+       SOCRATIC TUTOR ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING")
+       Implements /skill/self_learning_socratic.md per-Pillar mastery loop
+       ======================================================================== */
+    const SocraticTutor = {
+      isBusy: false,
+      store: {},
+      curPillarId: 1,
+
+      init() {
+        this.loadStore();
+        this.bindEvents();
+        this.syncCurrentBriefing();
+      },
+
+      loadStore() {
+        try {
+          const raw = safeStorageGet(SOCRATIC_STATE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") this.store = parsed;
+          }
+        } catch (_) {
+          this.store = {};
+        }
+      },
+
+      saveStore() {
+        safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(this.store));
+      },
+
+      getSubskillDefs(b) {
+        const isEn = App.currentLang === "en";
+        const pid = Number(b?.pillar_id || App.todayPillarId || 1);
+        const curName = String(b?.guideline_evolution?.current_guideline?.name || "2026 Guidelines");
+        const trials = (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
+        if (isEn) {
+          return [
+            { id: "guideline", label: `Guideline Shifts (${curName.slice(0, 26)})` },
+            { id: "trials", label: `Landmark RCTs (${trials.slice(0, 26)})` },
+            { id: "risk", label: "Mechanisms & Risk Thresholds" },
+            { id: "safety", label: "Bedside Safety & Contraindications" }
+          ];
+        }
+        return [
+          { id: "guideline", label: `Tiến hóa Khuyến cáo (${curName.slice(0, 24)})` },
+          { id: "trials", label: `RCT Bản lề (${trials.slice(0, 24)})` },
+          { id: "risk", label: "Cơ chế & Ngưỡng Nguy cơ" },
+          { id: "safety", label: "An toàn & Chống chỉ định" }
+        ];
+      },
+
+      getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
+        const key = String(pid);
+        const defs = this.getSubskillDefs(briefing);
+        if (!this.store[key]) {
+          this.store[key] = {
+            started: false,
+            phase: "diagnostic",
+            diag_step: 0,
+            focus_idx: 0,
+            difficulty: "normal",
+            attempts_on_current: 0,
+            last_question: "",
+            subskills: defs.map((d) => ({ id: d.id, label: d.label, level: 0, checks: 0 })),
+            messages: []
+          };
+        } else {
+          // Keep dynamic labels synced with current UI language
+          this.store[key].subskills = defs.map((d, i) => {
+            const prev = (this.store[key].subskills || [])[i] || {};
+            return {
+              id: d.id,
+              label: d.label,
+              level: Math.max(0, Math.min(5, Number(prev.level || 0))),
+              checks: Math.max(0, Number(prev.checks || 0))
+            };
+          });
+        }
+        return this.store[key];
+      },
+
+      syncCurrentBriefing() {
+        const b = App.selected || getTodaySingleBriefing();
+        this.curPillarId = Number((b && b.pillar_id) || App.todayPillarId || 1);
+        this.getSession(this.curPillarId, b);
+        this.renderUI();
+      },
+
+      onBriefingSelected(b) {
+        if (!b) return;
+        this.curPillarId = Number(b.pillar_id || 1);
+        this.getSession(this.curPillarId, b);
+        this.renderUI();
+      },
+
+      onLanguageChanged() {
+        this.getSession(this.curPillarId, App.selected || getTodaySingleBriefing());
+        this.renderUI();
+      },
+
+      bindEvents() {
+        const navBtn = document.getElementById("btnOpenSocraticHeader");
+        if (navBtn) {
+          navBtn.addEventListener("click", () => {
+            const sec = document.getElementById("socraticTutorSection");
+            if (sec) {
+              sec.scrollIntoView({ behavior: "smooth", block: "start" });
+              const sess = this.getSession();
+              if (!sess.started && !this.isBusy) {
+                this.startDiagnostic();
+              }
+            }
+          });
+        }
+
+        const btnStart = document.getElementById("btnStartSocratic");
+        if (btnStart) {
+          btnStart.addEventListener("click", () => {
+            if (this.isBusy) return;
+            const sess = this.getSession();
+            if (!sess.started) {
+              this.startDiagnostic();
+            } else {
+              const inp = document.getElementById("socraticInputField");
+              if (inp) inp.focus();
+            }
+          });
+        }
+
+        const btnReset = document.getElementById("btnResetSocratic");
+        if (btnReset) {
+          btnReset.addEventListener("click", () => {
+            if (this.isBusy) return;
+            delete this.store[String(this.curPillarId)];
+            this.saveStore();
+            this.getSession();
+            this.renderUI();
+            this.startDiagnostic();
+          });
+        }
+
+        const grid = document.getElementById("socraticSubskillsGrid");
+        if (grid) {
+          grid.addEventListener("click", (e) => {
+            const card = e.target.closest("[data-sub-idx]");
+            if (!card || this.isBusy) return;
+            const idx = parseInt(card.dataset.subIdx, 10);
+            const sess = this.getSession();
+            if (!Number.isNaN(idx) && idx >= 0 && idx < 4) {
+              sess.focus_idx = idx;
+              if (sess.phase === "diagnostic" && sess.started) {
+                sess.phase = "loop";
+              }
+              this.saveStore();
+              this.renderUI();
+            }
+          });
+        }
+
+        const cmdStrip = document.getElementById("socraticCmdStrip");
+        if (cmdStrip) {
+          cmdStrip.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-soc-cmd]");
+            if (!btn || this.isBusy) return;
+            this.handleCommand(btn.dataset.socCmd);
+          });
+        }
+
+        const form = document.getElementById("socraticInputForm");
+        if (form) {
+          form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const inp = document.getElementById("socraticInputField");
+            const val = (inp ? inp.value : "").trim();
+            if (!val || this.isBusy) return;
+            inp.value = "";
+            this.handleUserText(val);
+          });
+        }
+      },
+
+      renderAsciiSkillMap(sess = this.getSession()) {
+        const isEn = App.currentLang === "en";
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = Number(this.curPillarId || 1);
+        const pTitle = getPillarDisplayName(pid, !isEn);
+        const subs = sess.subskills || [];
+        const totalLvl = subs.reduce((acc, s) => acc + Number(s.level || 0), 0);
+        const pct = Math.round((totalLvl / 20) * 100);
+        const bar = (n, total = 10) => "\u2588".repeat(Math.max(0, Math.min(total, n))) + "\u2591".repeat(Math.max(0, total - Math.min(total, n)));
+        const overallSlots = Math.round((pct / 100) * 10);
+
+        const header = isEn
+          ? `Topic: Pillar #${pid} (${pTitle.slice(0, 26)})    overall: ${bar(overallSlots)} ${pct}%`
+          : `Chủ đề: Trụ cột #${pid} (${pTitle.slice(0, 24)})  tổng thể: ${bar(overallSlots)} ${pct}%`;
+        const sep = "-".repeat(66);
+        const rows = subs.map((s, idx) => {
+          const lvl = Number(s.level || 0);
+          const lbl = String(s.label || "").slice(0, 29).padEnd(30, " ");
+          const bStr = `[${bar(lvl * 2)}]  ${lvl}/5`;
+          let tag = "";
+          if (lvl >= 5) tag = isEn ? " * mastery" : " * tinh thông";
+          else if (lvl >= 4) tag = isEn ? " * independent" : " * làm chủ";
+          else if (idx === Number(sess.focus_idx || 0)) tag = isEn ? " <- current focus" : " <- trọng tâm";
+          return `${lbl}${bStr}${tag}`;
+        });
+        const scaleNote = isEn
+          ? "Scale: 0 unaware . 1 heard . 2 follow . 3 w/ help . 4 independent . 5 teach/edge"
+          : "Thang: 0 chưa biết . 1 nghe qua . 2 hiểu theo . 3 cần gợi ý . 4 độc lập . 5 giảng được";
+        return [header, sep, ...rows, sep, scaleNote].join("\n");
+      },
+
+      renderUI() {
+        const isVi = App.currentLang === "vi";
+        const sess = this.getSession();
+
+        const setEl = (id, txt) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = txt;
+        };
+        setEl("socraticTitleText", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
+        setEl("socraticSubText", isVi
+          ? "Ôn tập chủ động sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), AI hỏi gợi mở từng câu một để kiểm tra thực chiến Guideline & RCT."
+          : "Active post-reading mastery loop: 4-question diagnostic placement (levels 0–5), probing clinical questions one at a time, and final mastery exam.");
+
+        const phaseMapVi = {
+          diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
+          loop: `Luyện sâu Socratic • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
+          final_exam: "Kiểm tra Tổng hợp Cuối kỳ",
+          mastered: "ĐÃ LÀM CHỦ (≥ 4/5) ✓"
+        };
+        const phaseMapEn = {
+          diagnostic: `Diagnostic (${(sess.diag_step || 0) + 1}/4) • Target ≥ 4/5`,
+          loop: `Socratic Loop • Level: ${sess.difficulty}`,
+          final_exam: "Final Mixed Assessment",
+          mastered: "MASTERED (≥ 4/5) ✓"
+        };
+        const badgeText = !sess.started
+          ? (isVi ? "Mục tiêu: ≥ 4/5" : "Target: ≥ 4/5")
+          : (isVi ? phaseMapVi[sess.phase] : phaseMapEn[sess.phase]) || "";
+        setEl("socraticPhaseBadge", badgeText);
+
+        setEl("labelStartSocratic", sess.started
+          ? (isVi ? "Đang ôn tập" : "In Session")
+          : (isVi ? "Bắt đầu Chẩn đoán (4 câu)" : "Start Diagnostic (4 Qs)"));
+        const btnReset = document.getElementById("btnResetSocratic");
+        if (btnReset) btnReset.style.display = sess.started ? "inline-flex" : "none";
+        setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
+
+        setEl("btnSocCmdProgress", isVi ? "📊 Xem tiến độ" : "📊 Show progress");
+        setEl("btnSocCmdHarder", isVi ? "🔥 Khó hơn" : "🔥 Harder");
+        setEl("btnSocCmdEasier", isVi ? "🌱 Dễ hơn" : "🌱 Easier");
+        setEl("btnSocCmdTellMe", isVi ? "💡 Giải thích luôn" : "💡 Just tell me");
+        setEl("btnSocCmdSave", isVi ? "💾 Lưu trạng thái" : "💾 Save state");
+        setEl("btnSocCmdResume", isVi ? "📂 Khôi phục" : "📂 Resume state");
+
+        const btnHard = document.getElementById("btnSocCmdHarder");
+        const btnEasy = document.getElementById("btnSocCmdEasier");
+        if (btnHard) btnHard.classList.toggle("active", sess.difficulty === "hard");
+        if (btnEasy) btnEasy.classList.toggle("active", sess.difficulty === "easy");
+
+        const inp = document.getElementById("socraticInputField");
+        if (inp) {
+          inp.placeholder = isVi
+            ? "Nhập câu trả lời lập luận lâm sàng hoặc lệnh (vd: xem tiến độ, khó hơn, giải thích luôn)..."
+            : "Type your clinical reasoning or command (show progress, harder, just tell me)...";
+        }
+        setEl("labelSendSocratic", isVi ? "Trả lời" : "Submit");
+
+        // Render 4 Subskill Cards
+        const grid = document.getElementById("socraticSubskillsGrid");
+        if (grid) {
+          grid.innerHTML = (sess.subskills || []).map((s, idx) => {
+            const isFocus = idx === Number(sess.focus_idx || 0) && s.level < 4;
+            const isMast = Number(s.level || 0) >= 4;
+            return `<button type="button" class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}" data-sub-idx="${idx}">
+              <div class="socratic-subskill-top">
+                <span>${escapeHtml(s.label)}</span>
+                <span class="socratic-lvl-pill">${Number(s.level || 0)}/5</span>
+              </div>
+              <div class="socratic-bar-track">
+                <div class="socratic-bar-fill" style="width: ${Math.min(100, Number(s.level || 0) * 20)}%;"></div>
+              </div>
+            </button>`;
+          }).join("");
+        }
+
+        // Render ASCII Map
+        const pre = document.getElementById("socraticAsciiMap");
+        if (pre) pre.textContent = this.renderAsciiSkillMap(sess);
+
+        // Render Dialogue Messages
+        const box = document.getElementById("socraticMessagesList");
+        if (box) {
+          const msgs = sess.messages || [];
+          if (msgs.length === 0) {
+            box.innerHTML = `<div class="socratic-msg assistant"><div class="socratic-msg-bubble">${
+              isVi
+                ? "Bấm <strong>Bắt đầu Chẩn đoán (4 câu)</strong> để hệ thống kiểm tra mức độ nắm vững bài <strong>Trụ cột #" + this.curPillarId + "</strong> hôm nay bằng câu hỏi gợi mở (Socratic)."
+                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin active Socratic mastery testing on today's <strong>Pillar #" + this.curPillarId + "</strong>."
+            }</div></div>`;
+          } else {
+            box.innerHTML = msgs.map((m) => {
+              const bodyHtml = m.role === "assistant" && window.marked
+                ? marked.parse(m.text || "")
+                : escapeHtml(m.text || "");
+              return `<div class="socratic-msg ${m.role === "user" ? "user" : "assistant"}">
+                <div class="socratic-msg-bubble">${bodyHtml}</div>
+              </div>`;
+            }).join("");
+            box.scrollTop = box.scrollHeight;
+          }
+        }
+      },
+
+      async startDiagnostic() {
+        const sess = this.getSession();
+        sess.started = true;
+        sess.phase = "diagnostic";
+        sess.diag_step = 0;
+        sess.focus_idx = 0;
+        sess.attempts_on_current = 0;
+        sess.messages = [];
+        this.saveStore();
+        this.renderUI();
+        await this.callSocraticApi("start_diagnostic", "");
+      },
+
+      handleCommand(cmd) {
+        const isVi = App.currentLang === "vi";
+        const sess = this.getSession();
+        if (cmd === "show_progress") {
+          const mapTxt = "```text\n" + this.renderAsciiSkillMap(sess) + "\n```";
+          sess.messages.push({ role: "assistant", text: mapTxt });
+          this.saveStore();
+          this.renderUI();
+          return;
+        }
+        if (cmd === "harder" || cmd === "easier") {
+          sess.difficulty = cmd === "harder" ? "hard" : "easy";
+          this.saveStore();
+          this.renderUI();
+          showToast(isVi
+            ? (cmd === "harder" ? "Đã tăng độ khó Socratic." : "Đã giảm độ khó Socratic.")
+            : (cmd === "harder" ? "Difficulty set to harder." : "Difficulty set to easier."));
+          if (sess.started) {
+            this.callSocraticApi(cmd, cmd);
+          }
+          return;
+        }
+        if (cmd === "just_tell_me") {
+          if (!sess.started) {
+            this.startDiagnostic();
+            return;
+          }
+          sess.messages.push({ role: "user", text: isVi ? "Giải thích luôn câu hiện tại" : "just tell me" });
+          this.saveStore();
+          this.renderUI();
+          this.callSocraticApi("just_tell_me", "just tell me");
+          return;
+        }
+        if (cmd === "save_state") {
+          const statePayload = {
+            pid: this.curPillarId,
+            phase: sess.phase,
+            diag_step: sess.diag_step,
+            focus_idx: sess.focus_idx,
+            difficulty: sess.difficulty,
+            subskills: sess.subskills.map((s) => ({ id: s.id, level: s.level, checks: s.checks }))
+          };
+          const block = `[SOCRATIC_STATE]${JSON.stringify(statePayload)}[/SOCRATIC_STATE]`;
+          sess.messages.push({
+            role: "assistant",
+            text: (isVi
+              ? "**Mã trạng thái học tập đã lưu (sao chép để khôi phục bất kỳ lúc nào):**\n\n`resume from: "
+              : "**Saved Socratic state block (paste to resume later):**\n\n`resume from: ") + block + "`"
+          });
+          this.saveStore();
+          this.renderUI();
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(`resume from: ${block}`).catch(() => {});
+          }
+          showToast(isVi ? "Đã lưu & sao chép trạng thái Socratic!" : "Saved & copied Socratic state!");
+          return;
+        }
+        if (cmd === "resume_state") {
+          const pasted = window.prompt(isVi
+            ? "Dán đoạn mã 'resume from: [SOCRATIC_STATE]...' đã lưu:"
+            : "Paste your saved 'resume from: [SOCRATIC_STATE]...' block:");
+          if (pasted) this.resumeFromBlock(pasted);
+        }
+      },
+
+      resumeFromBlock(raw) {
+        const isVi = App.currentLang === "vi";
+        const m = String(raw || "").match(/\[SOCRATIC_STATE\](\{[\s\S]*?\})\[\/SOCRATIC_STATE\]/);
+        const jsonStr = m ? m[1] : String(raw || "").replace(/^resume\s*from:\s*/i, "").trim();
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (!parsed || !Array.isArray(parsed.subskills)) throw new Error("Invalid");
+          const sess = this.getSession();
+          sess.started = true;
+          sess.phase = parsed.phase || "loop";
+          sess.diag_step = Number(parsed.diag_step || 0);
+          sess.focus_idx = Number(parsed.focus_idx || 0);
+          sess.difficulty = parsed.difficulty || "normal";
+          sess.subskills = sess.subskills.map((s, idx) => ({
+            ...s,
+            level: Number(parsed.subskills[idx]?.level ?? s.level),
+            checks: Number(parsed.subskills[idx]?.checks ?? 0)
+          }));
+          sess.messages.push({
+            role: "assistant",
+            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n```text\n" : "State restored!\n\n```text\n") + this.renderAsciiSkillMap(sess) + "\n```"
+          });
+          this.saveStore();
+          this.renderUI();
+        } catch (_) {
+          showToast(isVi ? "Mã trạng thái không hợp lệ." : "Invalid Socratic state block.");
+        }
+      },
+
+      async handleUserText(text) {
+        const low = text.toLowerCase().trim();
+        if (/^(show progress|xem tiến độ|progress)$/i.test(low)) return this.handleCommand("show_progress");
+        if (/^(harder|khó hơn)$/i.test(low)) return this.handleCommand("harder");
+        if (/^(easier|dễ hơn)$/i.test(low)) return this.handleCommand("easier");
+        if (/^(just tell me|giải thích luôn|nói luôn)$/i.test(low)) return this.handleCommand("just_tell_me");
+        if (/^(save state|lưu trạng thái)$/i.test(low)) return this.handleCommand("save_state");
+        if (/^resume\s*from:/i.test(low)) return this.resumeFromBlock(text);
+
+        const sess = this.getSession();
+        if (!sess.started) sess.started = true;
+        sess.messages.push({ role: "user", text });
+        this.saveStore();
+        this.renderUI();
+        await this.callSocraticApi("answer", text);
+      },
+
+      async callSocraticApi(action, userAnswer) {
+        const b = App.selected || getTodaySingleBriefing();
+        const pid = Number((b && b.pillar_id) || this.curPillarId || 1);
+        const lang = App.currentLang || "vi";
+        const sess = this.getSession(pid, b);
+
+        this.isBusy = true;
+        const btnSend = document.getElementById("btnSendSocratic");
+        const btnStart = document.getElementById("btnStartSocratic");
+        if (btnSend) btnSend.disabled = true;
+        if (btnStart) btnStart.disabled = true;
+
+        const box = document.getElementById("socraticMessagesList");
+        const typing = document.createElement("div");
+        typing.className = "socratic-msg assistant";
+        typing.innerHTML = `<div class="socratic-msg-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> ${
+          lang === "en" ? "Formulating Socratic challenge..." : "Đang phân tích & đặt câu hỏi Socratic..."
+        }</div>`;
+        if (box) {
+          box.appendChild(typing);
+          box.scrollTop = box.scrollHeight;
+        }
+
+        try {
+          if (App.serverAvailable && !isFileOrigin()) {
+            try {
+              const res = await fetch("/api/socratic", {
+                method: "POST",
+                headers: getAuthHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({
+                  pillar_id: pid,
+                  briefing_id: b ? b.id : "",
+                  lang,
+                  action,
+                  user_answer: userAnswer,
+                  state: {
+                    phase: sess.phase,
+                    diag_step: sess.diag_step,
+                    focus_idx: sess.focus_idx,
+                    difficulty: sess.difficulty,
+                    attempts_on_current: sess.attempts_on_current,
+                    last_question: sess.last_question,
+                    subskills: sess.subskills
+                  }
+                })
+              });
+              const ct = res.headers.get("content-type") || "";
+              if (res.ok && ct.includes("application/json")) {
+                const d = await res.json();
+                if (d.ok && d.reply_markdown) {
+                  if (d.quota && window.EbmChat) {
+                    EbmChat.quota = d.quota;
+                    EbmChat.renderQuotaBadge();
+                  }
+                  const oldLevels = sess.subskills.map((s) => s.level);
+                  Object.assign(sess, d.state);
+                  sess.started = true;
+                  const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
+                  const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
+                  sess.messages.push({ role: "assistant", text: d.reply_markdown + suffixMap });
+                  this.saveStore();
+                  typing.remove();
+                  this.renderUI();
+                  return;
+                }
+              }
+            } catch (_) {}
+          }
+
+          // Client-side fallback (GitHub Pages / standalone): Groq API + Deterministic fallback
+          const out = await this.runClientSocratic(b, sess, action, userAnswer, lang);
+          const oldLevels = sess.subskills.map((s) => s.level);
+          Object.assign(sess, out.state);
+          sess.started = true;
+          const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
+          const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
+          sess.messages.push({ role: "assistant", text: out.reply + suffixMap });
+          this.saveStore();
+          typing.remove();
+          this.renderUI();
+        } catch (err) {
+          typing.remove();
+          sess.messages.push({ role: "assistant", text: `Error: ${err.message}` });
+          this.renderUI();
+        } finally {
+          this.isBusy = false;
+          if (btnSend) btnSend.disabled = false;
+          if (btnStart) btnStart.disabled = false;
+          const inp = document.getElementById("socraticInputField");
+          if (inp) inp.focus();
+        }
+      },
+
+      async runClientSocratic(primary, sess, action, userAnswer, lang) {
+        const isEn = lang === "en";
+        const key = window.EbmChat ? EbmChat._k() : "";
+        let reply = "";
+        let meta = { eval: "partial", new_level: sess.subskills[sess.focus_idx]?.level || 0, next_focus: sess.focus_idx, phase: sess.phase };
+
+        if (key && window.EbmChat && !(EbmChat.quota.exhausted || EbmChat.quota.used >= EbmChat.quota.limit)) {
+          EbmChat.quota.used += 1;
+          if (EbmChat.quota.used >= EbmChat.quota.limit) {
+            EbmChat.quota.exhausted = true;
+            EbmChat.quota.stop_reason = "Daily cap reached";
+          }
+          EbmChat.persistLocalQuota();
+
+          const botName = isEn ? "Med Bro" : "Soái ca Y khoa";
+          const trialsCompact = (primary?.landmark_trials || []).slice(0, 3).map((t) => ({
+            name: t.name, value: t.value, p: t.p,
+            changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
+            caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
+          }));
+          const sysPrompt = `You are '${botName}' acting as a strict Socratic Cardiology Tutor (maieutic method). Rules: 1) Ask strictly ONE probing clinical question at a time at the very end; never lecture or add hints after it. 2) No flattery; vague/partial answers do not raise levels. 3) Diagnostic phase ('diagnostic'): place each answer (0..3) and advance diag_step 0->3; transition to 'loop' after diag_step 3. 4) Teaching loop: if wrong/vague and action!='just_tell_me' and attempts<2, ask a narrower question exposing the gap without giving the answer; only explain 2-3 sentences when action=='just_tell_me' or attempts>=2 then immediately re-test from a new angle. 5) If right, occasionally play devil's advocate ('Are you sure? What if...') or spaced review. 6) When all 4 subskills>=4 enter 'final_exam'. Reply in ${isEn ? "concise academic English" : "concise clinical Vietnamese (white-coat = áo choàng trắng)"}. Append exact JSON on last line: <socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>`;
+          const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 1200)}`;
+          try {
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+              body: JSON.stringify({
+                model: "qwen/qwen3.8-27b",
+                messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
+                max_tokens: 550
+              })
+            });
+            if (res.ok) {
+              const d = await res.json();
+              let raw = String(d.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+              const m = raw.match(/<socratic_meta>\s*(\{[\s\S]*?\})\s*<\/socratic_meta>/);
+              if (m) {
+                try { meta = { ...meta, ...JSON.parse(m[1]) }; } catch (_) {}
+                raw = raw.slice(0, m.index).trim();
+              }
+              reply = raw;
+            }
+          } catch (_) {}
+        }
+
+        if (!reply) {
+          const t0 = (primary?.landmark_trials || [])[0] || {};
+          const curG = primary?.guideline_evolution?.current_guideline?.name || "2026 Guidelines";
+          if (action === "start_diagnostic") {
+            reply = isEn
+              ? `Starting 4-question diagnostic on **${curG}**: What is the biggest practice change compared with prior guidance?`
+              : `Bắt đầu 4 câu chẩn đoán nhanh cho **${curG}**: Thay đổi thực hành lớn nhất so với khuyến cáo cũ là gì?`;
+            meta = { eval: "start", new_level: 0, next_focus: 0, phase: "diagnostic" };
+          } else {
+            const words = String(userAnswer || "").trim().split(/\s+/).filter(Boolean).length;
+            const ok = words >= 7;
+            reply = ok
+              ? (isEn ? `Solid point — **are you sure** that still holds in **${t0.name || "borderline renal/acute cases"}** (${t0.caution_en || "check safety limits"})?` : `Lập luận có ý đúng — **bạn chắc chứ** khi áp dụng cho ca **${t0.name || "suy thận/giai đoạn cấp"}** (${t0.caution_vi || "kiểm tra giới hạn an toàn"})?`)
+              : (isEn ? "Too brief — what exact trial metric or exclusion criteria proves that in today's briefing?" : "Còn hơi chung chung — chỉ số RCT hoặc tiêu chuẩn loại trừ cụ thể nào trong bài hôm nay chứng minh điều đó?");
+            meta = { eval: ok ? "correct" : "partial", new_level: ok ? 2 : 1, next_focus: (sess.focus_idx + 1) % 4, phase: sess.phase };
+          }
+        }
+
+        const nextSubs = sess.subskills.map((s) => ({ ...s }));
+        let { phase, diag_step, focus_idx, attempts_on_current } = sess;
+        if (action !== "start_diagnostic") {
+          const ev = String(meta.eval || "partial").toLowerCase();
+          if (phase === "diagnostic") {
+            const placed = Math.max(0, Math.min(3, Number(meta.new_level || 1)));
+            nextSubs[diag_step].level = placed;
+            nextSubs[diag_step].checks = placed >= 2 ? 1 : 0;
+            if (diag_step < 3) {
+              diag_step += 1;
+              focus_idx = diag_step;
+            } else {
+              phase = "loop";
+              focus_idx = nextSubs.reduce((best, item, idx, arr) => (item.level < arr[best].level ? idx : best), 0);
+            }
+            attempts_on_current = 0;
+          } else {
+            const cur = nextSubs[focus_idx];
+            if (ev === "correct") {
+              cur.checks += 1;
+              attempts_on_current = 0;
+              if (phase === "loop" && cur.checks >= 2 && cur.level < 5) {
+                cur.level += 1;
+                cur.checks = 0;
+              } else if (phase === "final_exam") {
+                cur.level = Math.max(4, Math.min(5, cur.level + 1));
+                if (nextSubs.every((s) => s.level >= 5) || meta.phase === "mastered") phase = "mastered";
+              }
+              if (phase === "loop" && nextSubs.every((s) => s.level >= 4)) phase = "final_exam";
+              focus_idx = Math.abs(Number(meta.next_focus ?? ((focus_idx + 1) % 4))) % 4;
+            } else {
+              attempts_on_current += 1;
+              if (ev === "wrong") {
+                cur.checks = 0;
+                if (attempts_on_current >= 3 && cur.level > 0 && phase === "loop") cur.level -= 1;
+              }
+            }
+          }
+        }
+        return {
+          reply,
+          state: {
+            phase,
+            diag_step,
+            focus_idx,
+            difficulty: sess.difficulty,
+            attempts_on_current,
+            last_question: reply.slice(0, 360),
+            subskills: nextSubs
+          }
+        };
+      }
+    };
+
+    window.SocraticTutor = SocraticTutor;
     document.addEventListener("DOMContentLoaded", () => {
       EbmChat.init();
+      SocraticTutor.init();
       const btnTop = document.getElementById("btnBackToTop");
       if (btnTop) {
         const updateBackToTop = () => {

@@ -2428,6 +2428,389 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     }
 
 
+def _socratic_subskill_defs(primary: dict, lang: str) -> list[dict]:
+    """Build 4 concrete pillar-scoped subskills for Socratic Mastery."""
+    pid = primary.get("pillar_id") or 1
+    p_name = primary.get("pillar_name", f"Pillar #{pid}") if lang == "en" else primary.get("pillar_vi", f"Trụ cột #{pid}")
+    cur_g = (primary.get("guideline_evolution") or {}).get("current_guideline") or {}
+    g_name = str(cur_g.get("name", "2026 Guidelines"))[:60]
+    trials = primary.get("landmark_trials") or []
+    t_names = ", ".join(str(t.get("name", "")) for t in trials[:3] if t.get("name")) or p_name
+    if lang == "en":
+        return [
+            {"id": "guideline", "label": f"Guideline Shifts ({g_name[:32]})"},
+            {"id": "trials", "label": f"Landmark RCTs ({t_names[:32]})"},
+            {"id": "risk", "label": "Mechanism & Risk Thresholds"},
+            {"id": "safety", "label": "Bedside Safety & Contraindications"},
+        ]
+    return [
+        {"id": "guideline", "label": f"Tiến hóa Khuyến cáo ({g_name[:28]})"},
+        {"id": "trials", "label": f"RCT Bản lề ({t_names[:28]})"},
+        {"id": "risk", "label": "Cơ chế & Ngưỡng Nguy cơ"},
+        {"id": "safety", "label": "An toàn & Chống chỉ định"},
+    ]
+
+
+def _socratic_deterministic_fallback(
+    primary: dict,
+    state: dict,
+    lang: str,
+    action: str,
+    user_answer: str,
+) -> tuple[str, dict]:
+    """Zero-token deterministic Socratic question & strict evaluator fallback."""
+    is_en = lang == "en"
+    ge = primary.get("guideline_evolution") or {}
+    prior_g = (ge.get("prior_guideline") or {}).get("name", "Prior Guideline")
+    cur_g = (ge.get("current_guideline") or {}).get("name", "2026 Guideline")
+    steps = ge.get("steps") or []
+    trials = primary.get("landmark_trials") or []
+    pearls = primary.get("pearls") or []
+
+    phase = str(state.get("phase") or "diagnostic")
+    diag_step = int(state.get("diag_step") or 0)
+    focus_idx = int(state.get("focus_idx") or 0)
+    attempts = int(state.get("attempts_on_current") or 0)
+
+    def _q_for_slot(idx: int, step_offset: int = 0) -> str:
+        t0 = trials[step_offset % len(trials)] if trials else {}
+        s_last = steps[-1] if steps else {}
+        p0 = pearls[step_offset % len(pearls)] if pearls else {}
+        if idx == 0:
+            if is_en:
+                return f"Diagnostic check — Guideline Evolution: Compared with **{prior_g}**, what is the single biggest clinical shift introduced in **{cur_g}**, and why did earlier guidance change?"
+            return f"Kiểm tra chẩn đoán — Tiến hóa Khuyến cáo: So với **{prior_g}**, thay đổi thực hành lớn nhất trong **{cur_g}** là gì, và vì sao khuyến cáo cũ phải thay đổi?"
+        if idx == 1:
+            t_name = t0.get("name", "the primary RCT")
+            if is_en:
+                return f"In **{t_name}** ({t0.get('journal', 'NEJM/Lancet')}), what specific patient population benefitted from the primary outcome ({t0.get('value', 'effect')}), and which patients were excluded?"
+            return f"Trong thử nghiệm **{t_name}** ({t0.get('journal', '')}), nhóm bệnh nhân nào hưởng lợi rõ rệt ở kết cục chính ({t0.get('value', '')}), và nhóm nào bị loại trừ khỏi nghiên cứu?"
+        if idx == 2:
+            hint_desc = (s_last.get("desc_en" if is_en else "desc_vi") or "").strip()[:140]
+            if is_en:
+                return f"Mechanistic reasoning: How do the new risk thresholds or scoring criteria ({s_last.get('title_en', '2026 stratification')}) change your day-1 prescribing decision vs. older criteria?"
+            return f"Lập luận cơ chế: Ngưỡng phân tầng mới ({s_last.get('title_vi', 'phân tầng 2026')}) thay đổi quyết định dùng thuốc ngay từ ngày đầu như thế nào so với thang điểm cũ?"
+        caution = (t0.get("caution_en" if is_en else "caution_vi") or p0.get("text_en" if is_en else "text_vi") or "").strip()
+        if is_en:
+            return "Bedside trap: Give one concrete clinical scenario from today's briefing where applying the intensive target or drug aggressively would actually harm the patient."
+        return f"Bẫy lâm sàng tại giường bệnh: Hãy nêu 1 tình huống cụ thể trong bản tin hôm nay mà nếu áp dụng thuốc/đích điều trị mạnh tay quá mức lại gây hại cho người bệnh?"
+
+    if action == "start_diagnostic":
+        intro = (
+            f"### Med Bro — Socratic Learning Session\nI will ask 4 short diagnostic questions — one at a time — to map your starting level before drilling.\n\n**Question 1 (Guideline Evolution):** {_q_for_slot(0)}"
+            if is_en else
+            f"### Soái ca Y khoa — Học theo kiểu Socract\nTôi sẽ hỏi lần lượt 4 câu chẩn đoán nhanh (mỗi lần 1 câu, không gợi ý trước) để đo mức nền trước khi luyện sâu.\n\n**Câu 1 (Tiến hóa Khuyến cáo):** {_q_for_slot(0)}"
+        )
+        return intro, {"eval": "start", "new_level": 0, "next_focus": 0, "phase": "diagnostic"}
+
+    # Evaluate answer heuristically against keywords when offline
+    ans_low = (user_answer or "").lower().strip()
+    ref_blob = json.dumps({"steps": steps, "trials": trials, "pearls": pearls, "g": cur_g}, ensure_ascii=False).lower()
+    ref_tokens = [w for w in set(re.findall(r"[a-z0-9\-]{3,}|[à-ỹ]{3,}", ref_blob)) if len(w) >= 3]
+    overlap = sum(1 for tok in re.findall(r"[a-z0-9\-]{3,}|[à-ỹ]{3,}", ans_low) if tok in ref_tokens)
+    is_Substantive = len(ans_low.split()) >= 8 and overlap >= 2
+
+    if action == "just_tell_me" or attempts >= 2:
+        t0 = trials[0] if trials else {}
+        s_last = steps[-1] if steps else {}
+        explain = (
+            f"**Direct Summary:** {s_last.get('desc_en', cur_g)} Key caveat: {t0.get('caution_en', 'Check exclusions & renal/BP safety.')}"
+            if is_en else
+            f"**Giải thích ngắn:** {s_last.get('desc_vi', cur_g)} Lưu ý an toàn: {t0.get('caution_vi', 'Luôn kiểm tra chống chỉ định & chức năng thận/huyết áp.')}"
+        )
+        q_next = _q_for_slot((focus_idx + 1) % 4, attempts + 1)
+        msg = f"{explain}\n\n{'**Re-test from a new angle:**' if is_en else '**Kiểm tra lại từ góc độ mới:**'} {q_next}"
+        return msg, {"eval": "partial", "new_level": 2, "next_focus": focus_idx, "phase": phase if phase != "diagnostic" else "loop"}
+
+    if phase == "diagnostic":
+        lvl = 2 if is_Substantive else (1 if len(ans_low) > 6 else 0)
+        if diag_step < 3:
+            nxt = diag_step + 1
+            msg = (
+                f"Noted (placed at `{lvl}/5`).\n\n**Question {nxt + 1}:** {_q_for_slot(nxt, nxt)}"
+                if is_en else
+                f"Đã ghi nhận (mức khởi điểm `{lvl}/5`).\n\n**Câu {nxt + 1}:** {_q_for_slot(nxt, nxt)}"
+            )
+            return msg, {"eval": "correct" if is_Substantive else "partial", "new_level": lvl, "next_focus": nxt, "phase": "diagnostic"}
+        else:
+            msg = (
+                f"Diagnostic complete! Check the Skill Map above. Let's sharpen your weakest area first:\n\n{_q_for_slot(0, 1)}"
+                if is_en else
+                f"Hoàn tất chẩn đoán nền! Xem Bản đồ Kỹ năng phía trên. Giờ hãy mài sắc mảng cần củng cố nhất trước:\n\n{_q_for_slot(0, 1)}"
+            )
+            return msg, {"eval": "correct" if is_Substantive else "partial", "new_level": lvl, "next_focus": 0, "phase": "loop"}
+
+    if is_Substantive:
+        msg = (
+            f"Solid point — but **are you sure**? What happens to a frail patient with borderline eGFR or acute ischemia if we apply that rule blindly?"
+            if is_en else
+            f"Lập luận hợp lý — nhưng **bạn chắc chứ**? Nếu gặp bệnh nhân cao tuổi suy thận mạn hoặc đang thiếu máu cấp mà áp dụng y nguyên như vậy thì chuyện gì sẽ xảy ra?"
+        )
+        return msg, {"eval": "correct", "new_level": min(5, int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1)) + 1), "next_focus": (focus_idx + 1) % 4, "phase": "loop"}
+    else:
+        msg = (
+            "Not quite — look closely at the patient cohort and endpoint definition. Which specific subgroup failed or suffered harm in that situation?"
+            if is_en else
+            "Chưa đủ chặt — hãy nhìn lại tiêu chuẩn chọn bệnh và kết cục thử nghiệm: nhóm người bệnh cụ thể nào không được hưởng lợi hoặc dễ gặp biến cố trong tình huống đó?"
+        )
+        return msg, {"eval": "wrong", "new_level": int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1)), "next_focus": focus_idx, "phase": "loop"}
+
+
+def handle_socratic_turn(req_data: dict) -> dict:
+    """
+    Maieutic Socratic Tutor endpoint (POST /api/socratic) implementing /skill/self_learning_socratic.md:
+    - Strictly 4 subskills per Pillar with Levels 0..5.
+    - Diagnostic placement -> Socratic loop (1 question at a time, no flattery/spoon-feeding) -> Final Mastery Exam.
+    """
+    briefings = load_existing_briefings()
+    if not briefings:
+        return {"ok": False, "error": "No briefing data available."}
+
+    lang = "en" if str(req_data.get("lang", "vi")).lower() == "en" else "vi"
+    active_bid = str(req_data.get("briefing_id", "")).strip()
+    raw_pid = req_data.get("pillar_id")
+    active_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else 1
+
+    primary = next((b for b in briefings if b.get("id") == active_bid), None)
+    if not primary:
+        primary = next(
+            (b for b in briefings if int(b.get("pillar_id") or 0) == active_pid and "-main" in str(b.get("id", ""))),
+            briefings[0],
+        )
+
+    action = str(req_data.get("action", "answer")).strip().lower()
+    user_answer = str(req_data.get("user_answer", "")).strip()
+    state = req_data.get("state") if isinstance(req_data.get("state"), dict) else {}
+
+    subskills_defs = _socratic_subskill_defs(primary, lang)
+    raw_subs = state.get("subskills") if isinstance(state.get("subskills"), list) and len(state.get("subskills")) == 4 else []
+    subskills = []
+    for i, sdef in enumerate(subskills_defs):
+        prev = raw_subs[i] if i < len(raw_subs) and isinstance(raw_subs[i], dict) else {}
+        subskills.append({
+            "id": sdef["id"],
+            "label": sdef["label"],
+            "level": max(0, min(5, int(prev.get("level", 0) or 0))),
+            "checks": max(0, int(prev.get("checks", 0) or 0)),
+        })
+
+    phase = str(state.get("phase") or "diagnostic")
+    if phase not in ("diagnostic", "loop", "final_exam", "mastered"):
+        phase = "diagnostic"
+    diag_step = max(0, min(3, int(state.get("diag_step", 0) or 0)))
+    focus_idx = max(0, min(3, int(state.get("focus_idx", 0) or 0)))
+    difficulty = str(state.get("difficulty") or "normal")
+    attempts = max(0, int(state.get("attempts_on_current", 0) or 0))
+    last_question = str(state.get("last_question", ""))
+
+    if action == "start_diagnostic":
+        phase = "diagnostic"
+        diag_step = 0
+        focus_idx = 0
+        attempts = 0
+        for s in subskills:
+            s["level"] = 0
+            s["checks"] = 0
+
+    state_clean = {
+        "phase": phase,
+        "diag_step": diag_step,
+        "focus_idx": focus_idx,
+        "difficulty": difficulty,
+        "attempts_on_current": attempts,
+        "last_question": last_question,
+        "subskills": subskills,
+    }
+
+    provider, api_key = _resolve_chat_llm_key("")
+    quota = _load_chat_quota()
+
+    bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
+    trials_compact = [
+        {
+            "name": t.get("name"),
+            "value": t.get("value"),
+            "p": t.get("p"),
+            "changes": t.get("changes_en" if lang == "en" else "changes_vi", "")[:220],
+            "caution": t.get("caution_en" if lang == "en" else "caution_vi", "")[:220],
+        }
+        for t in (primary.get("landmark_trials") or [])[:3]
+    ]
+    ctx_blob = (
+        f"PILLAR #{primary.get('pillar_id')}: {primary.get('pillar_name' if lang == 'en' else 'pillar_vi')}\n"
+        f"PRIOR: {json.dumps((primary.get('guideline_evolution') or {}).get('prior_guideline', {}), ensure_ascii=False)}\n"
+        f"CURRENT: {json.dumps((primary.get('guideline_evolution') or {}).get('current_guideline', {}), ensure_ascii=False)}\n"
+        f"STEPS: {json.dumps((primary.get('guideline_evolution') or {}).get('steps', []), ensure_ascii=False)}\n"
+        f"TRIALS: {json.dumps(trials_compact, ensure_ascii=False)}\n"
+        f"PEARLS: {json.dumps((primary.get('pearls') or [])[:4], ensure_ascii=False)}\n"
+        f"EXCERPT: {(primary.get('part2_en_markdown' if lang == 'en' else 'part1_vi_markdown') or '')[:1300]}"
+    )
+
+    reply_text = ""
+    meta = {"eval": "partial", "new_level": subskills[focus_idx]["level"], "next_focus": focus_idx, "phase": phase}
+    used_llm = False
+
+    if api_key and not (quota["exhausted"] or quota["used"] >= quota["limit"]):
+        with _quota_lock:
+            quota = _load_chat_quota_unlocked()
+            quota["used"] += 1
+            if quota["used"] >= quota["limit"]:
+                quota["exhausted"] = True
+                quota["stop_reason"] = "Daily cap reached"
+            _save_chat_quota_unlocked(quota)
+
+        sys_prompt = (
+            f"You are '{bot_name}' acting as a strict Socratic Cardiology Tutor (following the maieutic method).\n"
+            "CORE RULES:\n"
+            "1. Teach by asking ONE sharp, clinical-reasoning question at a time — end IMMEDIATELY after the question; NEVER add hints, examples, or answers after it.\n"
+            "2. NO FLATTERY ('Great try!', 'Tuyệt vời!'). Be strict: vague or partially-correct answers do NOT earn level upgrades.\n"
+            "3. DIAGNOSTIC PHASE (`phase=='diagnostic'`): Do not teach yet. Briefly note diagnostic placement for the previous answer if any, then ask 1 probing diagnostic question for the next subskill (`diag_step` 0->1->2->3). When `diag_step==3` is answered, transition `phase` to `'loop'`.\n"
+            "4. TEACHING LOOP (`phase=='loop'`): If user is WRONG or VAGUE and `action!='just_tell_me'` and `attempts_on_current<2`, do NOT give the answer — ask a narrower question exposing the contradiction. Only explain directly (2-3 crisp sentences) if `action=='just_tell_me'` or `attempts_on_current>=2`, then immediately re-test from a new angle.\n"
+            "5. If user is RIGHT, play devil's advocate ('Are you sure? What if...') OR test an edge case/spaced review on another subskill.\n"
+            "6. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative bedside case blending multiple subskills; if passed cleanly, mark `phase` as `'mastered'`.\n"
+            "7. Difficulty adjustment: respect `difficulty` (`easy`, `normal`, `hard`).\n"
+            "8. Language: Reply strictly in " + ("concise academic English." if lang == "en" else "concise, natural clinical Vietnamese (dịch white-coat = áo choàng trắng).") + "\n"
+            "9. MANDATORY METADATA TAG AT VERY END OF RESPONSE:\n"
+            "Output exact JSON inside <socratic_meta>...</socratic_meta> on the last line:\n"
+            '{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}'
+        )
+
+        prompt_payload = (
+            f"STATE: {json.dumps(state_clean, ensure_ascii=False)}\n"
+            f"ACTION: {action}\n"
+            f"PREVIOUS_QUESTION: {last_question}\n"
+            f"USER_ANSWER: {user_answer or '(session start)'}\n\n"
+            f"CLINICAL_CONTEXT:\n{ctx_blob}"
+        )
+        try:
+            if provider == "groq":
+                payload = json.dumps({
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": [
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": prompt_payload},
+                    ],
+                    "max_tokens": 550,
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {api_key}",
+                        "User-Agent": "Mozilla/5.0",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    resp_j = json.loads(r.read().decode("utf-8"))
+                raw_out = resp_j["choices"][0]["message"]["content"]
+            else:
+                payload = json.dumps({
+                    "model": "gemini-3.8-flash",
+                    "system_instruction": sys_prompt,
+                    "input": prompt_payload,
+                    "generation_config": {"max_output_tokens": 550},
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    "https://generativelanguage.googleapis.com/v1beta/interactions",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": api_key,
+                        "Api-Revision": "2026-05-20",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    resp_j = json.loads(r.read().decode("utf-8"))
+                raw_out = resp_j.get("output_text") or ""
+
+            raw_out = re.sub(r"<think>[\s\S]*?</think>", "", raw_out).strip()
+            m_tag = re.search(r"<socratic_meta>\s*(\{[\s\S]*?\})\s*</socratic_meta>", raw_out)
+            if m_tag:
+                try:
+                    parsed_meta = json.loads(m_tag.group(1))
+                    if isinstance(parsed_meta, dict):
+                        meta.update(parsed_meta)
+                except Exception:
+                    pass
+                raw_out = raw_out[:m_tag.start()].strip()
+            reply_text = raw_out
+            used_llm = bool(reply_text)
+        except urllib.error.HTTPError as he:
+            if he.code in (429, 402, 403):
+                with _quota_lock:
+                    quota = _load_chat_quota_unlocked()
+                    quota["exhausted"] = True
+                    quota["stop_reason"] = f"HTTP {he.code}"
+                    _save_chat_quota_unlocked(quota)
+        except Exception as exc:
+            print(f"[Socratic Fallback] {exc}", file=sys.stderr)
+
+    if not reply_text:
+        reply_text, meta = _socratic_deterministic_fallback(primary, state_clean, lang, action, user_answer)
+
+    # Apply strict level & state machine progression
+    ev = str(meta.get("eval", "partial")).lower()
+    if action != "start_diagnostic":
+        if phase == "diagnostic":
+            placed = max(0, min(3, int(meta.get("new_level", 1) or 1)))
+            subskills[diag_step]["level"] = placed
+            subskills[diag_step]["checks"] = 1 if placed >= 2 else 0
+            if diag_step < 3:
+                diag_step += 1
+                focus_idx = diag_step
+                phase = "diagnostic"
+            else:
+                phase = "loop"
+                # Focus weakest subskill first
+                focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+            attempts = 0
+        elif phase in ("loop", "final_exam"):
+            cur_sub = subskills[focus_idx]
+            if ev == "correct":
+                cur_sub["checks"] += 1
+                attempts = 0
+                if phase == "loop" and cur_sub["checks"] >= 2 and cur_sub["level"] < 5:
+                    cur_sub["level"] += 1
+                    cur_sub["checks"] = 0
+                elif phase == "final_exam":
+                    cur_sub["level"] = max(4, min(5, cur_sub["level"] + 1))
+                    if str(meta.get("phase", "")).lower() == "mastered" or all(s["level"] >= 5 for s in subskills):
+                        phase = "mastered"
+                if all(s["level"] >= 4 for s in subskills) and phase == "loop":
+                    phase = "final_exam"
+                nxt = int(meta.get("next_focus", (focus_idx + 1) % 4) or 0) % 4
+                focus_idx = nxt
+            elif ev == "wrong":
+                attempts += 1
+                cur_sub["checks"] = 0
+                if attempts >= 3 and cur_sub["level"] > 0 and phase == "loop":
+                    cur_sub["level"] -= 1
+            else:
+                attempts += 1
+
+    new_state = {
+        "phase": phase,
+        "diag_step": diag_step,
+        "focus_idx": focus_idx,
+        "difficulty": difficulty,
+        "attempts_on_current": attempts,
+        "last_question": reply_text[:360],
+        "subskills": subskills,
+    }
+
+    return {
+        "ok": True,
+        "reply_markdown": reply_text,
+        "state": new_state,
+        "eval": ev,
+        "engine_used": f"{bot_name} • {'AI Socratic' if used_llm else 'EBM Socratic'}",
+        "quota": quota,
+    }
+
+
 class EBMRequestHandler(SimpleHTTPRequestHandler):
     """
     Serves the static HTML/JS/CSS files and provides local API endpoints:
@@ -2705,6 +3088,14 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/chat":
             try:
                 payload = answer_ebm_chat_query(req_data)
+                self._send_json(200 if payload.get("ok") else 400, payload)
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+
+        if path == "/api/socratic":
+            try:
+                payload = handle_socratic_turn(req_data)
                 self._send_json(200 if payload.get("ok") else 400, payload)
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
