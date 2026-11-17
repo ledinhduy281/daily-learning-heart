@@ -3552,25 +3552,19 @@
       color: var(--color-ink-secondary);
       flex-shrink: 0;
     }
-    .socratic-seg-track {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 4px;
-    }
-    .socratic-seg-cell {
-      height: 7px;
+    .socratic-bar-track {
+      height: 8px;
       border-radius: 999px;
       background: var(--color-hairline-cool);
-      position: relative;
-      transition: background-color 0.25s ease;
+      overflow: hidden;
     }
-    .socratic-seg-cell.target-mark {
-      box-shadow: inset 0 -2px 0 rgba(6, 95, 70, 0.25);
-    }
-    .socratic-seg-cell.filled {
+    .socratic-bar-fill {
+      height: 100%;
+      border-radius: 999px;
       background: var(--color-primary-deep);
+      transition: width 0.3s ease, background-color 0.25s ease;
     }
-    .socratic-seg-cell.filled.mastered {
+    .socratic-bar-fill.mastered {
       background: #059669;
     }
     .socratic-subskill-meta {
@@ -9525,12 +9519,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 deltaHtml = `<span class="socratic-delta-tag down">!</span>`;
               }
             }
-            const segs = [1, 2, 3, 4, 5].map((n) => {
-              const filled = n <= lvl ? " filled" : "";
-              const mastCls = isMast ? " mastered" : "";
-              const mark = n === 4 ? " target-mark" : "";
-              return `<span class="socratic-seg-cell${filled}${mastCls}${mark}"></span>`;
-            }).join("");
+            const pctWidth = Math.max(0, Math.min(100, lvl * 20));
             const statsLabel = isVi ? `Đã làm: ${ans} • Đúng: ${cor}` : `Done: ${ans} • Correct: ${cor}`;
             return `<button type="button" class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}${updateCls}" data-sub-idx="${idx}">
               <div class="socratic-subskill-top">
@@ -9543,7 +9532,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                   <span class="socratic-lvl-pill">${lvl}/5</span>
                 </span>
               </div>
-              <div class="socratic-seg-track">${segs}</div>
+              <div class="socratic-bar-track">
+                <div class="socratic-bar-fill${isMast ? " mastered" : ""}" style="width: ${pctWidth}%;"></div>
+              </div>
               <div class="socratic-subskill-meta">
                 <span>${escapeHtml(this.getLevelName(lvl, isVi))}${isFocus ? (isVi ? " • Trọng tâm" : " • Focus") : ""}</span>
                 <span>${escapeHtml(statsLabel)}</span>
