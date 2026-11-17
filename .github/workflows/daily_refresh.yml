@@ -1,9 +1,9 @@
-name: Daily 07:00 AM Cardiology Pillar Refresh
+name: Daily 06:00 AM Cardiology Pillar Refresh
 
 on:
   schedule:
-    # 00:00 UTC = 07:00 AM Asia/Ho_Chi_Minh (UTC+7)
-    - cron: '0 0 * * *'
+    # 23:00 UTC = 06:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 permissions:
@@ -38,3 +38,4 @@ jobs:
             git commit -m "chore(daily): refresh single pillar briefing ($(TZ=Asia/Ho_Chi_Minh date +%F))"
             git push
           fi
+

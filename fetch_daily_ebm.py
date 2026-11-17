@@ -190,7 +190,7 @@ PILLARS = [
 
 SYSTEM_INSTRUCTION = """You are acting as a clinical educator specializing in Internal Cardiology and Evidence-Based Medicine (EBM), capable of interpreting guidelines, RCTs, and meta-analyses, and explaining how recommendations are formed for early-career physicians. You interpret guidelines — you are not the author or a member of the writing committee of any guideline or trial. Never claim, even indirectly, to have participated in drafting, voting on, or deciding any recommendation (avoid phrases such as "we decided," "our committee considered," etc.).
 
-Goal: Produce a daily 7:00 AM professional briefing/lecture for early-career physicians (new graduates/residents) studying Internal Cardiology, designed to build evidence-based clinical reasoning and a clear understanding of the evolution of recommendations across guideline generations.
+Goal: Produce a daily 6:00 AM (Vietnam time) professional briefing/lecture for early-career physicians (new graduates/residents) studying Internal Cardiology, designed to build evidence-based clinical reasoning and a clear understanding of the evolution of recommendations across guideline generations.
 
 Tone and style: No greetings, no filler lead-ins (no "Good morning...", "Today we will explore...", "Below is today's briefing..."). Begin directly with the title and content. Target length: 1200–1600 Vietnamese words for Part 1 (roughly a 5–6 minute read at average pace).
 
@@ -653,7 +653,7 @@ def generate_briefing(
     return {
         "id": f"ebm-{today_str}-p{pillar['id']}-{int(time.time()) % 10000}",
         "date": today_str,
-        "time": "07:00 AM",
+        "time": "06:00 AM",
         "model_used": model_name,
         "pillar_id": pillar["id"],
         "pillar_name": pillar["name"],
@@ -735,7 +735,7 @@ def _build_pubmed_digest_briefing(pillar: dict, pubmed_refs: list, abstracts_map
         return {
             "id": f"ebm-{today_str}-p{pid}-{int(time.time()) % 10000}",
             "date": today_str,
-            "time": "07:00 AM",
+            "time": "06:00 AM",
             "model_used": "ebm-step0-curated+pubmed",
             "pillar_id": pid,
             "pillar_name": pillar["name"],
@@ -787,7 +787,7 @@ Chuyên đề thuộc **Trụ cột {pillar['id']}: {pillar['vi_name']}** ({pill
 
 ### 1. Văn kiện & Nguồn tham chiếu Trọng tâm
 - Tài liệu xác thực hàng đầu từ NCBI PubMed: {guideline_line}
-- Bản tin được tổng hợp tự động lúc **07:00 AM ({today_str})** qua cổng xác minh Step-0 NCBI PubMed E-utilities.
+- Bản tin được tổng hợp tự động lúc **06:00 AM ({today_str}, giờ Việt Nam)** qua cổng xác minh Step-0 NCBI PubMed E-utilities.
 
 ---
 
@@ -838,7 +838,7 @@ This briefing covers **Pillar #{pillar['id']}: {pillar['name']}**. Core clinical
     return {
         "id": f"ebm-{today_str}-p{pillar['id']}-{int(time.time()) % 10000}",
         "date": today_str,
-        "time": "07:00 AM",
+        "time": "06:00 AM",
         "model_used": "pubmed-step0-digest",
         "pillar_id": pillar["id"],
         "pillar_name": pillar["name"],
@@ -1372,7 +1372,7 @@ def _load_curated_pillar_briefing(pillar: dict, today_str: str) -> dict | None:
             return {
                 "id": f"ebm-{today_str}-p{pid}-main",
                 "date": today_str,
-                "time": "07:00 AM",
+                "time": "06:00 AM",
                 "model_used": "ebm-guideline-evolution-verified",
                 "pillar_id": pid,
                 "pillar_name": pillar["name"],
@@ -1503,7 +1503,7 @@ def refresh_today_briefing(
                 progress_cb=progress_cb,
             )
             new_briefing["date"] = today_str
-            new_briefing["time"] = new_briefing.get("time") or "07:00 AM"
+            new_briefing["time"] = new_briefing.get("time") or "06:00 AM"
             new_briefing["pillar_id"] = pid
             new_briefing["pillar_name"] = target_pillar["name"]
             new_briefing.setdefault("pillar_vi", target_pillar["vi_name"])
@@ -2843,7 +2843,7 @@ def main():
     parser.add_argument(
         "--serve",
         action="store_true",
-        help="Start local web server on http://127.0.0.1:8088 with auto 07:00 AM daily refresh.",
+        help="Start local web server on http://127.0.0.1:8088 with auto 06:00 AM (Vietnam time) daily refresh.",
     )
     parser.add_argument(
         "--refresh",
@@ -2853,7 +2853,7 @@ def main():
     parser.add_argument(
         "--install-launchd",
         action="store_true",
-        help="Install a macOS LaunchAgent to auto-refresh daily at 07:00 AM.",
+        help="Install a macOS LaunchAgent to auto-refresh daily at 06:00 AM (Vietnam time).",
     )
     parser.add_argument(
         "--port",
@@ -2884,9 +2884,14 @@ def main():
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>7</integer>
+        <integer>6</integer>
         <key>Minute</key>
         <integer>0</integer>
+    </dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>TZ</key>
+        <string>Asia/Ho_Chi_Minh</string>
     </dict>
     <key>StandardOutPath</key>
     <string>{log_path}</string>
@@ -2898,7 +2903,7 @@ def main():
 </plist>
 """
         plist_path.write_text(plist_content, encoding="utf-8")
-        print(f"[Launchd] Installed daily 07:00 AM job at: {plist_path}")
+        print(f"[Launchd] Installed daily 06:00 AM (Vietnam time) job at: {plist_path}")
         print(f"Load it now with: launchctl load -w {plist_path}")
         return
 
@@ -2930,25 +2935,26 @@ def main():
         with _feedback_lock:
             _load_feedback_data_unlocked()
 
-        def _daily_7am_worker():
+        def _daily_6am_worker():
+            vn_tz = datetime.timezone(datetime.timedelta(hours=7))
             while True:
                 try:
-                    now = datetime.datetime.now()
-                    if now.hour >= 7:
+                    now_vn = datetime.datetime.now(vn_tz)
+                    if now_vn.hour >= 6:
                         res = refresh_today_briefing(force=False)
                         if not res.get("already_up_to_date"):
                             b = res["briefing"]
-                            print(f"[Auto 07:00 AM Refresh] Generated today's briefing: Pillar #{b['pillar_id']} ({b['date']})")
+                            print(f"[Auto 06:00 AM VN Refresh] Generated today's briefing: Pillar #{b['pillar_id']} ({b['date']})")
                 except Exception as exc:
                     print(f"[Auto Refresh Warning] {exc}", file=sys.stderr)
                 time.sleep(60)
 
-        scheduler_thread = threading.Thread(target=_daily_7am_worker, daemon=True)
+        scheduler_thread = threading.Thread(target=_daily_6am_worker, daemon=True)
         scheduler_thread.start()
 
         server_addr = ("127.0.0.1", args.port)
         print("======================================================================")
-        print(" Xem Tim Mỗi Ngày (Daily Learning Heart) Server (Auto 07:00 AM Refresh)")
+        print(" Xem Tim Mỗi Ngày (Daily Learning Heart) Server (Auto 06:00 AM VN Refresh)")
         print(f" -> URL:           http://127.0.0.1:{args.port}")
         print(" -> Endpoints:     /api/status, /api/refresh, /api/refresh-stream,")
         print("                   /api/auth/*, /api/user/activity, /api/feedback")

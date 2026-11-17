@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Xem Tim Mỗi Ngày</title>
-  <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 7:00 AM theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
+  <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 6:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
@@ -3503,7 +3503,7 @@
       <div>
         <h1 class="hero-headline" id="heroHeadlineText">Xem Tim Mỗi Ngày</h1>
         <p class="hero-lead" id="heroLeadText">
-          Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.
+          Cập nhật lúc 06:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.
         </p>
       </div>
     </div>
@@ -3684,7 +3684,7 @@
           <div class="article-meta-left">
             <div class="meta-item-box">
               <i class="fa-regular fa-calendar"></i>
-              <span id="articleDateDisplay">2026-11-16 07:00 AM</span>
+              <span id="articleDateDisplay">2026-11-16 06:00 AM</span>
             </div>
             <div class="meta-item-box">
               <span class="badge-verified-tiny" id="articleVerifiedBadge"><i class="fa-solid fa-check"></i> Xác thực NCBI PubMed</span>
@@ -4101,7 +4101,7 @@
     const I18N = {
       vi: {
         heroHeadline: "Xem Tim Mỗi Ngày",
-        heroLead: "Cập nhật lúc 07:00 AM theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
+        heroLead: "Cập nhật lúc 06:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
         modeToday: "Bản tin Hôm nay (1 Trụ cột)",
         modeHistory: "Lịch sử & Sơ đồ Trụ cột",
         modeMeta: "Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu",
@@ -4152,7 +4152,7 @@
       },
       en: {
         heroHeadline: "Daily Learning Heart",
-        heroLead: "Updated daily at 07:00 AM on a 1-pillar-per-day ascending rotation. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
+        heroLead: "Updated daily at 06:00 AM (Vietnam time) on a 1-pillar-per-day ascending rotation. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
         modeToday: "Today's Briefing (1 Pillar)",
         modeHistory: "History & Pillar Roadmap",
         modeMeta: "Ascending Cycle 1 → 10 • Strictly 1 Pillar / Day",
@@ -4399,11 +4399,33 @@
         .trim();
     }
 
+    function getVietnamHourAndIso(dateObj = new Date()) {
+      try {
+        const fmt = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          hour12: false
+        });
+        const parts = Object.fromEntries(fmt.formatToParts(dateObj).map(p => [p.type, p.value]));
+        const yr = parts.year || String(dateObj.getUTCFullYear());
+        const mo = parts.month || String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+        const dy = parts.day || String(dateObj.getUTCDate()).padStart(2, "0");
+        const hr = (parseInt(parts.hour || "0", 10) || 0) % 24;
+        return { iso: `${yr}-${mo}-${dy}`, hour: hr };
+      } catch (_) {
+        const vn = new Date(dateObj.getTime() + 7 * 3600000);
+        const y = vn.getUTCFullYear();
+        const m = String(vn.getUTCMonth() + 1).padStart(2, "0");
+        const d = String(vn.getUTCDate()).padStart(2, "0");
+        return { iso: `${y}-${m}-${d}`, hour: vn.getUTCHours() };
+      }
+    }
+
     function getLocalIsoDate(dateObj = new Date()) {
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const d = String(dateObj.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
+      return getVietnamHourAndIso(dateObj).iso;
     }
 
     function parseIsoDateUtc(iso) {
@@ -4483,7 +4505,7 @@
       bindAppEvents();
       setLanguage(App.currentLang, { rerender: false, persist: false });
       bootstrapSessionAndStatus();
-      schedule7AmAutoRefresh();
+      scheduleDailyRefresh();
     });
 
     function loadSeedData() {
@@ -4672,8 +4694,8 @@
         setAuthenticatedUser(authedUser, App.token);
         hideAuthGate();
         renderAllViewsAfterAuth();
-        const now = new Date();
-        if (statusData && statusData.has_today_briefing === false && now.getHours() >= 7) {
+        const vnNow = getVietnamHourAndIso();
+        if (statusData && statusData.has_today_briefing === false && vnNow.hour >= 6) {
           refreshTodayData(false, true);
         }
       } else {
@@ -6006,7 +6028,7 @@
       Dom.articlePillarBadge.textContent = `${t("pillarWord")} #${b.pillar_id}: ${pName}`;
       const wkLabel = b.week_label || `${formatFullDdMmYyyy(b.date)}`;
       Dom.articleWeekBadge.textContent = isVi ? wkLabel : String(wkLabel).replace(/^Tuần\s+/i, "Week ");
-      Dom.articleDateDisplay.textContent = `${formatFullDdMmYyyy(b.date)} • ${b.time || "07:00 AM"}`;
+      Dom.articleDateDisplay.textContent = `${formatFullDdMmYyyy(b.date)} • ${b.time || "06:00 AM"}`;
       document.getElementById("articleVerifiedBadge").innerHTML = `<i class="fa-solid fa-check"></i> ${t("verifiedPubMed")}`;
 
       updateBookmarkButtonUI();
@@ -6526,12 +6548,12 @@
     /* ========================================================================
        DAILY 1-PILLAR REFRESH WITH LIVE SSE % PROGRESS
        ======================================================================== */
-    function schedule7AmAutoRefresh() {
+    function scheduleDailyRefresh() {
       setInterval(() => {
         if (!App.user || App.offlineDemo || isFileOrigin()) return;
-        const now = new Date();
-        if (now.getHours() >= 7) {
-          const todayIso = getLocalIsoDate(now);
+        const vnNow = getVietnamHourAndIso();
+        if (vnNow.hour >= 6) {
+          const todayIso = vnNow.iso;
           const todayPid = getPillarIdForDate(todayIso);
           const hasToday = App.briefings.some(
             b => b.date === todayIso && Number(b.pillar_id) === todayPid

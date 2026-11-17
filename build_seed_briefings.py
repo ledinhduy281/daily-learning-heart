@@ -40,7 +40,7 @@ def main() -> None:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     payload = {
-        "generated_at": "2026-11-16T07:00:00",
+        "generated_at": "2026-11-16T06:00:00",
         "default_model": "ebm-guideline-evolution-verified",
         "rotation_state": rotation_state,
         "pillars": PILLARS,

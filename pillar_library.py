@@ -212,7 +212,7 @@ def _make_briefing(
         "date": date,
         "short_date": _short_date(date),
         "week_label": week_label,
-        "time": "07:00 AM",
+        "time": "06:00 AM",
         "model_used": "ebm-guideline-evolution-verified",
         "pillar_id": pillar_id,
         "pillar_name": p["name"],
