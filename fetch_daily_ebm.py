@@ -2391,7 +2391,13 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         "has_server_key": True,
                     }
             except urllib.error.HTTPError as he:
-                if he.code in (429, 402, 403):
+                err_txt = ""
+                try:
+                    err_txt = he.read().decode("utf-8", errors="ignore").lower()
+                except Exception:
+                    pass
+                is_transient_tpm = (he.code == 429) and any(k in err_txt for k in ("per minute", "tpm", "rpm", "tokens per minute", "requests per minute")) and not any(d in err_txt for d in ("per day", "tpd", "rpd"))
+                if he.code in (402, 403) or (he.code == 429 and not is_transient_tpm):
                     with _quota_lock:
                         quota = _load_chat_quota_unlocked()
                         quota["exhausted"] = True
@@ -2401,7 +2407,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         f"> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP {he.code})** để bảo vệ hạn mức tài khoản. "
                         "Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n"
                     )
-                print(f"[Chat LLM HTTP {he.code}] Fallback to EBM", file=sys.stderr)
+                print(f"[Chat LLM HTTP {he.code}] Fallback to EBM (transient={is_transient_tpm})", file=sys.stderr)
             except Exception as exc:
                 print(f"[Chat LLM Fallback] {exc}", file=sys.stderr)
 
@@ -2660,19 +2666,19 @@ def handle_socratic_turn(req_data: dict) -> dict:
             _save_chat_quota_unlocked(quota)
 
         sys_prompt = (
-            f"You are '{bot_name}' acting as a strict Socratic Cardiology Tutor (following the maieutic method).\n"
+            f"You are '{bot_name}' acting as a strict Socratic Cardiology Tutor (maieutic method).\n"
             "CORE RULES:\n"
-            "1. Teach by asking ONE sharp, clinical-reasoning question at a time — end IMMEDIATELY after the question; NEVER add hints, examples, or answers after it.\n"
-            "2. NO FLATTERY ('Great try!', 'Tuyệt vời!'). Be strict: vague or partially-correct answers do NOT earn level upgrades.\n"
-            "3. DIAGNOSTIC PHASE (`phase=='diagnostic'`): Do not teach yet. Briefly note diagnostic placement for the previous answer if any, then ask 1 probing diagnostic question for the next subskill (`diag_step` 0->1->2->3). When `diag_step==3` is answered, transition `phase` to `'loop'`.\n"
-            "4. TEACHING LOOP (`phase=='loop'`): If user is WRONG or VAGUE and `action!='just_tell_me'` and `attempts_on_current<2`, do NOT give the answer — ask a narrower question exposing the contradiction. Only explain directly (2-3 crisp sentences) if `action=='just_tell_me'` or `attempts_on_current>=2`, then immediately re-test from a new angle.\n"
-            "5. If user is RIGHT, play devil's advocate ('Are you sure? What if...') OR test an edge case/spaced review on another subskill.\n"
-            "6. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative bedside case blending multiple subskills; if passed cleanly, mark `phase` as `'mastered'`.\n"
-            "7. Difficulty adjustment: respect `difficulty` (`easy`, `normal`, `hard`).\n"
-            "8. Language: Reply strictly in " + ("concise academic English." if lang == "en" else "concise, natural clinical Vietnamese (dịch white-coat = áo choàng trắng).") + "\n"
-            "9. MANDATORY METADATA TAG AT VERY END OF RESPONSE:\n"
-            "Output exact JSON inside <socratic_meta>...</socratic_meta> on the last line:\n"
-            '{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}'
+            "1. NO greetings, NO theatrical banter, NO flattery ('Chúc mừng', 'Great try!'), and NEVER mix random foreign words (strictly standard "
+            + ("English only)." if lang == "en" else "Vietnamese + standard medical English acronyms only; NEVER output Portuguese/Chinese).") + "\n"
+            "2. Teach by asking ONE sharp, clinical-reasoning question at a time — end IMMEDIATELY after the question; NEVER add hints, examples, or answers after it.\n"
+            "3. Strict grading: vague or partially-correct answers do NOT earn level upgrades.\n"
+            "4. DIAGNOSTIC PHASE (`phase=='diagnostic'`): Briefly place the previous answer if any (1 short phrase), then ask 1 probing diagnostic question for `subskills[diag_step]`. When `diag_step==3` is answered, transition `phase` to `'loop'`.\n"
+            "5. TEACHING LOOP (`phase=='loop'`): If user is WRONG/VAGUE and `action!='just_tell_me'` and `attempts_on_current<2`, do NOT give the answer — ask a narrower question exposing the gap. Only explain 2–3 crisp clinical sentences if `action=='just_tell_me'` or `attempts_on_current>=2`, then re-test from a new angle.\n"
+            "6. If user is RIGHT, play devil's advocate ('Bạn chắc chứ? Nếu...' / 'Are you sure? What if...') OR test an edge case / spaced review on another subskill.\n"
+            "7. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative clinical case; if passed cleanly, mark `phase` as `'mastered'`.\n"
+            "8. Respect `difficulty` (`easy`, `normal`, `hard`). Translate white-coat = 'áo choàng trắng'.\n"
+            "9. MANDATORY LAST LINE TAG:\n"
+            '<socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>'
         )
 
         prompt_payload = (
@@ -2690,6 +2696,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
                         {"role": "system", "content": sys_prompt},
                         {"role": "user", "content": prompt_payload},
                     ],
+                    "temperature": 0.2,
                     "max_tokens": 550,
                 }).encode("utf-8")
                 req = urllib.request.Request(
@@ -2739,7 +2746,13 @@ def handle_socratic_turn(req_data: dict) -> dict:
             reply_text = raw_out
             used_llm = bool(reply_text)
         except urllib.error.HTTPError as he:
-            if he.code in (429, 402, 403):
+            err_txt = ""
+            try:
+                err_txt = he.read().decode("utf-8", errors="ignore").lower()
+            except Exception:
+                pass
+            is_transient_tpm = (he.code == 429) and any(k in err_txt for k in ("per minute", "tpm", "rpm", "tokens per minute", "requests per minute")) and not any(d in err_txt for d in ("per day", "tpd", "rpd"))
+            if he.code in (402, 403) or (he.code == 429 and not is_transient_tpm):
                 with _quota_lock:
                     quota = _load_chat_quota_unlocked()
                     quota["exhausted"] = True

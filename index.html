@@ -8396,14 +8396,20 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             })
           });
           if (res.status === 429 || res.status === 402 || res.status === 403) {
-            this.quota.exhausted = true;
-            this.quota.stop_reason = `HTTP ${res.status}`;
-            this.persistLocalQuota();
-            return {
-              text: "",
-              engine: "",
-              blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
-            };
+            let errBody = "";
+            try { errBody = (await res.text()).toLowerCase(); } catch (_) {}
+            const isTransientTpm = res.status === 429 && /(per minute|tpm|rpm|tokens per minute|requests per minute)/.test(errBody) && !/(per day|tpd|rpd)/.test(errBody);
+            if (!isTransientTpm) {
+              this.quota.exhausted = true;
+              this.quota.stop_reason = `HTTP ${res.status}`;
+              this.persistLocalQuota();
+              return {
+                text: "",
+                engine: "",
+                blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
+              };
+            }
+            return { text: "", engine: "", blockedBanner: "" };
           }
           if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
           const d = await res.json();
@@ -9070,7 +9076,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
             caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
           }));
-          const sysPrompt = `You are '${botName}' acting as a strict Socratic Cardiology Tutor (maieutic method). Rules: 1) Ask strictly ONE probing clinical question at a time at the very end; never lecture or add hints after it. 2) No flattery; vague/partial answers do not raise levels. 3) Diagnostic phase ('diagnostic'): place each answer (0..3) and advance diag_step 0->3; transition to 'loop' after diag_step 3. 4) Teaching loop: if wrong/vague and action!='just_tell_me' and attempts<2, ask a narrower question exposing the gap without giving the answer; only explain 2-3 sentences when action=='just_tell_me' or attempts>=2 then immediately re-test from a new angle. 5) If right, occasionally play devil's advocate ('Are you sure? What if...') or spaced review. 6) When all 4 subskills>=4 enter 'final_exam'. Reply in ${isEn ? "concise academic English" : "concise clinical Vietnamese (white-coat = áo choàng trắng)"}. Append exact JSON on last line: <socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>`;
+          const sysPrompt = `You are '${botName}' acting as a strict Socratic Cardiology Tutor (maieutic method). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Ask strictly ONE probing clinical question at a time at the very end; never lecture or add hints after it. 3) Vague/partial answers do not raise levels. 4) Diagnostic phase ('diagnostic'): place each answer (0..3) and advance diag_step 0->3; transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong/vague and action!='just_tell_me' and attempts<2, ask a narrower question exposing the gap without giving the answer; only explain 2-3 sentences when action=='just_tell_me' or attempts>=2 then immediately re-test from a new angle. 6) If right, occasionally play devil's advocate ('Are you sure? What if...') or spaced review. 7) When all 4 subskills>=4 enter 'final_exam'. Translate white-coat = áo choàng trắng. Append exact JSON on last line: <socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>`;
           const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 1200)}`;
           try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -9079,6 +9085,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               body: JSON.stringify({
                 model: "qwen/qwen3.8-27b",
                 messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
+                temperature: 0.2,
                 max_tokens: 550
               })
             });
