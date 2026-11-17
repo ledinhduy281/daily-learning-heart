@@ -2457,116 +2457,394 @@ def _socratic_subskill_defs(primary: dict, lang: str) -> list[dict]:
     ]
 
 
+def _build_socratic_mcq(
+    primary: dict,
+    slot_idx: int,
+    variant_idx: int,
+    lang: str,
+    difficulty: str = "normal",
+) -> dict:
+    """Build a 4-option multiple-choice Socratic clinical question anchored in the active briefing."""
+    is_en = lang == "en"
+    pid = int(primary.get("pillar_id") or 1)
+    p_name = primary.get("pillar_name" if is_en else "pillar_vi") or f"Pillar #{pid}"
+    ge = primary.get("guideline_evolution") or {}
+    prior_g = (ge.get("prior_guideline") or {}).get("name") or ("Prior Guideline" if is_en else "Khuyến cáo cũ")
+    cur_g = (ge.get("current_guideline") or {}).get("name") or ("2026 Guidelines" if is_en else "Khuyến cáo 2026")
+    steps = ge.get("steps") or []
+    trials = primary.get("landmark_trials") or []
+    pearls = primary.get("pearls") or []
+
+    t0 = trials[variant_idx % len(trials)] if trials else {}
+    t_alt = trials[(variant_idx + 1) % len(trials)] if len(trials) > 1 else t0
+    s0 = steps[(len(steps) - 1 - variant_idx) % len(steps)] if (int(slot_idx) % 4 == 0 and steps) else (steps[variant_idx % len(steps)] if steps else {})
+    p0 = pearls[variant_idx % len(pearls)] if pearls else {}
+
+    def _clip(txt: str, limit: int = 165) -> str:
+        clean = " ".join(str(txt or "").split()).strip()
+        if len(clean) <= limit:
+            return clean
+        cut = clean[:limit].rsplit(" ", 1)[0].rstrip(" ,;:")
+        return f"{cut}..."
+
+    slot = int(slot_idx) % 4
+    hard_prefix = (
+        ("[Edge-Case Challenge] " if difficulty == "hard" else "")
+        if is_en
+        else ("[Tình huống Nâng cao] " if difficulty == "hard" else "")
+    )
+
+    if slot == 0:
+        s_title = _clip(s0.get("title_en" if is_en else "title_vi") or cur_g, 70)
+        s_desc = _clip(s0.get("desc_en" if is_en else "desc_vi") or cur_g, 155)
+        if is_en:
+            question = (
+                f"{hard_prefix}**Guideline Shift ({s_title}):** Compared with **{prior_g}**, "
+                f"which clinical change does **{cur_g}** emphasize most in today's Pillar #{pid} ({p_name})?"
+            )
+            correct_text = s_desc or f"Adopt {cur_g} criteria ({s_title}) with earlier risk-guided escalation."
+            distractors = [
+                f"Maintain the legacy {prior_g} stepwise threshold and defer therapy escalation for 12 months.",
+                "Reserve guideline-directed pharmacotherapy strictly for inpatients with acute hemodynamic shock.",
+                "Discontinue background therapy once a single outpatient biomarker normalizes.",
+            ]
+            explanation = f"{cur_g}: {s_desc}"
+        else:
+            question = (
+                f"{hard_prefix}**Tiến hóa Khuyến cáo ({s_title}):** So với **{prior_g}**, "
+                f"thay đổi thực hành trọng tâm nào được **{cur_g}** nhấn mạnh trong Trụ cột #{pid} ({p_name}) hôm nay?"
+            )
+            correct_text = s_desc or f"Áp dụng tiêu chuẩn {cur_g} ({s_title}) và phân tầng điều trị sớm theo nguy cơ."
+            distractors = [
+                f"Giữ nguyên ngưỡng điều trị cũ của {prior_g} và trì hoãn phối hợp thuốc ít nhất 12 tháng.",
+                "Chỉ dùng thuốc theo khuyến cáo cho bệnh nhân nội trú đang sốc tim hoặc tụt huyết áp cấp.",
+                "Ngưng toàn bộ thuốc nền ngay khi một chỉ số cận lâm sàng ngoại trú trở về mức bình thường.",
+            ]
+            explanation = f"{cur_g}: {s_desc}"
+    elif slot == 1:
+        t_name = str(t0.get("name") or "Landmark RCT")
+        t_val = str(t0.get("value") or ("statistically significant benefit" if is_en else "lợi ích có ý nghĩa thống kê"))
+        t_chg = _clip(t0.get("changes_en" if is_en else "changes_vi") or p0.get("text_en" if is_en else "text_vi") or cur_g, 155)
+        if is_en:
+            question = (
+                f"{hard_prefix}**Landmark RCT ({t_name} • {t_val}):** What clinical practice shift did **{t_name}** prove for this patient cohort?"
+            )
+            correct_text = t_chg
+            distractors = [
+                f"{t_name} showed neutral primary outcomes (p > 0.20) and advised against targeted escalation.",
+                f"{t_name} established monotherapy as superior to structured combination therapy in all high-risk subgroups.",
+                f"Benefit in {t_name} was confined purely to surrogate lab changes without hard clinical event reduction.",
+            ]
+            explanation = f"{t_name} ({t_val}): {t_chg}"
+        else:
+            question = (
+                f"{hard_prefix}**RCT Bản lề ({t_name} • {t_val}):** Kết quả của thử nghiệm **{t_name}** chứng minh bước ngoặt thực hành nào sau đây?"
+            )
+            correct_text = t_chg
+            distractors = [
+                f"{t_name} cho kết quả trung tính ở tiêu chí chính (p > 0,20), không khuyến cáo mở rộng chỉ định.",
+                f"{t_name} chứng minh đơn trị liệu liều thấp luôn vượt trội hơn phối hợp thuốc chuẩn ở nhóm nguy cơ cao.",
+                f"Lợi ích trong {t_name} chỉ ghi nhận trên xét nghiệm thay thế, không giảm biến cố lâm sàng cứng.",
+            ]
+            explanation = f"{t_name} ({t_val}): {t_chg}"
+    elif slot == 2:
+        p_txt = _clip(p0.get("text_en" if is_en else "text_vi") or s0.get("desc_en" if is_en else "desc_vi") or cur_g, 160)
+        s_title = _clip(s0.get("title_en" if is_en else "title_vi") or "2026 risk threshold", 70)
+        if is_en:
+            question = (
+                f"{hard_prefix}**Mechanisms & Risk Stratification ({s_title}):** Which bedside decision best reflects the pathophysiologic threshold emphasized today?"
+            )
+            correct_text = p_txt
+            distractors = [
+                "Rely solely on isolated age cutoffs while ignoring comorbidities, subclinical organ damage, or biomarkers.",
+                "Titrate therapy strictly by patient symptoms rather than risk-stratified targets or trial criteria.",
+                "Avoid additive combination pathways completely to eliminate follow-up lab monitoring.",
+            ]
+            explanation = p_txt
+        else:
+            question = (
+                f"{hard_prefix}**Cơ chế & Ngưỡng Nguy cơ ({s_title}):** Quyết định nào tại giường bệnh phản ánh đúng ngưỡng phân tầng và cơ chế bệnh sinh hôm nay?"
+            )
+            correct_text = p_txt
+            distractors = [
+                "Chỉ dựa vào ngưỡng tuổi đơn độc, bỏ qua bệnh đồng mắc, tổn thương cơ quan đích và dấu ấn sinh học.",
+                "Chỉ chỉnh liều dựa theo triệu chứng chủ quan của bệnh nhân, không cần đạt đích phân tầng nguy cơ.",
+                "Tránh phối hợp đa cơ chế hoàn toàn để không phải theo dõi sinh hóa và điện giải định kỳ.",
+            ]
+            explanation = p_txt
+    else:
+        caution_txt = _clip(
+            t0.get("caution_en" if is_en else "caution_vi")
+            or t_alt.get("caution_en" if is_en else "caution_vi")
+            or p0.get("text_en" if is_en else "text_vi")
+            or "",
+            160,
+        )
+        t_name = str(t0.get("name") or p_name)
+        if is_en:
+            question = (
+                f"{hard_prefix}**Bedside Safety Trap ({t_name}):** Which critical contraindication or safety safeguard must be verified before applying today's regimen aggressively?"
+            )
+            correct_text = caution_txt or "Re-check baseline eGFR, electrolytes, bleeding/hypotension risk, and key drug-drug interactions."
+            distractors = [
+                "None — intensive targets carry identical benefit-to-harm ratios regardless of renal function, frailty, or co-medications.",
+                "Double the initiating bolus in patients with advanced kidney dysfunction to overcome slower oral absorption.",
+                "Stop all cardioprotective baseline drugs first before checking eGFR, potassium, or blood pressure.",
+            ]
+            explanation = correct_text
+        else:
+            question = (
+                f"{hard_prefix}**Bẫy An toàn Lâm sàng ({t_name}):** Lưu ý an toàn hoặc chống chỉ định cốt lõi nào bắt buộc phải rà soát trước khi áp dụng phác đồ mạnh tay?"
+            )
+            correct_text = caution_txt or "Kiểm tra eGFR, điện giải, nguy cơ tụt huyết áp/xuất huyết và tương tác thuốc trước khi tăng liều."
+            distractors = [
+                "Không cần lưu ý — mọi mức eGFR, tuổi cao hay thuốc dùng kèm đều có cùng tỷ lệ lợi ích/nguy cơ như nhau.",
+                "Tăng gấp đôi liều khởi đầu ở người suy thận nặng để bù trừ khả năng thải trừ chậm.",
+                "Ngưng toàn bộ thuốc bảo vệ tim mạch nền trước khi kiểm tra creatinine, kali máu và huyết áp.",
+            ]
+            explanation = correct_text
+
+    keys = ["A", "B", "C", "D"]
+    correct_idx = (pid + slot + variant_idx) % 4
+    ordered = [None, None, None, None]
+    ordered[correct_idx] = correct_text
+    d_i = 0
+    for idx in range(4):
+        if ordered[idx] is None:
+            ordered[idx] = distractors[d_i]
+            d_i += 1
+    options = [{"key": keys[i], "text": ordered[i]} for i in range(4)]
+    return {
+        "question": question,
+        "options": options,
+        "correct_key": keys[correct_idx],
+        "explanation": explanation,
+    }
+
+
+def _strip_duplicate_mcq_lines(text: str) -> str:
+    """Remove trailing inline A/B/C/D option bullets from prose so options render solely in the MCQ button grid."""
+    lines = text.splitlines()
+    # Identify a block of lines starting with A/B/C/D markers at the end
+    opt_indices = [
+        i for i, ln in enumerate(lines)
+        if re.match(r"^\s*(?:[-*•]\s*)?(?:\*\*)?[ABCD](?:\*\*)?\s*[\)\.\:\-]\s+\S+", ln)
+    ]
+    if len(opt_indices) >= 4:
+        first_opt = opt_indices[-4]
+        kept = [ln for idx, ln in enumerate(lines) if idx < first_opt or idx not in opt_indices[-4:]]
+        cleaned = "\n".join(kept).strip()
+        if cleaned:
+            return cleaned
+    return text.strip()
+
+
+def _parse_inline_mcq_from_text(text: str) -> list[dict]:
+    """Extract A/B/C/D options if an LLM wrote them inline without populating <socratic_meta>.options."""
+    matches = re.findall(
+        r"^\s*(?:[-*•]\s*)?(?:\*\*)?([ABCD])(?:\*\*)?\s*[\)\.\:\-]\s+(.+?)\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    if len(matches) < 4:
+        return []
+    by_key = {}
+    for k, val in matches[-4:]:
+        by_key[k.upper()] = val.strip()
+    if all(k in by_key for k in ("A", "B", "C", "D")):
+        return [{"key": k, "text": by_key[k]} for k in ("A", "B", "C", "D")]
+    return []
+
+
+def _normalize_mcq_options(raw_opts) -> list[dict]:
+    """Validate and normalize a 4-option A/B/C/D list."""
+    if not isinstance(raw_opts, list) or len(raw_opts) != 4:
+        return []
+    out = []
+    expected = ("A", "B", "C", "D")
+    for idx, item in enumerate(raw_opts):
+        if isinstance(item, dict):
+            k = str(item.get("key") or expected[idx]).strip().upper()[:1]
+            txt = str(item.get("text") or "").strip()
+        elif isinstance(item, str):
+            k = expected[idx]
+            txt = re.sub(r"^[ABCD]\s*[\)\.\:\-]\s*", "", item.strip()).strip()
+        else:
+            return []
+        if k not in expected or not txt or txt == "...":
+            return []
+        out.append({"key": k, "text": txt})
+    keys_seen = {o["key"] for o in out}
+    if keys_seen != {"A", "B", "C", "D"}:
+        return []
+    out.sort(key=lambda o: expected.index(o["key"]))
+    return out
+
+
 def _socratic_deterministic_fallback(
     primary: dict,
     state: dict,
     lang: str,
     action: str,
     user_answer: str,
+    selected_choice: str = "",
 ) -> tuple[str, dict]:
-    """Zero-token deterministic Socratic question & strict evaluator fallback."""
+    """Zero-token deterministic Multiple-Choice Socratic question & strict evaluator fallback."""
     is_en = lang == "en"
-    ge = primary.get("guideline_evolution") or {}
-    prior_g = (ge.get("prior_guideline") or {}).get("name", "Prior Guideline")
-    cur_g = (ge.get("current_guideline") or {}).get("name", "2026 Guideline")
-    steps = ge.get("steps") or []
-    trials = primary.get("landmark_trials") or []
-    pearls = primary.get("pearls") or []
-
     phase = str(state.get("phase") or "diagnostic")
     diag_step = int(state.get("diag_step") or 0)
     focus_idx = int(state.get("focus_idx") or 0)
     attempts = int(state.get("attempts_on_current") or 0)
+    difficulty = str(state.get("difficulty") or "normal")
+    prev_correct_key = str(state.get("correct_key") or "").strip().upper()
+    prev_opts = _normalize_mcq_options(state.get("current_options"))
+    prev_correct_opt = next((o for o in prev_opts if o["key"] == prev_correct_key), None)
 
-    def _q_for_slot(idx: int, step_offset: int = 0) -> str:
-        t0 = trials[step_offset % len(trials)] if trials else {}
-        s_last = steps[-1] if steps else {}
-        p0 = pearls[step_offset % len(pearls)] if pearls else {}
-        if idx == 0:
-            if is_en:
-                return f"Diagnostic check — Guideline Evolution: Compared with **{prior_g}**, what is the single biggest clinical shift introduced in **{cur_g}**, and why did earlier guidance change?"
-            return f"Kiểm tra chẩn đoán — Tiến hóa Khuyến cáo: So với **{prior_g}**, thay đổi thực hành lớn nhất trong **{cur_g}** là gì, và vì sao khuyến cáo cũ phải thay đổi?"
-        if idx == 1:
-            t_name = t0.get("name", "the primary RCT")
-            if is_en:
-                return f"In **{t_name}** ({t0.get('journal', 'NEJM/Lancet')}), what specific patient population benefitted from the primary outcome ({t0.get('value', 'effect')}), and which patients were excluded?"
-            return f"Trong thử nghiệm **{t_name}** ({t0.get('journal', '')}), nhóm bệnh nhân nào hưởng lợi rõ rệt ở kết cục chính ({t0.get('value', '')}), và nhóm nào bị loại trừ khỏi nghiên cứu?"
-        if idx == 2:
-            hint_desc = (s_last.get("desc_en" if is_en else "desc_vi") or "").strip()[:140]
-            if is_en:
-                return f"Mechanistic reasoning: How do the new risk thresholds or scoring criteria ({s_last.get('title_en', '2026 stratification')}) change your day-1 prescribing decision vs. older criteria?"
-            return f"Lập luận cơ chế: Ngưỡng phân tầng mới ({s_last.get('title_vi', 'phân tầng 2026')}) thay đổi quyết định dùng thuốc ngay từ ngày đầu như thế nào so với thang điểm cũ?"
-        caution = (t0.get("caution_en" if is_en else "caution_vi") or p0.get("text_en" if is_en else "text_vi") or "").strip()
-        if is_en:
-            return "Bedside trap: Give one concrete clinical scenario from today's briefing where applying the intensive target or drug aggressively would actually harm the patient."
-        return f"Bẫy lâm sàng tại giường bệnh: Hãy nêu 1 tình huống cụ thể trong bản tin hôm nay mà nếu áp dụng thuốc/đích điều trị mạnh tay quá mức lại gây hại cho người bệnh?"
+    choice = (selected_choice or "").strip().upper()
+    if not choice and user_answer:
+        m_ch = re.match(r"^\s*([ABCD])(?:\b|[\.\:\)])", user_answer.strip(), re.I)
+        if m_ch:
+            choice = m_ch.group(1).upper()
+
+    is_choice_right = bool(choice and prev_correct_key and choice == prev_correct_key)
 
     if action == "start_diagnostic":
+        mcq = _build_socratic_mcq(primary, 0, 0, lang, difficulty)
         intro = (
-            f"### Med Bro — Socratic Learning Session\nI will ask 4 short diagnostic questions — one at a time — to map your starting level before drilling.\n\n**Question 1 (Guideline Evolution):** {_q_for_slot(0)}"
+            f"### Med Bro — Socratic Learning (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to map your mastery across 4 pillars.\n\n**Diagnostic Q1:** {mcq['question']}"
             if is_en else
-            f"### Soái ca Y khoa — Học theo kiểu Socract\nTôi sẽ hỏi lần lượt 4 câu chẩn đoán nhanh (mỗi lần 1 câu, không gợi ý trước) để đo mức nền trước khi luyện sâu.\n\n**Câu 1 (Tiến hóa Khuyến cáo):** {_q_for_slot(0)}"
+            f"### Soái ca Y khoa — Học theo kiểu Socract (Trắc nghiệm)\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** {mcq['question']}"
         )
-        return intro, {"eval": "start", "new_level": 0, "next_focus": 0, "phase": "diagnostic"}
+        return intro, {
+            "eval": "start",
+            "new_level": 0,
+            "next_focus": 0,
+            "phase": "diagnostic",
+            "options": mcq["options"],
+            "correct_key": mcq["correct_key"],
+        }
 
-    # Evaluate answer heuristically against keywords when offline
-    ans_low = (user_answer or "").lower().strip()
-    ref_blob = json.dumps({"steps": steps, "trials": trials, "pearls": pearls, "g": cur_g}, ensure_ascii=False).lower()
-    ref_tokens = [w for w in set(re.findall(r"[a-z0-9\-]{3,}|[à-ỹ]{3,}", ref_blob)) if len(w) >= 3]
-    overlap = sum(1 for tok in re.findall(r"[a-z0-9\-]{3,}|[à-ỹ]{3,}", ans_low) if tok in ref_tokens)
-    is_Substantive = len(ans_low.split()) >= 8 and overlap >= 2
+    if action in ("harder", "easier"):
+        mcq = _build_socratic_mcq(primary, focus_idx, attempts + 2, lang, difficulty)
+        msg = (
+            f"Adjusted difficulty to **{difficulty}**. Answer the next challenge below:\n\n{mcq['question']}"
+            if is_en else
+            f"Đã chuyển độ khó sang **{'Khó' if difficulty == 'hard' else 'Dễ'}**. Mời bạn chọn đáp án cho câu mới:\n\n{mcq['question']}"
+        )
+        return msg, {
+            "eval": "partial",
+            "new_level": int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1)),
+            "next_focus": focus_idx,
+            "phase": phase,
+            "options": mcq["options"],
+            "correct_key": mcq["correct_key"],
+        }
 
-    if action == "just_tell_me" or attempts >= 2:
-        t0 = trials[0] if trials else {}
-        s_last = steps[-1] if steps else {}
+    if action == "just_tell_me" or (not is_choice_right and attempts >= 2 and phase != "diagnostic"):
+        reveal_txt = (
+            f"{prev_correct_key} ({prev_correct_opt['text']})" if prev_correct_opt else prev_correct_key or "the guideline-concordant option"
+        )
+        prev_mcq = _build_socratic_mcq(primary, focus_idx, attempts, lang, difficulty)
         explain = (
-            f"**Direct Summary:** {s_last.get('desc_en', cur_g)} Key caveat: {t0.get('caution_en', 'Check exclusions & renal/BP safety.')}"
+            f"**Answer & Rationale ({prev_correct_key or 'Key'}):** **{reveal_txt}**. {prev_mcq['explanation']}"
             if is_en else
-            f"**Giải thích ngắn:** {s_last.get('desc_vi', cur_g)} Lưu ý an toàn: {t0.get('caution_vi', 'Luôn kiểm tra chống chỉ định & chức năng thận/huyết áp.')}"
+            f"**Giải thích đáp án đúng ({prev_correct_key or 'Đáp án'}):** **{reveal_txt}**. {prev_mcq['explanation']}"
         )
-        q_next = _q_for_slot((focus_idx + 1) % 4, attempts + 1)
-        msg = f"{explain}\n\n{'**Re-test from a new angle:**' if is_en else '**Kiểm tra lại từ góc độ mới:**'} {q_next}"
-        return msg, {"eval": "partial", "new_level": 2, "next_focus": focus_idx, "phase": phase if phase != "diagnostic" else "loop"}
+        next_slot = (focus_idx + 1) % 4
+        next_mcq = _build_socratic_mcq(primary, next_slot, attempts + 1, lang, difficulty)
+        msg = f"{explain}\n\n{'**Re-test from a new angle:**' if is_en else '**Kiểm tra lại từ góc độ mới:**'} {next_mcq['question']}"
+        return msg, {
+            "eval": "partial",
+            "new_level": 2,
+            "next_focus": next_slot,
+            "phase": phase if phase != "diagnostic" else "loop",
+            "options": next_mcq["options"],
+            "correct_key": next_mcq["correct_key"],
+        }
 
     if phase == "diagnostic":
-        lvl = 2 if is_Substantive else (1 if len(ans_low) > 6 else 0)
+        lvl = 2 if is_choice_right else 1
+        feedback_prefix = (
+            (f"Choice **{choice}** is accurate" if is_choice_right else f"Choice **{choice or '?'}** missed **{prev_correct_key}**")
+            if is_en else
+            (f"Chọn **{choice}** chính xác" if is_choice_right else f"Chọn **{choice or '?'}** chưa khớp với đáp án **{prev_correct_key}**")
+        )
         if diag_step < 3:
             nxt = diag_step + 1
+            mcq = _build_socratic_mcq(primary, nxt, nxt, lang, difficulty)
             msg = (
-                f"Noted (placed at `{lvl}/5`).\n\n**Question {nxt + 1}:** {_q_for_slot(nxt, nxt)}"
+                f"{feedback_prefix} (`{lvl}/5`).\n\n**Diagnostic Q{nxt + 1}:** {mcq['question']}"
                 if is_en else
-                f"Đã ghi nhận (mức khởi điểm `{lvl}/5`).\n\n**Câu {nxt + 1}:** {_q_for_slot(nxt, nxt)}"
+                f"{feedback_prefix} (`{lvl}/5`).\n\n**Câu Chẩn đoán {nxt + 1}:** {mcq['question']}"
             )
-            return msg, {"eval": "correct" if is_Substantive else "partial", "new_level": lvl, "next_focus": nxt, "phase": "diagnostic"}
-        else:
-            msg = (
-                f"Diagnostic complete! Check the Skill Map above. Let's sharpen your weakest area first:\n\n{_q_for_slot(0, 1)}"
-                if is_en else
-                f"Hoàn tất chẩn đoán nền! Xem Bản đồ Kỹ năng phía trên. Giờ hãy mài sắc mảng cần củng cố nhất trước:\n\n{_q_for_slot(0, 1)}"
-            )
-            return msg, {"eval": "correct" if is_Substantive else "partial", "new_level": lvl, "next_focus": 0, "phase": "loop"}
+            return msg, {
+                "eval": "correct" if is_choice_right else "wrong",
+                "new_level": lvl,
+                "next_focus": nxt,
+                "phase": "diagnostic",
+                "options": mcq["options"],
+                "correct_key": mcq["correct_key"],
+            }
+        # Complete diagnostic -> focus weakest subskill
+        temp_levels = [int(s.get("level", 0) or 0) for s in (state.get("subskills") or [{}]*4)]
+        temp_levels[3] = lvl
+        weakest = min(range(4), key=lambda idx: temp_levels[idx])
+        mcq = _build_socratic_mcq(primary, weakest, 1, lang, difficulty)
+        msg = (
+            f"{feedback_prefix}. Diagnostic complete! Let's drill your priority area first:\n\n{mcq['question']}"
+            if is_en else
+            f"{feedback_prefix}. Hoàn tất chẩn đoán nền! Giờ hãy luyện sâu vào mảng cần ưu tiên trước:\n\n{mcq['question']}"
+        )
+        return msg, {
+            "eval": "correct" if is_choice_right else "wrong",
+            "new_level": lvl,
+            "next_focus": weakest,
+            "phase": "loop",
+            "options": mcq["options"],
+            "correct_key": mcq["correct_key"],
+        }
 
-    if is_Substantive:
+    cur_lvl = int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1))
+    if is_choice_right:
+        nxt_slot = (focus_idx + 1) % 4
+        mcq = _build_socratic_mcq(primary, nxt_slot, attempts + 2, lang, difficulty)
         msg = (
-            f"Solid point — but **are you sure**? What happens to a frail patient with borderline eGFR or acute ischemia if we apply that rule blindly?"
+            f"**Correct ({choice}).** Ready for a follow-up twist?\n\n{mcq['question']}"
             if is_en else
-            f"Lập luận hợp lý — nhưng **bạn chắc chứ**? Nếu gặp bệnh nhân cao tuổi suy thận mạn hoặc đang thiếu máu cấp mà áp dụng y nguyên như vậy thì chuyện gì sẽ xảy ra?"
+            f"**Chính xác ({choice}).** Sẵn sàng cho câu hỏi phản biện tiếp theo chưa?\n\n{mcq['question']}"
         )
-        return msg, {"eval": "correct", "new_level": min(5, int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1)) + 1), "next_focus": (focus_idx + 1) % 4, "phase": "loop"}
-    else:
-        msg = (
-            "Not quite — look closely at the patient cohort and endpoint definition. Which specific subgroup failed or suffered harm in that situation?"
-            if is_en else
-            "Chưa đủ chặt — hãy nhìn lại tiêu chuẩn chọn bệnh và kết cục thử nghiệm: nhóm người bệnh cụ thể nào không được hưởng lợi hoặc dễ gặp biến cố trong tình huống đó?"
-        )
-        return msg, {"eval": "wrong", "new_level": int((state.get("subskills") or [{}])[focus_idx % 4].get("level", 1)), "next_focus": focus_idx, "phase": "loop"}
+        return msg, {
+            "eval": "correct",
+            "new_level": min(5, cur_lvl + 1),
+            "next_focus": nxt_slot,
+            "phase": phase,
+            "options": mcq["options"],
+            "correct_key": mcq["correct_key"],
+        }
+
+    # Wrong on teaching loop (attempts < 2): probe narrower angle WITHOUT revealing answer
+    mcq = _build_socratic_mcq(primary, focus_idx, attempts + 1, lang, difficulty)
+    msg = (
+        f"**Option {choice or '?'}** is a common clinical trap — re-examine the inclusion criteria and safety guardrails first, then try this targeted question:\n\n{mcq['question']}"
+        if is_en else
+        f"**Đáp án {choice or '?'}** là một bẫy lâm sàng hay gặp — hãy đối chiếu lại tiêu chuẩn chọn bệnh và giới hạn an toàn qua câu hỏi hẹp hơn sau:\n\n{mcq['question']}"
+    )
+    return msg, {
+        "eval": "wrong",
+        "new_level": cur_lvl,
+        "next_focus": focus_idx,
+        "phase": phase,
+        "options": mcq["options"],
+        "correct_key": mcq["correct_key"],
+    }
 
 
 def handle_socratic_turn(req_data: dict) -> dict:
     """
-    Maieutic Socratic Tutor endpoint (POST /api/socratic) implementing /skill/self_learning_socratic.md:
+    Maieutic Socratic Tutor endpoint (POST /api/socratic) implementing /skill/self_learning_socratic.md
+    with 4-option multiple-choice (A, B, C, D) questions:
     - Strictly 4 subskills per Pillar with Levels 0..5.
-    - Diagnostic placement -> Socratic loop (1 question at a time, no flattery/spoon-feeding) -> Final Mastery Exam.
+    - Diagnostic placement -> Socratic MCQ loop -> Final Mastery Exam.
     """
     briefings = load_existing_briefings()
     if not briefings:
@@ -2586,6 +2864,12 @@ def handle_socratic_turn(req_data: dict) -> dict:
 
     action = str(req_data.get("action", "answer")).strip().lower()
     user_answer = str(req_data.get("user_answer", "")).strip()
+    selected_choice = str(req_data.get("selected_choice", "")).strip().upper()
+    if not selected_choice and user_answer:
+        m_ch = re.match(r"^\s*([ABCD])(?:\b|[\.\:\)])", user_answer, re.I)
+        if m_ch:
+            selected_choice = m_ch.group(1).upper()
+
     state = req_data.get("state") if isinstance(req_data.get("state"), dict) else {}
 
     subskills_defs = _socratic_subskill_defs(primary, lang)
@@ -2608,15 +2892,28 @@ def handle_socratic_turn(req_data: dict) -> dict:
     difficulty = str(state.get("difficulty") or "normal")
     attempts = max(0, int(state.get("attempts_on_current", 0) or 0))
     last_question = str(state.get("last_question", ""))
+    prev_options = _normalize_mcq_options(state.get("current_options"))
+    prev_correct_key = str(state.get("correct_key") or "").strip().upper()
+    if prev_correct_key not in ("A", "B", "C", "D"):
+        prev_correct_key = ""
 
     if action == "start_diagnostic":
         phase = "diagnostic"
         diag_step = 0
         focus_idx = 0
         attempts = 0
+        prev_options = []
+        prev_correct_key = ""
         for s in subskills:
             s["level"] = 0
             s["checks"] = 0
+
+    is_choice_correct = bool(
+        action == "answer"
+        and selected_choice in ("A", "B", "C", "D")
+        and prev_correct_key in ("A", "B", "C", "D")
+        and selected_choice == prev_correct_key
+    )
 
     state_clean = {
         "phase": phase,
@@ -2625,6 +2922,8 @@ def handle_socratic_turn(req_data: dict) -> dict:
         "difficulty": difficulty,
         "attempts_on_current": attempts,
         "last_question": last_question,
+        "current_options": prev_options,
+        "correct_key": prev_correct_key,
         "subskills": subskills,
     }
 
@@ -2637,8 +2936,8 @@ def handle_socratic_turn(req_data: dict) -> dict:
             "name": t.get("name"),
             "value": t.get("value"),
             "p": t.get("p"),
-            "changes": t.get("changes_en" if lang == "en" else "changes_vi", "")[:220],
-            "caution": t.get("caution_en" if lang == "en" else "caution_vi", "")[:220],
+            "changes": (t.get("changes_en" if lang == "en" else "changes_vi") or "")[:220],
+            "caution": (t.get("caution_en" if lang == "en" else "caution_vi") or "")[:220],
         }
         for t in (primary.get("landmark_trials") or [])[:3]
     ]
@@ -2648,12 +2947,19 @@ def handle_socratic_turn(req_data: dict) -> dict:
         f"CURRENT: {json.dumps((primary.get('guideline_evolution') or {}).get('current_guideline', {}), ensure_ascii=False)}\n"
         f"STEPS: {json.dumps((primary.get('guideline_evolution') or {}).get('steps', []), ensure_ascii=False)}\n"
         f"TRIALS: {json.dumps(trials_compact, ensure_ascii=False)}\n"
-        f"PEARLS: {json.dumps((primary.get('pearls') or [])[:4], ensure_ascii=False)}\n"
-        f"EXCERPT: {(primary.get('part2_en_markdown' if lang == 'en' else 'part1_vi_markdown') or '')[:1300]}"
+        f"PEARLS: {json.dumps((primary.get('pearls') or [])[:3], ensure_ascii=False)}\n"
+        f"EXCERPT: {(primary.get('part2_en_markdown' if lang == 'en' else 'part1_vi_markdown') or '')[:700]}"
     )
 
     reply_text = ""
-    meta = {"eval": "partial", "new_level": subskills[focus_idx]["level"], "next_focus": focus_idx, "phase": phase}
+    meta = {
+        "eval": "partial",
+        "new_level": subskills[focus_idx]["level"],
+        "next_focus": focus_idx,
+        "phase": phase,
+        "options": [],
+        "correct_key": "",
+    }
     used_llm = False
 
     if api_key and not (quota["exhausted"] or quota["used"] >= quota["limit"]):
@@ -2666,26 +2972,30 @@ def handle_socratic_turn(req_data: dict) -> dict:
             _save_chat_quota_unlocked(quota)
 
         sys_prompt = (
-            f"You are '{bot_name}' acting as a strict Socratic Cardiology Tutor (maieutic method).\n"
+            f"You are '{bot_name}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D).\n"
             "CORE RULES:\n"
             "1. NO greetings, NO theatrical banter, NO flattery ('Chúc mừng', 'Great try!'), and NEVER mix random foreign words (strictly standard "
             + ("English only)." if lang == "en" else "Vietnamese + standard medical English acronyms only; NEVER output Portuguese/Chinese).") + "\n"
-            "2. Teach by asking ONE sharp, clinical-reasoning question at a time — end IMMEDIATELY after the question; NEVER add hints, examples, or answers after it.\n"
-            "3. Strict grading: vague or partially-correct answers do NOT earn level upgrades.\n"
-            "4. DIAGNOSTIC PHASE (`phase=='diagnostic'`): Briefly place the previous answer if any (1 short phrase), then ask 1 probing diagnostic question for `subskills[diag_step]`. When `diag_step==3` is answered, transition `phase` to `'loop'`.\n"
-            "5. TEACHING LOOP (`phase=='loop'`): If user is WRONG/VAGUE and `action!='just_tell_me'` and `attempts_on_current<2`, do NOT give the answer — ask a narrower question exposing the gap. Only explain 2–3 crisp clinical sentences if `action=='just_tell_me'` or `attempts_on_current>=2`, then re-test from a new angle.\n"
-            "6. If user is RIGHT, play devil's advocate ('Bạn chắc chứ? Nếu...' / 'Are you sure? What if...') OR test an edge case / spaced review on another subskill.\n"
-            "7. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative clinical case; if passed cleanly, mark `phase` as `'mastered'`.\n"
-            "8. Respect `difficulty` (`easy`, `normal`, `hard`). Translate white-coat = 'áo choàng trắng'.\n"
-            "9. MANDATORY LAST LINE TAG:\n"
-            '<socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>'
+            "2. Multiple-Choice format ONLY: put ONLY the feedback (if grading a choice) plus ONE sharp, clinical-reasoning MCQ stem in the prose body — NEVER write A/B/C/D options inside the prose body because the UI renders `meta.options` as interactive A/B/C/D buttons.\n"
+            "3. Deterministic choice grading: When `ACTION=='answer'` and `PREV_CORRECT_KEY` is provided, trust `IS_CHOICE_CORRECT` (`true` -> `eval:'correct'`, `false` -> `eval:'wrong'`).\n"
+            "4. DIAGNOSTIC PHASE (`phase=='diagnostic'`): Briefly place the previous choice (1 short phrase), then ask 1 probing MCQ for `subskills[diag_step]`. After `diag_step==3` is answered, transition `phase` to `'loop'`.\n"
+            "5. TEACHING LOOP (`phase=='loop'`): If `IS_CHOICE_CORRECT==false` and `action!='just_tell_me'` and `attempts_on_current<2`, explain briefly why the chosen distractor is a clinical trap WITHOUT revealing `PREV_CORRECT_KEY`, then ask a narrower probing MCQ. Only explain `PREV_CORRECT_KEY` in 2-3 crisp sentences if `action=='just_tell_me'` or `attempts_on_current>=2`, then re-test from a new angle.\n"
+            "6. If `IS_CHOICE_CORRECT==true`, briefly reinforce or challenge with a devil's advocate / edge-case MCQ.\n"
+            "7. FINAL EXAM (`phase=='final_exam'`): When all 4 subskills reach level >= 4, run an integrative clinical vignette MCQ; if passed cleanly, mark `phase` as `'mastered'` and set `options:[]`.\n"
+            "8. Vary `correct_key` naturally across A, B, C, D and make all 4 options plausible, concise (1 sentence each), and balanced in length. Translate white-coat = 'áo choàng trắng'.\n"
+            "9. MANDATORY VALID JSON ON LAST LINE (MUST contain 4 options A/B/C/D and `correct_key` whenever a question is asked):\n"
+            '<socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta>'
         )
 
+        state_for_prompt = {k: v for k, v in state_clean.items() if k != "current_options"}
         prompt_payload = (
-            f"STATE: {json.dumps(state_clean, ensure_ascii=False)}\n"
+            f"STATE: {json.dumps(state_for_prompt, ensure_ascii=False)}\n"
             f"ACTION: {action}\n"
+            f"USER_SELECTED_CHOICE: {selected_choice or '(none)'}\n"
+            f"PREV_CORRECT_KEY: {prev_correct_key or '(none)'}\n"
+            f"IS_CHOICE_CORRECT: {json.dumps(is_choice_correct)}\n"
             f"PREVIOUS_QUESTION: {last_question}\n"
-            f"USER_ANSWER: {user_answer or '(session start)'}\n\n"
+            f"USER_ANSWER_TEXT: {user_answer or '(session start)'}\n\n"
             f"CLINICAL_CONTEXT:\n{ctx_blob}"
         )
         try:
@@ -2697,7 +3007,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
                         {"role": "user", "content": prompt_payload},
                     ],
                     "temperature": 0.2,
-                    "max_tokens": 550,
+                    "max_tokens": 750,
                 }).encode("utf-8")
                 req = urllib.request.Request(
                     "https://api.groq.com/openai/v1/chat/completions",
@@ -2717,7 +3027,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
                     "model": "gemini-3.8-flash",
                     "system_instruction": sys_prompt,
                     "input": prompt_payload,
-                    "generation_config": {"max_output_tokens": 550},
+                    "generation_config": {"max_output_tokens": 750},
                 }).encode("utf-8")
                 req = urllib.request.Request(
                     "https://generativelanguage.googleapis.com/v1beta/interactions",
@@ -2743,8 +3053,26 @@ def handle_socratic_turn(req_data: dict) -> dict:
                 except Exception:
                     pass
                 raw_out = raw_out[:m_tag.start()].strip()
-            reply_text = raw_out
-            used_llm = bool(reply_text)
+
+            norm_opts = _normalize_mcq_options(meta.get("options"))
+            if not norm_opts:
+                norm_opts = _parse_inline_mcq_from_text(raw_out)
+            ckey = str(meta.get("correct_key") or "").strip().upper()[:1]
+            meta_phase = str(meta.get("phase") or phase).lower()
+
+            if meta_phase == "mastered" and action == "answer" and is_choice_correct:
+                reply_text = _strip_duplicate_mcq_lines(raw_out)
+                meta["options"] = []
+                meta["correct_key"] = ""
+                used_llm = bool(reply_text)
+            elif norm_opts and ckey in ("A", "B", "C", "D"):
+                reply_text = _strip_duplicate_mcq_lines(raw_out)
+                meta["options"] = norm_opts
+                meta["correct_key"] = ckey
+                used_llm = bool(reply_text)
+            else:
+                # Guarantee prose question and A/B/C/D buttons stay 100% paired
+                reply_text = ""
         except urllib.error.HTTPError as he:
             err_txt = ""
             try:
@@ -2762,13 +3090,17 @@ def handle_socratic_turn(req_data: dict) -> dict:
             print(f"[Socratic Fallback] {exc}", file=sys.stderr)
 
     if not reply_text:
-        reply_text, meta = _socratic_deterministic_fallback(primary, state_clean, lang, action, user_answer)
+        reply_text, meta = _socratic_deterministic_fallback(primary, state_clean, lang, action, user_answer, selected_choice)
 
-    # Apply strict level & state machine progression
+    # Apply strict level & deterministic MCQ state machine progression
     ev = str(meta.get("eval", "partial")).lower()
-    if action != "start_diagnostic":
+    if action == "answer" and prev_correct_key in ("A", "B", "C", "D") and selected_choice in ("A", "B", "C", "D"):
+        ev = "correct" if is_choice_correct else "wrong"
+        meta["eval"] = ev
+
+    if action == "answer":
         if phase == "diagnostic":
-            placed = max(0, min(3, int(meta.get("new_level", 1) or 1)))
+            placed = max(0, min(3, int(meta.get("new_level", 2 if ev == "correct" else 1) or (2 if ev == "correct" else 1))))
             subskills[diag_step]["level"] = placed
             subskills[diag_step]["checks"] = 1 if placed >= 2 else 0
             if diag_step < 3:
@@ -2777,7 +3109,6 @@ def handle_socratic_turn(req_data: dict) -> dict:
                 phase = "diagnostic"
             else:
                 phase = "loop"
-                # Focus weakest subskill first
                 focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
             attempts = 0
         elif phase in ("loop", "final_exam"):
@@ -2803,6 +3134,25 @@ def handle_socratic_turn(req_data: dict) -> dict:
                     cur_sub["level"] -= 1
             else:
                 attempts += 1
+    elif action == "just_tell_me":
+        attempts = 0
+        if phase == "diagnostic":
+            if diag_step < 3:
+                diag_step += 1
+                focus_idx = diag_step
+            else:
+                phase = "loop"
+                focus_idx = min(range(4), key=lambda idx: subskills[idx]["level"])
+
+    next_options = _normalize_mcq_options(meta.get("options"))
+    next_correct = str(meta.get("correct_key") or "").strip().upper()[:1]
+    if phase == "mastered":
+        next_options = []
+        next_correct = ""
+    elif not next_options or next_correct not in ("A", "B", "C", "D"):
+        fallback_mcq = _build_socratic_mcq(primary, focus_idx, diag_step + attempts + 1, lang, difficulty)
+        next_options = fallback_mcq["options"]
+        next_correct = fallback_mcq["correct_key"]
 
     new_state = {
         "phase": phase,
@@ -2811,15 +3161,20 @@ def handle_socratic_turn(req_data: dict) -> dict:
         "difficulty": difficulty,
         "attempts_on_current": attempts,
         "last_question": reply_text[:360],
+        "current_options": next_options,
+        "correct_key": next_correct,
+        "options_lang": lang,
         "subskills": subskills,
     }
 
     return {
         "ok": True,
         "reply_markdown": reply_text,
+        "options": next_options,
+        "correct_key": next_correct,
         "state": new_state,
         "eval": ev,
-        "engine_used": f"{bot_name} • {'AI Socratic' if used_llm else 'EBM Socratic'}",
+        "engine_used": f"{bot_name} • {'AI Socratic MCQ' if used_llm else 'EBM Socratic MCQ'}",
         "quota": quota,
     }
 

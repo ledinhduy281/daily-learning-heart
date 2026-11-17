@@ -3450,32 +3450,86 @@
     .socratic-msg-bubble p:last-child {
       margin-bottom: 0;
     }
-    .socratic-input-row {
+    .socratic-choices-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+    }
+    .socratic-choices-header {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--color-ink-secondary);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
-    .socratic-text-input {
-      flex: 1;
-      min-width: 0;
-      padding: 10px 12px;
+    .socratic-choices-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .socratic-choice-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 11px 13px;
       border: 1px solid var(--color-hairline);
       border-radius: var(--rounded-sm);
       background: var(--color-canvas);
       color: var(--color-ink);
       font-family: var(--font-sans);
-      font-size: 14px;
-      outline: none;
+      font-size: 13.5px;
+      line-height: 1.45;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     }
-    .socratic-text-input:focus {
+    .socratic-choice-btn:hover:not(:disabled) {
       border-color: var(--color-primary-deep);
+      background: rgba(62, 207, 142, 0.08);
+      box-shadow: 0 0 0 1px rgba(36, 180, 126, 0.25);
+      transform: translateY(-1px);
+    }
+    .socratic-choice-btn:hover:not(:disabled) .socratic-choice-badge {
+      background: var(--color-primary-deep);
+      color: #ffffff;
+      border-color: var(--color-primary-deep);
+    }
+    .socratic-choice-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .socratic-choice-badge {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      background: var(--color-canvas-soft);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-primary-deep);
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .socratic-choice-text {
+      flex: 1;
+      min-width: 0;
     }
 
     @media (max-width: 640px) {
       .socratic-card-supa {
         padding: 16px 14px;
       }
-      .socratic-subskills-grid {
+      .socratic-subskills-grid,
+      .socratic-choices-grid {
         grid-template-columns: 1fr;
       }
       .chat-fab-btn {
@@ -3993,7 +4047,7 @@
               <span class="socratic-target-badge" id="socraticPhaseBadge">Mục tiêu: ≥ 4/5</span>
             </div>
             <div class="socratic-sub-text" id="socraticSubText">
-              Ôn tập chủ động theo phương pháp gợi mở (Socratic): chẩn đoán 4 mảng kiến thức nền (0–5), truy vấn từng câu hỏi để hiểu bản chất thay đổi Guideline &amp; RCT.
+              Ôn tập chủ động sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5) và luyện sâu bằng câu hỏi trắc nghiệm gợi mở A/B/C/D (Socratic) về Guideline &amp; RCT.
             </div>
           </div>
           <div class="socratic-hdr-actions">
@@ -4023,13 +4077,10 @@
 
         <div class="socratic-dialogue-box" id="socraticMessagesList"></div>
 
-        <form class="socratic-input-row" id="socraticInputForm">
-          <input type="text" id="socraticInputField" class="socratic-text-input" placeholder="Nhập câu trả lời, lập luận lâm sàng hoặc lệnh (vd: show progress, harder, just tell me)..." autocomplete="off">
-          <button type="submit" class="btn btn-primary-green" id="btnSendSocratic">
-            <i class="fa-solid fa-paper-plane"></i>
-            <span id="labelSendSocratic">Trả lời</span>
-          </button>
-        </form>
+        <div class="socratic-choices-wrap" id="socraticChoicesWrap" style="display: none;">
+          <div class="socratic-choices-header" id="socraticChoicesHeader">Chọn 1 đáp án trắc nghiệm (A, B, C hoặc D):</div>
+          <div class="socratic-choices-grid" id="socraticChoicesGrid"></div>
+        </div>
       </section>
 
       <!-- 5. PRODUCT FEEDBACK BAR (BOTTOM ARTICLE PROMPT) -->
@@ -8541,6 +8592,206 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(this.store));
       },
 
+      clipText(txt, limit = 160) {
+        const clean = String(txt || "").replace(/\s+/g, " ").trim();
+        if (clean.length <= limit) return clean;
+        return clean.slice(0, limit).replace(/\s+\S*$/, "").replace(/[,;:\s]+$/, "") + "...";
+      },
+
+      normalizeMcqOptions(rawOpts) {
+        if (!Array.isArray(rawOpts) || rawOpts.length !== 4) return [];
+        const expected = ["A", "B", "C", "D"];
+        const out = [];
+        for (let i = 0; i < 4; i++) {
+          const item = rawOpts[i];
+          let k = expected[i];
+          let txt = "";
+          if (item && typeof item === "object") {
+            k = String(item.key || expected[i]).trim().toUpperCase().slice(0, 1);
+            txt = String(item.text || "").trim();
+          } else if (typeof item === "string") {
+            txt = item.trim().replace(/^[ABCD]\s*[\)\.\:\-]\s*/i, "").trim();
+          } else {
+            return [];
+          }
+          if (!expected.includes(k) || !txt || txt === "...") return [];
+          out.push({ key: k, text: txt });
+        }
+        const seen = new Set(out.map((o) => o.key));
+        if (seen.size !== 4) return [];
+        out.sort((a, b) => expected.indexOf(a.key) - expected.indexOf(b.key));
+        return out;
+      },
+
+      parseInlineMcqFromText(text) {
+        const lines = String(text || "").split(/\r?\n/);
+        const matched = [];
+        for (const ln of lines) {
+          const m = ln.match(/^\s*(?:[-*•]\s*)?(?:\*\*)?([ABCD])(?:\*\*)?\s*[\)\.\:\-]\s+(.+?)\s*$/);
+          if (m) matched.push({ key: m[1].toUpperCase(), text: m[2].trim() });
+        }
+        if (matched.length < 4) return [];
+        return this.normalizeMcqOptions(matched.slice(-4));
+      },
+
+      stripDuplicateMcqLines(text) {
+        const lines = String(text || "").split(/\r?\n/);
+        const optIdx = [];
+        lines.forEach((ln, idx) => {
+          if (/^\s*(?:[-*•]\s*)?(?:\*\*)?[ABCD](?:\*\*)?\s*[\)\.\:\-]\s+\S+/.test(ln)) {
+            optIdx.push(idx);
+          }
+        });
+        if (optIdx.length >= 4) {
+          const dropSet = new Set(optIdx.slice(-4));
+          const cleaned = lines.filter((_, idx) => !dropSet.has(idx)).join("\n").trim();
+          if (cleaned) return cleaned;
+        }
+        return String(text || "").trim();
+      },
+
+      buildDeterministicMcq(primary, slotIdx, variantIdx, lang, difficulty = "normal") {
+        const isEn = lang === "en";
+        const pid = Number(primary?.pillar_id || this.curPillarId || 1);
+        const pName = (isEn ? primary?.pillar_name : primary?.pillar_vi) || getPillarDisplayName(pid, !isEn);
+        const ge = primary?.guideline_evolution || {};
+        const priorG = ge?.prior_guideline?.name || (isEn ? "Prior Guideline" : "Khuyến cáo cũ");
+        const curG = ge?.current_guideline?.name || (isEn ? "2026 Guidelines" : "Khuyến cáo 2026");
+        const steps = Array.isArray(ge.steps) ? ge.steps : [];
+        const trials = Array.isArray(primary?.landmark_trials) ? primary.landmark_trials : [];
+        const pearls = Array.isArray(primary?.pearls) ? primary.pearls : [];
+
+        const slot = ((Number(slotIdx) % 4) + 4) % 4;
+        const t0 = trials.length ? trials[variantIdx % trials.length] : {};
+        const tAlt = trials.length > 1 ? trials[(variantIdx + 1) % trials.length] : t0;
+        const s0 = steps.length
+          ? steps[slot === 0 ? (((steps.length - 1 - variantIdx) % steps.length) + steps.length) % steps.length : (variantIdx % steps.length)]
+          : {};
+        const p0 = pearls.length ? pearls[variantIdx % pearls.length] : {};
+        const hardPrefix = difficulty === "hard"
+          ? (isEn ? "[Edge-Case Challenge] " : "[Tình huống Nâng cao] ")
+          : "";
+
+        let question = "";
+        let correctText = "";
+        let distractors = [];
+        let explanation = "";
+
+        if (slot === 0) {
+          const sTitle = this.clipText((isEn ? s0.title_en : s0.title_vi) || curG, 70);
+          const sDesc = this.clipText((isEn ? s0.desc_en : s0.desc_vi) || curG, 155);
+          if (isEn) {
+            question = `${hardPrefix}**Guideline Shift (${sTitle}):** Compared with **${priorG}**, which clinical change does **${curG}** emphasize most in today's Pillar #${pid} (${pName})?`;
+            correctText = sDesc || `Adopt ${curG} criteria (${sTitle}) with earlier risk-guided escalation.`;
+            distractors = [
+              `Maintain the legacy ${priorG} stepwise threshold and defer therapy escalation for 12 months.`,
+              "Reserve guideline-directed pharmacotherapy strictly for inpatients with acute hemodynamic shock.",
+              "Discontinue background therapy once a single outpatient biomarker normalizes."
+            ];
+            explanation = `${curG}: ${sDesc}`;
+          } else {
+            question = `${hardPrefix}**Tiến hóa Khuyến cáo (${sTitle}):** So với **${priorG}**, thay đổi thực hành trọng tâm nào được **${curG}** nhấn mạnh trong Trụ cột #${pid} (${pName}) hôm nay?`;
+            correctText = sDesc || `Áp dụng tiêu chuẩn ${curG} (${sTitle}) và phân tầng điều trị sớm theo nguy cơ.`;
+            distractors = [
+              `Giữ nguyên ngưỡng điều trị cũ của ${priorG} và trì hoãn phối hợp thuốc ít nhất 12 tháng.`,
+              "Chỉ dùng thuốc theo khuyến cáo cho bệnh nhân nội trú đang sốc tim hoặc tụt huyết áp cấp.",
+              "Ngưng toàn bộ thuốc nền ngay khi một chỉ số cận lâm sàng ngoại trú trở về mức bình thường."
+            ];
+            explanation = `${curG}: ${sDesc}`;
+          }
+        } else if (slot === 1) {
+          const tName = String(t0.name || "Landmark RCT");
+          const tVal = String(t0.value || (isEn ? "significant primary benefit" : "lợi ích rõ ở tiêu chí chính"));
+          const tChg = this.clipText((isEn ? t0.changes_en : t0.changes_vi) || (isEn ? p0.text_en : p0.text_vi) || curG, 155);
+          if (isEn) {
+            question = `${hardPrefix}**Landmark RCT (${tName} • ${tVal}):** What clinical practice shift did **${tName}** prove for this patient cohort?`;
+            correctText = tChg;
+            distractors = [
+              `${tName} showed neutral primary outcomes (p > 0.20) and advised against targeted escalation.`,
+              `${tName} established monotherapy as superior to structured combination therapy in all high-risk subgroups.`,
+              `Benefit in ${tName} was confined purely to surrogate lab changes without hard clinical event reduction.`
+            ];
+            explanation = `${tName} (${tVal}): ${tChg}`;
+          } else {
+            question = `${hardPrefix}**RCT Bản lề (${tName} • ${tVal}):** Kết quả của thử nghiệm **${tName}** chứng minh bước ngoặt thực hành nào sau đây?`;
+            correctText = tChg;
+            distractors = [
+              `${tName} cho kết quả trung tính ở tiêu chí chính (p > 0,20), không khuyến cáo mở rộng chỉ định.`,
+              `${tName} chứng minh đơn trị liệu liều thấp luôn vượt trội hơn phối hợp thuốc chuẩn ở nhóm nguy cơ cao.`,
+              `Lợi ích trong ${tName} chỉ ghi nhận trên xét nghiệm thay thế, không giảm biến cố lâm sàng cứng.`
+            ];
+            explanation = `${tName} (${tVal}): ${tChg}`;
+          }
+        } else if (slot === 2) {
+          const pTxt = this.clipText((isEn ? p0.text_en : p0.text_vi) || (isEn ? s0.desc_en : s0.desc_vi) || curG, 160);
+          const sTitle = this.clipText((isEn ? s0.title_en : s0.title_vi) || "2026 stratification", 70);
+          if (isEn) {
+            question = `${hardPrefix}**Mechanisms & Risk Stratification (${sTitle}):** Which bedside decision best reflects the pathophysiologic threshold emphasized today?`;
+            correctText = pTxt;
+            distractors = [
+              "Rely solely on isolated age cutoffs while ignoring comorbidities, subclinical organ damage, or biomarkers.",
+              "Titrate therapy strictly by patient symptoms rather than risk-stratified targets or trial criteria.",
+              "Avoid additive combination pathways completely to eliminate follow-up lab monitoring."
+            ];
+            explanation = pTxt;
+          } else {
+            question = `${hardPrefix}**Cơ chế & Ngưỡng Nguy cơ (${sTitle}):** Quyết định nào tại giường bệnh phản ánh đúng ngưỡng phân tầng và cơ chế bệnh sinh hôm nay?`;
+            correctText = pTxt;
+            distractors = [
+              "Chỉ dựa vào ngưỡng tuổi đơn độc, bỏ qua bệnh đồng mắc, tổn thương cơ quan đích và dấu ấn sinh học.",
+              "Chỉ chỉnh liều dựa theo triệu chứng chủ quan của bệnh nhân, không cần đạt đích phân tầng nguy cơ.",
+              "Tránh phối hợp đa cơ chế hoàn toàn để không phải theo dõi sinh hóa và điện giải định kỳ."
+            ];
+            explanation = pTxt;
+          }
+        } else {
+          const cautionTxt = this.clipText(
+            (isEn ? t0.caution_en : t0.caution_vi)
+              || (isEn ? tAlt.caution_en : tAlt.caution_vi)
+              || (isEn ? p0.text_en : p0.text_vi)
+              || "",
+            160
+          );
+          const tName = String(t0.name || pName);
+          if (isEn) {
+            question = `${hardPrefix}**Bedside Safety Trap (${tName}):** Which critical contraindication or safety safeguard must be verified before applying today's regimen aggressively?`;
+            correctText = cautionTxt || "Re-check baseline eGFR, electrolytes, bleeding/hypotension risk, and key drug-drug interactions.";
+            distractors = [
+              "None — intensive targets carry identical benefit-to-harm ratios regardless of renal function, frailty, or co-medications.",
+              "Double the initiating bolus in patients with advanced kidney dysfunction to overcome slower oral absorption.",
+              "Stop all cardioprotective baseline drugs first before checking eGFR, potassium, or blood pressure."
+            ];
+            explanation = correctText;
+          } else {
+            question = `${hardPrefix}**Bẫy An toàn Lâm sàng (${tName}):** Lưu ý an toàn hoặc chống chỉ định cốt lõi nào bắt buộc phải rà soát trước khi áp dụng phác đồ mạnh tay?`;
+            correctText = cautionTxt || "Kiểm tra eGFR, điện giải, nguy cơ tụt huyết áp/xuất huyết và tương tác thuốc trước khi tăng liều.";
+            distractors = [
+              "Không cần lưu ý — mọi mức eGFR, tuổi cao hay thuốc dùng kèm đều có cùng tỷ lệ lợi ích/nguy cơ như nhau.",
+              "Tăng gấp đôi liều khởi đầu ở người suy thận nặng để bù trừ khả năng thải trừ chậm.",
+              "Ngưng toàn bộ thuốc bảo vệ tim mạch nền trước khi kiểm tra creatinine, kali máu và huyết áp."
+            ];
+            explanation = correctText;
+          }
+        }
+
+        const keys = ["A", "B", "C", "D"];
+        const correctIdx = (((pid + slot + Math.max(0, Number(variantIdx || 0))) % 4) + 4) % 4;
+        const ordered = [null, null, null, null];
+        ordered[correctIdx] = correctText;
+        let dIdx = 0;
+        for (let i = 0; i < 4; i++) {
+          if (ordered[i] === null) {
+            ordered[i] = distractors[dIdx++];
+          }
+        }
+        return {
+          question,
+          options: keys.map((k, i) => ({ key: k, text: ordered[i] })),
+          correct_key: keys[correctIdx],
+          explanation
+        };
+      },
+
       getSubskillDefs(b) {
         const isEn = App.currentLang === "en";
         const pid = Number(b?.pillar_id || App.todayPillarId || 1);
@@ -8574,13 +8825,16 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             difficulty: "normal",
             attempts_on_current: 0,
             last_question: "",
+            current_options: [],
+            correct_key: "",
+            options_lang: App.currentLang || "vi",
             subskills: defs.map((d) => ({ id: d.id, label: d.label, level: 0, checks: 0 })),
             messages: []
           };
         } else {
-          // Keep dynamic labels synced with current UI language
-          this.store[key].subskills = defs.map((d, i) => {
-            const prev = (this.store[key].subskills || [])[i] || {};
+          const s = this.store[key];
+          s.subskills = defs.map((d, i) => {
+            const prev = (s.subskills || [])[i] || {};
             return {
               id: d.id,
               label: d.label,
@@ -8588,6 +8842,16 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               checks: Math.max(0, Number(prev.checks || 0))
             };
           });
+          if (!Array.isArray(s.current_options)) s.current_options = [];
+          if (!s.correct_key) s.correct_key = "";
+          if (!s.options_lang) s.options_lang = App.currentLang || "vi";
+          if (s.started && s.phase !== "mastered" && s.current_options.length !== 4 && briefing) {
+            const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), App.currentLang || "vi", s.difficulty || "normal");
+            s.current_options = mcq.options;
+            s.correct_key = mcq.correct_key;
+            s.options_lang = App.currentLang || "vi";
+            if (!s.last_question) s.last_question = mcq.question;
+          }
         }
         return this.store[key];
       },
@@ -8607,7 +8871,18 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
       },
 
       onLanguageChanged() {
-        this.getSession(this.curPillarId, App.selected || getTodaySingleBriefing());
+        const b = App.selected || getTodaySingleBriefing();
+        const sess = this.getSession(this.curPillarId, b);
+        const curLang = App.currentLang || "vi";
+        if (sess.started && sess.phase !== "mastered" && b && sess.options_lang !== curLang) {
+          const mcq = this.buildDeterministicMcq(b, sess.focus_idx || 0, (sess.diag_step || 0) + (sess.attempts_on_current || 0), curLang, sess.difficulty || "normal");
+          sess.current_options = mcq.options;
+          sess.correct_key = mcq.correct_key;
+          sess.options_lang = curLang;
+          sess.last_question = mcq.question;
+          sess.messages.push({ role: "assistant", text: mcq.question });
+          this.saveStore();
+        }
         this.renderUI();
       },
 
@@ -8634,8 +8909,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             if (!sess.started) {
               this.startDiagnostic();
             } else {
-              const inp = document.getElementById("socraticInputField");
-              if (inp) inp.focus();
+              const firstChoice = document.querySelector("#socraticChoicesGrid .socratic-choice-btn");
+              if (firstChoice) firstChoice.focus();
             }
           });
         }
@@ -8661,8 +8936,15 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             const sess = this.getSession();
             if (!Number.isNaN(idx) && idx >= 0 && idx < 4) {
               sess.focus_idx = idx;
-              if (sess.phase === "diagnostic" && sess.started) {
-                sess.phase = "loop";
+              if (sess.started && sess.phase !== "mastered") {
+                if (sess.phase === "diagnostic") sess.phase = "loop";
+                const b = App.selected || getTodaySingleBriefing();
+                const mcq = this.buildDeterministicMcq(b, idx, sess.attempts_on_current || 0, App.currentLang || "vi", sess.difficulty || "normal");
+                sess.current_options = mcq.options;
+                sess.correct_key = mcq.correct_key;
+                sess.options_lang = App.currentLang || "vi";
+                sess.last_question = mcq.question;
+                sess.messages.push({ role: "assistant", text: mcq.question });
               }
               this.saveStore();
               this.renderUI();
@@ -8679,22 +8961,18 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           });
         }
 
-        const form = document.getElementById("socraticInputForm");
-        if (form) {
-          form.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const inp = document.getElementById("socraticInputField");
-            const val = (inp ? inp.value : "").trim();
-            if (!val || this.isBusy) return;
-            inp.value = "";
-            this.handleUserText(val);
+        const choicesGrid = document.getElementById("socraticChoicesGrid");
+        if (choicesGrid) {
+          choicesGrid.addEventListener("click", (e) => {
+            const btn = e.target.closest(".socratic-choice-btn[data-choice-key]");
+            if (!btn || this.isBusy) return;
+            this.handleChoiceSelect(btn.dataset.choiceKey);
           });
         }
       },
 
       renderAsciiSkillMap(sess = this.getSession()) {
         const isEn = App.currentLang === "en";
-        const b = App.selected || getTodaySingleBriefing();
         const pid = Number(this.curPillarId || 1);
         const pTitle = getPillarDisplayName(pid, !isEn);
         const subs = sess.subskills || [];
@@ -8733,23 +9011,23 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         };
         setEl("socraticTitleText", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
         setEl("socraticSubText", isVi
-          ? "Ôn tập chủ động sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), AI hỏi gợi mở từng câu một để kiểm tra thực chiến Guideline & RCT."
-          : "Active post-reading mastery loop: 4-question diagnostic placement (levels 0–5), probing clinical questions one at a time, and final mastery exam.");
+          ? "Ôn tập trắc nghiệm Socratic sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & củng cố Guideline, RCT."
+          : "Active multiple-choice Socratic review: 4-question diagnostic placement (levels 0–5) with A/B/C/D clinical challenges probing Guidelines & RCTs.");
 
         const phaseMapVi = {
           diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
-          loop: `Luyện sâu Socratic • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
+          loop: `Trắc nghiệm Socratic • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
           final_exam: "Kiểm tra Tổng hợp Cuối kỳ",
           mastered: "ĐÃ LÀM CHỦ (≥ 4/5) ✓"
         };
         const phaseMapEn = {
           diagnostic: `Diagnostic (${(sess.diag_step || 0) + 1}/4) • Target ≥ 4/5`,
-          loop: `Socratic Loop • Level: ${sess.difficulty}`,
+          loop: `Socratic MCQ Loop • Level: ${sess.difficulty}`,
           final_exam: "Final Mixed Assessment",
           mastered: "MASTERED (≥ 4/5) ✓"
         };
         const badgeText = !sess.started
-          ? (isVi ? "Mục tiêu: ≥ 4/5" : "Target: ≥ 4/5")
+          ? (isVi ? "Trắc nghiệm • Mục tiêu ≥ 4/5" : "Multiple Choice • Target ≥ 4/5")
           : (isVi ? phaseMapVi[sess.phase] : phaseMapEn[sess.phase]) || "";
         setEl("socraticPhaseBadge", badgeText);
 
@@ -8772,13 +9050,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         if (btnHard) btnHard.classList.toggle("active", sess.difficulty === "hard");
         if (btnEasy) btnEasy.classList.toggle("active", sess.difficulty === "easy");
 
-        const inp = document.getElementById("socraticInputField");
-        if (inp) {
-          inp.placeholder = isVi
-            ? "Nhập câu trả lời lập luận lâm sàng hoặc lệnh (vd: xem tiến độ, khó hơn, giải thích luôn)..."
-            : "Type your clinical reasoning or command (show progress, harder, just tell me)...";
-        }
-        setEl("labelSendSocratic", isVi ? "Trả lời" : "Submit");
+        setEl("socraticChoicesHeader", isVi
+          ? "Chọn 1 đáp án đúng nhất (A, B, C hoặc D):"
+          : "Select the best clinical answer (A, B, C, or D):");
 
         // Render 4 Subskill Cards
         const grid = document.getElementById("socraticSubskillsGrid");
@@ -8809,8 +9083,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           if (msgs.length === 0) {
             box.innerHTML = `<div class="socratic-msg assistant"><div class="socratic-msg-bubble">${
               isVi
-                ? "Bấm <strong>Bắt đầu Chẩn đoán (4 câu)</strong> để hệ thống kiểm tra mức độ nắm vững bài <strong>Trụ cột #" + this.curPillarId + "</strong> hôm nay bằng câu hỏi gợi mở (Socratic)."
-                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin active Socratic mastery testing on today's <strong>Pillar #" + this.curPillarId + "</strong>."
+                ? "Bấm <strong>Bắt đầu Chẩn đoán (4 câu)</strong> để hệ thống kiểm tra mức độ nắm vững bài <strong>Trụ cột #" + this.curPillarId + "</strong> hôm nay bằng các câu hỏi trắc nghiệm gợi mở (A/B/C/D)."
+                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin active multiple-choice Socratic mastery testing on today's <strong>Pillar #" + this.curPillarId + "</strong>."
             }</div></div>`;
           } else {
             box.innerHTML = msgs.map((m) => {
@@ -8824,6 +9098,25 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             box.scrollTop = box.scrollHeight;
           }
         }
+
+        // Render 4 Multiple-Choice Option Buttons
+        const choicesWrap = document.getElementById("socraticChoicesWrap");
+        const choicesGrid = document.getElementById("socraticChoicesGrid");
+        const opts = this.normalizeMcqOptions(sess.current_options);
+        if (choicesWrap && choicesGrid) {
+          if (sess.started && sess.phase !== "mastered" && opts.length === 4) {
+            choicesWrap.style.display = "flex";
+            choicesGrid.innerHTML = opts.map((o) => `
+              <button type="button" class="socratic-choice-btn" data-choice-key="${escapeHtml(o.key)}" ${this.isBusy ? "disabled" : ""}>
+                <span class="socratic-choice-badge">${escapeHtml(o.key)}</span>
+                <span class="socratic-choice-text">${escapeHtml(o.text)}</span>
+              </button>
+            `).join("");
+          } else {
+            choicesWrap.style.display = "none";
+            choicesGrid.innerHTML = "";
+          }
+        }
       },
 
       async startDiagnostic() {
@@ -8833,10 +9126,13 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         sess.diag_step = 0;
         sess.focus_idx = 0;
         sess.attempts_on_current = 0;
+        sess.current_options = [];
+        sess.correct_key = "";
+        sess.options_lang = App.currentLang || "vi";
         sess.messages = [];
         this.saveStore();
         this.renderUI();
-        await this.callSocraticApi("start_diagnostic", "");
+        await this.callSocraticApi("start_diagnostic", "", "");
       },
 
       handleCommand(cmd) {
@@ -8854,10 +9150,10 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           this.saveStore();
           this.renderUI();
           showToast(isVi
-            ? (cmd === "harder" ? "Đã tăng độ khó Socratic." : "Đã giảm độ khó Socratic.")
+            ? (cmd === "harder" ? "Đã tăng độ khó trắc nghiệm Socratic." : "Đã giảm độ khó trắc nghiệm Socratic.")
             : (cmd === "harder" ? "Difficulty set to harder." : "Difficulty set to easier."));
-          if (sess.started) {
-            this.callSocraticApi(cmd, cmd);
+          if (sess.started && sess.phase !== "mastered") {
+            this.callSocraticApi(cmd, cmd, "");
           }
           return;
         }
@@ -8866,10 +9162,10 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             this.startDiagnostic();
             return;
           }
-          sess.messages.push({ role: "user", text: isVi ? "Giải thích luôn câu hiện tại" : "just tell me" });
+          sess.messages.push({ role: "user", text: isVi ? "💡 Giải thích luôn câu hiện tại" : "💡 Just tell me" });
           this.saveStore();
           this.renderUI();
-          this.callSocraticApi("just_tell_me", "just tell me");
+          this.callSocraticApi("just_tell_me", "just tell me", "");
           return;
         }
         if (cmd === "save_state") {
@@ -8922,9 +9218,20 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             level: Number(parsed.subskills[idx]?.level ?? s.level),
             checks: Number(parsed.subskills[idx]?.checks ?? 0)
           }));
+          const b = App.selected || getTodaySingleBriefing();
+          const mcq = this.buildDeterministicMcq(b, sess.focus_idx, sess.attempts_on_current || 0, App.currentLang || "vi", sess.difficulty);
+          if (sess.phase !== "mastered") {
+            sess.current_options = mcq.options;
+            sess.correct_key = mcq.correct_key;
+            sess.options_lang = App.currentLang || "vi";
+            sess.last_question = mcq.question;
+          } else {
+            sess.current_options = [];
+            sess.correct_key = "";
+          }
           sess.messages.push({
             role: "assistant",
-            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n```text\n" : "State restored!\n\n```text\n") + this.renderAsciiSkillMap(sess) + "\n```"
+            text: (isVi ? "Đã khôi phục tiến độ thành công!\n\n```text\n" : "State restored!\n\n```text\n") + this.renderAsciiSkillMap(sess) + "\n```" + (sess.phase !== "mastered" ? `\n\n${mcq.question}` : "")
           });
           this.saveStore();
           this.renderUI();
@@ -8933,40 +9240,41 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         }
       },
 
-      async handleUserText(text) {
-        const low = text.toLowerCase().trim();
-        if (/^(show progress|xem tiến độ|progress)$/i.test(low)) return this.handleCommand("show_progress");
-        if (/^(harder|khó hơn)$/i.test(low)) return this.handleCommand("harder");
-        if (/^(easier|dễ hơn)$/i.test(low)) return this.handleCommand("easier");
-        if (/^(just tell me|giải thích luôn|nói luôn)$/i.test(low)) return this.handleCommand("just_tell_me");
-        if (/^(save state|lưu trạng thái)$/i.test(low)) return this.handleCommand("save_state");
-        if (/^resume\s*from:/i.test(low)) return this.resumeFromBlock(text);
-
+      async handleChoiceSelect(choiceKey) {
+        const key = String(choiceKey || "").trim().toUpperCase();
+        if (!key || this.isBusy) return;
+        const isVi = App.currentLang === "vi";
         const sess = this.getSession();
         if (!sess.started) sess.started = true;
-        sess.messages.push({ role: "user", text });
+        const opt = (sess.current_options || []).find((o) => o.key === key);
+        const optTxt = opt ? `${key}. ${opt.text}` : key;
+        sess.messages.push({
+          role: "user",
+          text: isVi ? `Chọn đáp án ${optTxt}` : `Selected ${optTxt}`
+        });
         this.saveStore();
         this.renderUI();
-        await this.callSocraticApi("answer", text);
+        await this.callSocraticApi("answer", optTxt, key);
       },
 
-      async callSocraticApi(action, userAnswer) {
+      async callSocraticApi(action, userAnswer, selectedChoice = "") {
         const b = App.selected || getTodaySingleBriefing();
         const pid = Number((b && b.pillar_id) || this.curPillarId || 1);
         const lang = App.currentLang || "vi";
         const sess = this.getSession(pid, b);
 
         this.isBusy = true;
-        const btnSend = document.getElementById("btnSendSocratic");
         const btnStart = document.getElementById("btnStartSocratic");
-        if (btnSend) btnSend.disabled = true;
         if (btnStart) btnStart.disabled = true;
+        document.querySelectorAll("#socraticChoicesGrid .socratic-choice-btn").forEach((el) => {
+          el.disabled = true;
+        });
 
         const box = document.getElementById("socraticMessagesList");
         const typing = document.createElement("div");
         typing.className = "socratic-msg assistant";
         typing.innerHTML = `<div class="socratic-msg-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> ${
-          lang === "en" ? "Formulating Socratic challenge..." : "Đang phân tích & đặt câu hỏi Socratic..."
+          lang === "en" ? "Formulating multiple-choice Socratic challenge..." : "Đang soạn câu hỏi trắc nghiệm Socratic..."
         }</div>`;
         if (box) {
           box.appendChild(typing);
@@ -8985,6 +9293,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                   lang,
                   action,
                   user_answer: userAnswer,
+                  selected_choice: selectedChoice,
                   state: {
                     phase: sess.phase,
                     diag_step: sess.diag_step,
@@ -8992,6 +9301,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                     difficulty: sess.difficulty,
                     attempts_on_current: sess.attempts_on_current,
                     last_question: sess.last_question,
+                    current_options: sess.current_options,
+                    correct_key: sess.correct_key,
                     subskills: sess.subskills
                   }
                 })
@@ -9006,48 +9317,69 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                   }
                   const oldLevels = sess.subskills.map((s) => s.level);
                   Object.assign(sess, d.state);
+                  if (Array.isArray(d.options)) sess.current_options = d.options;
+                  if (typeof d.correct_key === "string") sess.correct_key = d.correct_key;
+                  sess.options_lang = lang;
                   sess.started = true;
                   const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
                   const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
                   sess.messages.push({ role: "assistant", text: d.reply_markdown + suffixMap });
                   this.saveStore();
                   typing.remove();
-                  this.renderUI();
                   return;
                 }
               }
             } catch (_) {}
           }
 
-          // Client-side fallback (GitHub Pages / standalone): Groq API + Deterministic fallback
-          const out = await this.runClientSocratic(b, sess, action, userAnswer, lang);
+          // Client-side engine (GitHub Pages / standalone): Groq API MCQ + Deterministic MCQ fallback
+          const out = await this.runClientSocratic(b, sess, action, userAnswer, lang, selectedChoice);
           const oldLevels = sess.subskills.map((s) => s.level);
           Object.assign(sess, out.state);
+          sess.options_lang = lang;
           sess.started = true;
           const levelChanged = sess.subskills.some((s, idx) => s.level !== oldLevels[idx]);
           const suffixMap = levelChanged ? `\n\n\`\`\`text\n${this.renderAsciiSkillMap(sess)}\n\`\`\`` : "";
           sess.messages.push({ role: "assistant", text: out.reply + suffixMap });
           this.saveStore();
           typing.remove();
-          this.renderUI();
         } catch (err) {
           typing.remove();
           sess.messages.push({ role: "assistant", text: `Error: ${err.message}` });
-          this.renderUI();
         } finally {
           this.isBusy = false;
-          if (btnSend) btnSend.disabled = false;
           if (btnStart) btnStart.disabled = false;
-          const inp = document.getElementById("socraticInputField");
-          if (inp) inp.focus();
+          this.renderUI();
         }
       },
 
-      async runClientSocratic(primary, sess, action, userAnswer, lang) {
+      async runClientSocratic(primary, sess, action, userAnswer, lang, selectedChoice = "") {
         const isEn = lang === "en";
         const key = window.EbmChat ? EbmChat._k() : "";
+        let choice = String(selectedChoice || "").trim().toUpperCase();
+        if (!choice && userAnswer) {
+          const mCh = String(userAnswer).trim().match(/^([ABCD])(?:\b|[\.\:\)])/i);
+          if (mCh) choice = mCh[1].toUpperCase();
+        }
+        const prevCorrectKey = String(sess.correct_key || "").trim().toUpperCase();
+        const prevOpts = this.normalizeMcqOptions(sess.current_options);
+        const prevCorrectOpt = prevOpts.find((o) => o.key === prevCorrectKey);
+        const isChoiceCorrect = Boolean(
+          action === "answer"
+          && ["A", "B", "C", "D"].includes(choice)
+          && ["A", "B", "C", "D"].includes(prevCorrectKey)
+          && choice === prevCorrectKey
+        );
+
         let reply = "";
-        let meta = { eval: "partial", new_level: sess.subskills[sess.focus_idx]?.level || 0, next_focus: sess.focus_idx, phase: sess.phase };
+        let meta = {
+          eval: "partial",
+          new_level: sess.subskills[sess.focus_idx]?.level || 0,
+          next_focus: sess.focus_idx,
+          phase: sess.phase,
+          options: [],
+          correct_key: ""
+        };
 
         if (key && window.EbmChat && !(EbmChat.quota.exhausted || EbmChat.quota.used >= EbmChat.quota.limit)) {
           EbmChat.quota.used += 1;
@@ -9063,8 +9395,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
             caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
           }));
-          const sysPrompt = `You are '${botName}' acting as a strict Socratic Cardiology Tutor (maieutic method). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Ask strictly ONE probing clinical question at a time at the very end; never lecture or add hints after it. 3) Vague/partial answers do not raise levels. 4) Diagnostic phase ('diagnostic'): place each answer (0..3) and advance diag_step 0->3; transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong/vague and action!='just_tell_me' and attempts<2, ask a narrower question exposing the gap without giving the answer; only explain 2-3 sentences when action=='just_tell_me' or attempts>=2 then immediately re-test from a new angle. 6) If right, occasionally play devil's advocate ('Are you sure? What if...') or spaced review. 7) When all 4 subskills>=4 enter 'final_exam'. Translate white-coat = áo choàng trắng. Append exact JSON on last line: <socratic_meta>{"eval":"start|correct|partial|wrong","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered"}</socratic_meta>`;
-          const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 1200)}`;
+          const sysPrompt = `You are '${botName}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Output feedback + ONE sharp MCQ stem in the prose body; NEVER list A/B/C/D options in prose because the UI renders meta.options as buttons. 3) When ACTION=='answer' and PREV_CORRECT_KEY is given, trust IS_CHOICE_CORRECT (true->eval:'correct', false->eval:'wrong'). 4) Diagnostic phase: place previous choice briefly, ask 1 probing MCQ for subskills[diag_step], transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong and action!='just_tell_me' and attempts<2, explain why the chosen trap fails WITHOUT revealing PREV_CORRECT_KEY, then ask a narrower MCQ; only reveal PREV_CORRECT_KEY when action=='just_tell_me' or attempts>=2, then re-test from a new angle. If right, play devil's advocate with an edge-case MCQ. 6) When all 4 subskills>=4 run final_exam MCQ; if passed set phase:'mastered' and options:[]. 7) Vary correct_key across A/B/C/D. Translate white-coat = áo choàng trắng. Last line MUST be exact JSON: <socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta>`;
+          const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nUSER_SELECTED_CHOICE:${choice || "(none)"}\nPREV_CORRECT_KEY:${prevCorrectKey || "(none)"}\nIS_CHOICE_CORRECT:${JSON.stringify(isChoiceCorrect)}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 700)}`;
           try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
               method: "POST",
@@ -9073,7 +9405,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 model: "qwen/qwen3.8-27b",
                 messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
                 temperature: 0.2,
-                max_tokens: 550
+                max_tokens: 750
               })
             });
             if (res.ok) {
@@ -9084,35 +9416,98 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 try { meta = { ...meta, ...JSON.parse(m[1]) }; } catch (_) {}
                 raw = raw.slice(0, m.index).trim();
               }
-              reply = raw;
+              let normOpts = this.normalizeMcqOptions(meta.options);
+              if (!normOpts.length) normOpts = this.parseInlineMcqFromText(raw);
+              const ckey = String(meta.correct_key || "").trim().toUpperCase().slice(0, 1);
+              const metaPhase = String(meta.phase || sess.phase).toLowerCase();
+              if (metaPhase === "mastered" && action === "answer" && isChoiceCorrect) {
+                reply = this.stripDuplicateMcqLines(raw);
+                meta.options = [];
+                meta.correct_key = "";
+              } else if (normOpts.length === 4 && ["A", "B", "C", "D"].includes(ckey)) {
+                reply = this.stripDuplicateMcqLines(raw);
+                meta.options = normOpts;
+                meta.correct_key = ckey;
+              } else {
+                reply = "";
+              }
+            } else {
+              let errTxt = "";
+              try { errTxt = (await res.text()).toLowerCase(); } catch (_) {}
+              const isTransientTpm = res.status === 429 && /(per minute|tpm|rpm|tokens per minute|requests per minute)/.test(errTxt) && !/(per day|tpd|rpd)/.test(errTxt);
+              if (res.status === 402 || res.status === 403 || (res.status === 429 && !isTransientTpm)) {
+                EbmChat.quota.exhausted = true;
+                EbmChat.quota.stop_reason = `HTTP ${res.status}`;
+                EbmChat.persistLocalQuota();
+              }
             }
           } catch (_) {}
         }
 
         if (!reply) {
-          const t0 = (primary?.landmark_trials || [])[0] || {};
-          const curG = primary?.guideline_evolution?.current_guideline?.name || "2026 Guidelines";
+          const diff = sess.difficulty || "normal";
           if (action === "start_diagnostic") {
+            const mcq = this.buildDeterministicMcq(primary, 0, 0, lang, diff);
             reply = isEn
-              ? `Starting 4-question diagnostic on **${curG}**: What is the biggest practice change compared with prior guidance?`
-              : `Bắt đầu 4 câu chẩn đoán nhanh cho **${curG}**: Thay đổi thực hành lớn nhất so với khuyến cáo cũ là gì?`;
-            meta = { eval: "start", new_level: 0, next_focus: 0, phase: "diagnostic" };
+              ? `### Med Bro — Socratic Learning (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to map your mastery.\n\n**Diagnostic Q1:** ${mcq.question}`
+              : `### Soái ca Y khoa — Học theo kiểu Socract (Trắc nghiệm)\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** ${mcq.question}`;
+            meta = { eval: "start", new_level: 0, next_focus: 0, phase: "diagnostic", options: mcq.options, correct_key: mcq.correct_key };
+          } else if (action === "harder" || action === "easier") {
+            const mcq = this.buildDeterministicMcq(primary, sess.focus_idx, (sess.attempts_on_current || 0) + 2, lang, diff);
+            reply = isEn
+              ? `Adjusted difficulty to **${diff}**. Select the best answer below:\n\n${mcq.question}`
+              : `Đã chuyển độ khó sang **${diff === "hard" ? "Khó" : "Dễ"}**. Mời bạn chọn đáp án:\n\n${mcq.question}`;
+            meta = { eval: "partial", new_level: sess.subskills[sess.focus_idx]?.level || 1, next_focus: sess.focus_idx, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
+          } else if (action === "just_tell_me" || (!isChoiceCorrect && (sess.attempts_on_current || 0) >= 2 && sess.phase !== "diagnostic")) {
+            const curMcq = this.buildDeterministicMcq(primary, sess.focus_idx, sess.attempts_on_current || 0, lang, diff);
+            const reveal = prevCorrectOpt ? `${prevCorrectKey} (${prevCorrectOpt.text})` : (prevCorrectKey || "guideline option");
+            const nxtSlot = (sess.focus_idx + 1) % 4;
+            const nxtMcq = this.buildDeterministicMcq(primary, nxtSlot, (sess.attempts_on_current || 0) + 1, lang, diff);
+            reply = isEn
+              ? `**Answer & Rationale (${prevCorrectKey || "Key"}):** **${reveal}**. ${curMcq.explanation}\n\n**Re-test from a new angle:** ${nxtMcq.question}`
+              : `**Giải thích đáp án đúng (${prevCorrectKey || "Đáp án"}):** **${reveal}**. ${curMcq.explanation}\n\n**Kiểm tra lại từ góc độ mới:** ${nxtMcq.question}`;
+            meta = { eval: "partial", new_level: 2, next_focus: nxtSlot, phase: sess.phase === "diagnostic" ? "loop" : sess.phase, options: nxtMcq.options, correct_key: nxtMcq.correct_key };
+          } else if (sess.phase === "diagnostic") {
+            const lvl = isChoiceCorrect ? 2 : 1;
+            const fb = isEn
+              ? (isChoiceCorrect ? `Choice **${choice}** is accurate` : `Choice **${choice || "?"}** missed **${prevCorrectKey}**`)
+              : (isChoiceCorrect ? `Chọn **${choice}** chính xác` : `Chọn **${choice || "?"}** chưa khớp với đáp án **${prevCorrectKey}**`);
+            if (sess.diag_step < 3) {
+              const nxt = sess.diag_step + 1;
+              const mcq = this.buildDeterministicMcq(primary, nxt, nxt, lang, diff);
+              reply = isEn ? `${fb} (\`${lvl}/5\`).\n\n**Diagnostic Q${nxt + 1}:** ${mcq.question}` : `${fb} (\`${lvl}/5\`).\n\n**Câu Chẩn đoán ${nxt + 1}:** ${mcq.question}`;
+              meta = { eval: isChoiceCorrect ? "correct" : "wrong", new_level: lvl, next_focus: nxt, phase: "diagnostic", options: mcq.options, correct_key: mcq.correct_key };
+            } else {
+              const lvls = sess.subskills.map((s, idx) => (idx === 3 ? lvl : Number(s.level || 0)));
+              const weakest = lvls.reduce((best, val, idx, arr) => (val < arr[best] ? idx : best), 0);
+              const mcq = this.buildDeterministicMcq(primary, weakest, 1, lang, diff);
+              reply = isEn ? `${fb}. Diagnostic complete! Let's drill your priority area first:\n\n${mcq.question}` : `${fb}. Hoàn tất chẩn đoán nền! Giờ hãy luyện sâu mảng ưu tiên trước:\n\n${mcq.question}`;
+              meta = { eval: isChoiceCorrect ? "correct" : "wrong", new_level: lvl, next_focus: weakest, phase: "loop", options: mcq.options, correct_key: mcq.correct_key };
+            }
+          } else if (isChoiceCorrect) {
+            const nxtSlot = (sess.focus_idx + 1) % 4;
+            const mcq = this.buildDeterministicMcq(primary, nxtSlot, (sess.attempts_on_current || 0) + 2, lang, diff);
+            reply = isEn ? `**Correct (${choice}).** Ready for a follow-up twist?\n\n${mcq.question}` : `**Chính xác (${choice}).** Sẵn sàng cho câu hỏi phản biện tiếp theo chưa?\n\n${mcq.question}`;
+            meta = { eval: "correct", new_level: Math.min(5, (sess.subskills[sess.focus_idx]?.level || 1) + 1), next_focus: nxtSlot, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
           } else {
-            const words = String(userAnswer || "").trim().split(/\s+/).filter(Boolean).length;
-            const ok = words >= 7;
-            reply = ok
-              ? (isEn ? `Solid point — **are you sure** that still holds in **${t0.name || "borderline renal/acute cases"}** (${t0.caution_en || "check safety limits"})?` : `Lập luận có ý đúng — **bạn chắc chứ** khi áp dụng cho ca **${t0.name || "suy thận/giai đoạn cấp"}** (${t0.caution_vi || "kiểm tra giới hạn an toàn"})?`)
-              : (isEn ? "Too brief — what exact trial metric or exclusion criteria proves that in today's briefing?" : "Còn hơi chung chung — chỉ số RCT hoặc tiêu chuẩn loại trừ cụ thể nào trong bài hôm nay chứng minh điều đó?");
-            meta = { eval: ok ? "correct" : "partial", new_level: ok ? 2 : 1, next_focus: (sess.focus_idx + 1) % 4, phase: sess.phase };
+            const mcq = this.buildDeterministicMcq(primary, sess.focus_idx, (sess.attempts_on_current || 0) + 1, lang, diff);
+            reply = isEn
+              ? `**Option ${choice || "?"}** is a common clinical trap — re-examine the inclusion criteria and safety limits, then try this narrower question:\n\n${mcq.question}`
+              : `**Đáp án ${choice || "?"}** là bẫy lâm sàng hay gặp — đối chiếu lại tiêu chuẩn chọn bệnh và giới hạn an toàn qua câu hẹp hơn sau:\n\n${mcq.question}`;
+            meta = { eval: "wrong", new_level: sess.subskills[sess.focus_idx]?.level || 1, next_focus: sess.focus_idx, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
           }
         }
 
         const nextSubs = sess.subskills.map((s) => ({ ...s }));
         let { phase, diag_step, focus_idx, attempts_on_current } = sess;
-        if (action !== "start_diagnostic") {
-          const ev = String(meta.eval || "partial").toLowerCase();
+        let ev = String(meta.eval || "partial").toLowerCase();
+        if (action === "answer" && ["A", "B", "C", "D"].includes(prevCorrectKey) && ["A", "B", "C", "D"].includes(choice)) {
+          ev = isChoiceCorrect ? "correct" : "wrong";
+        }
+
+        if (action === "answer") {
           if (phase === "diagnostic") {
-            const placed = Math.max(0, Math.min(3, Number(meta.new_level || 1)));
+            const placed = Math.max(0, Math.min(3, Number(meta.new_level || (ev === "correct" ? 2 : 1))));
             nextSubs[diag_step].level = placed;
             nextSubs[diag_step].checks = placed >= 2 ? 1 : 0;
             if (diag_step < 3) {
@@ -9145,7 +9540,30 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
               }
             }
           }
+        } else if (action === "just_tell_me") {
+          attempts_on_current = 0;
+          if (phase === "diagnostic") {
+            if (diag_step < 3) {
+              diag_step += 1;
+              focus_idx = diag_step;
+            } else {
+              phase = "loop";
+              focus_idx = nextSubs.reduce((best, item, idx, arr) => (item.level < arr[best].level ? idx : best), 0);
+            }
+          }
         }
+
+        let nextOptions = this.normalizeMcqOptions(meta.options);
+        let nextCorrect = String(meta.correct_key || "").trim().toUpperCase().slice(0, 1);
+        if (phase === "mastered") {
+          nextOptions = [];
+          nextCorrect = "";
+        } else if (nextOptions.length !== 4 || !["A", "B", "C", "D"].includes(nextCorrect)) {
+          const fallbackMcq = this.buildDeterministicMcq(primary, focus_idx, diag_step + attempts_on_current + 1, lang, sess.difficulty || "normal");
+          nextOptions = fallbackMcq.options;
+          nextCorrect = fallbackMcq.correct_key;
+        }
+
         return {
           reply,
           state: {
@@ -9155,6 +9573,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             difficulty: sess.difficulty,
             attempts_on_current,
             last_question: reply.slice(0, 360),
+            current_options: nextOptions,
+            correct_key: nextCorrect,
+            options_lang: lang,
             subskills: nextSubs
           }
         };
