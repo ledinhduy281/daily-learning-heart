@@ -3470,12 +3470,9 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      cursor: pointer;
+      cursor: default;
       text-align: left;
       transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .socratic-subskill-item:hover {
-      border-color: var(--color-primary-deep);
     }
     .socratic-subskill-item.active-focus {
       border-color: var(--color-primary-deep);
@@ -4297,10 +4294,10 @@
         <div class="socratic-scale-legend" id="socraticScaleLegend"></div>
 
         <div class="socratic-cmd-strip" id="socraticCmdStrip">
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="show_progress" id="btnSocCmdProgress">📊 Xem tiến độ</button>
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="harder" id="btnSocCmdHarder">🔥 Khó hơn</button>
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="easier" id="btnSocCmdEasier">🌱 Dễ hơn</button>
-          <button type="button" class="socratic-cmd-btn" data-soc-cmd="just_tell_me" id="btnSocCmdTellMe">💡 Giải thích luôn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="show_progress" id="btnSocCmdProgress">Xem tiến độ</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="harder" id="btnSocCmdHarder">Khó hơn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="easier" id="btnSocCmdEasier">Dễ hơn</button>
+          <button type="button" class="socratic-cmd-btn" data-soc-cmd="just_tell_me" id="btnSocCmdTellMe">Giải thích luôn</button>
         </div>
 
         <div class="socratic-dialogue-box" id="socraticMessagesList"></div>
@@ -9270,31 +9267,6 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           });
         }
 
-        const grid = document.getElementById("socraticSubskillsGrid");
-        if (grid) {
-          grid.addEventListener("click", (e) => {
-            const card = e.target.closest("[data-sub-idx]");
-            if (!card || this.isBusy) return;
-            const idx = parseInt(card.dataset.subIdx, 10);
-            const sess = this.getSession();
-            if (!Number.isNaN(idx) && idx >= 0 && idx < 4) {
-              sess.focus_idx = idx;
-              if (sess.started && sess.phase !== "mastered") {
-                if (sess.phase === "diagnostic") sess.phase = "loop";
-                const b = App.selected || getTodaySingleBriefing();
-                const mcq = this.buildDeterministicMcq(b, idx, sess.attempts_on_current || 0, App.currentLang || "vi", sess.difficulty || "normal");
-                sess.current_options = mcq.options;
-                sess.correct_key = mcq.correct_key;
-                sess.options_lang = App.currentLang || "vi";
-                sess.last_question = mcq.question;
-                sess.messages.push({ role: "assistant", text: mcq.question });
-              }
-              this.saveStore();
-              this.renderUI();
-            }
-          });
-        }
-
         const cmdStrip = document.getElementById("socraticCmdStrip");
         if (cmdStrip) {
           cmdStrip.addEventListener("click", (e) => {
@@ -9469,10 +9441,10 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         if (btnReset) btnReset.style.display = sess.started ? "inline-flex" : "none";
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
 
-        setEl("btnSocCmdProgress", isVi ? "📊 Xem tiến độ" : "📊 Show progress");
-        setEl("btnSocCmdHarder", isVi ? "🔥 Khó hơn" : "🔥 Harder");
-        setEl("btnSocCmdEasier", isVi ? "🌱 Dễ hơn" : "🌱 Easier");
-        setEl("btnSocCmdTellMe", isVi ? "💡 Giải thích luôn" : "💡 Just tell me");
+        setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");
+        setEl("btnSocCmdHarder", isVi ? "Khó hơn" : "Harder");
+        setEl("btnSocCmdEasier", isVi ? "Dễ hơn" : "Easier");
+        setEl("btnSocCmdTellMe", isVi ? "Giải thích luôn" : "Just tell me");
 
         const btnHard = document.getElementById("btnSocCmdHarder");
         const btnEasy = document.getElementById("btnSocCmdEasier");
@@ -9517,7 +9489,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             }
             const pctWidth = Math.max(0, Math.min(100, lvl * 20));
             const statsLabel = isVi ? `Đã làm: ${ans} • Đúng: ${cor}` : `Done: ${ans} • Correct: ${cor}`;
-            return `<button type="button" class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}${updateCls}" data-sub-idx="${idx}">
+            return `<div class="socratic-subskill-item${isFocus ? " active-focus" : ""}${isMast ? " mastered" : ""}${updateCls}">
               <div class="socratic-subskill-top">
                 <span class="socratic-subskill-name">
                   <span class="socratic-subskill-ico"><i class="fa-solid ${icons[idx] || "fa-book-medical"}"></i></span>
@@ -9535,7 +9507,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                 <span>${escapeHtml(this.getLevelName(lvl, isVi))}${isFocus ? (isVi ? " • Trọng tâm" : " • Focus") : ""}</span>
                 <span>${escapeHtml(statsLabel)}</span>
               </div>
-            </button>`;
+            </div>`;
           }).join("");
         }
 
@@ -9631,7 +9603,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             this.startDiagnostic();
             return;
           }
-          sess.messages.push({ role: "user", text: isVi ? "💡 Giải thích luôn câu hiện tại" : "💡 Just tell me" });
+          sess.messages.push({ role: "user", text: isVi ? "Giải thích luôn câu hiện tại" : "Just tell me" });
           this.saveStore();
           this.renderUI();
           this.callSocraticApi("just_tell_me", "just tell me", "");
