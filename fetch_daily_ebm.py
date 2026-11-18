@@ -1997,11 +1997,15 @@ def _compose_deterministic_ebm_answer(
     pubmed_hits: list[dict],
     lang: str = "vi",
     fda_note: dict | None = None,
+    verbosity: str = "medium",
 ) -> tuple[str, list[dict]]:
-    """Build concise, direct-first clinical response grounded on 2026 Guidelines, RCTs, PubMed & OpenFDA."""
+    """Build direct clinical response grounded on 2026 Guidelines, RCTs, PubMed & OpenFDA at chosen detail level."""
     primary = briefings[0]
     is_en = lang == "en"
     q_low = (query or "").lower()
+    v_norm = str(verbosity or "medium").strip().lower()
+    if v_norm not in ("short", "medium", "detailed"):
+        v_norm = "medium"
     ge = primary.get("guideline_evolution") or {}
     prior_g = ge.get("prior_guideline") or {}
     cur_g = ge.get("current_guideline") or {}
@@ -2036,10 +2040,11 @@ def _compose_deterministic_ebm_answer(
             break
 
     wants_detail = _wants_detailed_explanation(query)
+    eff_level = "detailed" if (v_norm == "detailed" or (v_norm == "medium" and wants_detail)) else v_norm
     mcq_opts = _extract_pasted_mcq_options(query)
 
-    # 1) Pasted Multiple-Choice Mode -> direct answer + clear clinical rationale (2–3 sentences)
-    if mcq_opts and not wants_detail:
+    # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
+    if mcq_opts:
         evid_blob = " ".join([
             cur_g.get("name", ""),
             " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
@@ -2075,22 +2080,43 @@ def _compose_deterministic_ebm_answer(
             reason_src = pearls[0].get("text_en" if is_en else "text_vi", "")
         if not reason_src:
             reason_src = mcq_opts[best_k]
-        one_reason = _first_clean_sentence(reason_src, 220).rstrip(".")
+        one_reason = _first_clean_sentence(reason_src, 200 if eff_level == "short" else 240).rstrip(".")
         if one_reason and len(one_reason) > 2 and one_reason[0].isupper() and not one_reason[:3].isupper():
             one_reason = one_reason[0].lower() + one_reason[1:]
+
+        head_ans = (
+            f"**{best_k}**, because {one_reason}."
+            if is_en else
+            f"**{best_k}**, vì {one_reason}."
+        )
+        if eff_level == "short":
+            return _ensure_complete_sentence(head_ans), sources
+
         tr_note = ""
         if trials:
             tr0 = trials[0]
             tr_note = " " + _first_clean_sentence(
                 f"{tr0.get('name')} ({tr0.get('value')}, {tr0.get('p')}): {tr0.get('changes_en' if is_en else 'changes_vi', '')}",
-                340,
+                320,
             )
-        ans = (
-            f"**{best_k}**, because {one_reason}.{tr_note}"
-            if is_en else
-            f"**{best_k}**, vì {one_reason}.{tr_note}"
-        )
-        return _ensure_complete_sentence(ans), sources
+        if eff_level == "medium":
+            return _ensure_complete_sentence(head_ans + tr_note), sources
+
+        mcq_parts = [head_ans + tr_note]
+        if cur_g.get("name"):
+            mcq_parts.append(
+                f"- **{'Guideline Basis' if is_en else 'Cơ sở Khuyến cáo'} ({cur_g.get('name')}):** "
+                + _first_clean_sentence(steps[-1].get("desc_en" if is_en else "desc_vi", "") if steps else "", 340)
+            )
+        for tr in trials[:2]:
+            chg = _first_clean_sentence(tr.get("changes_en" if is_en else "changes_vi", ""), 300)
+            caut = _first_clean_sentence(tr.get("caution_en" if is_en else "caution_vi", ""), 260)
+            mcq_parts.append(f"- **{tr.get('name')}** ({tr.get('value')}, {tr.get('ci')}, {tr.get('p')}): {chg} *{caut}*")
+        if pearls:
+            p0 = pearls[0].get("text_en" if is_en else "text_vi") or pearls[0].get("en" if is_en else "vi", "")
+            if p0:
+                mcq_parts.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 340)}")
+        return _ensure_complete_sentence("\n".join(mcq_parts)), sources
 
     # Match relevant sentences inside markdown body + structured evidence
     raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
@@ -2125,8 +2151,37 @@ def _compose_deterministic_ebm_answer(
             scored_lines.append((hits, re.sub(r"^[-*•]\s*", "", ln)))
     scored_lines.sort(key=lambda x: x[0], reverse=True)
 
-    # 2) Balanced direct answer with key evidence (~140–220 words)
-    if not wants_detail:
+    # 2) Short mode -> crisp 1-2 direct clinical sentences (~45-85 words)
+    if eff_level == "short":
+        short_segs: list[str] = []
+        if scored_lines:
+            short_segs.append(_first_clean_sentence(scored_lines[0][1], 240))
+        elif steps:
+            s_last = steps[-1]
+            short_segs.append(
+                f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}:** "
+                + _first_clean_sentence(s_last.get("desc_en" if is_en else "desc_vi", ""), 240)
+            )
+        if trials:
+            tr0 = trials[0]
+            short_segs.append(
+                f"**{tr0.get('name')}** ({tr0.get('value')}, {tr0.get('p')}): "
+                + _first_clean_sentence(tr0.get("changes_en" if is_en else "changes_vi", ""), 180)
+            )
+        elif fda_note and fda_note.get("text"):
+            note_txt = _first_clean_sentence(fda_note["text"], 200)
+            if not is_en and translate_fn:
+                try:
+                    tr_txt = translate_fn(note_txt[:220])
+                    if tr_txt:
+                        note_txt = _first_clean_sentence(tr_txt, 200)
+                except Exception:
+                    pass
+            short_segs.append(f"**{fda_note['label']} ({fda_note['drug']}):** {note_txt}")
+        return _ensure_complete_sentence(" ".join(short_segs)), sources
+
+    # 3) Medium / balanced direct answer (~130-210 words)
+    if eff_level == "medium":
         sections: list[str] = []
         if scored_lines:
             sections.append(" ".join(_first_clean_sentence(ln, 420) for _, ln in scored_lines[:2]))
@@ -2156,7 +2211,7 @@ def _compose_deterministic_ebm_answer(
                 sections.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 380)}")
         return _ensure_complete_sentence("\n\n".join(sections)), sources
 
-    # 3) Detailed explanation mode (~220–350 words, structured & complete)
+    # 4) Detailed explanation mode (~240-360 words, structured & complete)
     parts: list[str] = [
         f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}** *({'Prior' if is_en else 'Tiền nhiệm'}: {prior_g.get('name', '—')})*"
     ]
@@ -2376,6 +2431,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         return {"ok": False, "error": "Chưa có dữ liệu bản tin EBM."}
 
     lang = "en" if str(req_data.get("lang", "vi")).lower() == "en" else "vi"
+    raw_verbosity = str(req_data.get("verbosity", "medium")).strip().lower()
+    verbosity = raw_verbosity if raw_verbosity in ("short", "medium", "detailed") else "medium"
     active_bid = str(req_data.get("briefing_id", "")).strip()
     raw_pid = req_data.get("pillar_id")
     active_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
@@ -2452,7 +2509,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                 )
         else:
             _, sources = _compose_deterministic_ebm_answer(
-                search_query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note
+                search_query, top_briefings, pubmed_hits, lang=lang, fda_note=fda_note, verbosity=verbosity
             )
             with _quota_lock:
                 quota = _load_chat_quota_unlocked()
@@ -2501,17 +2558,40 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
             mcq_opts = _extract_pasted_mcq_options(query)
             wants_detail = _wants_detailed_explanation(query)
-            mcq_rule = (
-                "MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with '<Letter>, vì <reason>.' "
-                + ("('<Letter>, because <core reason>.' in English) " if lang == "en" else "")
-                + "followed by 1-2 short supporting sentences (70-120 words total) explaining why it fits the 2026 Guideline/RCT and briefly why the main distractor falls short.\n"
-                if (mcq_opts and not wants_detail)
-                else (
-                    "EXPLANATION REQUESTED: Build on any prior point WITHOUT repeating verbatim. Write a rich, well-structured clinical explanation (220-350 words) using short bullet points covering mechanism, landmark RCT numbers (HR/CI/p), and bedside safety checks, ending cleanly on a complete sentence.\n"
-                    if wants_detail
-                    else "BALANCED CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-5 structured bullet points (140-220 words total) covering guideline changes, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n"
-                )
-            )
+            eff_level = "detailed" if (verbosity == "detailed" or (verbosity == "medium" and wants_detail)) else verbosity
+            if mcq_opts:
+                if eff_level == "short":
+                    mcq_rule = (
+                        "MCQ OVERRIDE + SHORT MODE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with '<Letter>, vì <1 short crisp reason>.' "
+                        + ("('<Letter>, because <1 crisp reason>.' in English) " if lang == "en" else "")
+                        + "STRICT LIMIT: 20-55 words total (1-2 short sentences max). No bullet lists.\n"
+                    )
+                elif eff_level == "detailed":
+                    mcq_rule = (
+                        "MCQ OVERRIDE + DETAILED MODE: Start immediately on line 1 with '<Letter>, vì <core reason>.' "
+                        + ("('<Letter>, because <core reason>.' in English) " if lang == "en" else "")
+                        + "then write a structured breakdown (220-340 words) with short bullet points covering guideline criteria, RCT numbers (HR/CI/p), why the distractors are wrong, and bedside safety checks. End on a complete sentence.\n"
+                    )
+                else:
+                    mcq_rule = (
+                        "MCQ OVERRIDE + MEDIUM MODE: Start immediately with '<Letter>, vì <reason>.' "
+                        + ("('<Letter>, because <core reason>.' in English) " if lang == "en" else "")
+                        + "followed by 1-2 short supporting sentences (70-120 words total) tying to the 2026 Guideline/RCT and briefly noting why the main trap fails.\n"
+                    )
+            else:
+                if eff_level == "short":
+                    mcq_rule = (
+                        "SHORT RESPONSE MODE: Give the exact core clinical answer immediately in 1-3 short, crisp sentences (35-75 words total). "
+                        "Include key drug/threshold or RCT stat if directly asked; avoid long lists or filler. Always finish on a complete sentence.\n"
+                    )
+                elif eff_level == "detailed":
+                    mcq_rule = (
+                        "DETAILED CLINICAL MODE: Put the exact core answer first, then build a rich, well-structured clinical explanation (250-380 words) using short bullet points covering mechanism, prior-vs-2026 guideline shifts, landmark RCT metrics (HR/CI/p), and bedside monitoring/safety checks. End cleanly on a complete sentence.\n"
+                    )
+                else:
+                    mcq_rule = (
+                        "MEDIUM CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-4 concise bullet points (130-210 words total) covering guideline changes, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n"
+                    )
             sys_prompt = (
                 f"You are '{bot_name}', a direct yet thorough Cardiology EBM assistant inside '{site_name}'.\n"
                 f"{mcq_rule}"
@@ -2582,6 +2662,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
                         "answer_markdown": llm_text.strip(),
                         "sources": sources,
                         "engine_used": engine_name,
+                        "verbosity": eff_level,
                         "matched_pillar_id": primary.get("pillar_id"),
                         "matched_briefing_id": primary.get("id"),
                         "quota": quota,
@@ -2614,6 +2695,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         pubmed_hits,
         lang=lang,
         fda_note=fda_note,
+        verbosity=verbosity,
     )
     if quota_banner:
         answer_md = quota_banner + answer_md
@@ -2624,6 +2706,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
         "answer_markdown": answer_md,
         "sources": sources,
         "engine_used": engine_lbl,
+        "verbosity": verbosity,
         "matched_pillar_id": primary.get("pillar_id"),
         "matched_briefing_id": primary.get("id"),
         "quota": quota,
@@ -2908,9 +2991,9 @@ def _socratic_deterministic_fallback(
     if action == "start_diagnostic":
         mcq = _build_socratic_mcq(primary, 0, 0, lang, difficulty)
         intro = (
-            f"### Med Bro — Socratic Learning (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to map your mastery across 4 pillars.\n\n**Diagnostic Q1:** {mcq['question']}"
+            f"### Med Bro — Daily Review Quiz (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to review today's knowledge across 4 pillars.\n\n**Diagnostic Q1:** {mcq['question']}"
             if is_en else
-            f"### Soái ca Y khoa — Học theo kiểu Socract (Trắc nghiệm)\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** {mcq['question']}"
+            f"### Soái ca Y khoa — Trắc nghiệm ôn lại kiến thức hôm nay\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** {mcq['question']}"
         )
         return intro, {
             "eval": "start",
@@ -3424,7 +3507,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
         "correct_key": next_correct,
         "state": new_state,
         "eval": ev,
-        "engine_used": f"{bot_name} • {'AI Socratic MCQ' if used_llm else 'EBM Socratic MCQ'}",
+        "engine_used": f"{bot_name} • {'AI Quiz MCQ' if used_llm else 'EBM Quiz MCQ'}",
         "quota": quota,
     }
 

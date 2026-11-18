@@ -2583,11 +2583,10 @@
         min-width: 0;
         max-width: none;
       }
-      #btnOpenPubMedModal,
       #btnRefreshToday {
-        flex: 1 1 calc(50% - 4px);
+        flex: 1 1 100%;
         min-width: 0;
-        padding: 9px 10px;
+        padding: 9px 12px;
         font-size: 13px;
         justify-content: center;
         white-space: normal;
@@ -2853,10 +2852,58 @@
     .ebm-chat-panel.expanded .chat-messages-scroll,
     .ebm-chat-panel.expanded .chat-input-form,
     .ebm-chat-panel.expanded .chat-context-strip,
+    .ebm-chat-panel.expanded .chat-verbosity-bar,
     .ebm-chat-panel.expanded .chat-quick-strip,
     .ebm-chat-panel.expanded .chat-history-drawer {
       padding-left: max(18px, calc((100vw - 980px) / 2));
       padding-right: max(18px, calc((100vw - 980px) / 2));
+    }
+    .chat-verbosity-bar {
+      padding: 6px 14px;
+      background: #fbfcfd;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-verbosity-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-ink-mute);
+      white-space: nowrap;
+    }
+    .chat-verbosity-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px;
+      border-radius: 8px;
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+    }
+    .chat-verbosity-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--color-ink-secondary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+    .chat-verbosity-btn:hover {
+      color: var(--color-ink);
+    }
+    .chat-verbosity-btn.active {
+      background: #ffffff;
+      color: var(--color-primary-deep);
+      border-color: rgba(36, 180, 126, 0.35);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      font-weight: 700;
     }
     .chat-hdr-btn.active-btn {
       background: rgba(62, 207, 142, 0.28);
@@ -3784,6 +3831,30 @@
       .socratic-card-supa {
         padding: 16px 14px;
       }
+      .socratic-header-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .socratic-title-line {
+        font-size: 15.5px;
+        gap: 6px;
+        line-height: 1.3;
+      }
+      #socraticTitleText {
+        white-space: nowrap;
+      }
+      .socratic-target-badge {
+        font-size: 10.5px;
+        padding: 2px 7px;
+      }
+      .socratic-hdr-actions {
+        width: 100%;
+      }
+      .socratic-hdr-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
       .socratic-stage-stepper {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -4008,19 +4079,11 @@
             <span id="labelNavBookmarks">Đã lưu (0)</span>
           </button>
 
-          <button type="button" class="btn btn-secondary-outline btn-icon-only" id="btnLogout" title="Đăng xuất" aria-label="Đăng xuất">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
         </div>
 
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Học theo kiểu Socract">
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay">
           <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
-          <span id="labelSocraticHeaderBtn">Học theo kiểu Socract</span>
-        </button>
-
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenPubMedModal">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <span id="labelPubMedBtn">Tra Cứu PubMed</span>
+          <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
         </button>
 
         <button type="button" class="btn btn-primary-green" id="btnRefreshToday" title="Cập nhật và xác thực PubMed Step-0 cho đúng 1 Trụ cột hôm nay">
@@ -4302,11 +4365,11 @@
           <div class="socratic-title-block">
             <div class="socratic-title-line">
               <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
-              <span id="socraticTitleText">Học theo kiểu Socract</span>
+              <span id="socraticTitleText">Trắc nghiệm ôn tập</span>
               <span class="socratic-target-badge" id="socraticPhaseBadge">Mục tiêu: ≥ 4/5</span>
             </div>
             <div class="socratic-sub-text" id="socraticSubText">
-              Ôn tập chủ động sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5) và luyện sâu bằng câu hỏi trắc nghiệm gợi mở A/B/C/D (Socratic) về Guideline &amp; RCT.
+              Trắc nghiệm ôn lại kiến thức hôm nay sau khi đọc Trụ cột: chẩn đoán 4 mảng kiến thức (0–5) và luyện sâu bằng câu hỏi trắc nghiệm gợi mở A/B/C/D về Guideline &amp; RCT.
             </div>
           </div>
           <div class="socratic-hdr-actions">
@@ -4380,39 +4443,6 @@
 
     </section>
   </main>
-
-  <!-- ========================================================================
-       MODAL: PUBMED STEP-0 LIVE VERIFIER
-       ======================================================================== -->
-  <div class="modal-backdrop-supa" id="pubMedModal" role="dialog" aria-modal="true" aria-labelledby="pubMedModalTitle">
-    <div class="modal-dialog-supa">
-      <div class="modal-head">
-        <div class="modal-head-title" id="pubMedModalTitle">
-          <i class="fa-solid fa-microscope" style="color: var(--color-primary-deep);"></i>
-          <span>Tra Cứu Đối Chiếu NCBI PubMed E-Utilities</span>
-        </div>
-        <button type="button" class="btn-close-supa" id="btnClosePubMedModal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="pubmed-query-bar">
-          <input
-            type="text"
-            id="pubMedQueryInput"
-            class="pubmed-input-text"
-            placeholder="Nhập tên guideline hoặc thử nghiệm (VD: 2024 ESC hypertension, SPRINT, BPROAD)..."
-            value="2024 ESC Guidelines elevated blood pressure hypertension"
-          >
-          <button type="button" class="btn btn-primary-green" id="btnExecutePubMedQuery">
-            <span>Tra Cứu</span>
-          </button>
-        </div>
-
-        <div class="pubmed-results-scroll" id="pubMedResultsScroll">
-          <!-- Rendered by JS -->
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ========================================================================
        MODAL: PRODUCT FEEDBACK / REPORT
@@ -4555,7 +4585,11 @@
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary-outline" id="btnLogout" style="color: #b91c1c; border-color: rgba(185, 28, 28, 0.3);" title="Đăng xuất" aria-label="Đăng xuất">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span id="labelLogoutModalBtn">Đăng xuất</span>
+            </button>
             <button type="button" class="btn btn-secondary-outline" id="btnAccResetPassword">
               <i class="fa-solid fa-key"></i>
               <span>Cập nhật Mật khẩu mới</span>
@@ -4626,6 +4660,14 @@
       </div>
       <span class="chat-free-pill" id="chatModeBadge">AI • EBM</span>
     </div>
+    <div class="chat-verbosity-bar" id="chatVerbosityBar">
+      <span class="chat-verbosity-label" id="chatVerbosityLabel">Độ chi tiết:</span>
+      <div class="chat-verbosity-group" id="chatVerbosityGroup" role="group" aria-label="Độ chi tiết câu trả lời">
+        <button type="button" class="chat-verbosity-btn" data-verbosity="short">Ngắn</button>
+        <button type="button" class="chat-verbosity-btn active" data-verbosity="medium">Vừa</button>
+        <button type="button" class="chat-verbosity-btn" data-verbosity="detailed">Dài</button>
+      </div>
+    </div>
 
     <div class="chat-quick-strip" id="chatQuickPrompts">
       <!-- Populated dynamically per selected briefing & language -->
@@ -4677,6 +4719,7 @@
     const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
     const CHAT_SESSIONS_KEY = "soaica_chat_sessions_v1";
+    const CHAT_VERBOSITY_KEY = "soaica_chat_verbosity_v1";
     const SOCRATIC_STATE_KEY = "ebm_socratic_state_v1";
     const UI_LANG_KEY = "ebm_ui_lang";
     const ANCHOR_DATE_STR = "2026-11-16";
@@ -4724,7 +4767,6 @@
         viewSource: "Xem Nguồn",
         bottomFeedbackTitle: "Đánh giá & Góp ý Nhà làm sản phẩm",
         bottomFeedbackSub: "Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.",
-        pubMedBtn: "Tra Cứu PubMed",
         refreshBtn: "Cập nhật Trụ cột hôm nay",
         updatingLabel: "Đang cập nhật",
         todaySidebarHeading: "Trọng tâm Hôm nay (1 Trụ cột)",
@@ -4775,7 +4817,6 @@
         viewSource: "View Source",
         bottomFeedbackTitle: "Rate Briefing Quality & Send Product Feedback",
         bottomFeedbackSub: "Your clinical feedback helps refine guideline precision and daily reading experience.",
-        pubMedBtn: "PubMed Lookup",
         refreshBtn: "Refresh Today's Pillar",
         updatingLabel: "Updating",
         todaySidebarHeading: "Today's Focus (1 Pillar)",
@@ -4905,12 +4946,6 @@
       btnFontReset: document.getElementById("btnFontReset"),
       btnFontInc: document.getElementById("btnFontInc"),
 
-      modalPubMed: document.getElementById("pubMedModal"),
-      btnOpenPubMed: document.getElementById("btnOpenPubMedModal"),
-      btnClosePubMed: document.getElementById("btnClosePubMedModal"),
-      pubMedQueryInput: document.getElementById("pubMedQueryInput"),
-      btnExecutePubMed: document.getElementById("btnExecutePubMedQuery"),
-      pubMedResultsScroll: document.getElementById("pubMedResultsScroll"),
 
       feedbackReportModal: document.getElementById("feedbackReportModal"),
       btnCloseFeedbackModal: document.getElementById("btnCloseFeedbackModal"),
@@ -4950,6 +4985,8 @@
       chatEngineSubtitle: document.getElementById("chatEngineSubtitle"),
       chatActiveContextBar: document.getElementById("chatActiveContextBar"),
       chatModeBadge: document.getElementById("chatModeBadge"),
+      chatVerbosityLabel: document.getElementById("chatVerbosityLabel"),
+      chatVerbosityGroup: document.getElementById("chatVerbosityGroup"),
       chatQuickPrompts: document.getElementById("chatQuickPrompts"),
       chatMessagesList: document.getElementById("chatMessagesList"),
       chatInputForm: document.getElementById("chatInputForm"),
@@ -5880,6 +5917,7 @@
       App.user = null;
       App.offlineDemo = false;
       App.savedGlobalMode = false;
+      closeMyAccountModal();
       renderUserWorkspace();
       showAuthGate();
       showToast("Đã đăng xuất tài khoản.");
@@ -6150,7 +6188,6 @@
       document.getElementById("sourcesSectionTitle").textContent = t("sourcesSectionTitle");
       document.getElementById("bottomFeedbackTitle").textContent = t("bottomFeedbackTitle");
       document.getElementById("bottomFeedbackSub").textContent = t("bottomFeedbackSub");
-      document.getElementById("labelPubMedBtn").textContent = t("pubMedBtn");
       if (!Dom.btnRefreshToday.disabled) {
         Dom.labelRefreshToday.textContent = t("refreshBtn");
       }
@@ -6158,6 +6195,7 @@
         const lgLbl = isVi ? "Đăng xuất" : "Sign out";
         Dom.btnLogout.title = lgLbl;
         Dom.btnLogout.setAttribute("aria-label", lgLbl);
+        setTxt("#labelLogoutModalBtn", lgLbl);
       }
       if (Dom.btnNavBookmarks) {
         Dom.btnNavBookmarks.title = isVi ? "Lọc danh sách bản tin đã lưu" : "Filter saved briefings";
@@ -6165,9 +6203,9 @@
       const botName = isVi ? "Soái ca Y khoa" : "Med Bro";
       const socraticNavBtn = document.getElementById("btnOpenSocraticHeader");
       if (socraticNavBtn) {
-        socraticNavBtn.title = isVi ? "Học theo kiểu Socract" : "Socratic Learning";
+        socraticNavBtn.title = isVi ? "Trắc nghiệm ôn lại kiến thức hôm nay" : "Daily Review Quiz";
       }
-      setTxt("#labelSocraticHeaderBtn", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
+      setTxt("#labelSocraticHeaderBtn", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
       setTxt("#labelFloatingChat", botName);
       if (Dom.btnFloatingChat) {
         Dom.btnFloatingChat.setAttribute("aria-label", isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Med Bro");
@@ -6194,9 +6232,6 @@
       }
 
       // Modals Localization
-      setTxt("#pubMedModalTitle span", isVi ? "Tra Cứu Đối Chiếu NCBI PubMed E-Utilities" : "NCBI PubMed E-Utilities Live Lookup");
-      setPh("#pubMedQueryInput", isVi ? "Nhập tên guideline hoặc thử nghiệm (VD: 2026 ISH hypertension, SPRINT, BPROAD)..." : "Enter guideline or trial (e.g., 2026 ISH hypertension, SPRINT, BPROAD)...");
-      setTxt("#btnExecutePubMedQuery span", isVi ? "Tra Cứu" : "Search");
       setTxt("#myAccountModalTitle span", isVi ? "Tài khoản của tôi & Bảo mật" : "My Account & Security");
       setTxt("#myAccountModal .account-section-title span", isVi ? "Thông tin Bác sĩ" : "Physician Profile");
       setTxt("#myAccountModal label[for='accFullName']", isVi ? "Họ tên hiển thị" : "Display Name");
@@ -7783,114 +7818,16 @@
       });
       Dom.btnSubmitFeedbackReport.addEventListener("click", submitFeedbackReportModal);
 
-      // PubMed Modal Events
-      Dom.btnOpenPubMed.addEventListener("click", () => {
-        Dom.modalPubMed.classList.add("active");
-        if (Dom.pubMedResultsScroll.children.length === 0) {
-          executePubMedLookup();
-        }
-      });
-      Dom.btnClosePubMed.addEventListener("click", () => Dom.modalPubMed.classList.remove("active"));
-      Dom.modalPubMed.addEventListener("click", (e) => {
-        if (e.target === Dom.modalPubMed) Dom.modalPubMed.classList.remove("active");
-      });
-      Dom.btnExecutePubMed.addEventListener("click", executePubMedLookup);
-      Dom.pubMedQueryInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") executePubMedLookup();
-      });
-
-      // Escape key closes open dialogs (My Account / PubMed / Feedback Report)
+      // Escape key closes open dialogs (My Account / Feedback Report)
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           if (Dom.myAccountModal.classList.contains("active")) {
             closeMyAccountModal();
           } else if (Dom.feedbackReportModal.classList.contains("active")) {
             closeFeedbackReportModal();
-          } else if (Dom.modalPubMed.classList.contains("active")) {
-            Dom.modalPubMed.classList.remove("active");
           }
         }
       });
-    }
-
-    async function executePubMedLookup() {
-      const q = Dom.pubMedQueryInput.value.trim();
-      if (!q) return;
-
-      Dom.pubMedResultsScroll.innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: var(--color-ink-mute); font-size: 13px;">
-          <i class="fa-solid fa-spinner fa-spin" style="margin-bottom: 6px; display: block; font-size: 16px;"></i>
-          Đang truy vấn trực tiếp cơ sở dữ liệu NCBI PubMed...
-        </div>
-      `;
-
-      try {
-        let results = [];
-        if (App.serverAvailable && !isFileOrigin()) {
-          try {
-            const res = await fetch("/api/pubmed-verify", {
-              method: "POST",
-              headers: getAuthHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ query: q })
-            });
-            const ct = res.headers.get("content-type") || "";
-            if (res.ok && ct.includes("application/json")) {
-              const d = await res.json();
-              if (d.ok && d.results) results = d.results;
-            }
-          } catch (_) {}
-        }
-        if (results.length === 0) {
-          const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmode=json&retmax=5&sort=relevance`;
-          const sRes = await fetch(sUrl);
-          const sData = await sRes.json();
-          const ids = sData.esearchresult?.idlist || [];
-          if (ids.length > 0) {
-            const sumUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`;
-            const sumRes = await fetch(sumUrl);
-            const sumData = await sumRes.json();
-            for (const id of ids) {
-              const item = sumData.result?.[id];
-              if (!item) continue;
-              let doi = "";
-              for (const aid of (item.articleids || [])) {
-                if (aid.idtype === "doi") { doi = aid.value; break; }
-              }
-              results.push({
-                pmid: id,
-                title: item.title,
-                source: item.fulljournalname || item.source,
-                pubdate: item.pubdate,
-                doi: doi,
-                url: doi ? `https://doi.org/${doi}` : `https://pubmed.ncbi.nlm.nih.gov/${id}/`
-              });
-            }
-          }
-        }
-
-        if (results.length === 0) {
-          Dom.pubMedResultsScroll.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--color-ink-mute); font-size: 13px;">Không tìm thấy bài báo khớp.</div>`;
-          return;
-        }
-
-        Dom.pubMedResultsScroll.innerHTML = results.map(r => `
-          <div class="source-entry-item">
-            <div>
-              <div class="source-entry-title">${escapeHtml(r.title)}</div>
-              <div class="source-entry-citation">
-                ${escapeHtml(r.source)} (${escapeHtml(r.pubdate)}) &bull; PMID: <strong>${escapeHtml(r.pmid)}</strong>
-                ${r.doi ? `&bull; DOI: <strong>${escapeHtml(r.doi)}</strong>` : ""}
-              </div>
-            </div>
-            <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary-outline btn-view-source">
-              <span>PubMed</span>
-            </a>
-          </div>
-        `).join("");
-
-      } catch (err) {
-        Dom.pubMedResultsScroll.innerHTML = `<div style="color: var(--color-danger); padding: 1rem; font-size: 13px;">Lỗi: ${escapeHtml(err.message)}</div>`;
-      }
     }
 
     /* ========================================================================
@@ -7958,6 +7895,7 @@
       isExpanded: false,
       isHistoryOpen: false,
       isBusy: false,
+      verbosity: "medium",
       dailyLimit: 500,
       quota: { date: "", used: 0, limit: 500, exhausted: false, stop_reason: "" },
       sessions: [],
@@ -7971,6 +7909,7 @@
 
       init() {
         this.loadQuota();
+        this.loadVerbosity();
         this.bindEvents();
         this.updateContext();
         this.renderQuotaBadge();
@@ -8125,6 +8064,54 @@
             this.togglePanel(false);
           }
         });
+
+        if (Dom.chatVerbosityGroup) {
+          Dom.chatVerbosityGroup.addEventListener("click", (e) => {
+            const btn = e.target.closest(".chat-verbosity-btn[data-verbosity]");
+            if (!btn) return;
+            this.setVerbosity(btn.dataset.verbosity, true);
+          });
+        }
+      },
+
+      loadVerbosity() {
+        const saved = String(safeStorageGet(CHAT_VERBOSITY_KEY) || "").trim().toLowerCase();
+        const level = ["short", "medium", "detailed"].includes(saved) ? saved : "medium";
+        this.setVerbosity(level, false);
+      },
+
+      setVerbosity(level, persist = true) {
+        const norm = ["short", "medium", "detailed"].includes(String(level || "").toLowerCase())
+          ? String(level).toLowerCase()
+          : "medium";
+        this.verbosity = norm;
+        if (persist) {
+          safeStorageSet(CHAT_VERBOSITY_KEY, norm);
+        }
+        if (Dom.chatVerbosityGroup) {
+          Dom.chatVerbosityGroup.querySelectorAll(".chat-verbosity-btn[data-verbosity]").forEach((btn) => {
+            const active = btn.dataset.verbosity === norm;
+            btn.classList.toggle("active", active);
+            btn.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        }
+      },
+
+      renderVerbosityLabels() {
+        const isVi = App.currentLang === "vi";
+        if (Dom.chatVerbosityLabel) {
+          Dom.chatVerbosityLabel.textContent = isVi ? "Độ chi tiết:" : "Detail level:";
+        }
+        if (Dom.chatVerbosityGroup) {
+          Dom.chatVerbosityGroup.setAttribute("aria-label", isVi ? "Độ chi tiết câu trả lời" : "Response length");
+          const labels = isVi
+            ? { short: "Ngắn", medium: "Vừa", detailed: "Dài" }
+            : { short: "Short", medium: "Medium", detailed: "Detailed" };
+          Dom.chatVerbosityGroup.querySelectorAll(".chat-verbosity-btn[data-verbosity]").forEach((btn) => {
+            const key = btn.dataset.verbosity;
+            if (labels[key]) btn.textContent = labels[key];
+          });
+        }
       },
 
       toggleExpand(forceState) {
@@ -8359,6 +8346,7 @@
           Dom.btnNewChatFromDrawer.innerHTML = `<i class="fa-solid fa-plus"></i> ${isVi ? "Trò chuyện mới" : "New Chat"}`;
         }
         this.renderQuotaBadge();
+        this.renderVerbosityLabels();
         this.renderHistoryDrawer();
         this.updateContext();
         if (!this.isBusy && Array.isArray(this.messages) && !this.messages.some((m) => m && m.role === "user")) {
@@ -8753,10 +8741,14 @@
         return /[.!?…]["'\)\]\*`]*$/.test(clean) ? clean : `${clean}.`;
       },
 
-      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang) {
+      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang, verbosity = "medium") {
         const isEn = lang === "en";
+        const vNorm = ["short", "medium", "detailed"].includes(String(verbosity || "").toLowerCase())
+          ? String(verbosity).toLowerCase()
+          : "medium";
         const ge = primary.guideline_evolution || {};
         const curG = ge.current_guideline || {};
+        const priorG = ge.prior_guideline || {};
         const steps = ge.steps || [];
         const trials = primary.landmark_trials || [];
         const pearls = primary.pearls || [];
@@ -8773,10 +8765,11 @@
         });
 
         const wantsDetail = this.wantsDetailedExplanation(query);
+        const effLevel = (vNorm === "detailed" || (vNorm === "medium" && wantsDetail)) ? "detailed" : vNorm;
         const mcqOpts = this.extractPastedMcqOptions(query);
 
-        // 1) Pasted Multiple-Choice -> direct answer + clear clinical rationale (2–3 sentences)
-        if (mcqOpts && !wantsDetail) {
+        // 1) Pasted Multiple-Choice -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
+        if (mcqOpts) {
           const evidBlob = [
             curG.name || "",
             steps.map((s) => `${s.title_vi || ""} ${s.desc_vi || ""} ${s.title_en || ""} ${s.desc_en || ""}`).join(" "),
@@ -8802,17 +8795,35 @@
           const rawReason = (steps.length ? steps[steps.length - 1][isEn ? "desc_en" : "desc_vi"] : "")
             || (pearls.length ? (isEn ? pearls[0].text_en : pearls[0].text_vi) : "")
             || mcqOpts[bestK];
-          let oneReason = this.firstCleanSentence(rawReason, 220).replace(/\.$/, "");
+          let oneReason = this.firstCleanSentence(rawReason, effLevel === "short" ? 200 : 240).replace(/\.$/, "");
           if (oneReason.length > 2 && oneReason[0] === oneReason[0].toUpperCase() && oneReason.slice(0, 3) !== oneReason.slice(0, 3).toUpperCase()) {
             oneReason = oneReason[0].toLowerCase() + oneReason.slice(1);
+          }
+          const headAns = isEn ? `**${bestK}**, because ${oneReason}.` : `**${bestK}**, vì ${oneReason}.`;
+          if (effLevel === "short") {
+            return { markdown: this.ensureCompleteSentence(headAns), sources };
           }
           let trNote = "";
           if (trials.length > 0) {
             const tr0 = trials[0];
             trNote = " " + this.firstCleanSentence(`${tr0.name} (${tr0.value}, ${tr0.p}): ${isEn ? tr0.changes_en : tr0.changes_vi}`, 220);
           }
-          const ans = isEn ? `**${bestK}**, because ${oneReason}.${trNote}` : `**${bestK}**, vì ${oneReason}.${trNote}`;
-          return { markdown: this.ensureCompleteSentence(ans), sources };
+          if (effLevel === "medium") {
+            return { markdown: this.ensureCompleteSentence(headAns + trNote), sources };
+          }
+          const mcqParts = [headAns + trNote];
+          if (curG.name) {
+            const sDesc = steps.length ? this.firstCleanSentence(isEn ? steps[steps.length - 1].desc_en : steps[steps.length - 1].desc_vi, 320) : "";
+            mcqParts.push(`- **${isEn ? "Guideline Basis" : "Cơ sở Khuyến cáo"} (${curG.name}):** ${sDesc}`);
+          }
+          trials.slice(0, 2).forEach((tr) => {
+            mcqParts.push(`- **${tr.name}** (${tr.value}, ${tr.ci}, ${tr.p}): ${this.firstCleanSentence(isEn ? tr.changes_en : tr.changes_vi, 300)} *${this.firstCleanSentence(isEn ? tr.caution_en : tr.caution_vi, 260)}*`);
+          });
+          if (pearls.length > 0) {
+            const p0 = (isEn ? pearls[0].text_en : pearls[0].text_vi) || "";
+            if (p0) mcqParts.push(`- **${isEn ? "Clinical Pearl" : "Điểm nhấn lâm sàng"}:** ${this.firstCleanSentence(p0, 320)}`);
+          }
+          return { markdown: this.ensureCompleteSentence(mcqParts.join("\n")), sources };
         }
 
         const rawMd = (isEn ? primary.part2_en_markdown : primary.part1_vi_markdown) || primary.part1_vi_markdown || "";
@@ -8839,8 +8850,27 @@
           .filter((x) => x.hits > 0)
           .sort((a, b) => b.hits - a.hits);
 
-        // 2) Balanced direct answer with key evidence (~140–220 words)
-        if (!wantsDetail) {
+        // 2) Short mode -> 1-2 crisp clinical sentences (~45-85 words)
+        if (effLevel === "short") {
+          const shortSegs = [];
+          if (rankedLines.length > 0) {
+            shortSegs.push(this.firstCleanSentence(rankedLines[0].line, 240));
+          } else if (steps.length > 0) {
+            const sLast = steps[steps.length - 1];
+            shortSegs.push(`**${curG.name || (isEn ? primary.title_en : primary.title_vi)}:** ${this.firstCleanSentence(isEn ? sLast.desc_en : sLast.desc_vi, 240)}`);
+          }
+          if (trials.length > 0) {
+            const tr0 = trials[0];
+            shortSegs.push(`**${tr0.name}** (${tr0.value}, ${tr0.p}): ${this.firstCleanSentence(isEn ? tr0.changes_en : tr0.changes_vi, 180)}`);
+          } else if (fdaNote && fdaNote.text) {
+            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220)), 200);
+            shortSegs.push(`**${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
+          }
+          return { markdown: this.ensureCompleteSentence(shortSegs.join(" ")), sources };
+        }
+
+        // 3) Medium / balanced direct answer (~130-210 words)
+        if (effLevel === "medium") {
           const sections = [];
           if (rankedLines.length > 0) {
             sections.push(rankedLines.slice(0, 2).map((x) => this.firstCleanSentence(x.line, 420)).join(" "));
@@ -8862,7 +8892,7 @@
           return { markdown: this.ensureCompleteSentence(sections.join("\n\n")), sources };
         }
 
-        // 3) Detailed explanation mode (~220–350 words, structured & complete)
+        // 4) Detailed explanation mode (~240-360 words, structured & complete)
         const parts = [
           `**${curG.name || (isEn ? primary.title_en : primary.title_vi)}** *(${isEn ? "Prior" : "Tiền nhiệm"}: ${priorG.name || "—"})*`
         ];
@@ -8885,7 +8915,7 @@
         return { markdown: this.ensureCompleteSentence(parts.join("\n")), sources };
       },
 
-      async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory = []) {
+      async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory = [], verbosity = "medium") {
         const key = this._k();
         if (!key) return { text: "", engine: "", blockedBanner: "" };
 
@@ -8910,13 +8940,30 @@
 
         const botName = lang === "en" ? "Med Bro" : "Soái ca Y khoa";
         const siteName = lang === "en" ? "Daily Learning Heart" : "Xem Tim Mỗi Ngày";
+        const vNorm = ["short", "medium", "detailed"].includes(String(verbosity || "").toLowerCase())
+          ? String(verbosity).toLowerCase()
+          : "medium";
         const mcqOpts = this.extractPastedMcqOptions(query);
         const wantsDetail = this.wantsDetailedExplanation(query);
-        const mcqRule = (mcqOpts && !wantsDetail)
-          ? `MCQ OVERRIDE ACTIVE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with ${lang === "en" ? "'<Letter>, because <core reason>.'" : "'<Chữ cái A/B/C/D>, vì <lý do cốt lõi>.'"} followed by 1-2 short supporting sentences (70-120 words total) tying to the 2026 Guideline/RCT and briefly noting why the main trap fails.\n`
-          : (wantsDetail
-            ? "EXPLANATION REQUESTED: Expand on the prior point WITHOUT repeating verbatim. Write a rich, structured clinical explanation (220-350 words) with short bullet points covering mechanism, RCT metrics (HR/CI/p), and bedside safety checks, ending cleanly on a complete sentence.\n"
-            : "BALANCED CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-5 structured bullet points (140-220 words total) covering guideline shifts, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n");
+        const effLevel = (vNorm === "detailed" || (vNorm === "medium" && wantsDetail)) ? "detailed" : vNorm;
+        let mcqRule = "";
+        if (mcqOpts) {
+          if (effLevel === "short") {
+            mcqRule = `MCQ OVERRIDE + SHORT MODE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with ${lang === "en" ? "'<Letter>, because <1 short crisp reason>.'" : "'<Chữ cái A/B/C/D>, vì <1 lý do cốt lõi ngắn gọn>.'"} STRICT LIMIT: 20-55 words total (1-2 short sentences max). No bullet lists.\n`;
+          } else if (effLevel === "detailed") {
+            mcqRule = `MCQ OVERRIDE + DETAILED MODE: Start immediately on line 1 with ${lang === "en" ? "'<Letter>, because <core reason>.'" : "'<Chữ cái A/B/C/D>, vì <lý do cốt lõi>.'"} then write a structured breakdown (220-340 words) with short bullet points covering guideline criteria, RCT numbers (HR/CI/p), why distractors fail, and bedside safety checks. End cleanly on a complete sentence.\n`;
+          } else {
+            mcqRule = `MCQ OVERRIDE + MEDIUM MODE: Start immediately with ${lang === "en" ? "'<Letter>, because <core reason>.'" : "'<Chữ cái A/B/C/D>, vì <lý do cốt lõi>.'"} followed by 1-2 short supporting sentences (70-120 words total) tying to the 2026 Guideline/RCT and briefly noting why the main trap fails.\n`;
+          }
+        } else {
+          if (effLevel === "short") {
+            mcqRule = "SHORT RESPONSE MODE: Give the exact core clinical answer immediately in 1-3 short, crisp sentences (35-75 words total). Include key drug/threshold or RCT stat if directly asked; avoid long lists or filler. Always finish on a complete sentence.\n";
+          } else if (effLevel === "detailed") {
+            mcqRule = "DETAILED CLINICAL MODE: Put the exact core answer first, then provide a rich, structured clinical breakdown (250-380 words) using short bullet points covering mechanism, prior-vs-2026 guideline shifts, landmark RCT metrics (HR/CI/p), and bedside safety/monitoring checks. Always finish cleanly on a complete sentence.\n";
+          } else {
+            mcqRule = "MEDIUM CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-4 concise bullet points (130-210 words total) covering guideline shifts, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n";
+          }
+        }
 
         const sysPrompt = `You are '${botName}', a direct yet thorough Cardiology EBM assistant inside '${siteName}'.\n${mcqRule}STRICT SCOPE: Answer cardiology, medicine, pharmacology, guidelines, or medical follow-ups; decline off-topic in 1 short sentence. NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a Cardiology Pillar question. If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain warmly using everyday metaphors (200-320 words). TERMINOLOGY: Translate 'white-coat' = 'tăng huyết áp áo choàng trắng'. Never invent PMIDs/stats. Reply in ${lang === "en" ? "clear academic English. /no_think" : "clear, structured clinical Vietnamese. /no_think"}`;
 
@@ -9029,6 +9076,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                   pillar_id: activeB ? activeB.pillar_id : App.todayPillarId,
                   briefing_id: activeB ? activeB.id : "",
                   lang,
+                  verbosity: this.verbosity || "medium",
                   include_pubmed: true,
                   history: priorHistory
                 })
@@ -9067,8 +9115,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             this.fetchLivePubMedAbstracts(searchQuery, primary),
             this.fetchOpenFdaDrugNote(searchQuery)
           ]);
-          const llmOut = await this.callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory);
-          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang);
+          const llmOut = await this.callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory, this.verbosity || "medium");
+          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium");
           const finalMd = llmOut.text ? llmOut.text : ((llmOut.blockedBanner || "") + det.markdown);
           const engineLabel = llmOut.text
             ? llmOut.engine
@@ -9614,20 +9662,20 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           const el = document.getElementById(id);
           if (el) el.textContent = txt;
         };
-        setEl("socraticTitleText", isVi ? "Học theo kiểu Socract" : "Socratic Learning");
+        setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
         setEl("socraticSubText", isVi
-          ? "Ôn tập trắc nghiệm Socratic sau khi đọc xong Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & cập nhật tiến độ tức thì sau mỗi câu."
-          : "Active multiple-choice Socratic review: 4-question diagnostic (levels 0–5), A/B/C/D clinical challenges, and real-time mastery tracking after every answer.");
+          ? "Trắc nghiệm ôn lại kiến thức hôm nay sau khi đọc Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & cập nhật tiến độ tức thì sau mỗi câu."
+          : "Daily review quiz after reading today's pillar: 4-question diagnostic (levels 0–5), A/B/C/D clinical challenges, and real-time mastery tracking after every answer.");
 
         const phaseMapVi = {
           diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
-          loop: `Trắc nghiệm Socratic • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
+          loop: `Trắc nghiệm ôn tập • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
           final_exam: "Kiểm tra Tổng hợp Cuối kỳ",
           mastered: "ĐÃ LÀM CHỦ (≥ 4/5) ✓"
         };
         const phaseMapEn = {
           diagnostic: `Diagnostic (${(sess.diag_step || 0) + 1}/4) • Target ≥ 4/5`,
-          loop: `Socratic MCQ Loop • Level: ${sess.difficulty}`,
+          loop: `Review Quiz Loop • Level: ${sess.difficulty}`,
           final_exam: "Final Mixed Assessment",
           mastered: "MASTERED (≥ 4/5) ✓"
         };
@@ -9721,7 +9769,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             box.innerHTML = `<div class="socratic-msg assistant"><div class="socratic-msg-bubble">${
               isVi
                 ? "Bấm <strong>Bắt đầu Chẩn đoán (4 câu)</strong> để hệ thống kiểm tra mức độ nắm vững bài <strong>Trụ cột #" + this.curPillarId + "</strong> hôm nay bằng các câu hỏi trắc nghiệm gợi mở (A/B/C/D)."
-                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin active multiple-choice Socratic mastery testing on today's <strong>Pillar #" + this.curPillarId + "</strong>."
+                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin the daily review quiz on today's <strong>Pillar #" + this.curPillarId + "</strong>."
             }</div></div>`;
           } else {
             box.innerHTML = msgs.map((m) => {
@@ -9793,7 +9841,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           this.saveStore();
           this.renderUI();
           showToast(isVi
-            ? (cmd === "harder" ? "Đã tăng độ khó trắc nghiệm Socratic." : "Đã giảm độ khó trắc nghiệm Socratic.")
+            ? (cmd === "harder" ? "Đã tăng độ khó trắc nghiệm ôn tập." : "Đã giảm độ khó trắc nghiệm ôn tập.")
             : (cmd === "harder" ? "Difficulty set to harder." : "Difficulty set to easier."));
           if (sess.started && sess.phase !== "mastered") {
             this.callSocraticApi(cmd, cmd, "");
@@ -9846,7 +9894,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         const typing = document.createElement("div");
         typing.className = "socratic-msg assistant";
         typing.innerHTML = `<div class="socratic-msg-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> ${
-          lang === "en" ? "Formulating multiple-choice Socratic challenge..." : "Đang soạn câu hỏi trắc nghiệm Socratic..."
+          lang === "en" ? "Formulating multiple-choice review challenge..." : "Đang soạn câu hỏi trắc nghiệm ôn tập..."
         }</div>`;
         if (box) {
           box.appendChild(typing);
@@ -10021,8 +10069,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           if (action === "start_diagnostic") {
             const mcq = this.buildDeterministicMcq(primary, 0, 0, lang, diff);
             reply = isEn
-              ? `### Med Bro — Socratic Learning (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to map your mastery.\n\n**Diagnostic Q1:** ${mcq.question}`
-              : `### Soái ca Y khoa — Học theo kiểu Socract (Trắc nghiệm)\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** ${mcq.question}`;
+              ? `### Med Bro — Daily Review Quiz (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to review today's knowledge.\n\n**Diagnostic Q1:** ${mcq.question}`
+              : `### Soái ca Y khoa — Trắc nghiệm ôn lại kiến thức hôm nay\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** ${mcq.question}`;
             meta = { eval: "start", new_level: 0, next_focus: 0, phase: "diagnostic", options: mcq.options, correct_key: mcq.correct_key };
           } else if (action === "harder" || action === "easier") {
             const mcq = this.buildDeterministicMcq(primary, sess.focus_idx, (sess.attempts_on_current || 0) + 2, lang, diff);
