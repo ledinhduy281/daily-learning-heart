@@ -310,12 +310,31 @@ def get_pillar_by_id(pillar_id: int) -> dict:
     return PILLARS[0]
 
 
+VN_TZ = datetime.timezone(datetime.timedelta(hours=7))
+
+
+def _now_vn() -> datetime.datetime:
+    return datetime.datetime.now(VN_TZ)
+
+
+def _today_vn() -> datetime.date:
+    return _now_vn().date()
+
+
+def _scheduled_cycle_date_vn(cutoff_hour: int = 6) -> datetime.date:
+    """Before 06:00 AM Vietnam time, active edition remains yesterday's; at/after 06:00 AM it advances to today."""
+    now_vn = _now_vn()
+    if now_vn.hour >= cutoff_hour:
+        return now_vn.date()
+    return now_vn.date() - datetime.timedelta(days=1)
+
+
 def get_pillar_for_date(target_date: datetime.date | None = None) -> dict:
     """
     Deterministic 1-pillar-per-day ascending rotation (1 -> 2 -> ... -> 10 -> 1),
     anchored so ANCHOR_DATE (2026-11-16) is Pillar #1.
     """
-    d = target_date or datetime.date.today()
+    d = target_date or _today_vn()
     delta = (d - ANCHOR_DATE).days
     pid = (delta % 10) + 1
     return get_pillar_by_id(pid)
@@ -328,7 +347,7 @@ def get_next_pillar(current_id: int) -> dict:
 
 def load_rotation_state() -> dict:
     """Load rotation state and compute dynamic today/yesterday/tomorrow pillar IDs."""
-    today = datetime.date.today()
+    today = _scheduled_cycle_date_vn()
     today_pillar = get_pillar_for_date(today)
     yesterday_pillar = get_pillar_for_date(today - datetime.timedelta(days=1))
     tomorrow_pillar = get_pillar_for_date(today + datetime.timedelta(days=1))
@@ -1411,7 +1430,7 @@ def refresh_today_briefing(
     constructing the Guideline Evolution briefing (no random news crawling).
     """
     with _refresh_lock:
-        today = datetime.date.today()
+        today = _today_vn()
         today_str = today.isoformat()
         target_pillar = (
             get_pillar_by_id(int(pillar_id))
@@ -3494,7 +3513,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
                     progress_cb=lambda pct, txt: _emit({"type": "progress", "percent": pct, "message": txt}),
                 )
                 all_briefings = load_existing_briefings()
-                today = datetime.date.today()
+                today = _today_vn()
                 _emit({
                     "type": "done",
                     "percent": 100,
@@ -3511,7 +3530,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/status":
-            today = datetime.date.today()
+            today = _scheduled_cycle_date_vn()
             today_str = today.isoformat()
             today_pillar = get_pillar_for_date(today)
             yesterday_pillar = get_pillar_for_date(today - datetime.timedelta(days=1))
@@ -3528,8 +3547,9 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             current_user = get_user_by_token(token)
             user_key = current_user["username"] if current_user else "guest"
             feedback_summary = _get_feedback_summary(user_key)
+            include_briefings = str(query_params.get("include_briefings", ["0"])[0]) in ("1", "true", "yes")
 
-            self._send_json(200, {
+            payload = {
                 "ok": True,
                 "today_date": today_str,
                 "has_today_briefing": has_today,
@@ -3543,7 +3563,10 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
                 "available_models": AVAILABLE_MODELS,
                 "has_gemini_key": bool(os.environ.get("GEMINI_API_KEY")),
                 "has_openai_key": bool(os.environ.get("OPENAI_API_KEY")),
-            })
+            }
+            if include_briefings:
+                payload["briefings"] = briefings
+            self._send_json(200, payload)
             return
 
         if path == "/api/auth/me":
@@ -3841,6 +3864,11 @@ def main():
         help="Fetch/refresh today's single-pillar briefing immediately (Step-0 Guideline Evolution, or LLM if --model & --api-key provided).",
     )
     parser.add_argument(
+        "--refresh-if-needed",
+        action="store_true",
+        help="Refresh today's Vietnam-date single-pillar briefing only if not already generated for today.",
+    )
+    parser.add_argument(
         "--install-launchd",
         action="store_true",
         help="Install a macOS LaunchAgent to auto-refresh daily at 06:00 AM (Vietnam time).",
@@ -3897,12 +3925,12 @@ def main():
         print(f"Load it now with: launchctl load -w {plist_path}")
         return
 
-    if args.refresh:
+    if args.refresh or args.refresh_if_needed:
         model_requested = any(a == "--model" or a.startswith("--model=") for a in sys.argv[1:])
         explicit_key = args.api_key.strip()
         use_llm = bool(explicit_key and model_requested)
         res = refresh_today_briefing(
-            force=True,
+            force=bool(args.refresh),
             pillar_id=args.pillar,
             model_name=args.model if use_llm else "",
             api_key=explicit_key,
@@ -3910,7 +3938,8 @@ def main():
             use_llm=use_llm,
         )
         b = res["briefing"]
-        print(f"[Refreshed] {b['date']} — Pillar #{b['pillar_id']}: {b['title_vi']} (model: {b['model_used']})")
+        tag = "Already up to date" if res.get("already_up_to_date") else "Refreshed"
+        print(f"[{tag}] {b['date']} — Pillar #{b['pillar_id']}: {b['title_vi']} (model: {b['model_used']})")
         return
 
     if args.verify_pubmed:

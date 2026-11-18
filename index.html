@@ -5023,6 +5023,10 @@
       return getVietnamHourAndIso(dateObj).iso;
     }
 
+    function getScheduledCycleDate(vnNow = getVietnamHourAndIso()) {
+      return vnNow.hour >= 6 ? vnNow.iso : addDaysIso(vnNow.iso, -1);
+    }
+
     function parseIsoDateUtc(iso) {
       const parts = (iso || ANCHOR_DATE_STR).split("-").map(n => parseInt(n, 10));
       return Date.UTC(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
@@ -5125,12 +5129,33 @@
         }
       }
 
-      // Compute deterministic default today state before server status responds
-      const localToday = getLocalIsoDate();
-      const seedDate = (App.rotation && App.rotation.last_updated) || localToday;
-      App.todayDate = App.briefings.some(b => b.date === localToday) ? localToday : seedDate;
+      // Always align to 06:00 AM Vietnam Time schedule (before 06:00 AM VN stays on yesterday's edition)
+      App.todayDate = getScheduledCycleDate();
       computeRotationPillarsFromDate(App.todayDate);
       App.historyPillarId = App.todayPillarId;
+    }
+
+    async function reloadSeedBriefingsScript() {
+      return new Promise((resolve) => {
+        const sc = document.createElement("script");
+        sc.src = `data/briefings.js?v=${Date.now()}`;
+        sc.async = true;
+        sc.onload = () => {
+          if (window.EBM_BRIEFINGS_DATA && Array.isArray(window.EBM_BRIEFINGS_DATA.briefings)) {
+            App.briefings = window.EBM_BRIEFINGS_DATA.briefings;
+            if (window.EBM_BRIEFINGS_DATA.rotation_state) {
+              App.rotation = window.EBM_BRIEFINGS_DATA.rotation_state;
+            }
+          }
+          sc.remove();
+          resolve(true);
+        };
+        sc.onerror = () => {
+          sc.remove();
+          resolve(false);
+        };
+        document.head.appendChild(sc);
+      });
     }
 
     function computeRotationPillarsFromDate(todayIso) {
@@ -5218,6 +5243,7 @@
       loadOfflineFeedbackStore();
       hideAuthGate();
       renderAllViewsAfterAuth();
+      setTimeout(() => checkAndSyncDailyRefresh(true), 80);
     }
 
     async function bootstrapSessionAndStatus() {
@@ -5288,8 +5314,14 @@
         App.offlineDemo = false;
         setAuthenticatedUser(authedUser, App.token);
         hideAuthGate();
-        renderAllViewsAfterAuth();
         const vnNow = getVietnamHourAndIso();
+        const hasInMem = App.briefings.some(
+          b => b.date === App.todayDate && Number(b.pillar_id) === Number(App.todayPillarId)
+        );
+        if (!hasInMem && statusData && statusData.has_today_briefing) {
+          await reloadSeedBriefingsScript();
+        }
+        renderAllViewsAfterAuth();
         if (statusData && statusData.has_today_briefing === false && vnNow.hour >= 6) {
           refreshTodayData(false, true);
         }
@@ -7153,21 +7185,99 @@
     /* ========================================================================
        DAILY 1-PILLAR REFRESH WITH LIVE SSE % PROGRESS
        ======================================================================== */
-    function scheduleDailyRefresh() {
-      setInterval(() => {
-        if (!App.user || App.offlineDemo || isFileOrigin()) return;
+    let _dailySyncInFlight = false;
+    let _cloudCrawledIso = "";
+
+    async function checkAndSyncDailyRefresh(silent = true) {
+      if (_dailySyncInFlight || isFileOrigin()) return;
+      _dailySyncInFlight = true;
+      try {
         const vnNow = getVietnamHourAndIso();
-        if (vnNow.hour >= 6) {
-          const todayIso = vnNow.iso;
-          const todayPid = getPillarIdForDate(todayIso);
-          const hasToday = App.briefings.some(
-            b => b.date === todayIso && Number(b.pillar_id) === todayPid
-          );
-          if (!hasToday) {
-            refreshTodayData(false, true);
-          }
+        const scheduledIso = getScheduledCycleDate(vnNow);
+        const scheduledPid = getPillarIdForDate(scheduledIso);
+        const prevIso = App.todayDate;
+        const hasTodayInMem = App.briefings.some(
+          b => b.date === scheduledIso && Number(b.pillar_id) === scheduledPid && !b.crawled_articles
+        );
+        const needsSync = (prevIso !== scheduledIso) || !hasTodayInMem;
+
+        if (App.serverAvailable) {
+          if (!needsSync && vnNow.hour >= 6) return;
+          try {
+            const stRes = await fetch("/api/status?include_briefings=1", {
+              headers: getAuthHeaders(),
+              cache: "no-store"
+            });
+            const ct = stRes.headers.get("content-type") || "";
+            if (stRes.ok && ct.includes("application/json")) {
+              const stData = await stRes.json();
+              if (stData && stData.ok) {
+                const beforeSelId = App.selected ? App.selected.id : "";
+                applyServerStatus(stData);
+                const nowHasToday = App.briefings.some(
+                  b => b.date === App.todayDate && Number(b.pillar_id) === Number(App.todayPillarId) && !b.crawled_articles
+                );
+                if (nowHasToday && (prevIso !== App.todayDate || beforeSelId !== (getTodaySingleBriefing() || {}).id)) {
+                  renderDailyRotationBanner();
+                  renderPillarsTiles();
+                  renderModeSpecificPanels();
+                  if (App.mode === "today") {
+                    const target = getTodaySingleBriefing();
+                    if (target) selectBriefing(target);
+                  } else {
+                    renderBriefingsList();
+                  }
+                  if (!silent) {
+                    showToast(`Đã cập nhật bản tin mới lúc 06:00 AM (Trụ cột #${App.todayPillarId})!`);
+                  }
+                  return;
+                }
+                if (stData.has_today_briefing === false && vnNow.hour >= 6 && App.user && !App.offlineDemo) {
+                  await refreshTodayData(false, silent);
+                }
+              }
+            }
+          } catch (_) {}
+          return;
         }
-      }, 60000);
+
+        // Static / GitHub Pages Cloud Mode
+        if (!needsSync) return;
+        App.todayDate = scheduledIso;
+        computeRotationPillarsFromDate(scheduledIso);
+
+        await reloadSeedBriefingsScript();
+        const exactAfterReload = App.briefings.some(
+          b => b.date === scheduledIso && Number(b.pillar_id) === scheduledPid
+        );
+        if (exactAfterReload) {
+          renderDailyRotationBanner();
+          renderPillarsTiles();
+          renderModeSpecificPanels();
+          if (App.mode === "today") {
+            const target = getTodaySingleBriefing();
+            if (target) selectBriefing(target);
+          } else {
+            renderBriefingsList();
+          }
+          return;
+        }
+
+        if (vnNow.hour >= 6 && _cloudCrawledIso !== scheduledIso) {
+          _cloudCrawledIso = scheduledIso;
+          await refreshTodayData(false, silent);
+        }
+      } finally {
+        _dailySyncInFlight = false;
+      }
+    }
+
+    function scheduleDailyRefresh() {
+      setInterval(() => checkAndSyncDailyRefresh(true), 60000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) checkAndSyncDailyRefresh(true);
+      });
+      window.addEventListener("focus", () => checkAndSyncDailyRefresh(true));
     }
 
     async function refreshTodayData(force = true, silent = false) {
@@ -7267,59 +7377,76 @@
 
       // GitHub Pages / Static Cloud PWA live NCBI PubMed Guideline Crawler mode (Last 3 Months)
       if (!App.serverAvailable || isFileOrigin()) {
-        const localToday = getLocalIsoDate();
+        if (!force && !isFileOrigin()) {
+          await reloadSeedBriefingsScript();
+        }
+        const localToday = getScheduledCycleDate();
         const pid = getPillarIdForDate(localToday);
         App.todayDate = localToday;
         computeRotationPillarsFromDate(localToday);
         setProgress(20, `Đang đồng bộ chu kỳ Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}...`);
         try {
-          setProgress(45, `Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}...`);
-          const crawled = await crawlLatestGuidelineFromPubMed(pid, 90);
-          setProgress(85, "Đang cập nhật sơ đồ Guideline Evolution & Nguồn Step-0...");
-          const target = getTodaySingleBriefing();
-          if (target && crawled.length > 0) {
-            const top = crawled[0];
-            const ge = target.guideline_evolution || (target.guideline_evolution = {});
-            const cur = ge.current_guideline || {};
-            const curYears = (String(cur.year || "").match(/\b20\d{2}\b/g) || []).map(Number);
-            const curMaxYear = curYears.length > 0 ? Math.max(...curYears) : 0;
-            const nowStamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-            if (Number(top.year) > curMaxYear) {
-              if (cur.name || cur.title) {
-                ge.prior_guideline = {
-                  name: cur.name || cur.title,
-                  year: String(curMaxYear || 2025),
-                  doi: cur.doi || "",
-                  pmid: cur.pmid || ""
+          let target = getTodaySingleBriefing();
+          const alreadyFresh = !force && target && target.date === localToday && Number(target.pillar_id) === pid;
+          let crawled = [];
+          if (!alreadyFresh) {
+            setProgress(45, `Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}...`);
+            crawled = await crawlLatestGuidelineFromPubMed(pid, 90);
+            setProgress(85, "Đang cập nhật sơ đồ Guideline Evolution & Nguồn Step-0...");
+          }
+          if (target && !alreadyFresh) {
+            // Clone into today's scheduled date edition so historical template stays intact
+            target = JSON.parse(JSON.stringify(target));
+            target.id = `ebm-${localToday}-p${pid}-main`;
+            target.date = localToday;
+            target.time = "06:00 AM";
+            if (crawled.length > 0) {
+              const top = crawled[0];
+              const ge = target.guideline_evolution || (target.guideline_evolution = {});
+              const cur = ge.current_guideline || {};
+              const curYears = (String(cur.year || "").match(/\b20\d{2}\b/g) || []).map(Number);
+              const curMaxYear = curYears.length > 0 ? Math.max(...curYears) : 0;
+              const nowStamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+              if (Number(top.year) > curMaxYear) {
+                if (cur.name || cur.title) {
+                  ge.prior_guideline = {
+                    name: cur.name || cur.title,
+                    year: String(curMaxYear || 2025),
+                    doi: cur.doi || "",
+                    pmid: cur.pmid || ""
+                  };
+                }
+                ge.current_guideline = {
+                  name: top.title,
+                  year: `${top.year} (3T gần nhất)`,
+                  doi: top.doi,
+                  pmid: top.pmid,
+                  crawled_live: true,
+                  crawled_at: nowStamp
                 };
+              } else {
+                cur.crawled_live = true;
+                cur.crawled_at = nowStamp;
+                ge.current_guideline = cur;
               }
-              ge.current_guideline = {
-                name: top.title,
-                year: `${top.year} (3T gần nhất)`,
-                doi: top.doi,
-                pmid: top.pmid,
-                crawled_live: true,
-                crawled_at: nowStamp
-              };
-            } else {
-              cur.crawled_live = true;
-              cur.crawled_at = nowStamp;
-              ge.current_guideline = cur;
+              const existing = Array.isArray(target.pubmed_anchors) ? target.pubmed_anchors : [];
+              const seenPmid = new Set(existing.map((a) => String(a.pmid || "")));
+              const newAnchors = crawled
+                .filter((g) => g.pmid && !seenPmid.has(g.pmid))
+                .map(({ _score, year, ...rest }) => rest);
+              target.pubmed_anchors = [...newAnchors, ...existing];
+              target.last_guideline_crawl_at = nowStamp;
             }
-            const existing = Array.isArray(target.pubmed_anchors) ? target.pubmed_anchors : [];
-            const seenPmid = new Set(existing.map((a) => String(a.pmid || "")));
-            const newAnchors = crawled
-              .filter((g) => g.pmid && !seenPmid.has(g.pmid))
-              .map(({ _score, year, ...rest }) => rest);
-            target.pubmed_anchors = [...newAnchors, ...existing];
-            target.last_guideline_crawl_at = nowStamp;
+            App.briefings = [target, ...App.briefings.filter((b) => b.id !== target.id)];
           }
           renderDailyRotationBanner();
           renderPillarsTiles();
           renderModeSpecificPanels();
           if (target) selectBriefing(target);
-          setProgress(100, `Đã crawl ${crawled.length} Guideline mới nhất (3 tháng gần nhất) cho Trụ cột #${pid}/10!`);
-          if (!silent) showToast(`Đã crawl Guideline 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}!`);
+          setProgress(100, alreadyFresh
+            ? `Đã đồng bộ bản tin Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}!`
+            : `Đã crawl ${crawled.length} Guideline mới nhất (3 tháng gần nhất) cho Trụ cột #${pid}/10!`);
+          if (!silent) showToast(`Đã cập nhật Trụ cột #${pid} (${formatShortDdMm(localToday)})!`);
         } catch (_) {
           setProgress(100, "Đã đồng bộ dữ liệu cục bộ.");
         } finally {
