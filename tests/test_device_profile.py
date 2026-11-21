@@ -17,6 +17,26 @@ class QuietHandler(app.EBMRequestHandler):
 
 
 class DeviceProfileTests(unittest.TestCase):
+    def test_anonymous_storage_is_write_only_and_bounded(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'), patch.object(app, 'FEEDBACK_PATH', Path(directory) / 'feedback.json'), patch.object(app, 'MAX_ANONYMOUS_DEVICES', 1):
+            one, two = str(uuid.uuid4()), str(uuid.uuid4())
+            for device in (one, two):
+                self.assertEqual(self.request('/api/status', device)[0], 200)
+                self.assertEqual(self.request('/api/feedback', device)[0], 200)
+            self.assertFalse(json.loads(app.USERS_PATH.read_text()).get('devices'))
+            self.assertEqual(self.request('/api/user/activity', one, {'action': 'read', 'briefing_id': 'one'})[0], 200)
+            self.assertEqual(self.request('/api/user/activity', two, {'action': 'read', 'briefing_id': 'two'})[0], 429)
+            self.assertEqual(self.request('/api/feedback', two, {'type': 'like', 'briefing_id': 'two'})[0], 429)
+            with patch.object(app, 'handle_socratic_turn', return_value={'ok': True, 'state': {}}):
+                self.assertEqual(self.request('/api/socratic', two, {})[0], 429)
+            before = app.USERS_PATH.read_text()
+            with patch.object(app, 'MAX_DEVICE_BYTES', 600):
+                self.assertEqual(self.request('/api/user/activity', one, {'action': 'read', 'briefing_id': 'x' * 450})[0], 413)
+                with patch.object(app, 'handle_socratic_turn', return_value={'ok': True, 'state': {'text': 'x' * 700}}):
+                    self.assertEqual(self.request('/api/socratic', one, {})[0], 413)
+            self.assertEqual(app.USERS_PATH.read_text(), before)
+            self.assertEqual(self.request('/api/user/activity', one, {'action':'read', 'briefing_id':'x' * app.MAX_DEVICE_BYTES})[0], 413)
+
     @classmethod
     def setUpClass(cls):
         cls.directory = tempfile.TemporaryDirectory()
