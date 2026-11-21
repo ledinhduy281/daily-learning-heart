@@ -76,10 +76,12 @@ const DeviceProfile = (() => {
       remove(key) { delete p.progress[key]; persist(); },
       activity(readIds, savedIds) { p.read_ids = [...new Set(readIds)]; p.bookmarked_ids = [...new Set(savedIds)]; persist(); },
       rename(name) { name = String(name).trim(); if (!name || name.length > 100) throw new Error('Invalid name'); p.display_name = name; persist(); },
-      exportJSON() { return JSON.stringify(p, null, 2); },
+      exportJSON() { const {device_id, ...backup} = p; return JSON.stringify(backup, null, 2); },
       importJSON(text, mode = 'merge') {
         if (typeof text !== 'string' || text.length > 5 * 1024 * 1024 || !['merge','replace'].includes(mode)) throw new Error('Invalid import');
-        const incoming = validate(JSON.parse(text));
+        const parsed = JSON.parse(text);
+        if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
+        const incoming = validate({...parsed, device_id: p.device_id});
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) {
           try {
