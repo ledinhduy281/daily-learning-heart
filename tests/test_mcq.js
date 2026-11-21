@@ -6,6 +6,12 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+{
+  const b=briefings.find(b=>b.id==='ebm-2026-11-14-p9-main');
+  const primary={landmark_trials:b.landmark_trials.filter(t=>t.name.includes('Guidelines'))};
+  assert.ok(primary.landmark_trials.length);
+  for (const lang of ['vi','en']) assert.equal(quiz.build(primary,1,0,lang).question_kind,'appraisal');
+}
 for (const b of briefings) for (const lang of ['vi','en']) {
   let {state}=quiz.turn(b,{},lang,'start_diagnostic');
   const keys=[];

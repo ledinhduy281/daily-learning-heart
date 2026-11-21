@@ -19,7 +19,7 @@ const ClinicalQuiz = (() => {
   function build(primary,slotIdx,variantIdx,lang,difficulty='normal') {
     const en=lang==='en', suffix=en?'en':'vi', pools=[[],[],[],[]];
     for (const s of primary.guideline_evolution?.steps || []) pools[0].push([s['title_'+suffix]||'',s['desc_'+suffix]||'']);
-    for (const t of primary.landmark_trials || []) {
+    for (const t of (primary.landmark_trials || []).filter(distractors.isTrial)) {
       if (t.value) pools[1].push([t.name||'',en?`The reported result is ${t.value}.`:`Kết quả được báo cáo là ${t.value}.`]);
       pools[3].push([t.name||'',t['caution_'+suffix]||'']);
     }

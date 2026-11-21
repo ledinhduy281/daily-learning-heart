@@ -12,10 +12,16 @@ ENDPOINT_VI = {
 }
 
 
+def is_trial(entry):
+    metadata = ' '.join(str(entry.get(k) or '') for k in ('name', 'value', 'p'))
+    return (not re.search(r'guideline|consensus|\bClass\s+[IV]', metadata, re.I)
+            and bool(re.search(r'(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)', str(entry.get('value') or ''), re.I)))
+
+
 def rich_cards(primary, lang, numeric_alternatives):
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
-    trials = primary.get('landmark_trials') or []
+    trials = [t for t in primary.get('landmark_trials') or [] if is_trial(t)]
     steps = (primary.get('guideline_evolution') or {}).get('steps') or []
     cards = []
 

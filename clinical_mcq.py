@@ -2,7 +2,7 @@
 import re
 import unicodedata
 
-from clinical_distractors import rich_cards
+from clinical_distractors import is_trial, rich_cards
 
 
 def normalized(text):
@@ -42,7 +42,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
     ge = primary.get('guideline_evolution') or {}
-    trials = primary.get('landmark_trials') or []
+    trials = [t for t in primary.get('landmark_trials') or [] if is_trial(t)]
     pools = [[], [], [], []]
     for step in ge.get('steps') or []:
         pools[0].append((step.get('title_' + suffix, ''), step.get('desc_' + suffix, '')))

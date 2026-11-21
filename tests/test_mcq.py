@@ -7,6 +7,22 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_guideline_items_are_not_trial_endpoints(self):
+        from clinical_distractors import rich_cards
+        from clinical_mcq import alternatives
+        for b in self.briefings:
+            for lang in ('vi', 'en'):
+                cards = rich_cards(b, lang, alternatives)
+                for card in cards:
+                    if card['kind'] == 'trial':
+                        self.assertFalse(any('ESC PAAD' in text or 'Consensus' in text for text in card['texts']))
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-14-p9-main')
+        only_guideline = {'landmark_trials': [t for t in b['landmark_trials'] if 'Guidelines' in t['name']]}
+        self.assertTrue(only_guideline['landmark_trials'])
+        for lang in ('vi', 'en'):
+            self.assertEqual(rich_cards(only_guideline, lang, alternatives), [])
+            self.assertEqual(app._build_socratic_mcq(only_guideline, 1, 0, lang)['question_kind'], 'appraisal')
+
     def test_key_positions_vary_within_each_quiz(self):
         from socratic_quiz import turn
         for b in self.briefings:

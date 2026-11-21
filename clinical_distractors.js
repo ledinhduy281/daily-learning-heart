@@ -7,8 +7,9 @@ const ClinicalDistractors = (() => {
     'CV Death, Stroke, or Hospitalization for Worsening HF or ACS':'Tử vong tim mạch, đột quỵ hoặc nhập viện vì suy tim nặng lên hay hội chứng mạch vành cấp',
     '12-Month Freedom from Procedural Failure, AT/AF Recurrence, AAD, or Repeat Ablation':'Không thất bại thủ thuật, tái phát nhịp nhanh nhĩ/rung nhĩ, dùng thuốc chống loạn nhịp hoặc triệt đốt lại trong 12 tháng'
   };
+  const isTrial=t=>!/guideline|consensus|\bClass\s+[IV]/i.test(['name','value','p'].map(k=>t[k]||'').join(' ')) && /(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)/i.test(t.value||'');
   function cards(primary,lang,numericAlternatives) {
-    const en=lang==='en',suffix=en?'en':'vi',trials=primary.landmark_trials||[],steps=primary.guideline_evolution?.steps||[],result=[];
+    const en=lang==='en',suffix=en?'en':'vi',trials=(primary.landmark_trials||[]).filter(isTrial),steps=primary.guideline_evolution?.steps||[],result=[];
     const clean=s=>{const t=String(s||'').split(/\s+/).join(' ').trim();return t.includes('...')||t.includes('…')?'':t;};
     const normalized=s=>clean(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
     function safety(text) {
@@ -105,6 +106,6 @@ const ClinicalDistractors = (() => {
     }
     return result;
   }
-  return {cards};
+  return {cards,isTrial};
 })();
 if (typeof module!=='undefined') module.exports=ClinicalDistractors;
