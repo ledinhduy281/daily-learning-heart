@@ -44,6 +44,21 @@ assert.equal(JSON.parse(device.get('ebm_socratic_state_v1'))[5].streak, 2);
 assert.equal(device.profile.display_name, 'Doctor A');
 const backup = device.exportJSON();
 {
+  const chats = create(new Storage(), crypto);
+  const recent = {id:'same', updatedAt:'2026-11-20T00:00:00Z', messages:['new']};
+  const longer = {id:'long', messages:['one','two']};
+  chats.set('soaica_chat_sessions_v1', JSON.stringify([recent,longer]));
+  const incoming = {...JSON.parse(backup), progress:{soaica_chat_sessions_v1:JSON.stringify([
+    {...recent, updatedAt:'2026-11-19T00:00:00Z', messages:['old']}, {id:'long',messages:['one']}, {id:'other',messages:[]}
+  ])}};
+  chats.importJSON(JSON.stringify(incoming));
+  const merged = JSON.parse(chats.get('soaica_chat_sessions_v1'));
+  assert.equal(merged.length,3); assert.deepEqual(merged.find(s=>s.id==='same'),recent);
+  assert.deepEqual(merged.find(s=>s.id==='long'),longer);
+  chats.importJSON(JSON.stringify(incoming));
+  assert.equal(JSON.parse(chats.get('soaica_chat_sessions_v1')).length,3);
+}
+{
   const limited = new Storage({[KEY]: JSON.stringify(device.profile)});
   limited.setItem = () => {throw new Error('quota');};
   const failed = create(limited), previous = failed.exportJSON();

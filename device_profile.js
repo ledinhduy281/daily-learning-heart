@@ -12,13 +12,28 @@ const DeviceProfile = (() => {
     }
   }
   function merge(a, b) {
-    if (Array.isArray(a) && Array.isArray(b)) return [...new Map([...a, ...b].map(x => [JSON.stringify(x), x])).values()];
+    if (Array.isArray(a) && Array.isArray(b)) {
+      const items = new Map();
+      for (const item of [...a, ...b]) {
+        const key = object(item) && typeof item.id === 'string' ? `id:${item.id}` : `value:${JSON.stringify(item)}`;
+        const previous = items.get(key);
+        if (!previous || !object(item) || newerRecord(previous, item) === item) items.set(key, item);
+      }
+      return [...items.values()];
+    }
     if (object(a) && object(b)) {
       const out = {...a};
       for (const key of Object.keys(b)) out[key] = key in a ? merge(a[key], b[key]) : b[key];
       return out;
     }
     return b;
+  }
+  function newerRecord(a, b) {
+    const timestamp = x => Date.parse(x.updatedAt || x.updated_at || x.created_at || '') || 0;
+    if (timestamp(a) !== timestamp(b)) return timestamp(a) > timestamp(b) ? a : b;
+    const size = x => (Array.isArray(x.messages) ? x.messages.length : 0);
+    if (size(a) !== size(b)) return size(a) > size(b) ? a : b;
+    return JSON.stringify(a).length > JSON.stringify(b).length ? a : b;
   }
   function validate(p) {
     validateTree(p);
