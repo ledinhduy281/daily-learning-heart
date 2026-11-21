@@ -8543,9 +8543,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
-          const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim()
-            && this.normalizeMcqOptions(s.current_options).some(o => o.key === s.correct_key);
-          if (s.started && s.phase !== "mastered" && !hasPendingQuestion && briefing) {
+          const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim();
+          const hasValidChoices = this.normalizeMcqOptions(s.current_options).some(o => o.key === s.correct_key);
+          if (s.started && s.phase !== "mastered" && hasPendingQuestion && !hasValidChoices && briefing) {
             const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), App.currentLang || "vi", s.difficulty || "normal");
             this.replacePendingQuestion(s, mcq, App.currentLang || "vi");
           }
@@ -8920,6 +8920,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         sess.subskills = sess.subskills.map((s) => ({ ...s, level: 0, checks: 0, answered: 0, correct: 0 }));
         sess.current_options = [];
         sess.correct_key = "";
+        sess.last_question = "";
+        sess.explanation = "";
         sess.options_lang = App.currentLang || "vi";
         sess.messages = [];
         this.saveStore();

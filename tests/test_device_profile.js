@@ -163,8 +163,7 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   for (const broken of [
     {...second,current_options:[...first.current_options,...second.current_options]},
     {...second,current_options:[]},
-    {...second,correct_key:''},
-    {...second,last_question:''}
+    {...second,correct_key:''}
   ]) {
     importQuiz(broken);
     tutor.loadStore();
@@ -193,6 +192,11 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   const before = generated;
   assert.deepEqual(Array.from(tutor.getSession().current_options),[]);
   assert.equal(generated,before);
+  for (const question of ['', '   ', undefined]) {
+    tutor.store = {1:{started:true,phase:'diagnostic',last_question:question,current_options:[],correct_key:'',messages:[]}};
+    assert.equal(tutor.getSession().messages.length,0);
+    assert.equal(generated,before);
+  }
 }
 {
   const malicious = '<img src=x onerror="throw 1">';
@@ -220,6 +224,38 @@ assert.equal(headers()['X-Device-Id'], id);
 assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'application/json');
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
+  {
+    const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+    const tutor = vm.runInNewContext(`${tutorCode}; SocraticTutor`,{
+      App:{currentLang:'en',selected:{pillar_id:1}},SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',
+      getPillarDisplayName:()=> 'Pillar',safeStorageSet() {},
+      document:{getElementById:()=>null,querySelectorAll:()=>[],createElement:()=>({remove() {}})}
+    });
+    const question = 'Diagnostic question 1?';
+    const options = ['A','B','C','D'].map(key=>({key,text:`Choice ${key}`}));
+    tutor.buildDeterministicMcq = () => {throw Error('Unexpected recovery at diagnostic start');};
+    tutor.renderUI = () => {tutor.getSession();};
+    let responses = 0;
+    tutor.runClientSocratic = async (briefing,session,action) => {
+      assert.equal(action,'start_diagnostic');
+      assert.equal(session.messages.length,0);
+      assert.equal(session.last_question,'');
+      assert.equal(session.explanation,'');
+      assert.equal(session.current_options.length,0);
+      responses++;
+      return {reply:question,state:{last_question:question,current_options:options,correct_key:'B',explanation:'Diagnostic explanation'}};
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await tutor.startDiagnostic();
+      const session = tutor.getSession();
+      assert.equal(session.messages.length,1);
+      assert.equal(session.messages[0].text,question);
+      assert.equal(session.last_question,question);
+      assert.deepEqual(session.current_options,options);
+      assert.equal(session.correct_key,'B');
+    }
+    assert.equal(responses,2);
+  }
   const legacyStorage = new Storage({ebm_auth_token:'old-session'});
   const replacement = create(legacyStorage, crypto);
   replacement.activity(['legacy-lesson'], []);
