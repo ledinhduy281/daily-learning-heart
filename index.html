@@ -8483,6 +8483,19 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         ];
       },
 
+      replacePendingQuestion(sess, mcq, lang) {
+        Object.assign(sess, {
+          last_question: mcq.question,
+          current_options: mcq.options,
+          correct_key: mcq.correct_key,
+          explanation: mcq.explanation,
+          options_lang: lang
+        });
+        if (!Array.isArray(sess.messages)) sess.messages = [];
+        sess.messages.push({ role: "assistant", text: mcq.question });
+        this.saveStore();
+      },
+
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = String(pid);
         const defs = this.getSubskillDefs(briefing);
@@ -8503,6 +8516,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             last_question: "",
             current_options: [],
             correct_key: "",
+            explanation: "",
             options_lang: App.currentLang || "vi",
             subskills: defs.map((d) => ({ id: d.id, label: d.label, level: 0, checks: 0, answered: 0, correct: 0 })),
             messages: []
@@ -8529,12 +8543,11 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
-          if (s.started && s.phase !== "mastered" && s.current_options.length !== 4 && briefing) {
+          const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim()
+            && this.normalizeMcqOptions(s.current_options).some(o => o.key === s.correct_key);
+          if (s.started && s.phase !== "mastered" && !hasPendingQuestion && briefing) {
             const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), App.currentLang || "vi", s.difficulty || "normal");
-            s.current_options = mcq.options;
-            s.correct_key = mcq.correct_key;
-            s.options_lang = App.currentLang || "vi";
-            if (!s.last_question) s.last_question = mcq.question;
+            this.replacePendingQuestion(s, mcq, App.currentLang || "vi");
           }
         }
         return this.store[key];
@@ -8560,12 +8573,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         const curLang = App.currentLang || "vi";
         if (sess.started && sess.phase !== "mastered" && b && sess.options_lang !== curLang) {
           const mcq = this.buildDeterministicMcq(b, sess.focus_idx || 0, (sess.diag_step || 0) + (sess.attempts_on_current || 0), curLang, sess.difficulty || "normal");
-          sess.current_options = mcq.options;
-          sess.correct_key = mcq.correct_key;
-          sess.options_lang = curLang;
-          sess.last_question = mcq.question;
-          sess.messages.push({ role: "assistant", text: mcq.question });
-          this.saveStore();
+          this.replacePendingQuestion(sess, mcq, curLang);
         }
         this.renderUI();
       },

@@ -132,6 +132,69 @@ const broken = create(new Storage({[KEY]: 'broken', ebm_ui_lang: 'en'}), crypto)
 assert.equal(broken.get('ebm_ui_lang'), 'en');
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 {
+  const profile = create(new Storage(),crypto);
+  const pending = label => ({
+    started:true, phase:'loop', last_question:`Question ${label}?`,
+    current_options:['A','B','C','D'].map(key=>({key,text:`${label} ${key}`})),
+    correct_key:label==='old'?'A':'D', explanation:`Explanation ${label}`,
+    messages:[{role:'assistant',text:`Question ${label}?`}]
+  });
+  const first = pending('old'), second = pending('imported');
+  profile.set('ebm_socratic_state_v1',JSON.stringify({1:first}));
+  const importQuiz = record => profile.importJSON(JSON.stringify({
+    ...JSON.parse(backup), progress:{ebm_socratic_state_v1:JSON.stringify({1:record})}
+  }));
+  importQuiz(second);
+  const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+  const app = {currentLang:'vi',selected:{pillar_id:1}};
+  const tutor = vm.runInNewContext(`${tutorCode}; SocraticTutor`,{
+    App:app,SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',getPillarDisplayName:()=> 'Pillar',
+    safeStorageGet:key=>profile.get(key),safeStorageSet:(key,value)=>profile.set(key,value)
+  });
+  let generated = 0;
+  const fresh = {question:'Replacement question?',options:pending('fresh').current_options,correct_key:'B',explanation:'Replacement explanation'};
+  tutor.buildDeterministicMcq = () => {generated++;return fresh;};
+  tutor.loadStore();
+  let session = tutor.getSession();
+  for (const key of ['last_question','current_options','correct_key','explanation','messages']) {
+    assert.deepEqual(JSON.parse(JSON.stringify(session[key])),second[key]);
+  }
+  assert.equal(generated,0);
+  for (const broken of [
+    {...second,current_options:[...first.current_options,...second.current_options]},
+    {...second,current_options:[]},
+    {...second,correct_key:''},
+    {...second,last_question:''}
+  ]) {
+    importQuiz(broken);
+    tutor.loadStore();
+    session = tutor.getSession();
+    assert.equal(session.last_question,fresh.question);
+    assert.deepEqual(session.current_options,fresh.options);
+    assert.equal(session.correct_key,fresh.correct_key);
+    assert.equal(session.explanation,fresh.explanation);
+    assert.equal(session.messages.at(-1).text,fresh.question);
+    const saved = JSON.parse(profile.get('ebm_socratic_state_v1'))[1];
+    assert.equal(saved.last_question,fresh.question);
+    assert.equal(saved.messages.at(-1).text,fresh.question);
+    const before = generated;
+    tutor.getSession();
+    assert.equal(generated,before);
+  }
+  app.currentLang = 'en';
+  fresh.question = 'English replacement question?';
+  fresh.explanation = 'English replacement explanation';
+  tutor.renderUI = () => {};
+  tutor.onLanguageChanged();
+  assert.equal(session.explanation,fresh.explanation);
+  assert.equal(session.options_lang,'en');
+  assert.equal(session.messages.at(-1).text,session.last_question);
+  tutor.store = {};
+  const before = generated;
+  assert.deepEqual(Array.from(tutor.getSession().current_options),[]);
+  assert.equal(generated,before);
+}
+{
   const malicious = '<img src=x onerror="throw 1">';
   const escapeCode = html.match(/function escapeHtml\(str\) \{([\s\S]*?)\n    \}/)[0];
   const urlCode = html.match(/function safeChatSourceUrl\(value\) \{([\s\S]*?)\n    \}/)[0];
