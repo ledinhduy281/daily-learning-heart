@@ -47,9 +47,18 @@ const DeviceProfile = (() => {
     }
     return p;
   }
-  function mergeProgress(a, b) {
+  function mergeProgress(a, b, key, base) {
     try {
       const left = JSON.parse(a), right = JSON.parse(b);
+      if (key === 'ebm_socratic_state_v1' && object(left) && object(right)) {
+        let previous;
+        try { previous = JSON.parse(base); } catch (_) {}
+        const pillars = {...left};
+        for (const [id, record] of Object.entries(right)) {
+          if (!previous || JSON.stringify(record) !== JSON.stringify(previous[id])) pillars[id] = record;
+        }
+        return JSON.stringify(pillars);
+      }
       if (object(left) && object(right) || Array.isArray(left) && Array.isArray(right)) return JSON.stringify(merge(left, right));
     } catch (_) {}
     return b;
@@ -64,7 +73,7 @@ const DeviceProfile = (() => {
     for (const key of new Set([...Object.keys(base.progress), ...Object.keys(local.progress)])) {
       if (local.progress[key] === base.progress[key]) continue;
       if (!(key in local.progress)) delete next.progress[key];
-      else next.progress[key] = latest.progress[key] === base.progress[key] ? local.progress[key] : mergeProgress(latest.progress[key], local.progress[key]);
+      else next.progress[key] = latest.progress[key] === base.progress[key] ? local.progress[key] : mergeProgress(latest.progress[key], local.progress[key], key, base.progress[key]);
     }
     return next;
   }
@@ -129,7 +138,7 @@ const DeviceProfile = (() => {
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
         const incoming = validate({...parsed, device_id: p.device_id});
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
-        if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key]);
+        if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key], key);
         const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
         if (!persist(mode === 'replace')) {

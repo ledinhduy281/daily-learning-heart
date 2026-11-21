@@ -44,6 +44,21 @@ assert.equal(JSON.parse(device.get('ebm_socratic_state_v1'))[5].streak, 2);
 assert.equal(device.profile.display_name, 'Doctor A');
 const backup = device.exportJSON();
 {
+  const quizzes = create(new Storage(), crypto);
+  const old = {last_question:'old',correct_key:'A',current_options:['A','B','C','D'],explanation:'old explanation',current_question:{stem:'old'},messages:['old']};
+  const incoming = {last_question:'new',correct_key:'C',current_options:['W','X','Y','Z'],explanation:'new explanation',messages:['new']};
+  quizzes.set('ebm_socratic_state_v1',JSON.stringify({1:old,2:old}));
+  quizzes.importJSON(JSON.stringify({...JSON.parse(backup),progress:{ebm_socratic_state_v1:JSON.stringify({1:incoming})}}));
+  let state = JSON.parse(quizzes.get('ebm_socratic_state_v1'));
+  assert.deepEqual(state[1],incoming); assert.deepEqual(state[2],old);
+  const shared = new Storage({[KEY]:JSON.stringify(quizzes.profile)});
+  const a = create(shared,crypto), b = create(shared,crypto);
+  a.set('ebm_socratic_state_v1',JSON.stringify({1:incoming,2:incoming}));
+  b.set('ebm_socratic_state_v1',JSON.stringify({1:old,2:old}));
+  state = JSON.parse(create(shared,crypto).get('ebm_socratic_state_v1'));
+  assert.deepEqual(state[1],old); assert.deepEqual(state[2],incoming);
+}
+{
   const chats = create(new Storage(), crypto);
   const recent = {id:'same', updatedAt:'2026-11-20T00:00:00Z', messages:['new']};
   const longer = {id:'long', messages:['one','two']};
