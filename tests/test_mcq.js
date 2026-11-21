@@ -6,6 +6,18 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const lang of ['vi','en']) for (const reveal of ['just_tell_me','wrong']) {
+  const b=briefings[0],first=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');
+  const shown=quiz.turn(b,first.state,lang,reveal==='wrong'?'answer':reveal,'',first.state.correct_key==='A'?'B':'A');
+  assert.equal(shown.state.question_revealed,true);
+  assert.equal(quiz.turn(b,shown.state,lang,'answer','',first.state.correct_key==='A'?'B':'A').state.answered_count,shown.state.answered_count);
+  const out=quiz.turn(b,shown.state,lang,'answer','',first.state.correct_key);
+  assert.equal(out.eval,'partial');assert.equal(out.state.correct_count,0);
+  assert.equal(out.state.answered_count,shown.state.answered_count);
+  assert.deepEqual(out.state.subskills,first.state.subskills);
+  assert.equal(out.state.last_delta,0);assert.equal(out.state.question_revealed,false);
+  assert.equal(quiz.turn(b,out.state,lang,'answer','',out.state.correct_key).state.correct_count,1);
+}
 for (const slot of [2,3]) {
   const b=briefings.find(b=>b.id==='ebm-2026-11-20-p5-main');
   let {state}=quiz.turn(b,{focus_idx:slot,subskills:Array.from({length:4},()=>({level:0}))},'en','harder');
@@ -118,5 +130,6 @@ print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefi
 assert.equal(py.status,0,py.stderr);
 assert.deepEqual(generated,JSON.parse(py.stdout));
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
+assert.ok(html.includes('question_revealed: sess.question_revealed === true'));
 for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(m[1]);
 console.log(`JS MCQs, stored-question flows, Python parity (${generated.length} questions), SPA syntax: OK`);

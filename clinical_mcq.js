@@ -71,29 +71,32 @@ const ClinicalQuiz = (() => {
     const correct=valid && choice===current.correct_key;
     if (action==='just_tell_me' || (action==='answer' && !correct)) {
       Object.assign(state,{correct_key:current.correct_key,explanation:current.explanation,current_options:current.options,last_question:current.question});
-      if (action==='answer') {state.answered_count=(state.answered_count||0)+1;state.attempts_on_current=(state.attempts_on_current||0)+1;state.streak=0;}
+      if (action==='answer' && !state.question_revealed) {state.answered_count=(state.answered_count||0)+1;state.attempts_on_current=(state.attempts_on_current||0)+1;state.streak=0;}
+      Object.assign(state,{question_revealed:true,last_updated_idx:-1,last_delta:0,streak:0});
       state.last_eval=action==='answer'?'wrong':'partial';
       return {reply:(en?'Review the same question. ':'Ôn lại chính câu hỏi này. ')+current.explanation,state,eval:state.last_eval};
     }
     let feedback='';
+    const evaluation=state.question_revealed?'partial':'correct';
     if (action==='start_diagnostic') {
       Object.assign(state,{phase:'diagnostic',diag_step:0,focus_idx:0,answered_count:0,correct_count:0,attempts_on_current:0,streak:0,question_index:0});
       for (const s of state.subskills||[]) Object.assign(s,{level:0,checks:0,answered:0,correct:0});
     } else if (action==='answer') {
       feedback=current.explanation+'\n\n';
       const idx=current.subskill_idx ?? ({guideline:0,trial:1}[current.question_kind]),skills=state.subskills||[];
-      const credit=Number.isInteger(idx) && idx>=0 && idx<4 && skills.length===4;
+      const earned=!state.question_revealed;
+      const credit=earned && Number.isInteger(idx) && idx>=0 && idx<4 && skills.length===4;
       if (credit) {skills[idx].level=Math.min(5,Math.max(2,(skills[idx].level||0)+1));for (const k of ['checks','answered','correct']) skills[idx][k]=(skills[idx][k]||0)+1;}
-      Object.assign(state,{last_updated_idx:credit?idx:-1,last_delta:credit?1:0,answered_count:(state.answered_count||0)+1,correct_count:(state.correct_count||0)+1,streak:(state.streak||0)+1,attempts_on_current:0,focus_idx:((state.focus_idx||0)+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});
+      Object.assign(state,{last_updated_idx:credit?idx:-1,last_delta:credit?1:0,answered_count:(state.answered_count||0)+Number(earned),correct_count:(state.correct_count||0)+Number(earned),streak:earned?(state.streak||0)+1:0,attempts_on_current:0,focus_idx:((state.focus_idx||0)+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});
       if (state.question_index>=4 && state.phase!=='final_exam') state.phase='loop';
-      if (skills.length===4 && skills.every(s=>s.level>=4)) {
+      if (earned && skills.length===4 && skills.every(s=>s.level>=4)) {
         if (state.phase==='final_exam') {Object.assign(state,{phase:'mastered',current_options:[],correct_key:'',explanation:'',current_question:null});return {reply:feedback+(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:'correct'};}
         state.phase='final_exam';
       }
     } else if (['harder','easier'].includes(action)) {state.difficulty=action==='harder'?'hard':'easy';state.question_index=(state.question_index||0)+1;}
     const question=build(primary,state.focus_idx||0,state.question_index||0,lang,state.difficulty||'normal');
-    Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,options_lang:lang,last_eval:action==='answer'?'correct':''});
-    return {reply:feedback+question.question,state,eval:action==='answer'?'correct':'start'};
+    Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
+    return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
   return {build,turn,normalized};
 })();

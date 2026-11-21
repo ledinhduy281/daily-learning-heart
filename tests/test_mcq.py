@@ -7,6 +7,30 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_revealed_answers_do_not_earn_score_or_mastery(self):
+        b = self.briefings[0]
+        for lang in ('vi', 'en'):
+            for reveal in ('just_tell_me', 'wrong'):
+                req = {'briefing_id': b['id'], 'lang': lang, 'action': 'start_diagnostic'}
+                first = app.handle_socratic_turn(req)
+                choice = first['correct_key']
+                shown = app.handle_socratic_turn({**req, 'state': first['state'],
+                    'action': 'answer' if reveal == 'wrong' else reveal,
+                    'selected_choice': 'B' if choice == 'A' else 'A'})
+                self.assertTrue(shown['state']['question_revealed'])
+                repeated = app.handle_socratic_turn({**req, 'state': shown['state'], 'action': 'answer',
+                    'selected_choice': 'B' if choice == 'A' else 'A'})
+                self.assertEqual(repeated['state']['answered_count'], shown['state']['answered_count'])
+                out = app.handle_socratic_turn({**req, 'state': shown['state'], 'action': 'answer', 'selected_choice': choice})
+                self.assertEqual(out['eval'], 'partial')
+                self.assertEqual(out['state']['correct_count'], 0)
+                self.assertEqual(out['state']['answered_count'], shown['state']['answered_count'])
+                self.assertEqual(out['state']['subskills'], first['state']['subskills'])
+                self.assertEqual(out['state']['last_delta'], 0)
+                self.assertFalse(out['state']['question_revealed'])
+                next_out = app.handle_socratic_turn({**req, 'state': out['state'], 'action': 'answer', 'selected_choice': out['correct_key']})
+                self.assertEqual(next_out['state']['correct_count'], 1)
+
     def test_fallback_credits_the_actual_subskill(self):
         from socratic_quiz import turn
         b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-20-p5-main')
