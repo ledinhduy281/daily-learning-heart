@@ -6,6 +6,11 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const lang of ['vi','en']) {
+  const b=briefings.find(b=>b.id==='ebm-2026-08-25-p6-hist1'),q=quiz.build(b,0,0,lang);
+  const correct=q.options.find(o=>o.key===q.correct_key).text;
+  for (const criterion of ['DCM/HNDCM','≤35%','>35%','CMR-LGE','LMNA','FLNC','PLN','RBM20']) assert.ok(correct.includes(criterion));
+}
 {
   const b=briefings.find(b=>b.landmark_trials.some(t=>t.name==='EXPLORER-HCM'));
   for (let v=0;v<8;v++) {

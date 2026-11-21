@@ -7,6 +7,15 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_icd_threshold_retains_population_and_risk_criteria(self):
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-08-25-p6-hist1')
+        for lang in ('vi', 'en'):
+            q = app._build_socratic_mcq(b, 0, 0, lang)
+            correct = next(o['text'] for o in q['options'] if o['key'] == q['correct_key'])
+            for criterion in ('DCM/HNDCM', '≤35%', '>35%', 'CMR-LGE', 'LMNA', 'FLNC', 'PLN', 'RBM20'):
+                self.assertIn(criterion, correct)
+            self.assertNotIn('threshold', q['question'])
+
     def test_safety_reverses_the_selected_clause(self):
         from clinical_distractors import rich_cards
         from clinical_mcq import alternatives

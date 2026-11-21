@@ -161,21 +161,10 @@ def rich_cards(primary, lang, numeric_alternatives):
         if old_fact and new_fact and old_fact != new_fact:
             question = ('Which statement is the new practice update in the briefing’s final guideline stage?' if en else
                         'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?')
-            threshold = re.compile(r'\b(mPAP|PVR|SBP|DBP|LVEF|EF|eGFR|LDL-C|HbA1c|K\+)\s*([<>≤≥]=?)\s*(\d+(?:[.,]\d+)?)\s*(mmHg|WU|%|mmol/L|mg/dL)?', re.I)
-            pairs = [(a, b) for a in threshold.finditer(new_fact) for b in threshold.finditer(old_fact)
-                     if a[1].lower() == b[1].lower() and a.groups()[1:] != b.groups()[1:]]
             def clause(text):
-                parts = re.split(r';|(?<=[.!?])\s+', text)
-                return next((p.strip() for p in parts if numeric_alternatives(p)), parts[0].strip())
-            if pairs:
-                current_match, old_match = pairs[0]
-                def parameter(m):
-                    return f'{m[1]} {m[2]} {m[3]} {m[4] or ""}'.strip() + '.'
-                new_fact, old_fact = parameter(current_match), parameter(old_match)
-                question = (f'According to {current_era}, which {current_match[1]} threshold is recommended?' if en else
-                            f'Theo {current_era}, ngưỡng {current_match[1]} nào đúng?')
-            else:
-                new_fact, old_fact = clause(new_fact), clause(old_fact)
+                parts = re.split(r'(?<=[.!?])\s+', text)
+                return next((p.strip() for p in parts if numeric_alternatives(p)), parts[0].strip()).replace(';', ',')
+            new_fact, old_fact = clause(new_fact), clause(old_fact)
             prefix = 'Recommendation: ' if en else 'Khuyến cáo: '
             new_fact, old_fact = prefix + new_fact, prefix + old_fact
             wrong = [('old_guideline', old_fact, (f'This describes the earlier stage ({old_era}), not the new update ({current_era}).' if en else

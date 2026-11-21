@@ -95,17 +95,8 @@ const ClinicalDistractors = (() => {
       let oldFact=clean(old['desc_'+suffix]),newFact=clean(current['desc_'+suffix]);
       if (oldFact && newFact && oldFact!==newFact) {
         let question=en?'Which statement is the new practice update in the briefing’s final guideline stage?':'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?';
-        const threshold=/\b(mPAP|PVR|SBP|DBP|LVEF|EF|eGFR|LDL-C|HbA1c|K\+)\s*([<>≤≥]=?)\s*(\d+(?:[.,]\d+)?)\s*(mmHg|WU|%|mmol\/L|mg\/dL)?/gi;
-        const pairs=[];
-        for (const a of newFact.matchAll(threshold)) for (const b of oldFact.matchAll(threshold)) {
-          if (a[1].toLowerCase()===b[1].toLowerCase() && JSON.stringify(a.slice(2))!==JSON.stringify(b.slice(2))) pairs.push([a,b]);
-        }
-        const clause=text=>{const parts=text.split(/;|(?<=[.!?])\s+/);return (parts.find(p=>numericAlternatives(p))||parts[0]).trim();};
-        if (pairs.length) {
-          const [a,b]=pairs[0],parameter=m=>`${m[1]} ${m[2]} ${m[3]} ${m[4]||''}`.trim()+'.';
-          newFact=parameter(a);oldFact=parameter(b);
-          question=en?`According to ${currentEra}, which ${a[1]} threshold is recommended?`:`Theo ${currentEra}, ngưỡng ${a[1]} nào đúng?`;
-        } else {newFact=clause(newFact);oldFact=clause(oldFact);}
+        const clause=text=>{const parts=text.split(/(?<=[.!?])\s+/);return (parts.find(p=>numericAlternatives(p))||parts[0]).trim().replace(/;/g,',');};
+        newFact=clause(newFact);oldFact=clause(oldFact);
         const prefix=en?'Recommendation: ':'Khuyến cáo: ';
         newFact=prefix+newFact;oldFact=prefix+oldFact;
         const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}).`]];
