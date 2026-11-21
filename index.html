@@ -6751,8 +6751,11 @@
             await syncDeviceActivity();
             window.location.reload();
           }
-        } catch (_) {
-          showToast(App.currentLang === "vi" ? "Không thể nhập: tệp JSON không hợp lệ." : "Cannot import: invalid progress JSON.");
+        } catch (error) {
+          const isVi = App.currentLang === "vi";
+          showToast(error.code === "STORAGE_WRITE_FAILED"
+            ? (isVi ? "Không thể lưu tiến độ. Hãy kiểm tra dung lượng và quyền lưu trữ của trình duyệt rồi thử lại." : "Cannot save progress. Check browser storage space and permissions, then try again.")
+            : (isVi ? "Không thể nhập: tệp JSON không hợp lệ." : "Cannot import: invalid progress JSON."));
         } finally { importFile.value = ""; }
       });
 

@@ -43,6 +43,13 @@ assert.equal(device.get('ebm_font_scale'), '1.16');
 assert.equal(JSON.parse(device.get('ebm_socratic_state_v1'))[5].streak, 2);
 assert.equal(device.profile.display_name, 'Doctor A');
 const backup = device.exportJSON();
+{
+  const limited = new Storage({[KEY]: JSON.stringify(device.profile)});
+  limited.setItem = () => {throw new Error('quota');};
+  const failed = create(limited), previous = failed.exportJSON();
+  assert.throws(() => failed.importJSON(JSON.stringify({...JSON.parse(backup), display_name:'Not saved'}), 'replace'), {code:'STORAGE_WRITE_FAILED'});
+  assert.equal(failed.exportJSON(), previous);
+}
 assert.ok(!Object.hasOwn(JSON.parse(backup), 'device_id'));
 assert.ok(!backup.includes(id));
 const imported = create(new Storage(), {randomUUID: () => 'b9876543-1234-4123-8123-123456789abc'});
@@ -97,7 +104,7 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   const malicious = '<img src=x onerror="throw 1">';
   const escapeCode = html.match(/function escapeHtml\(str\) \{([\s\S]*?)\n    \}/)[0];
   const urlCode = html.match(/function safeChatSourceUrl\(value\) \{([\s\S]*?)\n    \}/)[0];
-  const scope = {URL, document: {createElement() {return {children: [], appendChild(x) {this.children.push(x);}, addEventListener() {}};}}, App: {currentLang: 'en'}};
+  const scope = {URL, document: {createElement() {return {children: [], appendChild(x) {this.children.push(x);}, addEventListener() {}};}}, Dom: {chatMessagesList: {appendChild() {}}}, App: {currentLang: 'en'}};
   vm.runInNewContext(`${escapeCode}\n${urlCode}`, scope);
   const render = html.match(/      renderMessageDom\(msgObj\) \{[\s\S]*?\n      \},/)[0].slice(0,-1);
   const fn = vm.runInNewContext(`({${render}}).renderMessageDom`, scope);
@@ -119,6 +126,17 @@ assert.equal(headers()['X-Device-Id'], id);
 assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'application/json');
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
+  const importBody = html.match(/importFile.addEventListener\("change", async \(\) => \{([\s\S]*?)\n      \}\);/)[1];
+  let reloads = 0, toast = '';
+  const importFile = {files: [{size:backup.length, text:async () => backup}], value:'file.json'};
+  const onImport = vm.runInNewContext(`(async function() {${importBody}})`, {
+    importFile, document:{getElementById:() => ({value:'replace'})}, App:{currentLang:'en'},
+    window:{confirm:() => true, location:{reload() {reloads++;}}},
+    deviceStore:{importJSON() {throw Object.assign(new Error('quota'), {code:'STORAGE_WRITE_FAILED'});}},
+    showToast(message) {toast=message;}
+  });
+  await onImport();
+  assert.equal(reloads,0); assert.match(toast,/browser storage/); assert.equal(importFile.value,'');
   let source, requestHeaders;
   const consume = vm.runInNewContext(`(async function(path, onMessage) {${streamCode}})`, {
     TextDecoder, getAuthHeaders: headers,

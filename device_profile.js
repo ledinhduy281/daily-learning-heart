@@ -115,8 +115,14 @@ const DeviceProfile = (() => {
         const incoming = validate({...parsed, device_id: p.device_id});
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key]);
+        const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
-        persist(mode === 'replace');
+        if (!persist(mode === 'replace')) {
+          p = previous;
+          const error = new Error('Progress could not be saved to browser storage');
+          error.code = 'STORAGE_WRITE_FAILED';
+          throw error;
+        }
       }
     };
   }
