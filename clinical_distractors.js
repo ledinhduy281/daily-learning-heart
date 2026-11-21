@@ -96,7 +96,7 @@ const ClinicalDistractors = (() => {
       let oldFact=clean(old['desc_'+suffix]),newFact=clean(current['desc_'+suffix]);
       if (oldFact && newFact && oldFact!==newFact) {
         let question=en?'Which statement is the new practice update in the briefing’s final guideline stage?':'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?';
-        const clause=text=>{const parts=text.split(/(?<=[.!?])\s+/);return (parts.find(p=>numericAlternatives(p))||parts[0]).trim().replace(/;/g,',');};
+        const clause=text=>text.replace(/;/g,',').replace(/≥/g,'≥ ');
         newFact=clause(newFact);oldFact=clause(oldFact);
         const prefix=en?'Recommendation: ':'Khuyến cáo: ';
         newFact=prefix+newFact;oldFact=prefix+oldFact;

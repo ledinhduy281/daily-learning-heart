@@ -168,8 +168,7 @@ def rich_cards(primary, lang, numeric_alternatives):
             question = ('Which statement is the new practice update in the briefing’s final guideline stage?' if en else
                         'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?')
             def clause(text):
-                parts = re.split(r'(?<=[.!?])\s+', text)
-                return next((p.strip() for p in parts if numeric_alternatives(p)), parts[0].strip()).replace(';', ',')
+                return text.replace(';', ',').replace('≥', '≥ ')
             new_fact, old_fact = clause(new_fact), clause(old_fact)
             prefix = 'Recommendation: ' if en else 'Khuyến cáo: '
             new_fact, old_fact = prefix + new_fact, prefix + old_fact
