@@ -33,6 +33,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from search_ranking import CONCEPTS, normalize, contains, score as relevance_score
 from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -1662,7 +1663,22 @@ _CHAT_SYNONYM_MAP: dict[str, list[str]] = {
 
 def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
     """Convert a bilingual VI/EN clinical question into an English NCBI PubMed search query."""
-    q_low = (query or "").lower()
+    q_low = normalize(query or "")
+    groups = []
+    for kind in ("disease", "intervention"):
+        alternatives = []
+        for category, mesh, aliases in CONCEPTS:
+            if category == kind and any(contains(q_low, a) for a in aliases):
+                if mesh:
+                    alternatives.append(f'"{mesh}"[MeSH Terms]')
+                alternatives.extend(f'"{a}"[tiab]' for a in aliases if a.isascii())
+        if alternatives:
+            groups.append('(' + ' OR '.join(dict.fromkeys(alternatives)) + ')')
+    drugs = [d for d in _CARDIO_DRUG_MAP if contains(q_low, d)]
+    if drugs:
+        groups.append('(' + ' OR '.join(f'"{d}"[tiab]' for d in drugs) + ')')
+    if groups:
+        return ' AND '.join(groups) + ' AND 2022:2026[dp]'
     terms: list[str] = []
     for k, vals in _CHAT_SYNONYM_MAP.items():
         if k in q_low:
@@ -1674,29 +1690,35 @@ def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
     if not deduped and briefing:
         pid = int(briefing.get("pillar_id") or 1)
         from crawl_cardiology_news import PILLAR_CRAWL_QUERIES
-        return f"{PILLAR_CRAWL_QUERIES.get(pid, 'cardiology')} AND 2026[dp]"
-    joined = " OR ".join(f'"{t}"' if " " in t or "-" in t else t for t in deduped)
-    return f"({joined}) AND cardiology[MeSH Terms OR Title/Abstract] AND 2026[dp]"
+        return f"({PILLAR_CRAWL_QUERIES.get(pid, 'cardiology')}) AND 2022:2026[dp]"
+    joined = " AND ".join(f'"{t}"[tiab]' for t in deduped) or 'cardiology[MeSH Terms]'
+    return f"({joined}) AND 2022:2026[dp]"
 
 
-def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3) -> list[dict]:
+def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3, question: str = "") -> list[dict]:
     """Fetch top PubMed metadata + parsed abstract conclusion snippet ($0 NCBI E-utilities)."""
-    if not query.strip():
+    if not query.strip() or max_results <= 0:
         return []
     try:
         enc_q = urllib.parse.quote(query)
         esearch_url = (
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
-            f"db=pubmed&term={enc_q}&retmode=json&retmax={max_results}&sort=relevance"
+            f"db=pubmed&term={enc_q}&retmode=json&retmax={max_results * 4}&sort=relevance"
         )
         with urllib.request.urlopen(urllib.request.Request(esearch_url, headers={"User-Agent": "CardiologyEBM/1.0"}), timeout=8) as r:
             id_list = json.loads(r.read().decode("utf-8")).get("esearchresult", {}).get("idlist", [])
+        if len(id_list) < max_results and '2022:2026[dp]' in query:
+            relaxed = query.replace(' AND 2022:2026[dp]', '')
+            url = esearch_url.replace(enc_q, urllib.parse.quote(relaxed))
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "CardiologyEBM/1.0"}), timeout=8) as r:
+                older = json.loads(r.read().decode('utf-8')).get('esearchresult', {}).get('idlist', [])
+            id_list = list(dict.fromkeys(id_list + older))
         if not id_list:
             return []
 
         efetch_url = (
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
-            f"db=pubmed&id={','.join(id_list[:max_results])}&retmode=xml"
+            f"db=pubmed&id={','.join(id_list[:max_results * 4])}&retmode=xml"
         )
         with urllib.request.urlopen(urllib.request.Request(efetch_url, headers={"User-Agent": "CardiologyEBM/1.0"}), timeout=10) as r:
             root = ET.fromstring(r.read())
@@ -1740,8 +1762,13 @@ def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3) -> list[dict]
                 "doi": doi,
                 "url": f"https://doi.org/{doi}" if doi else f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
                 "snippet": snippet,
+                "_abstract": ' '.join(all_ab),
             })
-        return hits
+        ranking_query = question or re.sub(r'\[[^]]+\]|\b(?:AND|OR)\b|2022:2026', ' ', query)
+        hits.sort(key=lambda h: relevance_score({'title_en': h['title'], 'snippet': h['_abstract']}, ranking_query), reverse=True)
+        for hit in hits:
+            hit.pop('_abstract')
+        return hits[:max_results]
     except Exception as exc:
         print(f"[Chat PubMed Warning] {exc}", file=sys.stderr)
         return []
@@ -1761,39 +1788,12 @@ def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", 
     """Rank a curated briefing against a clinical user question using explicit pillar matching + VI/EN tokens."""
     q_low = (query or "").lower()
     explicit_pids = [int(m) for m in re.findall(r"(?:trụ\s*cột|pillar|chủ\s*đề)\s*#?\s*(10|[1-9])\b", q_low)]
-    raw_terms: list[str] = re.findall(r"[\w\-]{2,}", q_low)
-    expanded: list[str] = [t for t in raw_terms if t not in _CHAT_STOPWORDS]
-    for k, syns in _CHAT_SYNONYM_MAP.items():
-        if k in q_low:
-            expanded.extend(syns)
-
-    hay_head = " ".join([
-        str(b.get("title_vi", "")),
-        str(b.get("title_en", "")),
-        str(b.get("topic_focus_vi", "")),
-        str(b.get("pillar_vi", "")),
-        str(b.get("pillar_name", "")),
-        json.dumps(b.get("guideline_evolution", {}), ensure_ascii=False),
-        json.dumps(b.get("landmark_trials", []), ensure_ascii=False),
-        json.dumps(b.get("pearls", []), ensure_ascii=False),
-    ]).lower()
-    hay_body = (str(b.get("part1_vi_markdown", "")) + " " + str(b.get("part2_en_markdown", ""))).lower()
-
     score = 0
     pid = int(b.get("pillar_id") or 0)
     if explicit_pids:
         score += 250 if pid in explicit_pids else -100
 
-    keyword_hits = 0
-    seen_terms: set[str] = set()
-    for tok in expanded:
-        if len(tok) < 2 or tok in _CHAT_STOPWORDS or tok in seen_terms:
-            continue
-        seen_terms.add(tok)
-        if tok in hay_head:
-            keyword_hits += 6
-        elif tok in hay_body:
-            keyword_hits += 2
+    keyword_hits = relevance_score(b, query)
     score += keyword_hits
 
     if "-main" in str(b.get("id", "")) or "2026" in str((b.get("guideline_evolution") or {}).get("current_guideline", {}).get("year", "")):
@@ -2490,7 +2490,7 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
     pubmed_hits: list[dict] = []
     if include_pubmed:
         pm_query = _build_pubmed_chat_query(search_query, primary)
-        pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=2)
+        pubmed_hits = _fetch_pubmed_with_abstracts(pm_query, max_results=2, question=search_query)
 
     fda_note = _fetch_openfda_drug_note(search_query)
     quota_banner = ""
