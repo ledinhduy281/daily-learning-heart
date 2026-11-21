@@ -34,6 +34,32 @@ for (const b of briefings) for (const lang of ['vi','en']) {
   assert.equal(right.eval,'correct');check(right.state.current_question);
 }
 assert.equal(letters.size,4);
+{
+  const primary={landmark_trials:[{name:'EMPEROR-Preserved',value:'HR 0.79',endpoint_label:'CV Death or First HF Hospitalization',changes_en:'Empagliflozin in HFpEF.'}]};
+  const fact='Do not initiate finerenone if eGFR < 25 mL/min/1.73 m².';
+  primary.drugs=[{name:'Finerenone',contraindication_en:fact}];
+  const q=quiz.build(primary,1,0,'en');
+  assert.ok(Object.values(q.distractor_types).includes('safety'));
+  assert.ok(q.explanation.includes(fact));
+  for (const empty of [[],null,['invalid']]) {
+    primary.drugs=empty;
+    const types=Object.values(quiz.build(primary,1,0,'en').distractor_types);
+    assert.ok(!types.includes('safety') && types.includes('numeric'));
+  }
+}
+for (const lang of ['vi','en']) {
+  const hf=briefings.find(b=>b.pillar_id===5 && b.id.includes('-main'));
+  const q=quiz.build(hf,1,0,lang),types=Object.values(q.distractor_types);
+  assert.ok(types.includes('population') && types.includes('safety'));
+  assert.equal(new Set(types).size,3);
+  assert.ok(!types.includes('numeric'));
+  assert.ok(q.question.length<150);
+  const pah=briefings.find(b=>b.id==='ebm-2026-09-03-p9-hist2');
+  const g=quiz.build(pah,0,0,lang);
+  assert.ok(Object.values(g.distractor_types).includes('old_guideline'));
+  assert.ok(new Set(Object.values(g.distractor_types)).size>=2);
+  assert.ok(g.explanation.includes(pah.guideline_evolution.steps[0]['era_label_'+lang]));
+}
 for (const lang of ['vi','en']) {check(quiz.build({},0,0,lang));assert.ok(quiz.turn({}, {},lang,'just_tell_me').reply);}
 const py=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
 print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefings() for l in ('vi','en') for s in range(4) for v in range(3)],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});

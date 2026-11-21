@@ -2,6 +2,8 @@
 import re
 import unicodedata
 
+from clinical_distractors import rich_cards
+
 
 def normalized(text):
     text = unicodedata.normalize('NFD', str(text).lower().replace('đ', 'd'))
@@ -80,13 +82,20 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
                    [texts[0], 'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.', 'Kết luận tóm tắt không đủ để xác định liều.', 'Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'])
     else:
         source, variants = candidates[int(variant_idx) % len(candidates)]
-        question = (f'Before applying the evidence summarized under “{source}” to an eligible patient, which statement uses the threshold, recommendation class, or result documented in the briefing? Keep the population and outcome unchanged when comparing options.' if en else
-                    f'Trước khi áp dụng chứng cứ tại mục “{source}” cho bệnh nhân phù hợp tiêu chuẩn, nhận định nào dùng đúng ngưỡng, mức khuyến cáo hoặc kết quả được nêu trong bản tin? Giữ nguyên quần thể và tiêu chí đánh giá khi so sánh các lựa chọn.')
+        question = (f'According to {source}, which statement is correct?' if en else
+                    f'Theo {source}, nhận định nào đúng?')
         texts = [t for t, _ in variants]
         reasons = [
             (f'The briefing reports {source}: {texts[0]}' if en else f'Bản tin nêu tại {source}: {texts[0]}')
         ] + [(f'This changes the documented parameter from {variants[0][1]} to {r}; the briefing does not support that value for this statement.' if en else
               f'Lựa chọn này đổi thông số được ghi nhận từ {variants[0][1]} thành {r}; bản tin không nêu giá trị này cho nhận định trên.') for _, r in variants[1:]]
+    types = ['correct', 'numeric', 'numeric', 'numeric']
+    cards = rich_cards(primary, lang, alternatives)
+    preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
+    if preferred or cards:
+        available = preferred or cards
+        card = available[int(variant_idx) % len(available)]
+        question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
     seed = sum(ord(c) for c in str(primary.get('id', ''))) + int(slot_idx) * 17 + int(variant_idx) * 31
     order = [0, 1, 2, 3]
@@ -98,4 +107,5 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     correct_key = 'ABCD'[order.index(0)]
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
-    return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation}
+    return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
+            'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}

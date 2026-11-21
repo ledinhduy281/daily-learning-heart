@@ -77,6 +77,47 @@ class ClinicalMcqTests(unittest.TestCase):
         with patch.object(app, 'load_existing_briefings', return_value=[]):
             self.assertFalse(app.handle_socratic_turn({})['ok'])
 
+    def test_supported_distractors_are_diverse_and_source_attributed(self):
+        hf = next(b for b in self.briefings if b['pillar_id'] == 5 and '-main' in b['id'])
+        pah = next(b for b in self.briefings if b['id'] == 'ebm-2026-09-03-p9-hist2')
+        for lang in ('vi', 'en'):
+            trial = app._build_socratic_mcq(hf, 1, 0, lang)
+            self.assertIn('population', trial['distractor_types'].values())
+            self.assertIn('safety', trial['distractor_types'].values())
+            self.assertEqual(len(set(trial['distractor_types'].values())), 3)
+            self.assertNotIn('numeric', trial['distractor_types'].values())
+            self.assertLess(len(trial['question']), 150)
+            guideline = app._build_socratic_mcq(pah, 0, 0, lang)
+            self.assertIn('old_guideline', guideline['distractor_types'].values())
+            self.assertGreaterEqual(len(set(guideline['distractor_types'].values())), 2)
+            old = pah['guideline_evolution']['steps'][0]
+            self.assertIn(old['desc_' + lang], str(guideline['options']))
+            self.assertIn(old['era_label_' + lang], guideline['explanation'])
+        af = next(b for b in self.briefings if b['pillar_id'] == 6 and '-main' in b['id'])
+        for lang in ('vi', 'en'):
+            question = app._build_socratic_mcq(af, 1, 0, lang)
+            self.assertIn('endpoint', question['distractor_types'].values())
+            self.assertIn('ADVENT', question['explanation'])
+            self.assertIn('safety', question['distractor_types'].values())
+            if lang == 'en':
+                correct = next(o['text'] for o in question['options'] if o['key'] == question['correct_key'])
+                self.assertIn(af['landmark_trials'][0]['endpoint_label'], correct)
+                self.assertNotIn('cuts CV death and stroke by 21%', correct)
+
+    def test_explicit_drug_safety_and_numeric_fallback(self):
+        primary = {'landmark_trials': [{'name': 'EMPEROR-Preserved', 'value': 'HR 0.79',
+                   'endpoint_label': 'CV Death or First HF Hospitalization', 'changes_en': 'Empagliflozin in HFpEF.'}]}
+        fact = 'Do not initiate finerenone if eGFR < 25 mL/min/1.73 m².'
+        primary['drugs'] = [{'name': 'Finerenone', 'contraindication_en': fact}]
+        question = app._build_socratic_mcq(primary, 1, 0, 'en')
+        self.assertIn('safety', question['distractor_types'].values())
+        self.assertIn(fact, question['explanation'])
+        for empty in ([], None, ['invalid']):
+            primary['drugs'] = empty
+            question = app._build_socratic_mcq(primary, 1, 0, 'en')
+            self.assertNotIn('safety', question['distractor_types'].values())
+            self.assertIn('numeric', question['distractor_types'].values())
+
 
 if __name__ == '__main__':
     unittest.main()

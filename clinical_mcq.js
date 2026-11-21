@@ -1,5 +1,6 @@
 /* Offline mirror of clinical_mcq.py and socratic_quiz.py. No AI answer keys. */
 const ClinicalQuiz = (() => {
+  const distractors = typeof module !== 'undefined' ? require('./clinical_distractors.js') : ClinicalDistractors;
   const normalized = s => String(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   function alternatives(text) {
     let m=text.match(/\bClass\s+(IIa|IIb|III|II|I)\b/i), replacements;
@@ -38,16 +39,22 @@ const ClinicalQuiz = (() => {
       reasons=en?[texts[0],'An effect estimate does not establish eligibility.','A conclusion alone does not establish dosing.','A title does not define eligibility.']:[texts[0],'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.','Kết luận tóm tắt không đủ để xác định liều.','Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'];
     } else {
       const [source,variants]=candidates[variantIdx%candidates.length];
-      question=en?`Before applying the evidence summarized under “${source}” to an eligible patient, which statement uses the threshold, recommendation class, or result documented in the briefing? Keep the population and outcome unchanged when comparing options.`:`Trước khi áp dụng chứng cứ tại mục “${source}” cho bệnh nhân phù hợp tiêu chuẩn, nhận định nào dùng đúng ngưỡng, mức khuyến cáo hoặc kết quả được nêu trong bản tin? Giữ nguyên quần thể và tiêu chí đánh giá khi so sánh các lựa chọn.`;
+      question=en?`According to ${source}, which statement is correct?`:`Theo ${source}, nhận định nào đúng?`;
       texts=variants.map(([t])=>t);
       reasons=[en?`The briefing reports ${source}: ${texts[0]}`:`Bản tin nêu tại ${source}: ${texts[0]}`,...variants.slice(1).map(([,r])=>en?`This changes the documented parameter from ${variants[0][1]} to ${r}; the briefing does not support that value for this statement.`:`Lựa chọn này đổi thông số được ghi nhận từ ${variants[0][1]} thành ${r}; bản tin không nêu giá trị này cho nhận định trên.`)];
+    }
+    let types=['correct','numeric','numeric','numeric'];
+    const cards=distractors.cards(primary,lang,alternatives),preferred=cards.filter(c=>c.kind===(slotIdx%4===0?'guideline':'trial'));
+    if (preferred.length || cards.length) {
+      const available=preferred.length?preferred:cards,card=available[variantIdx%available.length];
+      ({question,texts,reasons,types}=card);
     }
     let seed=Array.from(String(primary.id||'')).reduce((n,c)=>n+c.codePointAt(0),0)+slotIdx*17+variantIdx*31;
     const order=[0,1,2,3];
     for (let i=3;i>0;i--) {seed=(seed*1664525+1013904223)>>>0;const j=seed%(i+1);[order[i],order[j]]=[order[j],order[i]];}
     const options=order.map((n,i)=>({key:'ABCD'[i],text:texts[n]})),correct_key='ABCD'[order.indexOf(0)];
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
-    return {question,options,correct_key,explanation};
+    return {question,options,correct_key,explanation,distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en',current=state.current_question;
