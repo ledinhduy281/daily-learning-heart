@@ -18,7 +18,7 @@ Open `http://127.0.0.1:8080/` or `http://127.0.0.1:8088/` in your browser. Stati
 - Browse the daily or archived briefing, then switch between Vietnamese and English.
 - Search the archive with a topic, abbreviation, or trial name such as `FINEARTS-HF`. The browser ranks bundled briefings locally using bilingual term normalization and BM25. This search does not contact PubMed or an AI provider.
 - Use PubMed verification to find indexed publications and identifiers. The in-app educational Q&A can combine bundled evidence with live PubMed and, for relevant drug queries, openFDA. Live lookups require internet access and may be incomplete or unavailable.
-- Use the review quiz to practice reasoning about the selected topic. Check questionable answers against the original sources. If you need zero model calls, see the [browser Q&A and quiz caveat](AGENTS.md#what-uses-ai-today).
+- Use the review quiz to practice reasoning about the selected topic. Check questionable answers against the original sources. See the [AI guide](AGENTS.md#what-uses-ai-today) for optional model use in Q&A and quizzes.
 
 ## Daily refresh
 
