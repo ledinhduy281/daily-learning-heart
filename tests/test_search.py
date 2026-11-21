@@ -61,6 +61,16 @@ class SearchTests(unittest.TestCase):
                 self.assertNotIn(unrelated, built)
         self.assertIn('hypertension', app._build_pubmed_chat_query('THA'))
 
+    def test_pubmed_alternative_trials_are_ored_within_concept(self):
+        group = '("dapt"[tiab] OR "twilight"[tiab] OR "tico"[tiab])'
+        self.assertEqual(app._build_pubmed_chat_query('DAPT'), group + ' AND 2022:2026[dp]')
+        combined = app._build_pubmed_chat_query('DAPT dapagliflozin')
+        self.assertIn(group, combined)
+        self.assertIn('("dapagliflozin"[tiab]) AND ' + group, combined)
+        self.assertNotIn('"twilight"[tiab] AND "tico"[tiab]', combined)
+        diabetes = app._build_pubmed_chat_query('đái tháo đường')
+        self.assertEqual(diabetes, '("diabetes"[tiab] OR "t2dm"[tiab] OR "sglt2i"[tiab]) AND 2022:2026[dp]')
+
     @patch('urllib.request.urlopen')
     def test_fallback_and_rerank(self, network):
         xml = '<PubmedArticleSet>'

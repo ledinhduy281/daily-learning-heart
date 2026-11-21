@@ -1665,10 +1665,12 @@ def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
     """Convert a bilingual VI/EN clinical question into an English NCBI PubMed search query."""
     q_low = normalize(query or "")
     groups = []
+    matched_phrases = []
     for kind in ("disease", "intervention"):
         alternatives = []
         for category, mesh, aliases in CONCEPTS:
             if category == kind and any(contains(q_low, a) for a in aliases):
+                matched_phrases.extend(aliases)
                 if mesh:
                     alternatives.append(f'"{mesh}"[MeSH Terms]')
                 alternatives.extend(f'"{a}"[tiab]' for a in aliases if a.isascii())
@@ -1677,22 +1679,25 @@ def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
     drugs = [d for d in _CARDIO_DRUG_MAP if contains(q_low, d)]
     if drugs:
         groups.append('(' + ' OR '.join(f'"{d}"[tiab]' for d in drugs) + ')')
-    if groups:
-        return ' AND '.join(groups) + ' AND 2022:2026[dp]'
-    terms: list[str] = []
-    for k, vals in _CHAT_SYNONYM_MAP.items():
-        if contains(q_low, normalize(k)):
-            terms.extend(vals[:3])
-    ascii_tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9\-/+]{2,}", query or "")
+    remaining = q_low
+    for phrase in sorted(set(matched_phrases + drugs), key=len, reverse=True):
+        remaining = re.sub(r'(?<!\w)' + re.escape(phrase) + r'(?!\w)', ' ', remaining)
+    for k, vals in sorted(_CHAT_SYNONYM_MAP.items(), key=lambda item: -len(normalize(item[0]))):
+        topic = normalize(k)
+        if contains(remaining, topic):
+            alternatives = list(dict.fromkeys(vals[:3]))
+            groups.append('(' + ' OR '.join(f'"{t}"[tiab]' for t in alternatives) + ')')
+            remaining = re.sub(r'(?<!\w)' + re.escape(topic) + r'(?!\w)', ' ', remaining)
+    ascii_tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9\-/+]{2,}", remaining)
     stop = {"the", "and", "for", "with", "what", "how", "when", "new", "latest", "guideline", "guidelines", "moi", "nhat"}
-    terms.extend(t for t in ascii_tokens if t.lower() not in stop)
-    deduped = list(dict.fromkeys(terms))[:5]
-    if not deduped and briefing:
+    deduped = list(dict.fromkeys(t for t in ascii_tokens if t.lower() not in stop))[:5]
+    groups.extend(f'"{t}"[tiab]' for t in deduped)
+    if not groups and briefing:
         pid = int(briefing.get("pillar_id") or 1)
         from crawl_cardiology_news import PILLAR_CRAWL_QUERIES
         return f"({PILLAR_CRAWL_QUERIES.get(pid, 'cardiology')}) AND 2022:2026[dp]"
-    joined = " AND ".join(f'"{t}"[tiab]' for t in deduped) or 'cardiology[MeSH Terms]'
-    return f"({joined}) AND 2022:2026[dp]"
+    joined = " AND ".join(groups) or 'cardiology[MeSH Terms]'
+    return f"{joined} AND 2022:2026[dp]"
 
 
 def _fetch_pubmed_with_abstracts(query: str, max_results: int = 3, question: str = "") -> list[dict]:
