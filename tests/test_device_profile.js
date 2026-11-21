@@ -74,6 +74,22 @@ assert.equal(memory.get('ebm_ui_lang'), 'en');
 const broken = create(new Storage({[KEY]: 'broken', ebm_ui_lang: 'en'}), crypto);
 assert.equal(broken.get('ebm_ui_lang'), 'en');
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
+{
+  const malicious = '<img src=x onerror="throw 1">';
+  const escapeCode = html.match(/function escapeHtml\(str\) \{([\s\S]*?)\n    \}/)[0];
+  const urlCode = html.match(/function safeChatSourceUrl\(value\) \{([\s\S]*?)\n    \}/)[0];
+  const scope = {URL, document: {createElement() {return {children: [], appendChild(x) {this.children.push(x);}, addEventListener() {}};}}, App: {currentLang: 'en'}};
+  vm.runInNewContext(`${escapeCode}\n${urlCode}`, scope);
+  const render = html.match(/      renderMessageDom\(msgObj\) \{[\s\S]*?\n      \},/)[0].slice(0,-1);
+  const fn = vm.runInNewContext(`({${render}}).renderMessageDom`, scope);
+  const dom = fn({role: 'assistant', markdownText: malicious});
+  assert.equal(dom.children[0].textContent, malicious);
+  assert.equal(dom.children[0].innerHTML, undefined);
+  assert.equal(scope.safeChatSourceUrl('javascript:alert(1)'), '#');
+  assert.equal(scope.safeChatSourceUrl('https://pubmed.ncbi.nlm.nih.gov/'), 'https://pubmed.ncbi.nlm.nih.gov/');
+  const body = html.match(/const bodyHtml = ([\s\S]*?);\n              return/)[1];
+  assert.ok(vm.runInNewContext(body, {...scope, m: {role:'assistant', text:malicious}}).startsWith('&lt;img'));
+}
 assert.ok(!/authGateOverlay|auth-locked|type="password"|\/api\/auth\/(login|register|logout|reset-password)/.test(html));
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));

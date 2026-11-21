@@ -4790,6 +4790,13 @@
       return "https://doi.org/" + clean.split("/").map(seg => encodeURIComponent(seg)).join("/");
     }
 
+    function safeChatSourceUrl(value) {
+      try {
+        const url = new URL(value);
+        return ["http:", "https:"].includes(url.protocol) ? url.href : "#";
+      } catch (_) { return "#"; }
+    }
+
     function formatInlineRich(str) {
       if (!str) return "";
       return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -7511,11 +7518,7 @@
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble";
-        if (role === "assistant" && window.marked) {
-          bubble.innerHTML = marked.parse(markdownText || "");
-        } else {
-          bubble.textContent = markdownText || "";
-        }
+        bubble.textContent = markdownText || "";
         wrap.appendChild(bubble);
 
         if (Array.isArray(sources) && sources.length > 0) {
@@ -7523,7 +7526,7 @@
           srcRow.className = "chat-sources-row";
           srcRow.innerHTML = sources.slice(0, 5).map((s) => {
             const pmidUrl = s.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(s.pmid)}/` : "";
-            const url = pmidUrl || (s.doi ? formatDoiUrl(s.doi) : (s.url || "#"));
+            const url = safeChatSourceUrl(pmidUrl || (s.doi ? formatDoiUrl(s.doi) : s.url));
             return `<a class="chat-source-pill" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.title || "")}">
               <i class="fa-solid fa-arrow-up-right-from-square"></i> PMID ${escapeHtml(s.pmid)}${s.pubdate ? ` • ${escapeHtml(s.pubdate)}` : ""}
             </a>`;
@@ -8861,9 +8864,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             }</div></div>`;
           } else {
             box.innerHTML = msgs.map((m) => {
-              const bodyHtml = m.role === "assistant" && window.marked
-                ? marked.parse(m.text || "")
-                : escapeHtml(m.text || "");
+              const bodyHtml = escapeHtml(m.text || "");
               return `<div class="socratic-msg ${m.role === "user" ? "user" : "assistant"}">
                 <div class="socratic-msg-bubble">${bodyHtml}</div>
               </div>`;
