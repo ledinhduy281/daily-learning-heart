@@ -38,6 +38,20 @@ class SearchTests(unittest.TestCase):
         self.assertIn('2022:2026[dp]', q)
         self.assertNotIn('AND 2026[dp]', q)
 
+    def test_unrelated_active_briefing_cannot_override_keyword_match(self):
+        data = app.load_existing_briefings()
+        hypertension = next(b for b in data if b['pillar_id'] == 1 and '-main' in b['id'])
+        af = next(b for b in data if b['pillar_id'] == 6 and '-main' in b['id'])
+        for query in ('rung nhĩ', 'rung nhi', 'AF'):
+            self.assertEqual(score(hypertension, query), 0)
+            self.assertGreater(app._score_briefing_for_chat(af, query, hypertension['id'], 1),
+                               app._score_briefing_for_chat(hypertension, query, hypertension['id'], 1))
+            self.assertEqual(app._score_briefing_for_chat(hypertension, query, hypertension['id'], 1),
+                             app._score_briefing_for_chat(hypertension, query))
+        for query in ('', 'the', 'today'):
+            self.assertEqual(app._score_briefing_for_chat(hypertension, query, hypertension['id'], 1)
+                             - app._score_briefing_for_chat(hypertension, query), 60)
+
     @patch('urllib.request.urlopen')
     def test_fallback_and_rerank(self, network):
         xml = '<PubmedArticleSet>'

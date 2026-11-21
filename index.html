@@ -8497,10 +8497,10 @@
         }
 
         const hasCtxPhrase = /(hôm nay|bài này|bản tin này|trụ cột này|today|current)/i.test(qLow);
-        if (explicitPids.length === 0 && (hasCtxPhrase || keywordScore === 0)) {
+        if (explicitPids.length === 0 && (hasCtxPhrase || !SearchRanking.hasTerms(query))) {
           if (App.selected && b.id === App.selected.id) score += 60;
           else if (App.selected && pid === Number(App.selected.pillar_id)) score += 45;
-        } else {
+        } else if (keywordScore > 0) {
           if (App.selected && b.id === App.selected.id) score += 4;
           else if (App.selected && pid === Number(App.selected.pillar_id)) score += 2;
         }

@@ -20,5 +20,17 @@ for (const [q,full] of [['AF','atrial fibrillation'],['HFpEF','heart failure wit
 for (const key of ['title_en','guideline_evolution','landmark_trials','drug_names','pearls']) assert.ok(score({[key]:'finerenone'},'finerenone') > score({part2_en_markdown:'finerenone'},'finerenone'));
 // Compile the actual SPA script without requiring a browser DOM.
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
+const start=html.indexOf('      scoreBriefing(b, query) {');
+const end=html.indexOf('      async translateSnippetToVi',start);
+const hypertension=data.find(b=>b.pillar_id===1 && b.id.includes('-main'));
+const af=data.find(b=>b.pillar_id===6 && b.id.includes('-main'));
+const tutor=vm.runInNewContext(`({${html.slice(start,end)}})`,{SearchRanking:require('../search_ranking.js'),App:{selected:hypertension}});
+const noContext=vm.runInNewContext(`({${html.slice(start,end)}})`,{SearchRanking:require('../search_ranking.js'),App:{selected:null}});
+for (const q of ['rung nhĩ','rung nhi','AF']) {
+  assert.equal(score(hypertension,q),0);
+  assert.ok(tutor.scoreBriefing(af,q)>tutor.scoreBriefing(hypertension,q));
+  assert.equal(tutor.scoreBriefing(hypertension,q),noContext.scoreBriefing(hypertension,q));
+}
+for (const q of ['','the','today']) assert.equal(tutor.scoreBriefing(hypertension,q)-noContext.scoreBriefing(hypertension,q),60);
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
 console.log('JS search tests and SPA syntax: OK');

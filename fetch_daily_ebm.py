@@ -33,7 +33,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from search_ranking import CONCEPTS, normalize, contains, score as relevance_score
+from search_ranking import CONCEPTS, normalize, contains, score as relevance_score, terms as search_terms
 from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -1800,12 +1800,12 @@ def _score_briefing_for_chat(b: dict, query: str, active_briefing_id: str = "", 
         score += 15
 
     has_ctx_phrase = any(p in q_low for p in ("hôm nay", "bài này", "bản tin này", "trụ cột này", "today", "current"))
-    if not explicit_pids and (has_ctx_phrase or keyword_hits == 0):
+    if not explicit_pids and (has_ctx_phrase or not search_terms(query)):
         if active_briefing_id and b.get("id") == active_briefing_id:
             score += 60
         elif active_pillar_id and pid == int(active_pillar_id):
             score += 45
-    else:
+    elif keyword_hits > 0:
         if active_briefing_id and b.get("id") == active_briefing_id:
             score += 4
         elif active_pillar_id and pid == int(active_pillar_id):

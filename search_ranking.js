@@ -52,6 +52,6 @@ const SearchRanking = (() => {
     if (phrase && docs.some(d=>phrases.some(p=>contains(d.s,p)))) total+=12;
     return Math.round(total);
   }
-  return { normalize, score };
+  return { normalize, score, hasTerms: query => terms(query).length > 0 };
 })();
 if (typeof module !== 'undefined') module.exports = SearchRanking;
