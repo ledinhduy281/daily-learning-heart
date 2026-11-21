@@ -70,6 +70,17 @@ class ClinicalMcqTests(unittest.TestCase):
                     _, state, _ = turn(b, state, lang, 'answer', selected_choice=state['correct_key'])
                 self.assertEqual(set(keys), set('ABCD'), (b['id'], lang, keys))
 
+    def test_key_positions_do_not_follow_a_fixed_cycle(self):
+        from socratic_quiz import turn
+        for b in self.briefings:
+            _, state, _ = turn(b, {}, 'en', 'start_diagnostic')
+            idx = []
+            for _ in range(16):
+                idx.append('ABCD'.index(state['correct_key']))
+                _, state, _ = turn(b, state, 'en', 'answer', selected_choice=state['correct_key'])
+            steps = {(y - x) % 4 for x, y in zip(idx, idx[1:])}
+            self.assertGreater(len(steps), 1, (b['id'], idx))
+
     def test_icd_threshold_retains_population_and_risk_criteria(self):
         b = next(b for b in self.briefings if b['id'] == 'ebm-2026-08-25-p6-hist1')
         for lang in ('vi', 'en'):

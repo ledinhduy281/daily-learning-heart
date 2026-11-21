@@ -108,7 +108,14 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         seed = (seed * 1664525 + 1013904223) % 4294967296
         j = (seed >> 16) % (i + 1)
         order[i], order[j] = order[j], order[i]
-    target = (briefing_seed + int(variant_idx)) % 4
+    # Each block of four questions uses every letter once, in a per-block shuffled order.
+    block_seed = briefing_seed * 7 + (int(variant_idx) // 4) * 131
+    targets = [0, 1, 2, 3]
+    for i in range(3, 0, -1):
+        block_seed = (block_seed * 1664525 + 1013904223) % 4294967296
+        j = (block_seed >> 16) % (i + 1)
+        targets[i], targets[j] = targets[j], targets[i]
+    target = targets[int(variant_idx) % 4]
     correct_position = order.index(0)
     order[target], order[correct_position] = order[correct_position], order[target]
     options = [{'key': 'ABCD'[i], 'text': texts[n]} for i, n in enumerate(order)]
