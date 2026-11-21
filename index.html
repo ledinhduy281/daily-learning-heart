@@ -31,6 +31,7 @@
 
   <!-- Seeded Briefings Data -->
   <script src="data/briefings.js"></script>
+  <script src="clinical_mcq.js"></script>
 
   <style>
     /* ==========================================================================
@@ -9227,145 +9228,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
       },
 
       buildDeterministicMcq(primary, slotIdx, variantIdx, lang, difficulty = "normal") {
-        const isEn = lang === "en";
-        const pid = Number(primary?.pillar_id || this.curPillarId || 1);
-        const pName = (isEn ? primary?.pillar_name : primary?.pillar_vi) || getPillarDisplayName(pid, !isEn);
-        const ge = primary?.guideline_evolution || {};
-        const priorG = ge?.prior_guideline?.name || (isEn ? "Prior Guideline" : "Khuyến cáo cũ");
-        const curG = ge?.current_guideline?.name || (isEn ? "2026 Guidelines" : "Khuyến cáo 2026");
-        const steps = Array.isArray(ge.steps) ? ge.steps : [];
-        const trials = Array.isArray(primary?.landmark_trials) ? primary.landmark_trials : [];
-        const pearls = Array.isArray(primary?.pearls) ? primary.pearls : [];
-
-        const slot = ((Number(slotIdx) % 4) + 4) % 4;
-        const t0 = trials.length ? trials[variantIdx % trials.length] : {};
-        const tAlt = trials.length > 1 ? trials[(variantIdx + 1) % trials.length] : t0;
-        const s0 = steps.length
-          ? steps[slot === 0 ? (((steps.length - 1 - variantIdx) % steps.length) + steps.length) % steps.length : (variantIdx % steps.length)]
-          : {};
-        const p0 = pearls.length ? pearls[variantIdx % pearls.length] : {};
-        const hardPrefix = difficulty === "hard"
-          ? (isEn ? "[Edge-Case Challenge] " : "[Tình huống Nâng cao] ")
-          : "";
-
-        let question = "";
-        let correctText = "";
-        let distractors = [];
-        let explanation = "";
-
-        if (slot === 0) {
-          const sTitle = this.clipText((isEn ? s0.title_en : s0.title_vi) || curG, 70);
-          const sDesc = this.clipText((isEn ? s0.desc_en : s0.desc_vi) || curG, 155);
-          if (isEn) {
-            question = `${hardPrefix}**Guideline Shift (${sTitle}):** Compared with **${priorG}**, which clinical change does **${curG}** emphasize most in today's Pillar #${pid} (${pName})?`;
-            correctText = sDesc || `Adopt ${curG} criteria (${sTitle}) with earlier risk-guided escalation.`;
-            distractors = [
-              `Maintain the legacy ${priorG} stepwise threshold and defer therapy escalation for 12 months.`,
-              "Reserve guideline-directed pharmacotherapy strictly for inpatients with acute hemodynamic shock.",
-              "Discontinue background therapy once a single outpatient biomarker normalizes."
-            ];
-            explanation = `${curG}: ${sDesc}`;
-          } else {
-            question = `${hardPrefix}**Tiến hóa Khuyến cáo (${sTitle}):** So với **${priorG}**, thay đổi thực hành trọng tâm nào được **${curG}** nhấn mạnh trong Trụ cột #${pid} (${pName}) hôm nay?`;
-            correctText = sDesc || `Áp dụng tiêu chuẩn ${curG} (${sTitle}) và phân tầng điều trị sớm theo nguy cơ.`;
-            distractors = [
-              `Giữ nguyên ngưỡng điều trị cũ của ${priorG} và trì hoãn phối hợp thuốc ít nhất 12 tháng.`,
-              "Chỉ dùng thuốc theo khuyến cáo cho bệnh nhân nội trú đang sốc tim hoặc tụt huyết áp cấp.",
-              "Ngưng toàn bộ thuốc nền ngay khi một chỉ số cận lâm sàng ngoại trú trở về mức bình thường."
-            ];
-            explanation = `${curG}: ${sDesc}`;
-          }
-        } else if (slot === 1) {
-          const tName = String(t0.name || "Landmark RCT");
-          const tVal = String(t0.value || (isEn ? "significant primary benefit" : "lợi ích rõ ở tiêu chí chính"));
-          const tChg = this.clipText((isEn ? t0.changes_en : t0.changes_vi) || (isEn ? p0.text_en : p0.text_vi) || curG, 155);
-          if (isEn) {
-            question = `${hardPrefix}**Landmark RCT (${tName} • ${tVal}):** What clinical practice shift did **${tName}** prove for this patient cohort?`;
-            correctText = tChg;
-            distractors = [
-              `${tName} showed neutral primary outcomes (p > 0.20) and advised against targeted escalation.`,
-              `${tName} established monotherapy as superior to structured combination therapy in all high-risk subgroups.`,
-              `Benefit in ${tName} was confined purely to surrogate lab changes without hard clinical event reduction.`
-            ];
-            explanation = `${tName} (${tVal}): ${tChg}`;
-          } else {
-            question = `${hardPrefix}**RCT Bản lề (${tName} • ${tVal}):** Kết quả của thử nghiệm **${tName}** chứng minh bước ngoặt thực hành nào sau đây?`;
-            correctText = tChg;
-            distractors = [
-              `${tName} cho kết quả trung tính ở tiêu chí chính (p > 0,20), không khuyến cáo mở rộng chỉ định.`,
-              `${tName} chứng minh đơn trị liệu liều thấp luôn vượt trội hơn phối hợp thuốc chuẩn ở nhóm nguy cơ cao.`,
-              `Lợi ích trong ${tName} chỉ ghi nhận trên xét nghiệm thay thế, không giảm biến cố lâm sàng cứng.`
-            ];
-            explanation = `${tName} (${tVal}): ${tChg}`;
-          }
-        } else if (slot === 2) {
-          const pTxt = this.clipText((isEn ? p0.text_en : p0.text_vi) || (isEn ? s0.desc_en : s0.desc_vi) || curG, 160);
-          const sTitle = this.clipText((isEn ? s0.title_en : s0.title_vi) || "2026 stratification", 70);
-          if (isEn) {
-            question = `${hardPrefix}**Mechanisms & Risk Stratification (${sTitle}):** Which bedside decision best reflects the pathophysiologic threshold emphasized today?`;
-            correctText = pTxt;
-            distractors = [
-              "Rely solely on isolated age cutoffs while ignoring comorbidities, subclinical organ damage, or biomarkers.",
-              "Titrate therapy strictly by patient symptoms rather than risk-stratified targets or trial criteria.",
-              "Avoid additive combination pathways completely to eliminate follow-up lab monitoring."
-            ];
-            explanation = pTxt;
-          } else {
-            question = `${hardPrefix}**Cơ chế & Ngưỡng Nguy cơ (${sTitle}):** Quyết định nào tại giường bệnh phản ánh đúng ngưỡng phân tầng và cơ chế bệnh sinh hôm nay?`;
-            correctText = pTxt;
-            distractors = [
-              "Chỉ dựa vào ngưỡng tuổi đơn độc, bỏ qua bệnh đồng mắc, tổn thương cơ quan đích và dấu ấn sinh học.",
-              "Chỉ chỉnh liều dựa theo triệu chứng chủ quan của bệnh nhân, không cần đạt đích phân tầng nguy cơ.",
-              "Tránh phối hợp đa cơ chế hoàn toàn để không phải theo dõi sinh hóa và điện giải định kỳ."
-            ];
-            explanation = pTxt;
-          }
-        } else {
-          const cautionTxt = this.clipText(
-            (isEn ? t0.caution_en : t0.caution_vi)
-              || (isEn ? tAlt.caution_en : tAlt.caution_vi)
-              || (isEn ? p0.text_en : p0.text_vi)
-              || "",
-            160
-          );
-          const tName = String(t0.name || pName);
-          if (isEn) {
-            question = `${hardPrefix}**Bedside Safety Trap (${tName}):** Which critical contraindication or safety safeguard must be verified before applying today's regimen aggressively?`;
-            correctText = cautionTxt || "Re-check baseline eGFR, electrolytes, bleeding/hypotension risk, and key drug-drug interactions.";
-            distractors = [
-              "None — intensive targets carry identical benefit-to-harm ratios regardless of renal function, frailty, or co-medications.",
-              "Double the initiating bolus in patients with advanced kidney dysfunction to overcome slower oral absorption.",
-              "Stop all cardioprotective baseline drugs first before checking eGFR, potassium, or blood pressure."
-            ];
-            explanation = correctText;
-          } else {
-            question = `${hardPrefix}**Bẫy An toàn Lâm sàng (${tName}):** Lưu ý an toàn hoặc chống chỉ định cốt lõi nào bắt buộc phải rà soát trước khi áp dụng phác đồ mạnh tay?`;
-            correctText = cautionTxt || "Kiểm tra eGFR, điện giải, nguy cơ tụt huyết áp/xuất huyết và tương tác thuốc trước khi tăng liều.";
-            distractors = [
-              "Không cần lưu ý — mọi mức eGFR, tuổi cao hay thuốc dùng kèm đều có cùng tỷ lệ lợi ích/nguy cơ như nhau.",
-              "Tăng gấp đôi liều khởi đầu ở người suy thận nặng để bù trừ khả năng thải trừ chậm.",
-              "Ngưng toàn bộ thuốc bảo vệ tim mạch nền trước khi kiểm tra creatinine, kali máu và huyết áp."
-            ];
-            explanation = correctText;
-          }
-        }
-
-        const keys = ["A", "B", "C", "D"];
-        const correctIdx = (((pid + slot + Math.max(0, Number(variantIdx || 0))) % 4) + 4) % 4;
-        const ordered = [null, null, null, null];
-        ordered[correctIdx] = correctText;
-        let dIdx = 0;
-        for (let i = 0; i < 4; i++) {
-          if (ordered[i] === null) {
-            ordered[i] = distractors[dIdx++];
-          }
-        }
-        return {
-          question,
-          options: keys.map((k, i) => ({ key: k, text: ordered[i] })),
-          correct_key: keys[correctIdx],
-          explanation
-        };
+        return ClinicalQuiz.build(primary, slotIdx, variantIdx, lang, difficulty);
       },
 
       getSubskillDefs(b) {
@@ -9435,12 +9298,15 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
-          if (s.started && s.phase !== "mastered" && s.current_options.length !== 4 && briefing) {
+          if (s.started && s.phase !== "mastered" && (!s.current_question || s.current_options.length !== 4) && briefing) {
             const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), App.currentLang || "vi", s.difficulty || "normal");
             s.current_options = mcq.options;
             s.correct_key = mcq.correct_key;
+            s.current_question = mcq;
+            s.explanation = mcq.explanation;
             s.options_lang = App.currentLang || "vi";
-            if (!s.last_question) s.last_question = mcq.question;
+            s.last_question = mcq.question;
+            if (s.messages.length) s.messages.push({ role: "assistant", text: mcq.question });
           }
         }
         return this.store[key];
@@ -9468,6 +9334,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           const mcq = this.buildDeterministicMcq(b, sess.focus_idx || 0, (sess.diag_step || 0) + (sess.attempts_on_current || 0), curLang, sess.difficulty || "normal");
           sess.current_options = mcq.options;
           sess.correct_key = mcq.correct_key;
+          sess.current_question = mcq;
+          sess.explanation = mcq.explanation;
           sess.options_lang = curLang;
           sess.last_question = mcq.question;
           sess.messages.push({ role: "assistant", text: mcq.question });
@@ -9820,6 +9688,8 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
         sess.subskills = sess.subskills.map((s) => ({ ...s, level: 0, checks: 0, answered: 0, correct: 0 }));
         sess.current_options = [];
         sess.correct_key = "";
+        sess.current_question = null;
+        sess.explanation = "";
         sess.options_lang = App.currentLang || "vi";
         sess.messages = [];
         this.saveStore();
@@ -9929,6 +9799,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
                     last_question: sess.last_question,
                     current_options: sess.current_options,
                     correct_key: sess.correct_key,
+                    explanation: sess.explanation,
+                    current_question: sess.current_question,
+                    question_index: sess.question_index,
                     subskills: sess.subskills
                   }
                 })
@@ -9955,7 +9828,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             } catch (_) {}
           }
 
-          // Client-side engine (GitHub Pages / standalone): Groq API MCQ + Deterministic MCQ fallback
+          // Local fact-grounded quiz for GitHub Pages / standalone.
           const out = await this.runClientSocratic(b, sess, action, userAnswer, lang, selectedChoice);
           Object.assign(sess, out.state);
           sess.options_lang = lang;
@@ -9974,286 +9847,9 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
       },
 
       async runClientSocratic(primary, sess, action, userAnswer, lang, selectedChoice = "") {
-        const isEn = lang === "en";
-        const key = window.EbmChat ? EbmChat._k() : "";
-        let choice = String(selectedChoice || "").trim().toUpperCase();
-        if (!choice && userAnswer) {
-          const mCh = String(userAnswer).trim().match(/^([ABCD])(?:\b|[\.\:\)])/i);
-          if (mCh) choice = mCh[1].toUpperCase();
-        }
-        const prevCorrectKey = String(sess.correct_key || "").trim().toUpperCase();
-        const prevOpts = this.normalizeMcqOptions(sess.current_options);
-        const prevCorrectOpt = prevOpts.find((o) => o.key === prevCorrectKey);
-        const isChoiceCorrect = Boolean(
-          action === "answer"
-          && ["A", "B", "C", "D"].includes(choice)
-          && ["A", "B", "C", "D"].includes(prevCorrectKey)
-          && choice === prevCorrectKey
-        );
-
-        let reply = "";
-        let meta = {
-          eval: "partial",
-          new_level: sess.subskills[sess.focus_idx]?.level || 0,
-          next_focus: sess.focus_idx,
-          phase: sess.phase,
-          options: [],
-          correct_key: ""
-        };
-
-        if (key && window.EbmChat && !(EbmChat.quota.exhausted || EbmChat.quota.used >= EbmChat.quota.limit)) {
-          EbmChat.quota.used += 1;
-          if (EbmChat.quota.used >= EbmChat.quota.limit) {
-            EbmChat.quota.exhausted = true;
-            EbmChat.quota.stop_reason = "Daily cap reached";
-          }
-          EbmChat.persistLocalQuota();
-
-          const botName = isEn ? "Med Bro" : "Soái ca Y khoa";
-          const trialsCompact = (primary?.landmark_trials || []).slice(0, 3).map((t) => ({
-            name: t.name, value: t.value, p: t.p,
-            changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
-            caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
-          }));
-          const sysPrompt = `You are '${botName}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Output feedback + ONE sharp MCQ stem in the prose body; NEVER list A/B/C/D options in prose because the UI renders meta.options as buttons. 3) When ACTION=='answer' and PREV_CORRECT_KEY is given, trust IS_CHOICE_CORRECT (true->eval:'correct', false->eval:'wrong'). 4) Diagnostic phase: place previous choice briefly, ask 1 probing MCQ for subskills[diag_step], transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong and action!='just_tell_me' and attempts<2, explain why the chosen trap fails WITHOUT revealing PREV_CORRECT_KEY, then ask a narrower MCQ; only reveal PREV_CORRECT_KEY when action=='just_tell_me' or attempts>=2, then re-test from a new angle. If right, play devil's advocate with an edge-case MCQ. 6) When all 4 subskills>=4 run final_exam MCQ; if passed set phase:'mastered' and options:[]. 7) Vary correct_key across A/B/C/D. Translate white-coat = áo choàng trắng. Last line MUST be exact JSON: <socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta> /no_think`;
-          const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nUSER_SELECTED_CHOICE:${choice || "(none)"}\nPREV_CORRECT_KEY:${prevCorrectKey || "(none)"}\nIS_CHOICE_CORRECT:${JSON.stringify(isChoiceCorrect)}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 700)}`;
-          try {
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-              body: JSON.stringify({
-                model: "qwen/qwen3.8-27b",
-                messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
-                temperature: 0.2,
-                max_tokens: 900
-              })
-            });
-            if (res.ok) {
-              const d = await res.json();
-              let raw = String(d.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-              const m = raw.match(/<socratic_meta>\s*(\{[\s\S]*?\})\s*<\/socratic_meta>/);
-              if (m) {
-                try { meta = { ...meta, ...JSON.parse(m[1]) }; } catch (_) {}
-                raw = raw.slice(0, m.index).trim();
-              }
-              let normOpts = this.normalizeMcqOptions(meta.options);
-              if (!normOpts.length) normOpts = this.parseInlineMcqFromText(raw);
-              const ckey = String(meta.correct_key || "").trim().toUpperCase().slice(0, 1);
-              const metaPhase = String(meta.phase || sess.phase).toLowerCase();
-              if (metaPhase === "mastered" && action === "answer" && isChoiceCorrect) {
-                reply = this.stripDuplicateMcqLines(raw);
-                meta.options = [];
-                meta.correct_key = "";
-              } else if (normOpts.length === 4 && ["A", "B", "C", "D"].includes(ckey)) {
-                reply = this.stripDuplicateMcqLines(raw);
-                meta.options = normOpts;
-                meta.correct_key = ckey;
-              } else {
-                reply = "";
-              }
-            } else {
-              let errTxt = "";
-              try { errTxt = (await res.text()).toLowerCase(); } catch (_) {}
-              const isTransientTpm = res.status === 429 && /(per minute|tpm|rpm|tokens per minute|requests per minute)/.test(errTxt) && !/(per day|tpd|rpd)/.test(errTxt);
-              if (res.status === 402 || res.status === 403 || (res.status === 429 && !isTransientTpm)) {
-                EbmChat.quota.exhausted = true;
-                EbmChat.quota.stop_reason = `HTTP ${res.status}`;
-                EbmChat.persistLocalQuota();
-              }
-            }
-          } catch (_) {}
-        }
-
-        if (!reply) {
-          const diff = sess.difficulty || "normal";
-          if (action === "start_diagnostic") {
-            const mcq = this.buildDeterministicMcq(primary, 0, 0, lang, diff);
-            reply = isEn
-              ? `### Med Bro — Daily Review Quiz (Multiple Choice)\nI will test you with 4 short clinical MCQs — one at a time — to review today's knowledge.\n\n**Diagnostic Q1:** ${mcq.question}`
-              : `### Soái ca Y khoa — Trắc nghiệm ôn lại kiến thức hôm nay\nTôi sẽ hỏi lần lượt 4 câu trắc nghiệm lâm sàng (mỗi lần 1 câu) để đo mức nền trước khi luyện sâu.\n\n**Câu Chẩn đoán 1:** ${mcq.question}`;
-            meta = { eval: "start", new_level: 0, next_focus: 0, phase: "diagnostic", options: mcq.options, correct_key: mcq.correct_key };
-          } else if (action === "harder" || action === "easier") {
-            const mcq = this.buildDeterministicMcq(primary, sess.focus_idx, (sess.attempts_on_current || 0) + 2, lang, diff);
-            reply = isEn
-              ? `Adjusted difficulty to **${diff}**. Select the best answer below:\n\n${mcq.question}`
-              : `Đã chuyển độ khó sang **${diff === "hard" ? "Khó" : "Dễ"}**. Mời bạn chọn đáp án:\n\n${mcq.question}`;
-            meta = { eval: "partial", new_level: sess.subskills[sess.focus_idx]?.level || 1, next_focus: sess.focus_idx, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
-          } else if (action === "just_tell_me" || (!isChoiceCorrect && (sess.attempts_on_current || 0) >= 2 && sess.phase !== "diagnostic")) {
-            const curMcq = this.buildDeterministicMcq(primary, sess.focus_idx, sess.attempts_on_current || 0, lang, diff);
-            const reveal = prevCorrectOpt ? `${prevCorrectKey} (${prevCorrectOpt.text})` : (prevCorrectKey || "guideline option");
-            const nxtSlot = (sess.focus_idx + 1) % 4;
-            const nxtMcq = this.buildDeterministicMcq(primary, nxtSlot, (sess.attempts_on_current || 0) + 1, lang, diff);
-            reply = isEn
-              ? `**Answer & Rationale (${prevCorrectKey || "Key"}):** **${reveal}**. ${curMcq.explanation}\n\n**Re-test from a new angle:** ${nxtMcq.question}`
-              : `**Giải thích đáp án đúng (${prevCorrectKey || "Đáp án"}):** **${reveal}**. ${curMcq.explanation}\n\n**Kiểm tra lại từ góc độ mới:** ${nxtMcq.question}`;
-            meta = { eval: "partial", new_level: 2, next_focus: nxtSlot, phase: sess.phase === "diagnostic" ? "loop" : sess.phase, options: nxtMcq.options, correct_key: nxtMcq.correct_key };
-          } else if (sess.phase === "diagnostic") {
-            const lvl = isChoiceCorrect ? 2 : 1;
-            const fb = isEn
-              ? (isChoiceCorrect ? `Choice **${choice}** is accurate` : `Choice **${choice || "?"}** missed **${prevCorrectKey}**`)
-              : (isChoiceCorrect ? `Chọn **${choice}** chính xác` : `Chọn **${choice || "?"}** chưa khớp với đáp án **${prevCorrectKey}**`);
-            if (sess.diag_step < 3) {
-              const nxt = sess.diag_step + 1;
-              const mcq = this.buildDeterministicMcq(primary, nxt, nxt, lang, diff);
-              reply = isEn ? `${fb} (\`${lvl}/5\`).\n\n**Diagnostic Q${nxt + 1}:** ${mcq.question}` : `${fb} (\`${lvl}/5\`).\n\n**Câu Chẩn đoán ${nxt + 1}:** ${mcq.question}`;
-              meta = { eval: isChoiceCorrect ? "correct" : "wrong", new_level: lvl, next_focus: nxt, phase: "diagnostic", options: mcq.options, correct_key: mcq.correct_key };
-            } else {
-              const lvls = sess.subskills.map((s, idx) => (idx === 3 ? lvl : Number(s.level || 0)));
-              const weakest = lvls.reduce((best, val, idx, arr) => (val < arr[best] ? idx : best), 0);
-              const mcq = this.buildDeterministicMcq(primary, weakest, 1, lang, diff);
-              reply = isEn ? `${fb}. Diagnostic complete! Let's drill your priority area first:\n\n${mcq.question}` : `${fb}. Hoàn tất chẩn đoán nền! Giờ hãy luyện sâu mảng ưu tiên trước:\n\n${mcq.question}`;
-              meta = { eval: isChoiceCorrect ? "correct" : "wrong", new_level: lvl, next_focus: weakest, phase: "loop", options: mcq.options, correct_key: mcq.correct_key };
-            }
-          } else if (isChoiceCorrect) {
-            const nxtSlot = (sess.focus_idx + 1) % 4;
-            const mcq = this.buildDeterministicMcq(primary, nxtSlot, (sess.attempts_on_current || 0) + 2, lang, diff);
-            reply = isEn ? `**Correct (${choice}).** Ready for a follow-up twist?\n\n${mcq.question}` : `**Chính xác (${choice}).** Sẵn sàng cho câu hỏi phản biện tiếp theo chưa?\n\n${mcq.question}`;
-            meta = { eval: "correct", new_level: Math.min(5, (sess.subskills[sess.focus_idx]?.level || 1) + 1), next_focus: nxtSlot, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
-          } else {
-            const mcq = this.buildDeterministicMcq(primary, sess.focus_idx, (sess.attempts_on_current || 0) + 1, lang, diff);
-            reply = isEn
-              ? `**Option ${choice || "?"}** is a common clinical trap — re-examine the inclusion criteria and safety limits, then try this narrower question:\n\n${mcq.question}`
-              : `**Đáp án ${choice || "?"}** là bẫy lâm sàng hay gặp — đối chiếu lại tiêu chuẩn chọn bệnh và giới hạn an toàn qua câu hẹp hơn sau:\n\n${mcq.question}`;
-            meta = { eval: "wrong", new_level: sess.subskills[sess.focus_idx]?.level || 1, next_focus: sess.focus_idx, phase: sess.phase, options: mcq.options, correct_key: mcq.correct_key };
-          }
-        }
-
-        const nextSubs = sess.subskills.map((s) => ({
-          ...s,
-          level: Math.max(0, Math.min(5, Number(s.level || 0))),
-          checks: Math.max(0, Number(s.checks || 0)),
-          answered: Math.max(0, Number(s.answered || 0)),
-          correct: Math.max(0, Number(s.correct || 0))
-        }));
-        let { phase, diag_step, focus_idx, attempts_on_current, answered_count, correct_count, streak, last_updated_idx, last_delta, last_eval } = sess;
-        answered_count = Math.max(0, Number(answered_count || 0));
-        correct_count = Math.max(0, Number(correct_count || 0));
-        streak = Math.max(0, Number(streak || 0));
-        last_updated_idx = -1;
-        last_delta = 0;
-
-        let ev = String(meta.eval || "partial").toLowerCase();
-        if (action === "answer" && ["A", "B", "C", "D"].includes(prevCorrectKey) && ["A", "B", "C", "D"].includes(choice)) {
-          ev = isChoiceCorrect ? "correct" : "wrong";
-        }
-
-        if (action === "answer") {
-          const targetIdx = phase === "diagnostic" ? diag_step : focus_idx;
-          const cur = nextSubs[targetIdx];
-          const oldLvl = cur.level;
-          answered_count += 1;
-          cur.answered += 1;
-
-          const pickLowestNext = (avoidIdx) => {
-            let best = 0;
-            for (let i = 1; i < 4; i++) {
-              if (nextSubs[i].level < nextSubs[best].level || (nextSubs[i].level === nextSubs[best].level && best === avoidIdx && i !== avoidIdx)) {
-                best = i;
-              }
-            }
-            return best;
-          };
-
-          if (ev === "correct") {
-            correct_count += 1;
-            streak += 1;
-            cur.correct += 1;
-            cur.checks += 1;
-            attempts_on_current = 0;
-            if (phase === "diagnostic") {
-              cur.level = 2;
-              if (diag_step < 3) {
-                diag_step += 1;
-                focus_idx = diag_step;
-              } else {
-                phase = "loop";
-                focus_idx = pickLowestNext(-1);
-              }
-            } else if (phase === "loop") {
-              cur.level = Math.min(5, Math.max(2, oldLvl + 1));
-              if (nextSubs.every((s) => s.level >= 4)) phase = "final_exam";
-              focus_idx = pickLowestNext(targetIdx);
-            } else if (phase === "final_exam") {
-              cur.level = 5;
-              if (nextSubs.every((s) => s.level >= 4)) phase = "mastered";
-              focus_idx = pickLowestNext(targetIdx);
-            }
-          } else if (ev === "wrong") {
-            streak = 0;
-            cur.checks = 0;
-            attempts_on_current += 1;
-            if (phase === "diagnostic") {
-              cur.level = 1;
-              if (diag_step < 3) {
-                diag_step += 1;
-                focus_idx = diag_step;
-              } else {
-                phase = "loop";
-                focus_idx = pickLowestNext(-1);
-              }
-              attempts_on_current = 0;
-            } else {
-              if (oldLvl > 1) cur.level = oldLvl - 1;
-              else if (oldLvl === 0) cur.level = 1;
-            }
-          } else {
-            streak = 0;
-            attempts_on_current += 1;
-          }
-
-          last_updated_idx = targetIdx;
-          last_delta = cur.level - oldLvl;
-          last_eval = ev;
-        } else if (action === "just_tell_me") {
-          attempts_on_current = 0;
-          streak = 0;
-          last_eval = "partial";
-          if (phase === "diagnostic") {
-            if (diag_step < 3) {
-              diag_step += 1;
-              focus_idx = diag_step;
-            } else {
-              phase = "loop";
-              focus_idx = nextSubs.reduce((best, item, idx, arr) => (item.level < arr[best].level ? idx : best), 0);
-            }
-          }
-        } else if (action === "start_diagnostic") {
-          last_eval = "";
-        }
-
-        let nextOptions = this.normalizeMcqOptions(meta.options);
-        let nextCorrect = String(meta.correct_key || "").trim().toUpperCase().slice(0, 1);
-        if (phase === "mastered") {
-          nextOptions = [];
-          nextCorrect = "";
-        } else if (nextOptions.length !== 4 || !["A", "B", "C", "D"].includes(nextCorrect)) {
-          const fallbackMcq = this.buildDeterministicMcq(primary, focus_idx, diag_step + attempts_on_current + 1, lang, sess.difficulty || "normal");
-          nextOptions = fallbackMcq.options;
-          nextCorrect = fallbackMcq.correct_key;
-        }
-
-        return {
-          reply,
-          state: {
-            phase,
-            diag_step,
-            focus_idx,
-            difficulty: sess.difficulty,
-            attempts_on_current,
-            answered_count,
-            correct_count,
-            streak,
-            last_updated_idx,
-            last_delta,
-            last_eval,
-            last_question: reply.slice(0, 360),
-            current_options: nextOptions,
-            correct_key: nextCorrect,
-            options_lang: lang,
-            subskills: nextSubs
-          }
-        };
+        return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);
       }
+
     };
 
     window.SocraticTutor = SocraticTutor;

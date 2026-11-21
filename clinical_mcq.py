@@ -1,0 +1,101 @@
+"""Fact-preserving clinical MCQs: change one explicit threshold, class, or estimate."""
+import re
+import unicodedata
+
+
+def normalized(text):
+    text = unicodedata.normalize('NFD', str(text).lower().replace('đ', 'd'))
+    return re.sub(r'\W+', ' ', ''.join(c for c in text if unicodedata.category(c) != 'Mn')).strip()
+
+
+def alternatives(text):
+    """Return one documented fact and three single-variable, plausible near misses."""
+    match = re.search(r'\bClass\s+(IIa|IIb|III|II|I)\b', text, re.I)
+    if match:
+        start, end = match.span(1)
+        original = match.group(1)
+        replacements = [x for x in ['I', 'IIa', 'IIb', 'III'] if x.lower() != original.lower()][:3]
+    else:
+        match = re.search(r'[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)', text)
+        if not match:
+            match = re.search(r'([0-9]+(?:[.,][0-9]+)?)\s*%', text)
+        if not match:
+            match = re.search(r'(?:HR|RR|OR|Win Ratio)\s+([0-9]+(?:[.,][0-9]+)?)', text, re.I)
+        if not match:
+            return None
+        start, end = match.span(1)
+        original = match.group(1)
+        number = float(original.replace(',', '.'))
+        decimals = len(re.split('[.,]', original)[1]) if re.search('[.,]', original) else 0
+        delta = 0.1 if number < 2 and decimals else (0.5 if decimals and number < 10 else (5 if number >= 20 else 1))
+        offsets = (-1, 1, 2) if number > delta else (1, 2, 3)
+        if number >= 85:
+            offsets = (-1, -2, -3)
+        values = [number + delta * i for i in offsets]
+        replacements = [f'{v:.{decimals}f}'.replace('.', ',' if ',' in original else '.') for v in values]
+    return [(text, original)] + [(text[:start] + r + text[end:], r) for r in replacements]
+
+
+def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
+    en = lang == 'en'
+    suffix = 'en' if en else 'vi'
+    ge = primary.get('guideline_evolution') or {}
+    trials = primary.get('landmark_trials') or []
+    pools = [[], [], [], []]
+    for step in ge.get('steps') or []:
+        pools[0].append((step.get('title_' + suffix, ''), step.get('desc_' + suffix, '')))
+    for trial in trials:
+        name = trial.get('name', '')
+        value = trial.get('value', '')
+        if value:
+            text = f'The reported result is {value}.' if en else f'Kết quả được báo cáo là {value}.'
+            pools[1].append((name, text))
+        pools[3].append((name, trial.get('caution_' + suffix, '')))
+    for pearl in primary.get('pearls') or []:
+        pools[2].append((primary.get('title_' + suffix, ''), pearl.get('text_' + suffix, '')))
+
+    slot = int(slot_idx) % 4
+    candidates = []
+    for source, fact in pools[slot] + pools[1] + pools[0] + pools[2] + pools[3]:
+        fact = ' '.join(str(fact or '').split())
+        if not fact or '...' in fact or '…' in fact:
+            continue
+        if any(phrase in normalized(fact) for phrase in ('khong duoc dung', 'khong ngung', 'khong dung cac thuoc', 'never withdraw', 'never discontinue', 'do not stop')):
+            continue
+        variants = alternatives(fact)
+        if variants and len({normalized(t) for t, _ in variants}) == 4:
+            candidates.append((source, variants))
+    if not candidates:
+        question = ('A briefing lacks the trial population and safety criteria. What is the best next step before applying its result?' if en else
+                    'Bản tin chưa nêu quần thể nghiên cứu và tiêu chí an toàn. Cần làm gì trước khi áp dụng kết quả?')
+        texts = (['Check the full report for eligibility criteria and safety exclusions.',
+                  'Use the effect estimate from another trial in the same drug class.',
+                  'Use the abstract conclusion to set the starting dose.',
+                  'Infer eligibility from the trial title.'] if en else
+                 ['Đối chiếu báo cáo đầy đủ về tiêu chuẩn chọn bệnh và tiêu chí loại trừ vì an toàn.',
+                  'Dùng ước lượng hiệu quả từ thử nghiệm khác của cùng nhóm thuốc.',
+                  'Dựa vào kết luận tóm tắt để chọn liều khởi đầu.',
+                  'Suy ra tiêu chuẩn chọn bệnh từ tên thử nghiệm.'])
+        reasons = ([texts[0], 'An effect estimate does not establish eligibility.', 'A conclusion alone does not establish dosing.', 'A title does not define eligibility.'] if en else
+                   [texts[0], 'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.', 'Kết luận tóm tắt không đủ để xác định liều.', 'Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'])
+    else:
+        source, variants = candidates[int(variant_idx) % len(candidates)]
+        question = (f'Before applying the evidence summarized under “{source}” to an eligible patient, which statement uses the threshold, recommendation class, or result documented in the briefing? Keep the population and outcome unchanged when comparing options.' if en else
+                    f'Trước khi áp dụng chứng cứ tại mục “{source}” cho bệnh nhân phù hợp tiêu chuẩn, nhận định nào dùng đúng ngưỡng, mức khuyến cáo hoặc kết quả được nêu trong bản tin? Giữ nguyên quần thể và tiêu chí đánh giá khi so sánh các lựa chọn.')
+        texts = [t for t, _ in variants]
+        reasons = [
+            (f'The briefing reports {source}: {texts[0]}' if en else f'Bản tin nêu tại {source}: {texts[0]}')
+        ] + [(f'This changes the documented parameter from {variants[0][1]} to {r}; the briefing does not support that value for this statement.' if en else
+              f'Lựa chọn này đổi thông số được ghi nhận từ {variants[0][1]} thành {r}; bản tin không nêu giá trị này cho nhận định trên.') for _, r in variants[1:]]
+    # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
+    seed = sum(ord(c) for c in str(primary.get('id', ''))) + int(slot_idx) * 17 + int(variant_idx) * 31
+    order = [0, 1, 2, 3]
+    for i in range(3, 0, -1):
+        seed = (seed * 1664525 + 1013904223) % 4294967296
+        j = seed % (i + 1)
+        order[i], order[j] = order[j], order[i]
+    options = [{'key': 'ABCD'[i], 'text': texts[n]} for i, n in enumerate(order)]
+    correct_key = 'ABCD'[order.index(0)]
+    explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
+    explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
+    return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation}
