@@ -13,6 +13,20 @@ let calls = 0;
 const id = 'a9876543-1234-4123-8123-123456789abc';
 const crypto = {randomUUID() { calls++; return id; }};
 const storage = new Storage();
+{
+  const shared = new Storage(), a = create(shared, crypto), b = create(shared, crypto);
+  a.activity(['a'], ['a']); a.set('ebm_ui_lang', 'en'); a.rename('New name');
+  b.activity(['b'], ['b']); b.set('ebm_font_scale', '1.2');
+  const restored = create(shared, crypto);
+  assert.deepEqual(restored.profile.read_ids, ['a','b']);
+  assert.deepEqual(restored.profile.bookmarked_ids, ['a','b']);
+  assert.equal(restored.profile.display_name, 'New name');
+  assert.equal(restored.get('ebm_ui_lang'), 'en');
+  assert.equal(restored.get('ebm_font_scale'), '1.2');
+  restored.activity(['a','b'], ['b']);
+  assert.deepEqual(create(shared, crypto).profile.bookmarked_ids, ['b']);
+}
+calls = 0;
 let device = create(storage, crypto);
 assert.equal(calls, 1);
 assert.equal(device.profile.device_id, id);

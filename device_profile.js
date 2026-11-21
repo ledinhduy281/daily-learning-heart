@@ -32,11 +32,42 @@ const DeviceProfile = (() => {
     }
     return p;
   }
+  function mergeProgress(a, b) {
+    try {
+      const left = JSON.parse(a), right = JSON.parse(b);
+      if (object(left) && object(right) || Array.isArray(left) && Array.isArray(right)) return JSON.stringify(merge(left, right));
+    } catch (_) {}
+    return b;
+  }
+  function reconcile(base, local, latest) {
+    const next = {...latest, progress: {...latest.progress}};
+    if (local.display_name !== base.display_name) next.display_name = local.display_name;
+    next.read_ids = [...new Set([...latest.read_ids, ...local.read_ids])];
+    const removed = new Set(base.bookmarked_ids.filter(id => !local.bookmarked_ids.includes(id)));
+    const added = local.bookmarked_ids.filter(id => !base.bookmarked_ids.includes(id));
+    next.bookmarked_ids = [...new Set([...latest.bookmarked_ids.filter(id => !removed.has(id)), ...added])];
+    for (const key of new Set([...Object.keys(base.progress), ...Object.keys(local.progress)])) {
+      if (local.progress[key] === base.progress[key]) continue;
+      if (!(key in local.progress)) delete next.progress[key];
+      else next.progress[key] = latest.progress[key] === base.progress[key] ? local.progress[key] : mergeProgress(latest.progress[key], local.progress[key]);
+    }
+    return next;
+  }
   function create(storage, cryptoSource = globalThis.crypto, lang = 'vi') {
     const read = key => { try { return storage.getItem(key); } catch (_) { return null; } };
     let p;
     try { p = validate(JSON.parse(read(KEY))); } catch (_) {}
-    const persist = () => { try { storage.setItem(KEY, JSON.stringify(p)); return true; } catch (_) { return false; } };
+    let baseline = p && JSON.parse(JSON.stringify(p));
+    const persist = (replace = false) => {
+      try {
+        let latest;
+        try { latest = validate(JSON.parse(read(KEY))); } catch (_) {}
+        const next = !replace && baseline && latest?.device_id === p.device_id ? reconcile(baseline, p, latest) : p;
+        storage.setItem(KEY, JSON.stringify(next));
+        p = next; baseline = JSON.parse(JSON.stringify(p));
+        return true;
+      } catch (_) { return false; }
+    };
     if (!p) {
       const bytes = new Uint8Array(16);
       if (cryptoSource?.getRandomValues) cryptoSource.getRandomValues(bytes);
@@ -83,14 +114,9 @@ const DeviceProfile = (() => {
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
         const incoming = validate({...parsed, device_id: p.device_id});
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
-        if (mode === 'merge') for (const key of Object.keys(incoming.progress)) {
-          try {
-            const a = JSON.parse(p.progress[key]), b = JSON.parse(incoming.progress[key]);
-            if (object(a) && object(b) || Array.isArray(a) && Array.isArray(b)) next.progress[key] = JSON.stringify(merge(a,b));
-          } catch (_) {}
-        }
+        if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key]);
         p = {...next, device_id: p.device_id, created_at: p.created_at};
-        persist();
+        persist(mode === 'replace');
       }
     };
   }
