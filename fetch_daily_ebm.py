@@ -29,6 +29,7 @@ import secrets
 import sys
 import threading
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -1022,6 +1023,17 @@ def _create_session_for_user(data: dict, user_rec: dict) -> str:
 def _resolve_user_from_token_unlocked(data: dict, token: str) -> dict | None:
     if not token:
         return None
+    if token.startswith('device:'):
+        device_id = _validated_device_id(token[7:])
+        if not device_id:
+            return None
+        devices = data.setdefault('devices', {})
+        if device_id not in devices:
+            devices[device_id] = {'username': f'device:{device_id}', 'display_name': 'Doctor',
+                                  'device_id': device_id, 'read_ids': [], 'bookmarked_ids': [],
+                                  'created_at': datetime.datetime.now().isoformat()}
+            _save_users_data_unlocked(data)
+        return devices[device_id]
     sessions = data.get("sessions", {})
     sess = sessions.get(token)
     if not isinstance(sess, dict):
@@ -1031,6 +1043,27 @@ def _resolve_user_from_token_unlocked(data: dict, token: str) -> dict | None:
     if not username or (sig_user is not None and sig_user != username):
         return None
     return _find_user_by_identifier(data.get("users", {}), username)
+
+
+def _validated_device_id(value: str) -> str | None:
+    if not re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', value or ''):
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return None
+
+
+def save_device_quiz(token: str, req_data: dict, payload: dict) -> None:
+    if not token.startswith('device:') or not payload.get('ok'):
+        return
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        user = _resolve_user_from_token_unlocked(data, token)
+        if user:
+            key = str(req_data.get('briefing_id') or req_data.get('pillar_id') or 'current')
+            user.setdefault('socratic_state', {})[key] = payload.get('state', {})
+            _save_users_data_unlocked(data)
 
 
 def get_user_by_token(token: str) -> dict | None:
@@ -1131,7 +1164,12 @@ def logout_token(token: str) -> dict:
 def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
     briefing_id = str(req_data.get("briefing_id", "")).strip()
     action = str(req_data.get("action", "")).strip()
-    if not briefing_id or action not in ("read", "toggle_bookmark"):
+    if action == 'sync':
+        for key in ('read_ids', 'bookmarked_ids'):
+            values = req_data.get(key)
+            if not isinstance(values, list) or len(values) > 100000 or any(not isinstance(v, str) or len(v) > 500 for v in values):
+                return 400, {'ok': False, 'error': 'Invalid activity'}
+    elif not briefing_id or action not in ("read", "toggle_bookmark"):
         return 400, {"ok": False, "error": "Thiếu briefing_id hoặc action không hợp lệ."}
 
     with _users_lock:
@@ -1143,7 +1181,13 @@ def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
         read_ids = list(dict.fromkeys(user.get("read_ids", [])))
         bookmarked_ids = list(dict.fromkeys(user.get("bookmarked_ids", [])))
 
-        if action == "read":
+        if action == 'sync':
+            user['read_ids'] = list(dict.fromkeys(req_data['read_ids']))
+            user['bookmarked_ids'] = list(dict.fromkeys(req_data['bookmarked_ids']))
+            name = req_data.get('display_name')
+            if isinstance(name, str) and 0 < len(name.strip()) <= 100:
+                user['display_name'] = name.strip()
+        elif action == "read":
             if briefing_id not in read_ids:
                 read_ids.append(briefing_id)
             user["read_ids"] = read_ids
@@ -3544,7 +3588,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id")
         self.end_headers()
         self.wfile.write(body)
 
@@ -3552,6 +3596,9 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         auth_header = self.headers.get("Authorization", "").strip()
         if auth_header.lower().startswith("bearer "):
             return auth_header[7:].strip()
+        device_id = _validated_device_id(self.headers.get('X-Device-Id', ''))
+        if device_id:
+            return f'device:{device_id}'
         if query_params and query_params.get("token"):
             return str(query_params["token"][0]).strip()
         if body_data and body_data.get("token"):
@@ -3562,13 +3609,26 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id")
         self.end_headers()
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         query_params = urllib.parse.parse_qs(parsed.query)
+
+        if Path(self.translate_path(path)).resolve() in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
+            self._send_json(403, {'ok': False, 'error': 'Private data'})
+            return
+        if path in ('/', '/index.html'):
+            page = (BASE_DIR / 'index.html').read_text(encoding='utf-8')
+            body = page.replace('<head>', '<head><script>window.EBM_SERVER = true;</script>', 1).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
 
         if path == "/api/refresh-stream":
             self.close_connection = True
@@ -3801,6 +3861,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/socratic":
             try:
                 payload = handle_socratic_turn(req_data)
+                save_device_quiz(self._extract_token(body_data=req_data), req_data, payload)
                 self._send_json(200 if payload.get("ok") else 400, payload)
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})

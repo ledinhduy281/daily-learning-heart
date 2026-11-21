@@ -5,7 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Xem Tim Mỗi Ngày</title>
   <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 6:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
-  <link rel="manifest" href="manifest.json">
+  <script>
+    if (location.protocol !== "file:") {
+      const manifest = document.createElement("link");
+      manifest.rel = "manifest";
+      manifest.href = "manifest.json";
+      document.head.appendChild(manifest);
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <meta name="theme-color" content="#ffffff">
@@ -31,6 +38,7 @@
 
   <!-- Seeded Briefings Data -->
   <script src="data/briefings.js"></script>
+  <script src="device_profile.js"></script>
 
   <style>
     /* ==========================================================================
@@ -131,10 +139,6 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-    }
-
-    body.auth-locked {
-      overflow: hidden;
     }
 
     :focus-visible {
@@ -3920,125 +3924,6 @@
 <body>
 
   <!-- ========================================================================
-       AUTHENTICATION GATE OVERLAY (Supabase Card, Level 3 Shadow)
-       ======================================================================== -->
-  <div class="auth-gate-overlay" id="authGateOverlay" role="dialog" aria-modal="true" aria-labelledby="authGateTitle">
-    <div class="auth-gate-card">
-      <div class="auth-card-brand">
-        <div class="brand-logo">
-          <div class="brand-mark">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M13.2 2L3 14.4h8.4L9.6 22 21 9.6h-8.4L13.2 2z" fill="#3ecf8e" />
-            </svg>
-          </div>
-          <span class="brand-text" id="authBrandTitle">Xem Tim Mỗi Ngày</span>
-        </div>
-      </div>
-
-      <div>
-        <h2 class="auth-card-title" id="authGateTitle">Cổng Lâm sàng Cá nhân hóa</h2>
-        <p class="auth-card-subtitle" id="authGateSubtitle">
-          Đăng nhập để đồng bộ lịch sử đọc, danh sách bản tin đã lưu và phản hồi đóng góp cải tiến sản phẩm.
-        </p>
-      </div>
-
-      <div class="auth-tabs-bar" role="tablist">
-        <button type="button" class="auth-tab-btn active" id="authTabLogin" role="tab" aria-selected="true">Đăng nhập</button>
-        <button type="button" class="auth-tab-btn" id="authTabRegister" role="tab" aria-selected="false">Đăng ký</button>
-      </div>
-
-      <div class="auth-error-alert" id="authErrorBox" role="alert"></div>
-
-      <!-- LOGIN FORM -->
-      <form class="auth-form-stack" id="loginForm">
-        <div class="form-field-group">
-          <label class="form-field-label" for="loginUsername">Tên đăng nhập</label>
-          <input type="text" id="loginUsername" class="supa-text-input" placeholder="VD: bs.timmach" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-        </div>
-
-        <div class="form-field-group">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label class="form-field-label" for="loginPassword">Mật khẩu</label>
-            <button type="button" class="link-inline-action" id="btnShowForgotPassword">Quên mật khẩu?</button>
-          </div>
-          <input type="password" id="loginPassword" class="supa-text-input" placeholder="Nhập mật khẩu" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary-green" id="btnLoginSubmit" style="width: 100%;">
-          <span>Đăng nhập</span>
-        </button>
-
-        <div class="auth-divider-row">hoặc trải nghiệm nhanh</div>
-
-        <button type="button" class="btn btn-secondary-outline" id="btnDemoLogin" style="width: 100%; white-space: normal; line-height: 1.3; padding: 10px 14px;">
-          <i class="fa-solid fa-user-doctor" style="color: var(--color-primary-deep);"></i>
-          <span>Đăng nhập nhanh: Bác sĩ Đặng Quốc Tình (bs.timmach)</span>
-        </button>
-      </form>
-
-      <!-- FORGOT PASSWORD FORM -->
-      <form class="auth-form-stack" id="forgotPasswordForm" style="display: none;">
-        <div class="form-field-group">
-          <label class="form-field-label" for="forgotUsername">Tên đăng nhập hoặc Email</label>
-          <input type="text" id="forgotUsername" class="supa-text-input" placeholder="VD: bs.timmach hoặc timmach@ebm.vn" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-        </div>
-
-        <div class="form-field-group">
-          <label class="form-field-label" for="forgotNewPassword">Mật khẩu mới</label>
-          <input type="password" id="forgotNewPassword" class="supa-text-input" placeholder="Tối thiểu 4 ký tự" autocomplete="new-password" required>
-        </div>
-
-        <div class="form-field-group">
-          <label class="form-field-label" for="forgotConfirmPassword">Xác nhận mật khẩu mới</label>
-          <input type="password" id="forgotConfirmPassword" class="supa-text-input" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary-green" id="btnForgotSubmit" style="width: 100%;">
-          <i class="fa-solid fa-key"></i>
-          <span>Đặt lại Mật khẩu &amp; Đăng nhập</span>
-        </button>
-
-        <button type="button" class="btn btn-secondary-outline" id="btnBackToLogin" style="width: 100%;">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span>Quay lại Đăng nhập</span>
-        </button>
-      </form>
-
-      <!-- REGISTER FORM -->
-      <form class="auth-form-stack" id="registerForm" style="display: none;">
-        <div class="form-field-group">
-          <label class="form-field-label" for="regUsername">Tên đăng nhập</label>
-          <input type="text" id="regUsername" class="supa-text-input" placeholder="VD: bs.an.nguyen" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
-        </div>
-
-        <div class="form-field-group">
-          <label class="form-field-label" for="regFullName">Họ tên Bác sĩ</label>
-          <input type="text" id="regFullName" class="supa-text-input" placeholder="VD: BS. Nguyễn Văn An" autocomplete="name" required>
-        </div>
-
-        <div class="form-field-group">
-          <label class="form-field-label" for="regSpecialty">Chuyên khoa</label>
-          <input type="text" id="regSpecialty" class="supa-text-input" placeholder="VD: Nội Tim mạch / Hồi sức Tim mạch" value="Nội Tim mạch" required>
-        </div>
-
-        <div class="form-field-group">
-          <label class="form-field-label" for="regPassword">Mật khẩu</label>
-          <input type="password" id="regPassword" class="supa-text-input" placeholder="Tối thiểu 4 ký tự" autocomplete="new-password" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary-green" id="btnRegisterSubmit" style="width: 100%;">
-          <span>Đăng ký &amp; Vào Workspace</span>
-        </button>
-      </form>
-
-      <div class="auth-offline-note" id="authOfflineNote">
-        <i class="fa-solid fa-cloud-check" style="color: var(--color-primary-deep);"></i>
-        <span id="authOfflineNoteText">Đang chạy ở chế độ Độc lập 24/7 — tài khoản, lịch sử đọc và phản hồi được lưu ngay trên thiết bị của bạn.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================
        TOP NAVBAR
        ======================================================================== -->
   <header class="nav-bar-light">
@@ -4067,7 +3952,7 @@
 
         <!-- Authenticated User Workspace Controls -->
         <div class="user-workspace-controls" id="userWorkspaceControls">
-          <button type="button" class="user-profile-pill" id="userProfilePill" title="Xem &amp; Quản lý Tài khoản của tôi" aria-label="Tài khoản của tôi">
+          <button type="button" class="user-profile-pill" id="userProfilePill" title="Hồ sơ trên thiết bị" aria-label="Hồ sơ trên thiết bị">
             <div class="user-avatar-dot" id="userAvatarInitials">BS</div>
             <span class="user-name-label" id="userDisplayName">BS. Đặng Quốc Tình</span>
             <span class="user-read-badge" id="userReadCountBadge">Đã đọc: 0</span>
@@ -4500,101 +4385,26 @@
     </div>
   </div>
 
-  <!-- ========================================================================
-       MODAL: MY ACCOUNT & PASSWORD RESET
-       ======================================================================== -->
   <div class="modal-backdrop-supa" id="myAccountModal" role="dialog" aria-modal="true" aria-labelledby="myAccountModalTitle">
-    <div class="modal-dialog-supa" style="max-width: 580px;">
+    <div class="modal-dialog-supa" style="max-width: 520px;">
       <div class="modal-head">
-        <div class="modal-head-title" id="myAccountModalTitle">
-          <i class="fa-solid fa-user-doctor" style="color: var(--color-primary-deep);"></i>
-          <span>Tài khoản của tôi &amp; Bảo mật</span>
-        </div>
-        <button type="button" class="btn-close-supa" id="btnCloseAccountModal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        <h2 class="modal-head-title" id="myAccountModalTitle">Hồ sơ trên thiết bị</h2>
+        <button type="button" class="btn-close-supa" id="btnCloseAccountModal" aria-label="Đóng">×</button>
       </div>
-
       <div class="modal-body">
-        <!-- Section 1: Account Profile -->
-        <div class="account-section-box">
-          <div class="account-section-title">
-            <span>Thông tin Bác sĩ</span>
-            <span class="brand-tag-briefing" id="accUsernameBadge">@bs.timmach</span>
-          </div>
-
-          <div class="form-field-group">
-            <label class="form-field-label" for="accFullName">Họ tên hiển thị</label>
-            <input type="text" id="accFullName" class="supa-text-input" placeholder="VD: BS. Đặng Quốc Tình">
-          </div>
-
-          <div class="account-form-grid">
-            <div class="form-field-group">
-              <label class="form-field-label" for="accSpecialty">Chuyên khoa</label>
-              <input type="text" id="accSpecialty" class="supa-text-input" placeholder="Nội Tim mạch">
-            </div>
-            <div class="form-field-group">
-              <label class="form-field-label" for="accEmail">Email</label>
-              <input type="email" id="accEmail" class="supa-text-input" placeholder="timmach@ebm.vn">
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end;">
-            <button type="button" class="btn btn-primary-green" id="btnSaveProfile">
-              <i class="fa-solid fa-check"></i>
-              <span>Lưu thông tin hồ sơ</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Section 2: Reading Activity Summary -->
-        <div class="account-section-box">
-          <div class="account-section-title">
-            <span>Thống kê Học tập &amp; Bản tin gần đây</span>
-          </div>
-          <div class="account-stats-grid">
-            <div class="account-stat-card">
-              <span style="font-size: 12px; color: var(--color-ink-mute);">Bản tin đã đọc</span>
-              <span class="account-stat-num" id="accReadCount">0</span>
-            </div>
-            <div class="account-stat-card">
-              <span style="font-size: 12px; color: var(--color-ink-mute);">Bản tin đã lưu</span>
-              <span class="account-stat-num" id="accSavedCount">0</span>
-            </div>
-          </div>
-          <div class="account-history-list" id="accRecentHistoryList">
-            <!-- Rendered dynamically -->
-          </div>
-        </div>
-
-        <!-- Section 3: Reset / Change Password -->
-        <div class="account-section-box">
-          <div class="account-section-title">
-            <span>Đổi / Reset Mật khẩu</span>
-            <button type="button" class="link-inline-action" id="btnAccResetDefaultPw" title="Đặt lại mật khẩu về mặc định 123456">
-              Reset về mặc định (123456)
-            </button>
-          </div>
-
-          <div class="account-form-grid">
-            <div class="form-field-group">
-              <label class="form-field-label" for="accNewPassword">Mật khẩu mới</label>
-              <input type="password" id="accNewPassword" class="supa-text-input" placeholder="Tối thiểu 4 ký tự" autocomplete="new-password">
-            </div>
-            <div class="form-field-group">
-              <label class="form-field-label" for="accConfirmPassword">Xác nhận mật khẩu mới</label>
-              <input type="password" id="accConfirmPassword" class="supa-text-input" placeholder="Nhập lại mật khẩu" autocomplete="new-password">
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-secondary-outline" id="btnLogout" style="color: #b91c1c; border-color: rgba(185, 28, 28, 0.3);" title="Đăng xuất" aria-label="Đăng xuất">
-              <i class="fa-solid fa-right-from-bracket"></i>
-              <span id="labelLogoutModalBtn">Đăng xuất</span>
-            </button>
-            <button type="button" class="btn btn-secondary-outline" id="btnAccResetPassword">
-              <i class="fa-solid fa-key"></i>
-              <span>Cập nhật Mật khẩu mới</span>
-            </button>
-          </div>
+        <p id="deviceProfileNote">Tiến độ được tự động lưu trên thiết bị này. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt.</p>
+        <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
+        <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
+        <button type="button" class="btn btn-primary-green" id="btnSaveProfile">Lưu tên</button>
+        <div class="account-section-box" style="margin-top: 16px;">
+          <button type="button" class="btn btn-secondary-outline" id="btnExportProgress">Xuất tiến độ (JSON)</button>
+          <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách nhập</label>
+          <select id="progressImportMode" class="supa-text-input">
+            <option value="merge" id="labelImportMerge">Hợp nhất</option>
+            <option value="replace" id="labelImportReplace">Thay thế</option>
+          </select>
+          <button type="button" class="btn btn-secondary-outline" id="btnImportProgress">Nhập tiến độ (JSON)</button>
+          <input type="file" id="progressImportFile" accept=".json,application/json" hidden>
         </div>
       </div>
     </div>
@@ -4712,11 +4522,8 @@
        JAVASCRIPT APPLICATION LOGIC
        ======================================================================== -->
   <script>
-    const AUTH_TOKEN_KEY = "ebm_auth_token";
     const OFFLINE_ACTIVITY_KEY = "ebm_offline_user_activity";
     const OFFLINE_FEEDBACK_KEY = "ebm_offline_feedback";
-    const CLOUD_USERS_KEY = "ebm_cloud_users_db";
-    const CLOUD_SESSION_KEY = "ebm_cloud_current_user";
     const CHAT_QUOTA_KEY = "soaica_daily_quota_v1";
     const CHAT_SESSIONS_KEY = "soaica_chat_sessions_v1";
     const CHAT_VERBOSITY_KEY = "soaica_chat_verbosity_v1";
@@ -4866,30 +4673,6 @@
     };
 
     const Dom = {
-      authGateOverlay: document.getElementById("authGateOverlay"),
-      authTabLogin: document.getElementById("authTabLogin"),
-      authTabRegister: document.getElementById("authTabRegister"),
-      loginForm: document.getElementById("loginForm"),
-      registerForm: document.getElementById("registerForm"),
-      forgotPasswordForm: document.getElementById("forgotPasswordForm"),
-      loginUsername: document.getElementById("loginUsername"),
-      loginPassword: document.getElementById("loginPassword"),
-      btnShowForgotPassword: document.getElementById("btnShowForgotPassword"),
-      btnLoginSubmit: document.getElementById("btnLoginSubmit"),
-      btnDemoLogin: document.getElementById("btnDemoLogin"),
-      forgotUsername: document.getElementById("forgotUsername"),
-      forgotNewPassword: document.getElementById("forgotNewPassword"),
-      forgotConfirmPassword: document.getElementById("forgotConfirmPassword"),
-      btnForgotSubmit: document.getElementById("btnForgotSubmit"),
-      btnBackToLogin: document.getElementById("btnBackToLogin"),
-      regUsername: document.getElementById("regUsername"),
-      regFullName: document.getElementById("regFullName"),
-      regSpecialty: document.getElementById("regSpecialty"),
-      regPassword: document.getElementById("regPassword"),
-      btnRegisterSubmit: document.getElementById("btnRegisterSubmit"),
-      authErrorBox: document.getElementById("authErrorBox"),
-      authOfflineNote: document.getElementById("authOfflineNote"),
-
       navRotationStatus: document.getElementById("navRotationStatus"),
       userWorkspaceControls: document.getElementById("userWorkspaceControls"),
       userProfilePill: document.getElementById("userProfilePill"),
@@ -4898,7 +4681,6 @@
       userReadCountBadge: document.getElementById("userReadCountBadge"),
       btnNavBookmarks: document.getElementById("btnNavBookmarks"),
       labelNavBookmarks: document.getElementById("labelNavBookmarks"),
-      btnLogout: document.getElementById("btnLogout"),
 
       tabModeToday: document.getElementById("tabModeToday"),
       tabModeHistory: document.getElementById("tabModeHistory"),
@@ -4956,18 +4738,8 @@
 
       myAccountModal: document.getElementById("myAccountModal"),
       btnCloseAccountModal: document.getElementById("btnCloseAccountModal"),
-      accUsernameBadge: document.getElementById("accUsernameBadge"),
       accFullName: document.getElementById("accFullName"),
-      accSpecialty: document.getElementById("accSpecialty"),
-      accEmail: document.getElementById("accEmail"),
       btnSaveProfile: document.getElementById("btnSaveProfile"),
-      accReadCount: document.getElementById("accReadCount"),
-      accSavedCount: document.getElementById("accSavedCount"),
-      accRecentHistoryList: document.getElementById("accRecentHistoryList"),
-      accNewPassword: document.getElementById("accNewPassword"),
-      accConfirmPassword: document.getElementById("accConfirmPassword"),
-      btnAccResetPassword: document.getElementById("btnAccResetPassword"),
-      btnAccResetDefaultPw: document.getElementById("btnAccResetDefaultPw"),
 
       toastBox: document.getElementById("toastBox"),
       toastMsg: document.getElementById("toastMsg"),
@@ -5115,11 +4887,30 @@
     }
 
     function getAuthHeaders(extra = {}) {
-      const headers = { ...extra };
-      if (App.token) {
-        headers["Authorization"] = `Bearer ${App.token}`;
-      }
-      return headers;
+      return {"X-Device-Id": deviceStore.profile.device_id, ...extra};
+    }
+
+    async function consumeApiEvents(path, onMessage) {
+      const response = await fetch(path, {headers: getAuthHeaders()});
+      if (!response.ok || !response.body) throw new Error("Stream unavailable");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) throw new Error("Stream ended before completion");
+          buffer += decoder.decode(value, {stream: true});
+          let boundary;
+          while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+            const frame = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            for (const line of frame.split("\n")) {
+              if (line.startsWith("data:") && await onMessage({data: line.slice(5).trimStart()}) === false) return;
+            }
+          }
+        }
+      } finally { await reader.cancel(); }
     }
 
     let toastTimer = null;
@@ -5131,11 +4922,12 @@
     }
 
     /* ========================================================================
-       INITIALIZATION & AUTHENTICATION GATE
+       INITIALIZATION
        ======================================================================== */
     document.addEventListener("DOMContentLoaded", () => {
       const savedLang = safeStorageGet(UI_LANG_KEY);
       App.currentLang = savedLang === "en" ? "en" : "vi";
+      App.fontScale = Math.max(0.85, Math.min(1.25, Number(safeStorageGet("ebm_font_scale")) || 1));
       loadSeedData();
       populatePillarSelect();
       bindAppEvents();
@@ -5208,167 +5000,42 @@
       App.tomorrowPillar = { date: tmIso, id: tmPid, ...getPillarInfo(tmPid) };
     }
 
-    const _memoryStorageFallback = {};
+    const deviceStore = DeviceProfile.create((() => {
+      try { return window.localStorage; } catch (_) { return null; }
+    })());
 
-    function safeStorageGet(key) {
-      try {
-        const val = window.localStorage.getItem(key);
-        if (val !== null) return val;
-      } catch (_) {}
-      return Object.prototype.hasOwnProperty.call(_memoryStorageFallback, key)
-        ? _memoryStorageFallback[key]
-        : null;
-    }
-
-    function safeStorageSet(key, val) {
-      _memoryStorageFallback[key] = String(val);
-      try {
-        window.localStorage.setItem(key, String(val));
-      } catch (_) {}
-    }
-
-    function safeStorageRemove(key) {
-      delete _memoryStorageFallback[key];
-      try {
-        window.localStorage.removeItem(key);
-      } catch (_) {}
-    }
-
-    function normalizeUsernameIdent(val) {
-      return String(val || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s*\.\s*/g, ".")
-        .replace(/\s+/g, "");
-    }
-
-    function getCloudUsersDb() {
-      let db = {};
-      try {
-        const raw = safeStorageGet(CLOUD_USERS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === "object") db = parsed;
-        }
-      } catch (_) {}
-      if (!db["bs.timmach"]) {
-        db["bs.timmach"] = {
-          username: "bs.timmach",
-          email: "timmach@ebm.vn",
-          password: "123456",
-          full_name: "BS. Đặng Quốc Tình",
-          display_name: "BS. Đặng Quốc Tình",
-          specialty: "Nội Tim mạch & Hồi sức Tim mạch",
-          read_ids: ["ebm-2026-11-15-p10-main"],
-          bookmarked_ids: ["ebm-2026-11-16-p1-main"]
-        };
-        saveCloudUsersDb(db);
-      }
-      return db;
-    }
-
-    function saveCloudUsersDb(db) {
-      try {
-        safeStorageSet(CLOUD_USERS_KEY, JSON.stringify(db));
-      } catch (_) {}
-    }
-
-    function activateCloudSession(userRec) {
-      App.offlineDemo = true;
-      safeStorageSet(CLOUD_SESSION_KEY, userRec.username);
-      setAuthenticatedUser(userRec, `cloud-${userRec.username}`);
-      loadOfflineFeedbackStore();
-      hideAuthGate();
-      renderAllViewsAfterAuth();
-      setTimeout(() => checkAndSyncDailyRefresh(true), 80);
-    }
+    function safeStorageGet(key) { return deviceStore.get(key); }
+    function safeStorageSet(key, value) { deviceStore.set(key, value); }
+    function safeStorageRemove(key) { deviceStore.remove(key); }
 
     async function bootstrapSessionAndStatus() {
-      App.token = safeStorageGet(AUTH_TOKEN_KEY);
-
-      if (isFileOrigin()) {
-        App.serverAvailable = false;
-        Dom.authOfflineNote.classList.add("show");
-        const savedUserKey = safeStorageGet(CLOUD_SESSION_KEY);
-        if (savedUserKey) {
-          const db = getCloudUsersDb();
-          if (db[savedUserKey]) {
-            activateCloudSession(db[savedUserKey]);
-            return;
+      App.serverAvailable = Boolean(window.EBM_SERVER);
+      App.offlineDemo = !App.serverAvailable;
+      setAuthenticatedUser({});
+      loadOfflineFeedbackStore();
+      renderAllViewsAfterAuth();
+      if (!App.serverAvailable) return;
+      try {
+        let legacyToken = null;
+        try { legacyToken = window.localStorage.getItem("ebm_auth_token"); } catch (_) {}
+        if (legacyToken && !safeStorageGet("ebm_legacy_server_migrated")) {
+          const res = await fetch("/api/auth/me", {headers: getAuthHeaders({Authorization: `Bearer ${legacyToken}`})});
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) setAuthenticatedUser(data.user);
+            safeStorageSet("ebm_legacy_server_migrated", "1");
           }
         }
-        showAuthGate();
-        renderShellViews();
-        return;
-      }
-
-      let statusData = null;
-      try {
-        const res = await fetch("/api/status", { headers: getAuthHeaders() });
-        const ct = res.headers.get("content-type") || "";
-        if (res.ok && ct.includes("application/json")) {
-          statusData = await res.json();
+        await syncDeviceActivity();
+        const res = await fetch("/api/status", {headers: getAuthHeaders()});
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) applyServerStatus(data);
+          renderAllViewsAfterAuth();
         }
       } catch (_) {
-        statusData = null;
-      }
-
-      if (statusData && statusData.ok) {
-        App.serverAvailable = true;
-        applyServerStatus(statusData);
-      } else {
         App.serverAvailable = false;
-        // Static / GitHub Pages / PWA cloud mode
-        const savedUserKey = safeStorageGet(CLOUD_SESSION_KEY);
-        if (savedUserKey) {
-          const db = getCloudUsersDb();
-          if (db[savedUserKey]) {
-            activateCloudSession(db[savedUserKey]);
-            return;
-          }
-        }
-        Dom.authOfflineNote.classList.add("show");
-        showAuthGate();
-        renderShellViews();
-        return;
-      }
-
-      // Local Python Server mode: check user session from /api/status or /api/auth/me
-      let authedUser = statusData && (statusData.user || statusData.current_user);
-      if (!authedUser && App.token) {
-        try {
-          const meRes = await fetch("/api/auth/me", { headers: getAuthHeaders() });
-          if (meRes.ok) {
-            const meData = await meRes.json();
-            if (meData.ok && meData.user) {
-              authedUser = meData.user;
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (authedUser) {
-        App.offlineDemo = false;
-        setAuthenticatedUser(authedUser, App.token);
-        hideAuthGate();
-        const vnNow = getVietnamHourAndIso();
-        const hasInMem = App.briefings.some(
-          b => b.date === App.todayDate && Number(b.pillar_id) === Number(App.todayPillarId)
-        );
-        if (!hasInMem && statusData && statusData.has_today_briefing) {
-          await reloadSeedBriefingsScript();
-        }
-        renderAllViewsAfterAuth();
-        if (statusData && statusData.has_today_briefing === false && vnNow.hour >= 6) {
-          refreshTodayData(false, true);
-        }
-      } else {
-        if (App.token) {
-          safeStorageRemove(AUTH_TOKEN_KEY);
-          App.token = null;
-        }
-        showAuthGate();
-        renderShellViews();
+        App.offlineDemo = true;
       }
     }
 
@@ -5397,58 +5064,18 @@
       }
     }
 
-    function showAuthGate() {
-      Dom.authGateOverlay.classList.add("active");
-      document.body.classList.add("auth-locked");
-      Dom.authErrorBox.classList.remove("show");
-    }
-
-    function hideAuthGate() {
-      Dom.authGateOverlay.classList.remove("active");
-      document.body.classList.remove("auth-locked");
-      Dom.authErrorBox.classList.remove("show");
-    }
-
-    function showAuthError(msg) {
-      Dom.authErrorBox.textContent = msg;
-      Dom.authErrorBox.classList.add("show");
-    }
-
-    function setAuthenticatedUser(userObj, token) {
-      const normalized = {
-        username: userObj.username || "bs.timmach",
-        email: userObj.email || "",
-        full_name: userObj.display_name || userObj.full_name || userObj.name || userObj.username || "BS. Tim mạch",
-        specialty: userObj.specialty || "Nội Tim mạch",
-        read_ids: Array.isArray(userObj.read_ids) ? [...new Set(userObj.read_ids)] : [],
-        bookmarked_ids: Array.isArray(userObj.bookmarked_ids) ? [...new Set(userObj.bookmarked_ids)] : []
-      };
-      App.user = normalized;
-      if (token) {
-        App.token = token;
-        safeStorageSet(AUTH_TOKEN_KEY, token);
+    function setAuthenticatedUser(userObj) {
+      const legacyName = userObj.display_name || userObj.full_name;
+      if (legacyName && ['Bác sĩ', 'Doctor'].includes(deviceStore.profile.display_name)) {
+        deviceStore.rename(String(legacyName).slice(0, 100));
       }
+      const profile = deviceStore.profile;
+      const readIds = [...new Set([...profile.read_ids, ...(userObj.read_ids || [])])];
+      const savedIds = [...new Set([...profile.bookmarked_ids, ...(userObj.bookmarked_ids || [])])];
+      deviceStore.activity(readIds, savedIds);
+      App.user = {username: profile.device_id, full_name: profile.display_name,
+        display_name: profile.display_name, read_ids: readIds, bookmarked_ids: savedIds};
       renderUserWorkspace();
-    }
-
-    function activateOfflineDemoSession() {
-      App.offlineDemo = true;
-      let stored = { read_ids: [], bookmarked_ids: [] };
-      try {
-        const raw = safeStorageGet(OFFLINE_ACTIVITY_KEY);
-        if (raw) stored = JSON.parse(raw);
-      } catch (_) {}
-      setAuthenticatedUser({
-        username: "bs.timmach",
-        full_name: "BS. Đặng Quốc Tình",
-        specialty: "Nội Tim mạch (Chế độ ngoại tuyến)",
-        read_ids: stored.read_ids || [],
-        bookmarked_ids: stored.bookmarked_ids || []
-      }, "offline-demo-token");
-      loadOfflineFeedbackStore();
-      hideAuthGate();
-      renderAllViewsAfterAuth();
-      showToast("Đã vào workspace Bác sĩ Đặng Quốc Tình (chế độ chỉ đọc ngoại tuyến).");
     }
 
     function loadOfflineFeedbackStore() {
@@ -5468,330 +5095,38 @@
     }
 
     function saveOfflineActivityStore() {
-      if (!App.user) return;
+      if (App.user) deviceStore.activity(App.user.read_ids, App.user.bookmarked_ids);
+    }
+
+    async function syncDeviceActivity() {
+      if (!App.serverAvailable) return;
       try {
-        const db = getCloudUsersDb();
-        const key = (App.user.username || "bs.timmach").toLowerCase();
-        if (db[key]) {
-          db[key].read_ids = App.user.read_ids || [];
-          db[key].bookmarked_ids = App.user.bookmarked_ids || [];
-          saveCloudUsersDb(db);
-        }
-        safeStorageSet(OFFLINE_ACTIVITY_KEY, JSON.stringify({
-          read_ids: App.user.read_ids || [],
-          bookmarked_ids: App.user.bookmarked_ids || []
-        }));
-      } catch (_) {}
-    }
-
-    function cloudLoginFallback(payload) {
-      const db = getCloudUsersDb();
-      if (payload.demo) {
-        activateCloudSession(db["bs.timmach"]);
-        showToast(`Chào mừng ${db["bs.timmach"].full_name}!`);
-        return;
-      }
-      const ident = normalizeUsernameIdent(payload.username);
-      const rawPw = String(payload.password || "");
-      const trimmedPw = rawPw.trim();
-      const rec = Object.values(db).find(
-        u => normalizeUsernameIdent(u.username) === ident || normalizeUsernameIdent(u.email) === ident
-      );
-      if (!rec) {
-        // Account created on another device (e.g., laptop) doesn't exist in this phone's localStorage yet:
-        // Auto-initialize on this device so cross-device login succeeds immediately on GitHub Pages.
-        if (ident.length >= 3 && trimmedPw.length >= 4 && ident !== "bs.timmach" && ident !== "timmach@ebm.vn") {
-          const newRec = {
-            username: ident,
-            email: ident.includes("@") ? ident : "",
-            password: trimmedPw,
-            full_name: ident,
-            display_name: ident,
-            specialty: "Nội Tim mạch",
-            read_ids: [],
-            bookmarked_ids: []
-          };
-          db[ident] = newRec;
-          saveCloudUsersDb(db);
-          activateCloudSession(newRec);
-          showToast(`Đã đồng bộ tài khoản ${ident} trên thiết bị này!`);
-          return;
-        }
-        showAuthError("Tên đăng nhập hoặc mật khẩu không chính xác (tài khoản mẫu: bs.timmach / 123456).");
-        return;
-      }
-      if (rec.password !== rawPw && rec.password !== trimmedPw) {
-        showAuthError("Mật khẩu không chính xác (tài khoản mẫu: bs.timmach / 123456).");
-        return;
-      }
-      activateCloudSession(rec);
-      showToast(`Chào mừng ${rec.full_name || rec.username}!`);
-    }
-
-    function cloudRegisterFallback(payload) {
-      const uname = normalizeUsernameIdent(payload.username);
-      const fullName = (payload.full_name || "").trim() || uname;
-      const spec = (payload.specialty || "").trim() || "Nội Tim mạch";
-      const pw = String(payload.password || "").trim();
-      if (uname.length < 3 || pw.length < 4) {
-        showAuthError("Tên đăng nhập tối thiểu 3 ký tự và mật khẩu tối thiểu 4 ký tự.");
-        return;
-      }
-      const db = getCloudUsersDb();
-      if (db[uname]) {
-        showAuthError(`Tài khoản '${uname}' đã tồn tại trên thiết bị này.`);
-        return;
-      }
-      const newRec = {
-        username: uname,
-        email: "",
-        password: pw,
-        full_name: fullName,
-        display_name: fullName,
-        specialty: spec,
-        read_ids: [],
-        bookmarked_ids: []
-      };
-      db[uname] = newRec;
-      saveCloudUsersDb(db);
-      activateCloudSession(newRec);
-      showToast(`Đã tạo tài khoản ${fullName}!`);
-    }
-
-    function cloudResetPasswordFallback(identifier, newPassword, autoLogin = false) {
-      const db = getCloudUsersDb();
-      const ident = normalizeUsernameIdent(identifier);
-      const rec = Object.values(db).find(
-        u => normalizeUsernameIdent(u.username) === ident || normalizeUsernameIdent(u.email) === ident
-      );
-      if (!rec) {
-        return { ok: false, error: "Không tìm thấy tài khoản phù hợp với tên đăng nhập hoặc email." };
-      }
-      rec.password = newPassword;
-      saveCloudUsersDb(db);
-      if (autoLogin) {
-        activateCloudSession(rec);
-      }
-      return { ok: true, user: rec };
-    }
-
-    function cloudUpdateProfileFallback(fullName, specialty, email) {
-      if (!App.user) return null;
-      const db = getCloudUsersDb();
-      const key = (App.user.username || "").toLowerCase();
-      const rec = db[key] || {
-        username: App.user.username,
-        password: "123456",
-        read_ids: App.user.read_ids || [],
-        bookmarked_ids: App.user.bookmarked_ids || []
-      };
-      if (fullName) {
-        rec.full_name = fullName;
-        rec.display_name = fullName;
-      }
-      if (specialty) rec.specialty = specialty;
-      rec.email = email;
-      db[key] = rec;
-      saveCloudUsersDb(db);
-      setAuthenticatedUser(rec, null);
-      return App.user;
-    }
-
-    async function handleForgotPasswordRequest(usernameOrEmail, newPw, confirmPw) {
-      Dom.authErrorBox.classList.remove("show");
-      if (!usernameOrEmail) {
-        showAuthError("Vui lòng nhập Tên đăng nhập hoặc Email của tài khoản.");
-        return;
-      }
-      if (newPw.length < 4) {
-        showAuthError("Mật khẩu mới cần tối thiểu 4 ký tự.");
-        return;
-      }
-      if (newPw !== confirmPw) {
-        showAuthError("Xác nhận mật khẩu mới chưa khớp.");
-        return;
-      }
-
-      if (isFileOrigin() || !App.serverAvailable) {
-        const res = cloudResetPasswordFallback(usernameOrEmail, newPw, true);
-        if (!res.ok) {
-          showAuthError(res.error);
-          return;
-        }
-        Dom.forgotNewPassword.value = "";
-        Dom.forgotConfirmPassword.value = "";
-        showToast("Đã đặt lại mật khẩu và đăng nhập thành công!");
-        return;
-      }
-
-      Dom.btnForgotSubmit.disabled = true;
-      try {
-        const res = await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: usernameOrEmail, new_password: newPw })
+        await fetch("/api/user/activity", {
+          method: "POST", headers: getAuthHeaders({"Content-Type": "application/json"}),
+          body: JSON.stringify({action: "sync", read_ids: App.user.read_ids,
+            bookmarked_ids: App.user.bookmarked_ids, display_name: deviceStore.profile.display_name})
         });
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          App.serverAvailable = false;
-          const fallback = cloudResetPasswordFallback(usernameOrEmail, newPw, true);
-          if (!fallback.ok) showAuthError(fallback.error);
-          else showToast("Đã đặt lại mật khẩu thành công!");
-          return;
-        }
-        const data = await res.json();
-        if (!res.ok || !data.ok) {
-          showAuthError(data.error || "Không thể đặt lại mật khẩu.");
-          return;
-        }
-        App.offlineDemo = false;
-        setAuthenticatedUser(data.user, data.token || data.auth_token);
-        hideAuthGate();
-        renderAllViewsAfterAuth();
-        Dom.forgotNewPassword.value = "";
-        Dom.forgotConfirmPassword.value = "";
-        showToast("Đã đặt lại mật khẩu và đăng nhập thành công!");
-      } catch (err) {
-        showAuthError("Lỗi kết nối máy chủ: " + err.message);
-      } finally {
-        Dom.btnForgotSubmit.disabled = false;
+      } catch (_) {
+        App.serverAvailable = false;
+        App.offlineDemo = true;
       }
     }
 
     function openMyAccountModal() {
-      if (!App.user) return;
-      Dom.accUsernameBadge.textContent = `@${App.user.username}`;
-      Dom.accFullName.value = App.user.full_name || "";
-      Dom.accSpecialty.value = App.user.specialty || "Nội Tim mạch";
-      Dom.accEmail.value = App.user.email || "";
-      Dom.accNewPassword.value = "";
-      Dom.accConfirmPassword.value = "";
-
-      const readIds = App.user.read_ids || [];
-      const savedIds = App.user.bookmarked_ids || [];
-      Dom.accReadCount.textContent = String(readIds.length);
-      Dom.accSavedCount.textContent = String(savedIds.length);
-
-      const combinedIds = [...new Set([...savedIds, ...readIds.slice().reverse()])].slice(0, 6);
-      if (combinedIds.length === 0) {
-        Dom.accRecentHistoryList.innerHTML = `<div style="font-size: 12px; color: var(--color-ink-mute);">Chưa có lịch sử đọc hoặc bản tin đã lưu.</div>`;
-      } else {
-        const savedSet = new Set(savedIds);
-        Dom.accRecentHistoryList.innerHTML = combinedIds.map(id => {
-          const item = App.briefings.find(b => b.id === id);
-          if (!item) return "";
-          const badge = savedSet.has(id) ? "Đã lưu" : "Đã đọc";
-          return `
-            <button type="button" class="account-history-item" onclick="jumpToAccountBriefing('${escapeHtml(id)}')">
-              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                #${item.pillar_id} • ${formatShortDdMm(item.date)} — ${escapeHtml(cleanHeadline(item.title_vi))}
-              </span>
-              <span class="brand-tag-briefing">${badge}</span>
-            </button>
-          `;
-        }).join("") || `<div style="font-size: 12px; color: var(--color-ink-mute);">Chưa có lịch sử khớp danh mục hiện tại.</div>`;
-      }
-
+      Dom.accFullName.value = deviceStore.profile.display_name;
       Dom.myAccountModal.classList.add("active");
     }
 
-    function closeMyAccountModal() {
-      Dom.myAccountModal.classList.remove("active");
-    }
+    function closeMyAccountModal() { Dom.myAccountModal.classList.remove("active"); }
 
-    window.jumpToAccountBriefing = function(id) {
-      const target = App.briefings.find(b => b.id === id);
-      if (!target) return;
-      closeMyAccountModal();
-      App.mode = "history";
-      App.historyPillarId = Number(target.pillar_id);
-      App.savedGlobalMode = false;
-      applyLocalizationChrome();
-      renderPillarsTiles();
-      renderModeSpecificPanels();
-      selectBriefing(target);
-    };
-
-    async function handleProfileSaveRequest() {
-      if (!App.user) return;
-      const fullName = Dom.accFullName.value.trim();
-      const specialty = Dom.accSpecialty.value.trim();
-      const email = Dom.accEmail.value.trim();
-      if (!fullName) {
-        showToast("Vui lòng nhập Họ tên hiển thị.");
-        return;
-      }
-
-      if (isFileOrigin() || !App.serverAvailable || App.offlineDemo) {
-        cloudUpdateProfileFallback(fullName, specialty, email);
-        showToast("Đã cập nhật thông tin tài khoản!");
-        return;
-      }
-
-      Dom.btnSaveProfile.disabled = true;
+    function handleProfileSaveRequest() {
       try {
-        const res = await fetch("/api/auth/profile", {
-          method: "POST",
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ display_name: fullName, specialty: specialty, email: email })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Không thể cập nhật hồ sơ.");
-        }
-        setAuthenticatedUser(data.user, null);
-        showToast("Đã lưu thông tin Tài khoản Bác sĩ!");
-      } catch (err) {
-        showToast("Lỗi lưu hồ sơ: " + err.message);
-      } finally {
-        Dom.btnSaveProfile.disabled = false;
-      }
-    }
-
-    async function handleAccountPasswordResetRequest(newPw, confirmPw, isDefaultReset = false) {
-      if (!App.user) return;
-      if (newPw.length < 4) {
-        showToast("Mật khẩu mới cần tối thiểu 4 ký tự.");
-        return;
-      }
-      if (newPw !== confirmPw) {
-        showToast("Xác nhận mật khẩu mới chưa khớp.");
-        return;
-      }
-
-      if (isFileOrigin() || !App.serverAvailable || App.offlineDemo) {
-        const res = cloudResetPasswordFallback(App.user.username, newPw, false);
-        if (!res.ok) {
-          showToast(res.error);
-          return;
-        }
-        Dom.accNewPassword.value = "";
-        Dom.accConfirmPassword.value = "";
-        showToast(isDefaultReset ? "Đã reset mật khẩu về mặc định (123456)!" : "Đã cập nhật mật khẩu mới!");
-        return;
-      }
-
-      Dom.btnAccResetPassword.disabled = true;
-      try {
-        const res = await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ username: App.user.username, new_password: newPw })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Không thể đặt lại mật khẩu.");
-        }
-        if (data.token) {
-          setAuthenticatedUser(data.user, data.token);
-        }
-        Dom.accNewPassword.value = "";
-        Dom.accConfirmPassword.value = "";
-        showToast(isDefaultReset ? "Đã reset mật khẩu về mặc định (123456)!" : "Đã cập nhật mật khẩu mới thành công!");
-      } catch (err) {
-        showToast("Lỗi đổi mật khẩu: " + err.message);
-      } finally {
-        Dom.btnAccResetPassword.disabled = false;
+        deviceStore.rename(Dom.accFullName.value);
+        setAuthenticatedUser({});
+        syncDeviceActivity();
+        showToast(App.currentLang === "vi" ? "Đã lưu tên hiển thị." : "Display name saved.");
+      } catch (_) {
+        showToast(App.currentLang === "vi" ? "Nhập tên từ 1 đến 100 ký tự." : "Enter a name of 1–100 characters.");
       }
     }
 
@@ -5820,175 +5155,25 @@
       }
     }
 
-    async function handleAuthLoginRequest(payload) {
-      Dom.authErrorBox.classList.remove("show");
-      if (isFileOrigin() || !App.serverAvailable) {
-        cloudLoginFallback(payload);
-        return;
-      }
-
-      Dom.btnLoginSubmit.disabled = true;
-      Dom.btnDemoLogin.disabled = true;
-      try {
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          App.serverAvailable = false;
-          cloudLoginFallback(payload);
-          return;
-        }
-        const data = await res.json();
-        if (!res.ok || !data.ok) {
-          showAuthError(data.error || "Tên đăng nhập hoặc mật khẩu không chính xác.");
-          return;
-        }
-        App.offlineDemo = false;
-        setAuthenticatedUser(data.user, data.token || data.auth_token);
-        hideAuthGate();
-        // Refresh /api/status with new token to pull personalized summary
-        try {
-          const stRes = await fetch("/api/status", { headers: getAuthHeaders() });
-          if (stRes.ok) applyServerStatus(await stRes.json());
-        } catch (_) {}
-        renderAllViewsAfterAuth();
-        showToast(`Chào mừng ${App.user.full_name}!`);
-      } catch (err) {
-        App.serverAvailable = false;
-        cloudLoginFallback(payload);
-      } finally {
-        Dom.btnLoginSubmit.disabled = false;
-        Dom.btnDemoLogin.disabled = false;
-      }
-    }
-
-    async function handleAuthRegisterRequest(payload) {
-      Dom.authErrorBox.classList.remove("show");
-      if (isFileOrigin() || !App.serverAvailable) {
-        cloudRegisterFallback(payload);
-        return;
-      }
-
-      Dom.btnRegisterSubmit.disabled = true;
-      try {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          App.serverAvailable = false;
-          cloudRegisterFallback(payload);
-          return;
-        }
-        const data = await res.json();
-        if (!res.ok || !data.ok) {
-          showAuthError(data.error || "Không thể đăng ký tài khoản.");
-          return;
-        }
-        App.offlineDemo = false;
-        setAuthenticatedUser(data.user, data.token || data.auth_token);
-        hideAuthGate();
-        renderAllViewsAfterAuth();
-        showToast(`Đã tạo tài khoản ${App.user.full_name}!`);
-      } catch (err) {
-        App.serverAvailable = false;
-        cloudRegisterFallback(payload);
-      } finally {
-        Dom.btnRegisterSubmit.disabled = false;
-      }
-    }
-
-    function handleLogout() {
-      if (App.token && !App.offlineDemo && App.serverAvailable && !isFileOrigin()) {
-        fetch("/api/auth/logout", {
-          method: "POST",
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({})
-        }).catch(() => {});
-      }
-      safeStorageRemove(AUTH_TOKEN_KEY);
-      safeStorageRemove(CLOUD_SESSION_KEY);
-      App.token = null;
-      App.user = null;
-      App.offlineDemo = false;
-      App.savedGlobalMode = false;
-      closeMyAccountModal();
-      renderUserWorkspace();
-      showAuthGate();
-      showToast("Đã đăng xuất tài khoản.");
-    }
-
-    /* ========================================================================
-       USER ACTIVITY (READ + BOOKMARK)
-       ======================================================================== */
     async function recordBriefingRead(briefingId) {
-      if (!App.user || !briefingId) return;
-      if (!App.user.read_ids.includes(briefingId)) {
-        App.user.read_ids.push(briefingId);
-        renderUserWorkspace();
-      }
-
-      if (App.offlineDemo || isFileOrigin()) {
-        saveOfflineActivityStore();
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/user/activity", {
-          method: "POST",
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ briefing_id: briefingId, action: "read" })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ok && data.user) {
-            setAuthenticatedUser(data.user, null);
-          }
-        }
-      } catch (_) {}
+      if (!App.user || !briefingId || App.user.read_ids.includes(briefingId)) return;
+      App.user.read_ids.push(briefingId);
+      saveOfflineActivityStore();
+      renderUserWorkspace();
+      await syncDeviceActivity();
     }
 
     async function toggleBriefingBookmark() {
       if (!App.user || !App.selected) return;
-      const bid = App.selected.id;
-      const idx = App.user.bookmarked_ids.indexOf(bid);
-      const adding = idx === -1;
-      if (adding) {
-        App.user.bookmarked_ids.push(bid);
-      } else {
-        App.user.bookmarked_ids.splice(idx, 1);
-      }
-
+      const id = App.selected.id;
+      const index = App.user.bookmarked_ids.indexOf(id);
+      if (index < 0) App.user.bookmarked_ids.push(id);
+      else App.user.bookmarked_ids.splice(index, 1);
+      saveOfflineActivityStore();
       updateBookmarkButtonUI();
       renderUserWorkspace();
       renderBriefingsList();
-      showToast(adding ? "Đã lưu bản tin vào mục cá nhân." : "Đã bỏ lưu bản tin.");
-
-      if (App.offlineDemo || isFileOrigin()) {
-        saveOfflineActivityStore();
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/user/activity", {
-          method: "POST",
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ briefing_id: bid, action: "toggle_bookmark" })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ok && data.user) {
-            setAuthenticatedUser(data.user, null);
-            updateBookmarkButtonUI();
-            renderBriefingsList();
-          }
-        }
-      } catch (_) {}
+      await syncDeviceActivity();
     }
 
     function updateBookmarkButtonUI() {
@@ -6132,45 +5317,11 @@
 
       const navBrandEl = document.getElementById("navBrandTitle");
       if (navBrandEl) navBrandEl.textContent = brandName;
-      const authBrandEl = document.getElementById("authBrandTitle");
-      if (authBrandEl) authBrandEl.textContent = brandName;
 
-      // Auth Gate Localization
       const setTxt = (sel, txt) => {
-        const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+        const el = document.querySelector(sel);
         if (el) el.textContent = txt;
       };
-      const setPh = (sel, txt) => {
-        const el = typeof sel === "string" ? document.querySelector(sel) : sel;
-        if (el) el.placeholder = txt;
-      };
-      setTxt("#authGateTitle", isVi ? "Cổng Lâm sàng Cá nhân hóa" : "Personalized Clinical Portal");
-      setTxt("#authGateSubtitle", isVi
-        ? "Đăng nhập để đồng bộ lịch sử đọc, danh sách bản tin đã lưu và phản hồi đóng góp cải tiến sản phẩm."
-        : "Sign in to sync your reading history, saved briefings, and clinical feedback.");
-      setTxt("#authTabLogin", isVi ? "Đăng nhập" : "Sign In");
-      setTxt("#authTabRegister", isVi ? "Đăng ký" : "Register");
-      setTxt("#loginForm label[for='loginUsername']", isVi ? "Tên đăng nhập" : "Username");
-      setPh("#loginUsername", isVi ? "VD: bs.timmach" : "e.g., bs.timmach");
-      setTxt("#loginForm label[for='loginPassword']", isVi ? "Mật khẩu" : "Password");
-      setPh("#loginPassword", isVi ? "Nhập mật khẩu" : "Enter password");
-      setTxt("#btnShowForgotPassword", isVi ? "Quên mật khẩu?" : "Forgot password?");
-      setTxt("#btnLoginSubmit span", isVi ? "Đăng nhập" : "Sign In");
-      setTxt(".auth-divider-row", isVi ? "hoặc trải nghiệm nhanh" : "or quick access");
-      setTxt("#btnDemoLogin span", isVi ? "Đăng nhập nhanh: Bác sĩ Đặng Quốc Tình (bs.timmach)" : "Quick Sign-In: Dr. Dang Quoc Tinh (bs.timmach)");
-      setTxt("#forgotPasswordForm label[for='forgotUsername']", isVi ? "Tên đăng nhập hoặc Email" : "Username or Email");
-      setTxt("#forgotPasswordForm label[for='forgotNewPassword']", isVi ? "Mật khẩu mới" : "New password");
-      setTxt("#forgotPasswordForm label[for='forgotConfirmPassword']", isVi ? "Xác nhận mật khẩu mới" : "Confirm new password");
-      setTxt("#btnForgotSubmit span", isVi ? "Đặt lại Mật khẩu & Đăng nhập" : "Reset Password & Sign In");
-      setTxt("#btnBackToLogin span", isVi ? "Quay lại Đăng nhập" : "Back to Sign In");
-      setTxt("#registerForm label[for='regUsername']", isVi ? "Tên đăng nhập" : "Username");
-      setTxt("#registerForm label[for='regFullName']", isVi ? "Họ tên Bác sĩ" : "Physician Name");
-      setTxt("#registerForm label[for='regSpecialty']", isVi ? "Chuyên khoa" : "Specialty");
-      setTxt("#registerForm label[for='regPassword']", isVi ? "Mật khẩu" : "Password");
-      setTxt("#btnRegisterSubmit span", isVi ? "Đăng ký & Vào Workspace" : "Register & Enter Workspace");
-      setTxt("#authOfflineNoteText", isVi
-        ? "Đang chạy ở chế độ Độc lập 24/7 — tài khoản, lịch sử đọc và phản hồi được lưu ngay trên thiết bị của bạn."
-        : "Running 24/7 Standalone Mode — your account, reading history, and feedback are saved on this device.");
 
       // Main Workspace & Navbar Chrome
       document.getElementById("heroHeadlineText").textContent = t("heroHeadline");
@@ -6190,12 +5341,6 @@
       document.getElementById("bottomFeedbackSub").textContent = t("bottomFeedbackSub");
       if (!Dom.btnRefreshToday.disabled) {
         Dom.labelRefreshToday.textContent = t("refreshBtn");
-      }
-      if (Dom.btnLogout) {
-        const lgLbl = isVi ? "Đăng xuất" : "Sign out";
-        Dom.btnLogout.title = lgLbl;
-        Dom.btnLogout.setAttribute("aria-label", lgLbl);
-        setTxt("#labelLogoutModalBtn", lgLbl);
       }
       if (Dom.btnNavBookmarks) {
         Dom.btnNavBookmarks.title = isVi ? "Lọc danh sách bản tin đã lưu" : "Filter saved briefings";
@@ -6231,14 +5376,15 @@
         if (topSpan) topSpan.textContent = isVi ? "Đầu trang" : "Top";
       }
 
-      // Modals Localization
-      setTxt("#myAccountModalTitle span", isVi ? "Tài khoản của tôi & Bảo mật" : "My Account & Security");
-      setTxt("#myAccountModal .account-section-title span", isVi ? "Thông tin Bác sĩ" : "Physician Profile");
-      setTxt("#myAccountModal label[for='accFullName']", isVi ? "Họ tên hiển thị" : "Display Name");
-      setTxt("#myAccountModal label[for='accSpecialty']", isVi ? "Chuyên khoa" : "Specialty");
-      setTxt("#btnSaveProfile span", isVi ? "Lưu thông tin hồ sơ" : "Save Profile");
-      setTxt("#btnAccResetPassword span", isVi ? "Cập nhật Mật khẩu mới" : "Update Password");
-      setTxt("#btnAccResetDefaultPw", isVi ? "Reset về mặc định (123456)" : "Reset to default (123456)");
+      setTxt("#myAccountModalTitle", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
+      setTxt("#deviceProfileNote", isVi ? "Tiến độ được tự động lưu trên thiết bị này. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt." : "Progress is saved automatically on this device. Export a backup before clearing browser data.");
+      setTxt("#labelDeviceName", isVi ? "Tên hiển thị" : "Display name");
+      setTxt("#btnSaveProfile", isVi ? "Lưu tên" : "Save name");
+      setTxt("#btnExportProgress", isVi ? "Xuất tiến độ (JSON)" : "Export progress (JSON)");
+      setTxt("#btnImportProgress", isVi ? "Nhập tiến độ (JSON)" : "Import progress (JSON)");
+      setTxt("#labelImportMode", isVi ? "Cách nhập" : "Import mode");
+      setTxt("#labelImportMerge", isVi ? "Hợp nhất" : "Merge");
+      setTxt("#labelImportReplace", isVi ? "Thay thế" : "Replace");
 
       document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
       document.getElementById("todaySidebarDesc").textContent = t("todaySidebarDesc");
@@ -6288,9 +5434,9 @@
       document.getElementById("labelReportCommentPrompt").textContent = isVi
         ? "Nội dung chi tiết gửi Nhà làm sản phẩm:"
         : "Details for the product team:";
-      setPh("#feedbackReportComment", isVi
+      Dom.feedbackReportComment.placeholder = isVi
         ? "Mô tả số liệu cần kiểm chứng, đề xuất bổ sung RCT hoặc góp ý trải nghiệm..."
-        : "Describe figures to verify, RCTs to add, or UX suggestions...");
+        : "Describe figures to verify, RCTs to add, or UX suggestions...";
       document.getElementById("labelReportSubmitBtn").textContent = isVi ? "Gửi Phản hồi" : "Submit Feedback";
       Dom.btnCancelFeedbackReport.textContent = isVi ? "Hủy" : "Cancel";
 
@@ -7492,16 +6638,14 @@
 
       setProgress(1, `Đang xác thực NCBI PubMed Step-0 cho Trụ cột #${App.todayPillarId} hôm nay...`);
 
-      if (window.EventSource) {
-        const es = new EventSource("/api/refresh-stream");
-        es.onmessage = async (evt) => {
+      if (window.ReadableStream) {
+        const onMessage = async (evt) => {
           try {
             const data = JSON.parse(evt.data);
             if (data.type === "progress") {
               setProgress(data.percent || 0, data.message || "");
             } else if (data.type === "done") {
               setProgress(100, `Hoàn tất cập nhật Trụ cột #${App.todayPillarId} hôm nay!`);
-              es.close();
               if (Array.isArray(data.briefings)) App.briefings = data.briefings;
               if (data.rotation_state) App.rotation = data.rotation_state;
               if (data.today_date) App.todayDate = data.today_date;
@@ -7524,18 +6668,20 @@
               }
               showToast(`Đã cập nhật xong Trụ cột #${App.todayPillarId} hôm nay (100%)!`);
               finishRefresh();
+              return false;
             } else if (data.type === "error") {
-              es.close();
               if (!silent) showToast("Lỗi cập nhật: " + (data.error || "Unknown error"));
               finishRefresh();
+              return false;
             }
           } catch (_) {}
         };
-        es.onerror = () => {
-          es.close();
+        try {
+          await consumeApiEvents("/api/refresh-stream", onMessage);
+        } catch (_) {
           if (!silent) showToast("Mất kết nối stream khi cập nhật.");
           finishRefresh();
-        };
+        }
         return;
       }
 
@@ -7566,102 +6712,41 @@
        EVENT BINDINGS
        ======================================================================== */
     function bindAppEvents() {
-      // Auth Tabs & Forgot Password Toggle
-      Dom.authTabLogin.addEventListener("click", () => {
-        Dom.authTabLogin.classList.add("active");
-        Dom.authTabRegister.classList.remove("active");
-        Dom.authTabLogin.setAttribute("aria-selected", "true");
-        Dom.authTabRegister.setAttribute("aria-selected", "false");
-        Dom.loginForm.style.display = "flex";
-        Dom.registerForm.style.display = "none";
-        Dom.forgotPasswordForm.style.display = "none";
-        Dom.authErrorBox.classList.remove("show");
-      });
-
-      Dom.authTabRegister.addEventListener("click", () => {
-        Dom.authTabRegister.classList.add("active");
-        Dom.authTabLogin.classList.remove("active");
-        Dom.authTabRegister.setAttribute("aria-selected", "true");
-        Dom.authTabLogin.setAttribute("aria-selected", "false");
-        Dom.registerForm.style.display = "flex";
-        Dom.loginForm.style.display = "none";
-        Dom.forgotPasswordForm.style.display = "none";
-        Dom.authErrorBox.classList.remove("show");
-      });
-
-      Dom.btnShowForgotPassword.addEventListener("click", () => {
-        Dom.loginForm.style.display = "none";
-        Dom.registerForm.style.display = "none";
-        Dom.forgotPasswordForm.style.display = "flex";
-        Dom.authErrorBox.classList.remove("show");
-        if (Dom.loginUsername.value.trim()) {
-          Dom.forgotUsername.value = Dom.loginUsername.value.trim();
-        }
-        setTimeout(() => Dom.forgotUsername.focus(), 40);
-      });
-
-      Dom.btnBackToLogin.addEventListener("click", () => {
-        Dom.forgotPasswordForm.style.display = "none";
-        Dom.registerForm.style.display = "none";
-        Dom.loginForm.style.display = "flex";
-        Dom.authErrorBox.classList.remove("show");
-      });
-
-      Dom.forgotPasswordForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleForgotPasswordRequest(
-          Dom.forgotUsername.value.trim(),
-          Dom.forgotNewPassword.value,
-          Dom.forgotConfirmPassword.value
-        );
-      });
-
-      Dom.loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleAuthLoginRequest({
-          username: Dom.loginUsername.value.trim(),
-          password: Dom.loginPassword.value
-        });
-      });
-
-      const triggerDemoLogin = (e) => {
-        if (e) e.preventDefault();
-        handleAuthLoginRequest({ demo: true });
-      };
-      Dom.btnDemoLogin.addEventListener("click", triggerDemoLogin);
-      Dom.btnDemoLogin.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        triggerDemoLogin(e);
-      }, { passive: false });
-
-      Dom.registerForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleAuthRegisterRequest({
-          username: Dom.regUsername.value.trim(),
-          full_name: Dom.regFullName.value.trim(),
-          specialty: Dom.regSpecialty.value.trim(),
-          password: Dom.regPassword.value
-        });
-      });
-
-      Dom.btnLogout.addEventListener("click", handleLogout);
-
-      // My Account Modal Events
       Dom.userProfilePill.addEventListener("click", openMyAccountModal);
       Dom.btnCloseAccountModal.addEventListener("click", closeMyAccountModal);
-      Dom.myAccountModal.addEventListener("click", (e) => {
+      Dom.myAccountModal.addEventListener("click", e => {
         if (e.target === Dom.myAccountModal) closeMyAccountModal();
       });
       Dom.btnSaveProfile.addEventListener("click", handleProfileSaveRequest);
-      Dom.btnAccResetPassword.addEventListener("click", () => {
-        handleAccountPasswordResetRequest(
-          Dom.accNewPassword.value,
-          Dom.accConfirmPassword.value,
-          false
-        );
+      document.getElementById("btnExportProgress").addEventListener("click", () => {
+        const url = URL.createObjectURL(new Blob([deviceStore.exportJSON()], {type: "application/json"}));
+        const link = document.createElement("a");
+        link.href = url; link.download = "daily-learning-heart-progress.json"; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       });
-      Dom.btnAccResetDefaultPw.addEventListener("click", () => {
-        handleAccountPasswordResetRequest("123456", "123456", true);
+      const importFile = document.getElementById("progressImportFile");
+      document.getElementById("btnImportProgress").addEventListener("click", () => importFile.click());
+      importFile.addEventListener("change", async () => {
+        const file = importFile.files[0];
+        if (!file) return;
+        try {
+          if (file.size > 5 * 1024 * 1024) throw new Error("File too large");
+          const text = await file.text();
+          const mode = document.getElementById("progressImportMode").value;
+          const isVi = App.currentLang === "vi";
+          const question = mode === "replace"
+            ? (isVi ? "Thay thế toàn bộ tiến độ trên thiết bị bằng bản sao này?" : "Replace all device progress with this backup?")
+            : (isVi ? "Hợp nhất bản sao này với tiến độ trên thiết bị?" : "Merge this backup with device progress?");
+          if (window.confirm(question)) {
+            deviceStore.importJSON(text, mode);
+            const p = deviceStore.profile;
+            App.user.read_ids = p.read_ids; App.user.bookmarked_ids = p.bookmarked_ids;
+            await syncDeviceActivity();
+            window.location.reload();
+          }
+        } catch (_) {
+          showToast(App.currentLang === "vi" ? "Không thể nhập: tệp JSON không hợp lệ." : "Cannot import: invalid progress JSON.");
+        } finally { importFile.value = ""; }
       });
 
       Dom.btnNavBookmarks.addEventListener("click", () => {
@@ -7773,6 +6858,7 @@
       const updateFontScale = () => {
         document.documentElement.style.setProperty("--content-scale", App.fontScale.toFixed(2));
         Dom.btnFontReset.textContent = `${Math.round(App.fontScale * 100)}%`;
+        safeStorageSet("ebm_font_scale", App.fontScale);
       };
       Dom.btnFontInc.addEventListener("click", () => {
         if (App.fontScale < 1.25) {
@@ -7790,6 +6876,8 @@
         App.fontScale = 1.0;
         updateFontScale();
       });
+
+      updateFontScale();
 
       // Delegated Click for Synchronized Product Feedback Icon Bars
       document.addEventListener("click", (e) => {
