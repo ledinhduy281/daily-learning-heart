@@ -23,7 +23,8 @@ CONCEPTS = [
     ('intervention', 'Angiotensin Receptor Antagonists', ['arni', 'angiotensin receptor neprilysin inhibitor', 'sacubitril valsartan']),
     ('intervention', '', ['gdmt', 'guideline directed medical therapy', 'dieu tri noi khoa toi uu']),
 ]
-STOP = set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri tom tat giai thich toi hoi bai ban tin gi nhu the nao summarize summary explain tell me please'.split())
+STOP = set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri hoi bai summarize summary explain please'.split())
+FILLER_PHRASES = ('tom tat', 'giai thich', 'cho toi', 'ban tin', 'la gi', 'nhu the nao', 'tell me')
 
 
 def contains(text, phrase):
@@ -32,6 +33,8 @@ def contains(text, phrase):
 
 def terms(query):
     q = normalize(query)
+    for phrase in FILLER_PHRASES:
+        q = re.sub(r'(?<!\w)' + r'\s+'.join(map(re.escape, phrase.split())) + r'(?!\w)', ' ', q)
     groups = []
     for _, _, aliases in sorted(CONCEPTS, key=lambda c: -max(map(len, c[2]))):
         if any(contains(q, a) for a in aliases):

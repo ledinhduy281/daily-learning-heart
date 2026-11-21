@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import fetch_daily_ebm as app
-from search_ranking import normalize, score
+from search_ranking import contains, fields, normalize, score, terms
 
 
 class SearchTests(unittest.TestCase):
@@ -49,6 +49,19 @@ class SearchTests(unittest.TestCase):
         for query in ('tóm tắt rung nhĩ', 'please explain AF'):
             self.assertGreater(score(af, query), 0)
             self.assertEqual(score({'title_en': 'hypertension'}, query), 0)
+
+    def test_filler_phrases_preserve_clinical_abbreviations(self):
+        data = app.load_existing_briefings()
+        for query in ('TAT', 'GI'):
+            hits = [b for b in data if any(contains(normalize(text), query.lower()) for text, _ in fields(b))]
+            self.assertTrue(hits, query)
+            self.assertTrue(all(score(b, query) > 0 for b in hits), query)
+            self.assertEqual(score({'title_en': query}, query), score({'title_en': query}, 'tóm tắt ' + query))
+        for token in ('tat', 'gi', 'tom', 'thich', 'giai', 'toi', 'ban', 'tin', 'nhu', 'nao', 'tell', 'me'):
+            self.assertEqual(terms(token), [[token]])
+        for query in ('tóm tắt', 'TÓM   TẮT', 'giải thích cho tôi', 'la gi', 'nhu the nao', 'tell me'):
+            self.assertEqual(terms(query), [])
+        self.assertGreater(score({'title_en': 'tomography'}, 'tomography'), 0)
 
     def test_unrelated_active_briefing_cannot_override_keyword_match(self):
         data = app.load_existing_briefings()

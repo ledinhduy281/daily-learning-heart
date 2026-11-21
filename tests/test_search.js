@@ -41,5 +41,14 @@ for (const q of ['tóm tắt rung nhĩ','please explain AF']) {
   assert.ok(score(af,q)>0);
   assert.equal(score({title_en:'hypertension'},q),0);
 }
+for (const q of ['TAT','GI']) {
+  const hits=data.filter(b=>new RegExp(`\\b${q}\\b`,'i').test(normalize(JSON.stringify(b))));
+  assert.ok(hits.length,q);
+  assert.ok(hits.every(b=>score(b,q)>0),q);
+  assert.equal(score({title_en:q},q),score({title_en:q},'tóm tắt '+q));
+}
+for (const token of ['tat','gi','tom','thich','giai','toi','ban','tin','nhu','nao','tell','me']) assert.ok(require('../search_ranking.js').hasTerms(token),token);
+for (const q of ['tóm tắt','TÓM   TẮT','giải thích cho tôi','la gi','nhu the nao','tell me']) assert.ok(!require('../search_ranking.js').hasTerms(q),q);
+assert.ok(score({title_en:'tomography'},'tomography')>0);
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
 console.log('JS search tests and SPA syntax: OK');

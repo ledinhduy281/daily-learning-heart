@@ -12,10 +12,12 @@ const SearchRanking = (() => {
     ['arni', 'angiotensin receptor neprilysin inhibitor', 'sacubitril valsartan'],
     ['gdmt', 'guideline directed medical therapy', 'dieu tri noi khoa toi uu']
   ];
-  const stop = new Set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri tom tat giai thich toi hoi bai ban tin gi nhu the nao summarize summary explain tell me please'.split(' '));
+  const stop = new Set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri hoi bai summarize summary explain please'.split(' '));
+  const fillerPhrases = ['tom tat','giai thich','cho toi','ban tin','la gi','nhu the nao','tell me'];
   const contains = (s, p) => (` ${s.replace(/[^a-z0-9]+/g, ' ')} `).includes(` ${p.replace(/[^a-z0-9]+/g, ' ')} `);
   function terms(query) {
     let q = normalize(query);
+    for (const phrase of fillerPhrases) q = q.replace(new RegExp(`\\b${phrase.split(' ').join('\\s+')}\\b`, 'g'), ' ');
     const groups = [];
     for (const aliases of [...concepts].sort((a,b) => Math.max(...b.map(x=>x.length))-Math.max(...a.map(x=>x.length)))) {
       if (aliases.some(a => contains(q,a))) {
