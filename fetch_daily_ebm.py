@@ -1681,7 +1681,7 @@ def _build_pubmed_chat_query(query: str, briefing: dict | None = None) -> str:
         return ' AND '.join(groups) + ' AND 2022:2026[dp]'
     terms: list[str] = []
     for k, vals in _CHAT_SYNONYM_MAP.items():
-        if k in q_low:
+        if contains(q_low, normalize(k)):
             terms.extend(vals[:3])
     ascii_tokens = re.findall(r"[a-zA-Z0-9][a-zA-Z0-9\-/+]{2,}", query or "")
     stop = {"the", "and", "for", "with", "what", "how", "when", "new", "latest", "guideline", "guidelines", "moi", "nhat"}

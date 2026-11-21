@@ -52,6 +52,15 @@ class SearchTests(unittest.TestCase):
             self.assertEqual(app._score_briefing_for_chat(hypertension, query, hypertension['id'], 1)
                              - app._score_briefing_for_chat(hypertension, query), 60)
 
+    def test_pubmed_vietnamese_topic_expansion_uses_whole_words(self):
+        for query in ('đái tháo đường', 'dai thao duong'):
+            built = app._build_pubmed_chat_query(query)
+            self.assertIn('"diabetes"[tiab]', built)
+            self.assertIn('"t2dm"[tiab]', built)
+            for unrelated in ('hypertension', 'sbp', 'rdn', 'spironolactone'):
+                self.assertNotIn(unrelated, built)
+        self.assertIn('hypertension', app._build_pubmed_chat_query('THA'))
+
     @patch('urllib.request.urlopen')
     def test_fallback_and_rerank(self, network):
         xml = '<PubmedArticleSet>'
