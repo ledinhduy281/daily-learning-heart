@@ -13,7 +13,7 @@ const ClinicalDistractors = (() => {
     const normalized=s=>clean(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
     function safety(text) {
       const patterns=en?[[/\bDo not initiate\b/i,'Initiate'],[/\bNever discontinue\b/i,'Discontinue'],[/\bNever withdraw\b/i,'Withdraw'],[/(^|;\s*)avoid\b/i,'$1Use']]:[[/Không được dừng/i,'Có thể dừng'],[/Tuyệt đối không ngừng/i,'Có thể ngừng'],[/Tuyệt đối không khởi trị/i,'Có thể khởi trị'],[/Không kê đơn/i,'Có thể kê đơn'],[/Không khởi trị/i,'Có thể khởi trị'],[/tránh phối hợp/i,'có thể phối hợp']];
-      for (const [pattern,replacement] of patterns) if (pattern.test(text)) return text.replace(pattern,replacement);
+      for (const clause of text.split(';')) for (const [pattern,replacement] of patterns) if (pattern.test(clause.trim())) return clause.trim().replace(pattern,replacement);
       return '';
     }
     const traps=[];

@@ -33,10 +33,11 @@ def rich_cards(primary, lang, numeric_alternatives):
                     if en else [(r'Không được dừng', 'Có thể dừng'), (r'Tuyệt đối không ngừng', 'Có thể ngừng'),
                                 (r'Tuyệt đối không khởi trị', 'Có thể khởi trị'), (r'Không kê đơn', 'Có thể kê đơn'),
                                 (r'Không khởi trị', 'Có thể khởi trị'), (r'tránh phối hợp', 'có thể phối hợp')])
-        for pattern, replacement in patterns:
-            changed, count = re.subn(pattern, replacement, text, count=1, flags=re.I)
-            if count:
-                return changed
+        for clause in text.split(';'):
+            for pattern, replacement in patterns:
+                changed, count = re.subn(pattern, replacement, clause.strip(), count=1, flags=re.I)
+                if count:
+                    return changed
         return ''
 
     traps = []

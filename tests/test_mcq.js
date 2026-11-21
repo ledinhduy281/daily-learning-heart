@@ -6,6 +6,15 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+{
+  const b=briefings.find(b=>b.landmark_trials.some(t=>t.name==='EXPLORER-HCM'));
+  for (let v=0;v<8;v++) {
+    const q=quiz.build(b,1,v,'en');
+    for (const o of q.options) if (q.distractor_types[o.key]==='safety' && o.text.startsWith('EXPLORER-HCM:')) {
+      assert.ok(o.text.includes('Use strong') && !o.text.includes('Mandatory echocardiographic'));
+    }
+  }
+}
 const letters=new Set();
 function check(q) {
   assert.deepEqual(q.options.map(o=>o.key),['A','B','C','D']);

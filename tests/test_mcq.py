@@ -7,6 +7,16 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_safety_reverses_the_selected_clause(self):
+        from clinical_distractors import rich_cards
+        from clinical_mcq import alternatives
+        b = next(b for b in self.briefings if any(t['name'] == 'EXPLORER-HCM' for t in b['landmark_trials']))
+        cards = rich_cards(b, 'en', alternatives)
+        traps = [text for card in cards for typ, text in zip(card['types'], card['texts']) if typ == 'safety']
+        explorer = [text for text in traps if text.startswith('EXPLORER-HCM:')]
+        self.assertTrue(explorer)
+        self.assertTrue(all('Use strong' in text and 'Mandatory echocardiographic' not in text for text in explorer))
+
     @classmethod
     def setUpClass(cls):
         cls.briefings = app.load_existing_briefings()
