@@ -66,7 +66,7 @@ const DeviceProfile = (() => {
   function reconcile(base, local, latest) {
     const next = {...latest, progress: {...latest.progress}};
     if (local.display_name !== base.display_name) next.display_name = local.display_name;
-    next.read_ids = [...new Set([...latest.read_ids, ...local.read_ids])];
+    next.read_ids = [...new Set([...latest.read_ids, ...local.read_ids.filter(id => !base.read_ids.includes(id))])];
     const removed = new Set(base.bookmarked_ids.filter(id => !local.bookmarked_ids.includes(id)));
     const added = local.bookmarked_ids.filter(id => !base.bookmarked_ids.includes(id));
     next.bookmarked_ids = [...new Set([...latest.bookmarked_ids.filter(id => !removed.has(id)), ...added])];
@@ -82,11 +82,12 @@ const DeviceProfile = (() => {
     let p;
     try { p = validate(JSON.parse(read(KEY))); } catch (_) {}
     let baseline = p && JSON.parse(JSON.stringify(p));
-    const persist = (replace = false) => {
+    const persist = (replace = false, importing = false) => {
       try {
         let latest;
         try { latest = validate(JSON.parse(read(KEY))); } catch (_) {}
         const next = !replace && baseline && latest?.device_id === p.device_id ? reconcile(baseline, p, latest) : p;
+        if (importing) next.progress.ebm_legacy_server_migrated = '1';
         storage.setItem(KEY, JSON.stringify(next));
         p = next; baseline = JSON.parse(JSON.stringify(p));
         return true;
@@ -141,12 +142,13 @@ const DeviceProfile = (() => {
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key], key);
         const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
-        if (!persist(mode === 'replace')) {
+        if (!persist(mode === 'replace', true)) {
           p = previous;
           const error = new Error('Progress could not be saved to browser storage');
           error.code = 'STORAGE_WRITE_FAILED';
           throw error;
         }
+        try { storage.removeItem('ebm_auth_token'); } catch (_) {}
       }
     };
   }

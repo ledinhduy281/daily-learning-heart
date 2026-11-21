@@ -8,6 +8,7 @@ class Storage {
   key(i) { return [...this.values.keys()][i]; }
   getItem(key) { return this.values.get(key) ?? null; }
   setItem(key, value) { this.values.set(key, String(value)); }
+  removeItem(key) { this.values.delete(key); }
 }
 let calls = 0;
 const id = 'a9876543-1234-4123-8123-123456789abc';
@@ -88,7 +89,7 @@ assert.notEqual(imported.profile.device_id, id);
 const localId = imported.profile.device_id;
 imported.importJSON(JSON.stringify(device.profile));
 assert.equal(imported.profile.device_id, localId);
-assert.deepEqual(imported.profile.progress, device.profile.progress);
+assert.deepEqual(imported.profile.progress, {...device.profile.progress, ebm_legacy_server_migrated:'1'});
 assert.deepEqual(imported.profile.read_ids, ['lesson']);
 imported.activity(['local'], ['local-saved']);
 imported.importJSON(backup, 'merge');
@@ -156,6 +157,25 @@ assert.equal(headers()['X-Device-Id'], id);
 assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'application/json');
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
+  const legacyStorage = new Storage({ebm_auth_token:'old-session'});
+  const replacement = create(legacyStorage, crypto), staleTab = create(legacyStorage, crypto);
+  replacement.activity(['legacy-lesson'], []);
+  replacement.importJSON(JSON.stringify({...JSON.parse(backup), read_ids:[], bookmarked_ids:[], progress:{}}), 'replace');
+  assert.equal(replacement.get('ebm_legacy_server_migrated'),'1');
+  assert.equal(legacyStorage.getItem('ebm_auth_token'),null);
+  staleTab.set('ebm_font_scale','1.1');
+  assert.deepEqual(create(legacyStorage,crypto).profile.read_ids,[]);
+  const bootstrapCode = html.match(/async function bootstrapSessionAndStatus\(\) \{([\s\S]*?)\n    \}/)[1];
+  const requests = [];
+  const bootstrap = vm.runInNewContext(`(async function() {${bootstrapCode}})`, {
+    App:{}, window:{EBM_SERVER:true,localStorage:legacyStorage},
+    safeStorageGet:key=>replacement.get(key), safeStorageSet:(key,value)=>replacement.set(key,value),
+    setAuthenticatedUser() {}, loadOfflineFeedbackStore() {}, renderAllViewsAfterAuth() {},
+    syncDeviceActivity:async () => {}, getAuthHeaders:() => ({}), applyServerStatus() {},
+    fetch:async path => {requests.push(path);return {ok:true,json:async () => ({ok:true})};}
+  });
+  await bootstrap();
+  assert.deepEqual(requests,['/api/status']);
   const importBody = html.match(/importFile.addEventListener\("change", async \(\) => \{([\s\S]*?)\n      \}\);/)[1];
   let reloads = 0, toast = '';
   const importFile = {files: [{size:backup.length, text:async () => backup}], value:'file.json'};
