@@ -195,8 +195,11 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   for (const question of ['', '   ', undefined]) {
     tutor.store = {1:{started:true,phase:'diagnostic',last_question:question,current_options:[],correct_key:'',messages:[]}};
     assert.equal(tutor.getSession().messages.length,0);
+    assert.equal(tutor.getSession().started,false);
     assert.equal(generated,before);
   }
+  tutor.store = {1:{started:true,phase:'mastered',last_question:'',current_options:[],messages:[]}};
+  assert.equal(tutor.getSession().started,true);
 }
 {
   const malicious = '<img src=x onerror="throw 1">';
@@ -226,10 +229,12 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
 async function checkStreams() {
   {
     const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+    let stored;
+    const startButton = {addEventListener(event,handler) {this.click=handler;}};
     const tutor = vm.runInNewContext(`${tutorCode}; SocraticTutor`,{
       App:{currentLang:'en',selected:{pillar_id:1}},SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',
-      getPillarDisplayName:()=> 'Pillar',safeStorageSet() {},
-      document:{getElementById:()=>null,querySelectorAll:()=>[],createElement:()=>({remove() {}})}
+      getPillarDisplayName:()=> 'Pillar',safeStorageGet:()=>stored,safeStorageSet:(key,value)=>{stored=value;},
+      document:{getElementById:id=>id==='btnStartSocratic'?startButton:null,querySelectorAll:()=>[],createElement:()=>({remove() {}})}
     });
     const question = 'Diagnostic question 1?';
     const options = ['A','B','C','D'].map(key=>({key,text:`Choice ${key}`}));
@@ -255,6 +260,23 @@ async function checkStreams() {
       assert.equal(session.correct_key,'B');
     }
     assert.equal(responses,2);
+    stored = JSON.stringify({1:{...tutor.getSession(),started:true,last_question:'',current_options:[],correct_key:'',explanation:'',messages:[]}});
+    tutor.store = {};
+    tutor.loadStore();
+    const interrupted = tutor.getSession();
+    assert.equal(interrupted.started,false);
+    assert.equal(interrupted.messages.length,0);
+    let restarted;
+    const startDiagnostic = tutor.startDiagnostic.bind(tutor);
+    tutor.startDiagnostic = () => {restarted=startDiagnostic();return restarted;};
+    tutor.bindEvents();
+    startButton.click();
+    assert.ok(restarted);
+    await restarted;
+    assert.equal(responses,3);
+    assert.equal(tutor.getSession().messages.length,1);
+    assert.equal(tutor.getSession().messages[0].text,question);
+    assert.equal(tutor.getSession().started,true);
   }
   const legacyStorage = new Storage({ebm_auth_token:'old-session'});
   const replacement = create(legacyStorage, crypto);
