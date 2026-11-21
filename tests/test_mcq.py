@@ -7,6 +7,18 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_fallback_credits_the_actual_subskill(self):
+        from socratic_quiz import turn
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-20-p5-main')
+        for slot in (2, 3):
+            initial = {'focus_idx': slot, 'subskills': [{'level': 0} for _ in range(4)]}
+            _, state, _ = turn(b, initial, 'en', 'harder')
+            self.assertEqual(state['current_question']['subskill_idx'], 1)
+            _, state, _ = turn(b, state, 'en', 'answer', selected_choice=state['correct_key'])
+            self.assertEqual([s.get('correct', 0) for s in state['subskills']], [0, 1, 0, 0])
+            self.assertEqual(state['last_updated_idx'], 1)
+            self.assertEqual(state['focus_idx'], (slot + 1) % 4)
+
     def test_guideline_items_are_not_trial_endpoints(self):
         from clinical_distractors import rich_cards
         from clinical_mcq import alternatives

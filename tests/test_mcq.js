@@ -6,6 +6,15 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const slot of [2,3]) {
+  const b=briefings.find(b=>b.id==='ebm-2026-11-20-p5-main');
+  let {state}=quiz.turn(b,{focus_idx:slot,subskills:Array.from({length:4},()=>({level:0}))},'en','harder');
+  assert.equal(state.current_question.subskill_idx,1);
+  ({state}=quiz.turn(b,state,'en','answer','',state.correct_key));
+  assert.deepEqual(state.subskills.map(s=>s.correct||0),[0,1,0,0]);
+  assert.equal(state.last_updated_idx,1);
+  assert.equal(state.focus_idx,(slot+1)%4);
+}
 {
   const b=briefings.find(b=>b.id==='ebm-2026-11-14-p9-main');
   const primary={landmark_trials:b.landmark_trials.filter(t=>t.name.includes('Guidelines'))};

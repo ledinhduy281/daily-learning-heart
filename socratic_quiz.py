@@ -33,19 +33,20 @@ def turn(primary, state, lang, action, user_answer='', selected_choice=''):
             skill.update(level=0, checks=0, answered=0, correct=0)
     elif action == 'answer':
         feedback = current['explanation'] + '\n\n'
-        idx = int(state.get('focus_idx', 0)) % 4
+        idx = current.get('subskill_idx', {'guideline': 0, 'trial': 1}.get(current.get('question_kind')))
         skills = state.get('subskills') or []
-        if len(skills) == 4:
+        credit = type(idx) is int and 0 <= idx < 4 and len(skills) == 4
+        if credit:
             skills[idx]['level'] = min(5, max(2, skills[idx].get('level', 0) + 1))
             for key in ('checks', 'answered', 'correct'):
                 skills[idx][key] = skills[idx].get(key, 0) + 1
-        state['last_updated_idx'] = idx
-        state['last_delta'] = 1
+        state['last_updated_idx'] = idx if credit else -1
+        state['last_delta'] = 1 if credit else 0
         state['answered_count'] = state.get('answered_count', 0) + 1
         state['correct_count'] = state.get('correct_count', 0) + 1
         state['streak'] = state.get('streak', 0) + 1
         state['attempts_on_current'] = 0
-        state['focus_idx'] = (idx + 1) % 4
+        state['focus_idx'] = (int(state.get('focus_idx', 0)) + 1) % 4
         state['diag_step'] = min(3, state.get('diag_step', 0) + 1)
         state['question_index'] = state.get('question_index', 0) + 1
         if state['question_index'] >= 4 and state.get('phase') != 'final_exam':

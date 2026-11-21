@@ -25,20 +25,21 @@ const ClinicalQuiz = (() => {
     }
     for (const p of primary.pearls || []) pools[2].push([primary['title_'+suffix]||'',p['text_'+suffix]||'']);
     const candidates=[];
-    for (const [source,raw] of [...pools[slotIdx%4],...pools[1],...pools[0],...pools[2],...pools[3]]) {
+    for (const [source,raw,poolIdx] of [slotIdx%4,1,0,2,3].flatMap(i=>pools[i].map(([s,f])=>[s,f,i]))) {
       const fact=String(raw||'').split(/\s+/).join(' ').trim();
       if (!fact || fact.includes('...') || fact.includes('…')) continue;
       if (['khong duoc dung','khong ngung','khong dung cac thuoc','never withdraw','never discontinue','do not stop'].some(p=>normalized(fact).includes(p))) continue;
       const variants=alternatives(fact);
-      if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) candidates.push([source,variants]);
+      if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) candidates.push([source,variants,poolIdx]);
     }
-    let question,texts,reasons;
+    let question,texts,reasons,subskillIdx=null;
     if (!candidates.length) {
       question=en?'A briefing lacks the trial population and safety criteria. What is the best next step before applying its result?':'Bản tin chưa nêu quần thể nghiên cứu và tiêu chí an toàn. Cần làm gì trước khi áp dụng kết quả?';
       texts=en?['Check the full report for eligibility criteria and safety exclusions.','Use the effect estimate from another trial in the same drug class.','Use the abstract conclusion to set the starting dose.','Infer eligibility from the trial title.']:['Đối chiếu báo cáo đầy đủ về tiêu chuẩn chọn bệnh và tiêu chí loại trừ vì an toàn.','Dùng ước lượng hiệu quả từ thử nghiệm khác của cùng nhóm thuốc.','Dựa vào kết luận tóm tắt để chọn liều khởi đầu.','Suy ra tiêu chuẩn chọn bệnh từ tên thử nghiệm.'];
       reasons=en?[texts[0],'An effect estimate does not establish eligibility.','A conclusion alone does not establish dosing.','A title does not define eligibility.']:[texts[0],'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.','Kết luận tóm tắt không đủ để xác định liều.','Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'];
     } else {
-      const [source,variants]=candidates[variantIdx%candidates.length];
+      const [source,variants,idx]=candidates[variantIdx%candidates.length];
+      subskillIdx=idx;
       question=en?`According to ${source}, which statement is correct?`:`Theo ${source}, nhận định nào đúng?`;
       texts=variants.map(([t])=>t);
       reasons=[en?`The briefing reports ${source}: ${texts[0]}`:`Bản tin nêu tại ${source}: ${texts[0]}`,...variants.slice(1).map(([,r])=>en?`This changes the documented parameter from ${variants[0][1]} to ${r}; the briefing does not support that value for this statement.`:`Lựa chọn này đổi thông số được ghi nhận từ ${variants[0][1]} thành ${r}; bản tin không nêu giá trị này cho nhận định trên.`)];
@@ -49,6 +50,7 @@ const ClinicalQuiz = (() => {
     if (preferred.length || cards.length) {
       const available=preferred.length?preferred:cards,card=available[variantIdx%available.length];
       kind=card.kind;
+      subskillIdx=kind==='guideline'?0:1;
       ({question,texts,reasons,types}=card);
     }
     const briefingSeed=Array.from(String(primary.id||'')).reduce((n,c)=>n+c.codePointAt(0),0);
@@ -59,7 +61,7 @@ const ClinicalQuiz = (() => {
     [order[target],order[correctPosition]]=[order[correctPosition],order[target]];
     const options=order.map((n,i)=>({key:'ABCD'[i],text:texts[n]})),correct_key='ABCD'[order.indexOf(0)];
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
-    return {question,options,correct_key,explanation,question_kind:kind,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
+    return {question,options,correct_key,explanation,question_kind:kind,subskill_idx:subskillIdx,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en',current=state.current_question;
@@ -79,9 +81,10 @@ const ClinicalQuiz = (() => {
       for (const s of state.subskills||[]) Object.assign(s,{level:0,checks:0,answered:0,correct:0});
     } else if (action==='answer') {
       feedback=current.explanation+'\n\n';
-      const idx=(state.focus_idx||0)%4,skills=state.subskills||[];
-      if (skills.length===4) {skills[idx].level=Math.min(5,Math.max(2,(skills[idx].level||0)+1));for (const k of ['checks','answered','correct']) skills[idx][k]=(skills[idx][k]||0)+1;}
-      Object.assign(state,{last_updated_idx:idx,last_delta:1,answered_count:(state.answered_count||0)+1,correct_count:(state.correct_count||0)+1,streak:(state.streak||0)+1,attempts_on_current:0,focus_idx:(idx+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});
+      const idx=current.subskill_idx ?? ({guideline:0,trial:1}[current.question_kind]),skills=state.subskills||[];
+      const credit=Number.isInteger(idx) && idx>=0 && idx<4 && skills.length===4;
+      if (credit) {skills[idx].level=Math.min(5,Math.max(2,(skills[idx].level||0)+1));for (const k of ['checks','answered','correct']) skills[idx][k]=(skills[idx][k]||0)+1;}
+      Object.assign(state,{last_updated_idx:credit?idx:-1,last_delta:credit?1:0,answered_count:(state.answered_count||0)+1,correct_count:(state.correct_count||0)+1,streak:(state.streak||0)+1,attempts_on_current:0,focus_idx:((state.focus_idx||0)+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});
       if (state.question_index>=4 && state.phase!=='final_exam') state.phase='loop';
       if (skills.length===4 && skills.every(s=>s.level>=4)) {
         if (state.phase==='final_exam') {Object.assign(state,{phase:'mastered',current_options:[],correct_key:'',explanation:'',current_question:null});return {reply:feedback+(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:'correct'};}

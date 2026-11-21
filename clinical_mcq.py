@@ -58,7 +58,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
 
     slot = int(slot_idx) % 4
     candidates = []
-    for source, fact in pools[slot] + pools[1] + pools[0] + pools[2] + pools[3]:
+    for source, fact, pool_idx in [(s, f, i) for i in (slot, 1, 0, 2, 3) for s, f in pools[i]]:
         fact = ' '.join(str(fact or '').split())
         if not fact or '...' in fact or '…' in fact:
             continue
@@ -66,7 +66,8 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
             continue
         variants = alternatives(fact)
         if variants and len({normalized(t) for t, _ in variants}) == 4:
-            candidates.append((source, variants))
+            candidates.append((source, variants, pool_idx))
+    subskill_idx = None
     if not candidates:
         question = ('A briefing lacks the trial population and safety criteria. What is the best next step before applying its result?' if en else
                     'Bản tin chưa nêu quần thể nghiên cứu và tiêu chí an toàn. Cần làm gì trước khi áp dụng kết quả?')
@@ -81,7 +82,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         reasons = ([texts[0], 'An effect estimate does not establish eligibility.', 'A conclusion alone does not establish dosing.', 'A title does not define eligibility.'] if en else
                    [texts[0], 'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.', 'Kết luận tóm tắt không đủ để xác định liều.', 'Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'])
     else:
-        source, variants = candidates[int(variant_idx) % len(candidates)]
+        source, variants, subskill_idx = candidates[int(variant_idx) % len(candidates)]
         question = (f'According to {source}, which statement is correct?' if en else
                     f'Theo {source}, nhận định nào đúng?')
         texts = [t for t, _ in variants]
@@ -97,6 +98,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         available = preferred or cards
         card = available[int(variant_idx) % len(available)]
         kind = card['kind']
+        subskill_idx = 0 if kind == 'guideline' else 1
         question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
     briefing_seed = sum(ord(c) for c in str(primary.get('id', '')))
@@ -114,5 +116,5 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
-            'question_kind': kind, 'option_kinds': {o['key']: kind for o in options},
+            'question_kind': kind, 'subskill_idx': subskill_idx, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}
