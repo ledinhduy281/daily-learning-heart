@@ -33,6 +33,7 @@
   <script src="data/briefings.js"></script>
   <script src="clinical_distractors.js"></script>
   <script src="clinical_mcq.js"></script>
+  <script src="search_ranking.js"></script>
 
   <style>
     /* ==========================================================================
@@ -6074,17 +6075,11 @@
       }
 
       if (App.searchQuery.trim() !== "") {
-        const q = App.searchQuery.toLowerCase();
-        list = list.filter(b => {
-          return (
-            (b.title_vi && b.title_vi.toLowerCase().includes(q)) ||
-            (b.title_en && b.title_en.toLowerCase().includes(q)) ||
-            (b.topic_focus_vi && b.topic_focus_vi.toLowerCase().includes(q)) ||
-            (b.topic_focus_en && b.topic_focus_en.toLowerCase().includes(q)) ||
-            (b.part1_vi_markdown && b.part1_vi_markdown.toLowerCase().includes(q)) ||
-            (b.part2_en_markdown && b.part2_en_markdown.toLowerCase().includes(q))
-          );
-        });
+        return list.map(b => ({b, score: SearchRanking.score(b, App.searchQuery)}))
+          .filter(hit => hit.score > 0)
+          .sort((a,b) => b.score-a.score || (b.b.date || '').localeCompare(a.b.date || ''))
+          .map(hit => hit.b);
+
       }
 
       return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
@@ -8490,26 +8485,13 @@
       scoreBriefing(b, query) {
         const qLow = (query || "").toLowerCase();
         const explicitPids = Array.from(qLow.matchAll(/(?:trụ\s*cột|pillar|chủ\s*đề)\s*#?\s*(10|[1-9])\b/gi)).map((m) => Number(m[1]));
-        const tokens = this.expandQueryTokens(query);
-        const hayHead = [
-          b.title_vi, b.title_en, b.topic_focus_vi, b.pillar_vi, b.pillar_name,
-          JSON.stringify(b.guideline_evolution || {}),
-          JSON.stringify(b.landmark_trials || []),
-          JSON.stringify(b.pearls || [])
-        ].join(" ").toLowerCase();
-        const hayBody = `${b.part1_vi_markdown || ""} ${b.part2_en_markdown || ""}`.toLowerCase();
-
         let score = 0;
         const pid = Number(b.pillar_id || 0);
         if (explicitPids.length > 0) {
           score += explicitPids.includes(pid) ? 250 : -100;
         }
 
-        let keywordScore = 0;
-        for (const t of tokens) {
-          if (hayHead.includes(t)) keywordScore += 6;
-          else if (hayBody.includes(t)) keywordScore += 2;
-        }
+        const keywordScore = SearchRanking.score(b, query);
         score += keywordScore;
 
         if (String(b.id || "").includes("-main") || String(b.guideline_evolution?.current_guideline?.year || "").includes("2026")) {
@@ -8517,10 +8499,10 @@
         }
 
         const hasCtxPhrase = /(hôm nay|bài này|bản tin này|trụ cột này|today|current)/i.test(qLow);
-        if (explicitPids.length === 0 && (hasCtxPhrase || tokens.length === 0 || keywordScore === 0)) {
+        if (explicitPids.length === 0 && (hasCtxPhrase || !SearchRanking.hasTerms(query))) {
           if (App.selected && b.id === App.selected.id) score += 60;
           else if (App.selected && pid === Number(App.selected.pillar_id)) score += 45;
-        } else {
+        } else if (keywordScore > 0) {
           if (App.selected && b.id === App.selected.id) score += 4;
           else if (App.selected && pid === Number(App.selected.pillar_id)) score += 2;
         }
