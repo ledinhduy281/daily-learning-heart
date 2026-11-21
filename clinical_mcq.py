@@ -90,11 +90,13 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         ] + [(f'This changes the documented parameter from {variants[0][1]} to {r}; the briefing does not support that value for this statement.' if en else
               f'Lựa chọn này đổi thông số được ghi nhận từ {variants[0][1]} thành {r}; bản tin không nêu giá trị này cho nhận định trên.') for _, r in variants[1:]]
     types = ['correct', 'numeric', 'numeric', 'numeric']
+    kind = 'fact' if candidates else 'appraisal'
     cards = rich_cards(primary, lang, alternatives)
     preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
     if preferred or cards:
         available = preferred or cards
         card = available[int(variant_idx) % len(available)]
+        kind = card['kind']
         question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
     seed = sum(ord(c) for c in str(primary.get('id', ''))) + int(slot_idx) * 17 + int(variant_idx) * 31
@@ -108,4 +110,5 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
+            'question_kind': kind, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}

@@ -20,6 +20,25 @@ class ClinicalMcqTests(unittest.TestCase):
         self.assertEqual(len(correct), 1)
         self.assertIn(correct[0]['text'], question['explanation'])
         self.assertIn(question['correct_key'], question['explanation'])
+        self.assertEqual(set(question['option_kinds']), set('ABCD'))
+        self.assertEqual(set(question['option_kinds'].values()), {question['question_kind']})
+        if question['question_kind'] in ('trial', 'guideline'):
+            self.assertTrue(all(':' in o['text'] for o in options))
+            self.assertTrue(all(o['text'].endswith('.') for o in options))
+            self.assertTrue(all(';' not in o['text'] for o in options))
+            self.assertNotIn('Xóa bỏ hoàn toàn định kiến', str(options))
+            if question['question_kind'] == 'guideline':
+                self.assertTrue(any(word in question['question'] for word in ('khuyến cáo', 'ngưỡng', 'guideline', 'threshold')))
+                self.assertEqual(len({o['text'].split(':')[0] for o in options}), 1)
+                self.assertTrue(all(o['text'].startswith(('Khuyến cáo: ', 'Recommendation: ')) for o in options))
+                self.assertNotIn('primary endpoint', str(options))
+                self.assertNotIn('Tiêu chí chính', str(options))
+                self.assertTrue(set(question['distractor_types'].values()) <= {'old_guideline', 'numeric'})
+            else:
+                self.assertTrue(any(word in question['question'] for word in ('thử nghiệm', 'trial')))
+                self.assertNotIn('Khuyến cáo: ', str(options))
+                self.assertNotIn('Recommendation: ', str(options))
+                self.assertNotIn('old_guideline', question['distractor_types'].values())
         for option in options:
             self.assertNotIn('...', option['text'])
             self.assertNotIn('…', option['text'])
@@ -91,7 +110,8 @@ class ClinicalMcqTests(unittest.TestCase):
             self.assertIn('old_guideline', guideline['distractor_types'].values())
             self.assertGreaterEqual(len(set(guideline['distractor_types'].values())), 2)
             old = pah['guideline_evolution']['steps'][0]
-            self.assertIn(old['desc_' + lang], str(guideline['options']))
+            self.assertTrue(all('mPAP' in o['text'] for o in guideline['options']))
+            self.assertTrue(any('≥ 25' in o['text'] for o in guideline['options']))
             self.assertIn(old['era_label_' + lang], guideline['explanation'])
         af = next(b for b in self.briefings if b['pillar_id'] == 6 and '-main' in b['id'])
         for lang in ('vi', 'en'):

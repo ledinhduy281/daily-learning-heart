@@ -19,16 +19,16 @@ const ClinicalDistractors = (() => {
     const traps=[];
     for (const t of trials) {
       const caution=clean(t['caution_'+suffix]),changed=safety(caution),source=t.name||'';
-      if (changed) traps.push(['safety',`${source}: ${changed}`,en?`This reverses the safety instruction for ${source}: ${caution}`:`Lựa chọn này đảo ngược lưu ý an toàn của ${source}: ${caution}`]);
+      if (changed) traps.push(['safety',`${source}: ${changed.split(';')[0].trim()}`,en?`This reverses the safety instruction for ${source}: ${caution}`:`Lựa chọn này đảo ngược lưu ý an toàn của ${source}: ${caution}`]);
     }
     for (const p of primary.pearls||[]) {
       const fact=clean(p['text_'+suffix]),changed=safety(fact);
-      if (changed) traps.push(['safety',changed,en?`The clinical pearl instead states: ${fact}`:`Điểm thực hành nêu điều ngược lại: ${fact}`]);
+      if (changed) traps.push(['safety',`${en?'Clinical practice':'Thực hành lâm sàng'}: ${changed.split(';')[0].trim()}`,en?`The clinical pearl instead states: ${fact}`:`Điểm thực hành nêu điều ngược lại: ${fact}`]);
     }
     for (const drug of Array.isArray(primary.drugs)?primary.drugs:[]) {
       if (!drug || typeof drug!=='object') continue;
       const fact=clean(drug['contraindication_'+suffix]||drug['caution_'+suffix]),changed=safety(fact),name=drug.name||'';
-      if (changed) traps.push(['safety',`${name}: ${changed}`,en?`${name}: ${fact}`:`Lưu ý của ${name}: ${fact}`]);
+      if (changed) traps.push(['safety',`${name}: ${changed.split(';')[0].trim()}`,en?`${name}: ${fact}`:`Lưu ý của ${name}: ${fact}`]);
     }
     function endpointSignature(label) {
       const patterns=[['death',/death|mortality|mace/i],['stroke',/stroke|mace/i],['mi',/infarction|\bmi\b|mace/i],['hf',/\bhf\b|heart failure/i],['bleeding',/bleed|barc/i],['function',/pvo2|functional|oxygen uptake/i],['quality',/kccq|quality/i],['rhythm',/af recurrence|procedural failure|ablation/i],['renal',/renal|kidney/i],['septal',/septal/i],['bp',/blood pressure|mmhg/i]];
@@ -36,10 +36,11 @@ const ClinicalDistractors = (() => {
     }
     function finish(kind,question,correct,source,distractors) {
       if (!correct) return;
+      correct=clean(correct).replace(/[.!?]+$/,'')+'.';
       const chosen=[],seen=new Set([normalized(correct)]);
       for (const distinct of [true,false]) {
         for (const [typ,raw,reason] of distractors) {
-          const text=clean(raw);
+          const text=clean(raw)?clean(raw).replace(/[.!?]+$/,'')+'.':'';
           if (!text || seen.has(normalized(text)) || (distinct && chosen.some(x=>x[0]===typ))) continue;
           chosen.push([typ,text,reason]);seen.add(normalized(text));
           if (chosen.length===3) break;
@@ -55,16 +56,18 @@ const ClinicalDistractors = (() => {
         if (chosen.length===3) break;
       }
       if (chosen.length!==3) return;
-      result.push({kind,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
+      result.push({kind,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
     }
     for (const t of trials) {
       const name=t.name||'',value=clean(t.value),fact=clean(t['changes_'+suffix]),endpoint=clean(t.endpoint_label);
       if (!name||!value||!fact) continue;
+      if (!endpoint) continue;
       const label=en?endpoint:(endpointVi[endpoint]||endpoint);
-      const correct=endpoint?(en?`The primary endpoint was “${label}” (${value}).`:`Tiêu chí chính là “${label}” (${value}).`):`${fact} (${value})`,distractors=[];
+      const claim=en?`The primary endpoint was “${label}” (${value}).`:`Tiêu chí chính là “${label}” (${value}).`;
+      const correct=`${name}: ${claim}`,distractors=[];
       for (const [population,other] of [['HFpEF','HFrEF'],['HFrEF','HFpEF']]) {
         if (new RegExp(`\\b${population}\\b`).test(fact) && !new RegExp(`\\b${other}\\b`).test(fact)) {
-          const wrong=`${fact} (${value})`.replace(new RegExp(`\\b${population}\\b`,'g'),other);
+          const wrong=en?`${name}: The reported result was ${value} in patients with ${other}.`:`${name}: Kết quả ${value} được ghi nhận ở bệnh nhân ${other}.`;
           distractors.push(['population',wrong,en?`This substitutes ${other} for the ${population} population described for ${name}.`:`Lựa chọn này đổi quần thể ${population} của ${name} thành ${other}.`]);
         }
       }
@@ -72,27 +75,40 @@ const ClinicalDistractors = (() => {
         const otherEndpoint=clean(other.endpoint_label);
         if (other!==t && endpointSignature(endpoint) && endpointSignature(otherEndpoint) && endpointSignature(otherEndpoint)!==endpointSignature(endpoint)) {
           const otherLabel=en?otherEndpoint:(endpointVi[otherEndpoint]||otherEndpoint);
-          const wrong=en?`${name}: the primary endpoint was “${otherLabel}” (${value}).`:`${name}: tiêu chí chính là “${otherLabel}” (${value}).`;
+          const wrong=en?`${name}: The primary endpoint was “${otherLabel}” (${value}).`:`${name}: Tiêu chí chính là “${otherLabel}” (${value}).`;
           const reason=en?`“${otherEndpoint}” belongs to ${other.name}; ${name} reports “${endpoint}”.`:`“${otherEndpoint}” là tiêu chí của ${other.name}; ${name} báo cáo “${endpoint}”.`;
           distractors.push(['endpoint',wrong,reason]);
         }
         if (other!==t && endpoint && clean(other.value) && other.value!==value) {
-          const wrong=`${other.name}: ${correct}`;
+          const wrong=`${other.name}: ${claim}`;
           const reason=en?`This attributes the ${name} result to ${other.name}, whose reported estimate is ${other.value}.`:`Lựa chọn này gán kết quả của ${name} cho ${other.name}; ước lượng được báo cáo của ${other.name} là ${other.value}.`;
           distractors.push(['trial_attribution',wrong,reason]);
         }
       }
       distractors.push(...traps);
-      let question=en?`Which statement correctly describes ${name}?`:`Nhận định nào đúng về thử nghiệm ${name}?`;
-      if (/\bHFpEF\b/.test(fact) && !fact.includes('HFrEF')) question=en?`A patient has HFpEF (LVEF 55%). Which statement about ${name} is correct?`:`Bệnh nhân suy tim EF 55%. Nhận định nào đúng về thử nghiệm ${name}?`;
+      let question=en?'Which statement about trial evidence and its clinical application is correct?':'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
+      if (/\bHFpEF\b/.test(fact) && !fact.includes('HFrEF')) question=en?'A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?':'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
       finish('trial',question,correct,name,distractors);
     }
     if (steps.length>=2) {
-      const old=steps[0],current=steps[steps.length-1],oldFact=clean(old['desc_'+suffix]),newFact=clean(current['desc_'+suffix]),oldEra=old['era_label_'+suffix]||'',currentEra=current['era_label_'+suffix]||'';
+      const old=steps[0],current=steps[steps.length-1],oldEra=old['era_label_'+suffix]||'',currentEra=current['era_label_'+suffix]||'';
+      let oldFact=clean(old['desc_'+suffix]),newFact=clean(current['desc_'+suffix]);
       if (oldFact && newFact && oldFact!==newFact) {
-        const question=en?'Which statement is the new practice update in the briefing’s final guideline stage?':'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?';
-        const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}). It may remain valid but is not the new development asked for.`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}). Nội dung này có thể vẫn đúng nhưng không phải bước cập nhật được hỏi.`]];
-        for (const card of result) for (let i=1;i<card.types.length;i++) if (['endpoint','safety','population','trial_attribution'].includes(card.types[i])) wrong.push([card.types[i],card.texts[i],card.reasons[i]]);
+        let question=en?'Which statement is the new practice update in the briefing’s final guideline stage?':'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?';
+        const threshold=/\b(mPAP|PVR|SBP|DBP|LVEF|EF|eGFR|LDL-C|HbA1c|K\+)\s*([<>≤≥]=?)\s*(\d+(?:[.,]\d+)?)\s*(mmHg|WU|%|mmol\/L|mg\/dL)?/gi;
+        const pairs=[];
+        for (const a of newFact.matchAll(threshold)) for (const b of oldFact.matchAll(threshold)) {
+          if (a[1].toLowerCase()===b[1].toLowerCase() && JSON.stringify(a.slice(2))!==JSON.stringify(b.slice(2))) pairs.push([a,b]);
+        }
+        const clause=text=>{const parts=text.split(/;|(?<=[.!?])\s+/);return (parts.find(p=>numericAlternatives(p))||parts[0]).trim();};
+        if (pairs.length) {
+          const [a,b]=pairs[0],parameter=m=>`${m[1]} ${m[2]} ${m[3]} ${m[4]||''}`.trim()+'.';
+          newFact=parameter(a);oldFact=parameter(b);
+          question=en?`According to ${currentEra}, which ${a[1]} threshold is recommended?`:`Theo ${currentEra}, ngưỡng ${a[1]} nào đúng?`;
+        } else {newFact=clause(newFact);oldFact=clause(oldFact);}
+        const prefix=en?'Recommendation: ':'Khuyến cáo: ';
+        newFact=prefix+newFact;oldFact=prefix+oldFact;
+        const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}).`]];
         finish('guideline',question,newFact,currentEra,wrong);
       }
     }

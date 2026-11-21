@@ -12,6 +12,23 @@ function check(q) {
   assert.equal(new Set(q.options.map(o=>quiz.normalized(o.text))).size,4);
   assert.ok(q.explanation.includes(q.options.find(o=>o.key===q.correct_key).text));
   assert.ok(q.explanation.includes(q.correct_key));
+  assert.deepEqual(Object.keys(q.option_kinds),['A','B','C','D']);
+  assert.ok(Object.values(q.option_kinds).every(k=>k===q.question_kind));
+  if (['trial','guideline'].includes(q.question_kind)) {
+    assert.ok(q.options.every(o=>o.text.includes(':') && !o.text.includes(';')));
+    assert.ok(q.options.every(o=>o.text.endsWith('.')));
+    assert.ok(q.options.every(o=>!o.text.includes('Xóa bỏ hoàn toàn định kiến')));
+    if (q.question_kind==='guideline') {
+      assert.ok(/khuyến cáo|ngưỡng|guideline|threshold/.test(q.question));
+      assert.equal(new Set(q.options.map(o=>o.text.split(':')[0])).size,1);
+      assert.ok(q.options.every(o=>/^(Khuyến cáo|Recommendation): /.test(o.text) && !/primary endpoint|Tiêu chí chính/.test(o.text)));
+      assert.ok(Object.values(q.distractor_types).every(t=>['old_guideline','numeric'].includes(t)));
+    } else {
+      assert.ok(/thử nghiệm|trial/.test(q.question));
+      assert.ok(q.options.every(o=>!/^(Khuyến cáo|Recommendation): /.test(o.text)));
+      assert.ok(!Object.values(q.distractor_types).includes('old_guideline'));
+    }
+  }
   for (const o of q.options) assert.ok(!o.text.includes('...') && !o.text.includes('…'));
   letters.add(q.correct_key);
 }

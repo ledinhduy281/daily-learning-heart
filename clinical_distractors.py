@@ -44,6 +44,7 @@ def rich_cards(primary, lang, numeric_alternatives):
         caution = clean(t.get('caution_' + suffix))
         changed = safety(caution)
         if changed:
+            changed = changed.split(';')[0].strip()
             source = t.get('name', '')
             traps.append(('safety', f'{source}: {changed}',
                           (f'This reverses the safety instruction for {source}: {caution}' if en else
@@ -52,7 +53,8 @@ def rich_cards(primary, lang, numeric_alternatives):
         fact = clean(p.get('text_' + suffix))
         changed = safety(fact)
         if changed:
-            traps.append(('safety', changed, (f'The clinical pearl instead states: {fact}' if en else f'Điểm thực hành nêu điều ngược lại: {fact}')))
+            changed = changed.split(';')[0].strip()
+            traps.append(('safety', f'{"Clinical practice" if en else "Thực hành lâm sàng"}: {changed}', (f'The clinical pearl instead states: {fact}' if en else f'Điểm thực hành nêu điều ngược lại: {fact}')))
     drugs = primary.get('drugs') or []
     for drug in drugs if isinstance(drugs, list) else []:
         if not isinstance(drug, dict):
@@ -60,6 +62,7 @@ def rich_cards(primary, lang, numeric_alternatives):
         fact = clean(drug.get('contraindication_' + suffix) or drug.get('caution_' + suffix))
         changed = safety(fact)
         if changed:
+            changed = changed.split(';')[0].strip()
             name = drug.get('name', '')
             traps.append(('safety', f'{name}: {changed}', (f'{name}: {fact}' if en else f'Lưu ý của {name}: {fact}')))
 
@@ -74,12 +77,15 @@ def rich_cards(primary, lang, numeric_alternatives):
     def finish(kind, question, correct, source, distractors):
         if not correct:
             return
+        correct = clean(correct).rstrip('.!?') + '.'
         chosen = []
         seen = {normalized(correct)}
         for distinct in (True, False):
             for item in distractors:
                 typ, text, reason = item
                 text = clean(text)
+                if text:
+                    text = text.rstrip('.!?') + '.'
                 if not text or normalized(text) in seen or (distinct and typ in [x[0] for x in chosen]):
                     continue
                 chosen.append((typ, text, reason))
@@ -101,7 +107,7 @@ def rich_cards(primary, lang, numeric_alternatives):
         if len(chosen) != 3:
             return
         cards.append({'kind': kind, 'question': question, 'texts': [correct] + [x[1] for x in chosen],
-                      'reasons': [(f'{source}: {correct}' if en else f'{source}: {correct}')] + [x[2] for x in chosen],
+                      'reasons': [correct if correct.startswith(f'{source}: ') else f'{source}: {correct}'] + [x[2] for x in chosen],
                       'types': ['correct'] + [x[0] for x in chosen]})
 
     for t in trials:
@@ -109,14 +115,18 @@ def rich_cards(primary, lang, numeric_alternatives):
         fact, endpoint = clean(t.get('changes_' + suffix)), clean(t.get('endpoint_label'))
         if not name or not value or not fact:
             continue
+        if not endpoint:
+            continue
         label = endpoint if en else ENDPOINT_VI.get(endpoint, endpoint)
-        correct = ((f'The primary endpoint was “{label}” ({value}).' if en else
-                    f'Tiêu chí chính là “{label}” ({value}).') if endpoint else f'{fact} ({value})')
+        claim = (f'The primary endpoint was “{label}” ({value}).' if en else
+                 f'Tiêu chí chính là “{label}” ({value}).')
+        correct = f'{name}: {claim}'
         distractors = []
         # These are explicit trial-population labels, not inferred age/sex or comorbidity criteria.
         for population, other in [('HFpEF', 'HFrEF'), ('HFrEF', 'HFpEF')]:
             if re.search(r'\b' + population + r'\b', fact) and not re.search(r'\b' + other + r'\b', fact):
-                wrong = re.sub(r'\b' + population + r'\b', other, f'{fact} ({value})')
+                wrong = (f'{name}: The reported result was {value} in patients with {other}.' if en else
+                         f'{name}: Kết quả {value} được ghi nhận ở bệnh nhân {other}.')
                 distractors.append(('population', wrong, (f'This substitutes {other} for the {population} population described for {name}.' if en else
                                                          f'Lựa chọn này đổi quần thể {population} của {name} thành {other}.')))
         for other in trials:
@@ -124,21 +134,22 @@ def rich_cards(primary, lang, numeric_alternatives):
             if (other is not t and endpoint_signature(endpoint) and endpoint_signature(other_endpoint)
                     and endpoint_signature(other_endpoint) != endpoint_signature(endpoint)):
                 other_label = other_endpoint if en else ENDPOINT_VI.get(other_endpoint, other_endpoint)
-                wrong = (f'{name}: the primary endpoint was “{other_label}” ({value}).' if en else
-                         f'{name}: tiêu chí chính là “{other_label}” ({value}).')
+                wrong = (f'{name}: The primary endpoint was “{other_label}” ({value}).' if en else
+                         f'{name}: Tiêu chí chính là “{other_label}” ({value}).')
                 reason = (f'“{other_endpoint}” belongs to {other.get("name")}; {name} reports “{endpoint}”.' if en else
                           f'“{other_endpoint}” là tiêu chí của {other.get("name")}; {name} báo cáo “{endpoint}”.')
                 distractors.append(('endpoint', wrong, reason))
             if other is not t and endpoint and clean(other.get('value')) and other.get('value') != value:
-                wrong = f'{other.get("name")}: {correct}'
+                wrong = f'{other.get("name")}: {claim}'
                 reason = (f'This attributes the {name} result to {other.get("name")}, whose reported estimate is {other.get("value")}.' if en else
                           f'Lựa chọn này gán kết quả của {name} cho {other.get("name")}; ước lượng được báo cáo của {other.get("name")} là {other.get("value")}.')
                 distractors.append(('trial_attribution', wrong, reason))
         distractors.extend(traps)
-        question = f'Which statement correctly describes {name}?' if en else f'Nhận định nào đúng về thử nghiệm {name}?'
+        question = ('Which statement about trial evidence and its clinical application is correct?' if en else
+                    'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
         if re.search(r'\bHFpEF\b', fact) and 'HFrEF' not in fact:
-            question = (f'A patient has HFpEF (LVEF 55%). Which statement about {name} is correct?' if en else
-                        f'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về thử nghiệm {name}?')
+            question = ('A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?' if en else
+                        'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
         finish('trial', question, correct, name, distractors)
 
     if len(steps) >= 2:
@@ -149,12 +160,24 @@ def rich_cards(primary, lang, numeric_alternatives):
         if old_fact and new_fact and old_fact != new_fact:
             question = ('Which statement is the new practice update in the briefing’s final guideline stage?' if en else
                         'Trong tiến trình khuyến cáo của bản tin, đâu là cập nhật thực hành ở giai đoạn mới nhất?')
-            wrong = [('old_guideline', old_fact, (f'This describes the earlier stage ({old_era}), not the new update ({current_era}). It may remain valid but is not the new development asked for.' if en else
-                      f'Đây là nội dung giai đoạn trước ({old_era}), không phải cập nhật mới ({current_era}). Nội dung này có thể vẫn đúng nhưng không phải bước cập nhật được hỏi.'))]
-            # Explicitly wrong trial/endpoint attribution is not a competing valid guideline statement.
-            for card in cards:
-                for typ, text, reason in zip(card['types'][1:], card['texts'][1:], card['reasons'][1:]):
-                    if typ in ('endpoint', 'safety', 'population', 'trial_attribution'):
-                        wrong.append((typ, text, reason))
+            threshold = re.compile(r'\b(mPAP|PVR|SBP|DBP|LVEF|EF|eGFR|LDL-C|HbA1c|K\+)\s*([<>≤≥]=?)\s*(\d+(?:[.,]\d+)?)\s*(mmHg|WU|%|mmol/L|mg/dL)?', re.I)
+            pairs = [(a, b) for a in threshold.finditer(new_fact) for b in threshold.finditer(old_fact)
+                     if a[1].lower() == b[1].lower() and a.groups()[1:] != b.groups()[1:]]
+            def clause(text):
+                parts = re.split(r';|(?<=[.!?])\s+', text)
+                return next((p.strip() for p in parts if numeric_alternatives(p)), parts[0].strip())
+            if pairs:
+                current_match, old_match = pairs[0]
+                def parameter(m):
+                    return f'{m[1]} {m[2]} {m[3]} {m[4] or ""}'.strip() + '.'
+                new_fact, old_fact = parameter(current_match), parameter(old_match)
+                question = (f'According to {current_era}, which {current_match[1]} threshold is recommended?' if en else
+                            f'Theo {current_era}, ngưỡng {current_match[1]} nào đúng?')
+            else:
+                new_fact, old_fact = clause(new_fact), clause(old_fact)
+            prefix = 'Recommendation: ' if en else 'Khuyến cáo: '
+            new_fact, old_fact = prefix + new_fact, prefix + old_fact
+            wrong = [('old_guideline', old_fact, (f'This describes the earlier stage ({old_era}), not the new update ({current_era}).' if en else
+                      f'Đây là nội dung giai đoạn trước ({old_era}), không phải cập nhật mới ({current_era}).'))]
             finish('guideline', question, new_fact, current_era, wrong)
     return cards
