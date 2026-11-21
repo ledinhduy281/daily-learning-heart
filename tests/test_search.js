@@ -32,5 +32,14 @@ for (const q of ['rung nhĩ','rung nhi','AF']) {
   assert.equal(tutor.scoreBriefing(hypertension,q),noContext.scoreBriefing(hypertension,q));
 }
 for (const q of ['','the','today']) assert.equal(tutor.scoreBriefing(hypertension,q)-noContext.scoreBriefing(hypertension,q),60);
+const afTutor=vm.runInNewContext(`({${html.slice(start,end)}})`,{SearchRanking:require('../search_ranking.js'),App:{selected:af}});
+for (const q of ['tóm tắt','tom tat','giải thích cho tôi','hỏi bài bản tin là gì như thế nào','summarize','summary','explain','tell me please']) {
+  assert.ok(data.every(b=>score(b,q)===0),q);
+  assert.equal([...data].sort((a,b)=>afTutor.scoreBriefing(b,q)-afTutor.scoreBriefing(a,q))[0].id,af.id,q);
+}
+for (const q of ['tóm tắt rung nhĩ','please explain AF']) {
+  assert.ok(score(af,q)>0);
+  assert.equal(score({title_en:'hypertension'},q),0);
+}
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
 console.log('JS search tests and SPA syntax: OK');

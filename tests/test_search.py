@@ -38,6 +38,18 @@ class SearchTests(unittest.TestCase):
         self.assertIn('2022:2026[dp]', q)
         self.assertNotIn('AND 2026[dp]', q)
 
+    def test_generic_requests_use_active_briefing(self):
+        data = app.load_existing_briefings()
+        af = next(b for b in data if b['pillar_id'] == 6 and '-main' in b['id'])
+        for query in ('tóm tắt', 'tom tat', 'giải thích cho tôi', 'hỏi bài bản tin là gì như thế nào',
+                      'summarize', 'summary', 'explain', 'tell me please'):
+            self.assertTrue(all(score(b, query) == 0 for b in data), query)
+            ranked = sorted(data, key=lambda b: app._score_briefing_for_chat(b, query, af['id'], 6), reverse=True)
+            self.assertEqual(ranked[0]['id'], af['id'], query)
+        for query in ('tóm tắt rung nhĩ', 'please explain AF'):
+            self.assertGreater(score(af, query), 0)
+            self.assertEqual(score({'title_en': 'hypertension'}, query), 0)
+
     def test_unrelated_active_briefing_cannot_override_keyword_match(self):
         data = app.load_existing_briefings()
         hypertension = next(b for b in data if b['pillar_id'] == 1 and '-main' in b['id'])

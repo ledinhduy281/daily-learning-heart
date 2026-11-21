@@ -23,7 +23,7 @@ CONCEPTS = [
     ('intervention', 'Angiotensin Receptor Antagonists', ['arni', 'angiotensin receptor neprilysin inhibitor', 'sacubitril valsartan']),
     ('intervention', '', ['gdmt', 'guideline directed medical therapy', 'dieu tri noi khoa toi uu']),
 ]
-STOP = set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri'.split())
+STOP = set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri tom tat giai thich toi hoi bai ban tin gi nhu the nao summarize summary explain tell me please'.split())
 
 
 def contains(text, phrase):

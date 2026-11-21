@@ -12,7 +12,7 @@ const SearchRanking = (() => {
     ['arni', 'angiotensin receptor neprilysin inhibitor', 'sacubitril valsartan'],
     ['gdmt', 'guideline directed medical therapy', 'dieu tri noi khoa toi uu']
   ];
-  const stop = new Set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri'.split(' '));
+  const stop = new Set('the and or for with what how why about this that in of to a an la va cho cua ve co moi nhat dieu tri tom tat giai thich toi hoi bai ban tin gi nhu the nao summarize summary explain tell me please'.split(' '));
   const contains = (s, p) => (` ${s.replace(/[^a-z0-9]+/g, ' ')} `).includes(` ${p.replace(/[^a-z0-9]+/g, ' ')} `);
   function terms(query) {
     let q = normalize(query);
