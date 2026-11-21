@@ -7897,11 +7897,6 @@
       currentSessionId: "",
       messages: [],
 
-      _k() {
-        const a = [46, 58, 34, 22, 8, 36, 59, 49, 120, 37, 12, 58, 60, 14, 125, 37, 2, 2, 33, 17, 32, 121, 37, 60, 30, 14, 45, 48, 43, 122, 15, 16, 31, 14, 43, 12, 43, 8, 44, 49, 3, 27, 45, 43, 32, 1, 31, 44, 127, 40, 40, 1, 57, 58, 26, 61];
-        return a.map((x) => String.fromCharCode(x ^ 73)).join("");
-      },
-
       init() {
         this.loadQuota();
         this.loadVerbosity();
@@ -8897,124 +8892,6 @@
         return { markdown: this.ensureCompleteSentence(parts.join("\n")), sources };
       },
 
-      async callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory = [], verbosity = "medium") {
-        const key = this._k();
-        if (!key) return { text: "", engine: "", blockedBanner: "" };
-
-        const todayStr = getLocalIsoDate();
-        if (this.quota.date !== todayStr) {
-          this.quota = { date: todayStr, used: 0, limit: this.dailyLimit || 500, exhausted: false, stop_reason: "" };
-        }
-        if (this.quota.exhausted || this.quota.used >= this.quota.limit) {
-          const banner = lang === "en"
-            ? `> ⚠️ **LLM API paused for today (${this.quota.used}/${this.quota.limit} turns used)** to stay strictly within your daily cap. Below is the direct lookup from EBM & NCBI PubMed:\n\n`
-            : `> ⚠️ **Đã dừng gọi API LLM hôm nay (${this.quota.used}/${this.quota.limit} lượt)** để đảm bảo không vượt hạn mức. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`;
-          return { text: "", engine: "", blockedBanner: banner };
-        }
-
-        // Consume 1 turn BEFORE calling external API so strict cap is never exceeded
-        this.quota.used += 1;
-        if (this.quota.used >= this.quota.limit) {
-          this.quota.exhausted = true;
-          this.quota.stop_reason = "Daily cap reached";
-        }
-        this.persistLocalQuota();
-
-        const botName = lang === "en" ? "Med Bro" : "Soái ca Y khoa";
-        const siteName = lang === "en" ? "Daily Learning Heart" : "Xem Tim Mỗi Ngày";
-        const vNorm = ["short", "medium", "detailed"].includes(String(verbosity || "").toLowerCase())
-          ? String(verbosity).toLowerCase()
-          : "medium";
-        const mcqOpts = this.extractPastedMcqOptions(query);
-        const wantsDetail = this.wantsDetailedExplanation(query);
-        const effLevel = (vNorm === "detailed" || (vNorm === "medium" && wantsDetail)) ? "detailed" : vNorm;
-        let mcqRule = "";
-        if (mcqOpts) {
-          if (effLevel === "short") {
-            mcqRule = `MCQ OVERRIDE + SHORT MODE: The user pasted a multiple-choice question (A/B/C/D). Start immediately with ${lang === "en" ? "'<Letter>, because <1 short crisp reason>.'" : "'<Chữ cái A/B/C/D>, vì <1 lý do cốt lõi ngắn gọn>.'"} STRICT LIMIT: 20-55 words total (1-2 short sentences max). No bullet lists.\n`;
-          } else if (effLevel === "detailed") {
-            mcqRule = `MCQ OVERRIDE + DETAILED MODE: Start immediately on line 1 with ${lang === "en" ? "'<Letter>, because <core reason>.'" : "'<Chữ cái A/B/C/D>, vì <lý do cốt lõi>.'"} then write a structured breakdown (220-340 words) with short bullet points covering guideline criteria, RCT numbers (HR/CI/p), why distractors fail, and bedside safety checks. End cleanly on a complete sentence.\n`;
-          } else {
-            mcqRule = `MCQ OVERRIDE + MEDIUM MODE: Start immediately with ${lang === "en" ? "'<Letter>, because <core reason>.'" : "'<Chữ cái A/B/C/D>, vì <lý do cốt lõi>.'"} followed by 1-2 short supporting sentences (70-120 words total) tying to the 2026 Guideline/RCT and briefly noting why the main trap fails.\n`;
-          }
-        } else {
-          if (effLevel === "short") {
-            mcqRule = "SHORT RESPONSE MODE: Give the exact core clinical answer immediately in 1-3 short, crisp sentences (35-75 words total). Include key drug/threshold or RCT stat if directly asked; avoid long lists or filler. Always finish on a complete sentence.\n";
-          } else if (effLevel === "detailed") {
-            mcqRule = "DETAILED CLINICAL MODE: Put the exact core answer first, then provide a rich, structured clinical breakdown (250-380 words) using short bullet points covering mechanism, prior-vs-2026 guideline shifts, landmark RCT metrics (HR/CI/p), and bedside safety/monitoring checks. Always finish cleanly on a complete sentence.\n";
-          } else {
-            mcqRule = "MEDIUM CLINICAL DEPTH: Put the exact core clinical answer directly in the first sentence, then expand with 3-4 concise bullet points (130-210 words total) covering guideline shifts, RCT metrics (HR/CI/p), and bedside contraindications/safety. Always finish on a complete sentence.\n";
-          }
-        }
-
-        const sysPrompt = `You are '${botName}', a direct yet thorough Cardiology EBM assistant inside '${siteName}'.\n${mcqRule}STRICT SCOPE: Answer cardiology, medicine, pharmacology, guidelines, or medical follow-ups; decline off-topic in 1 short sentence. NEVER output 'Lỗi: ngữ cảnh chỉ chứa...' or refuse a Cardiology Pillar question. If user asks for plain/non-medical terms ('không biết gì về y khoa', 'dễ hiểu'), explain warmly using everyday metaphors (200-320 words). TERMINOLOGY: Translate 'white-coat' = 'tăng huyết áp áo choàng trắng'. Never invent PMIDs/stats. Reply in ${lang === "en" ? "clear academic English. /no_think" : "clear, structured clinical Vietnamese. /no_think"}`;
-
-        const stepsCompact = (primary.guideline_evolution?.steps || []).slice(-3).map((s) => ({
-          title: lang === "en" ? s.title_en : s.title_vi,
-          desc: ((lang === "en" ? s.desc_en : s.desc_vi) || "").slice(0, 150)
-        }));
-        const trialsCompact = (primary.landmark_trials || []).slice(0, 2).map((t) => ({
-          name: t.name, value: t.value, p: t.p,
-          changes: ((lang === "en" ? t.changes_en : t.changes_vi) || "").slice(0, 150),
-          caution: ((lang === "en" ? t.caution_en : t.caution_vi) || "").slice(0, 150)
-        }));
-        const pearlsCompact = (primary.pearls || []).slice(0, 3).map((p) => ((lang === "en" ? p.text_en : p.text_vi) || "").slice(0, 150));
-        const pmCompact = (pubmedHits || []).map((p) => ({
-          pmid: p.pmid, title: p.title, pubdate: p.pubdate, snippet: (p.snippet || "").slice(0, 150)
-        }));
-        const ctx = `PILLAR #${primary.pillar_id}: ${primary.pillar_vi}
-GUIDELINE: ${JSON.stringify(primary.guideline_evolution?.current_guideline || {})}
-STEPS: ${JSON.stringify(stepsCompact)}
-TRIALS: ${JSON.stringify(trialsCompact)}
-PEARLS: ${JSON.stringify(pearlsCompact)}
-OPENFDA: ${JSON.stringify(fdaNote)}
-PUBMED: ${JSON.stringify(pmCompact)}
-EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdown) || "").slice(0, 900)}`;
-        const userInput = `CONTEXT:\n${ctx}\n\nQUESTION:\n${query}`;
-
-        try {
-          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${key}`
-            },
-            body: JSON.stringify({
-              model: "qwen/qwen3.8-27b",
-              messages: [
-                { role: "system", content: sysPrompt },
-                ...(Array.isArray(priorHistory) ? priorHistory : []),
-                { role: "user", content: userInput }
-              ],
-              temperature: 0.15,
-              max_tokens: 1500
-            })
-          });
-          if (res.status === 429 || res.status === 402 || res.status === 403) {
-            let errBody = "";
-            try { errBody = (await res.text()).toLowerCase(); } catch (_) {}
-            const isTransientTpm = res.status === 429 && /(per minute|tpm|rpm|tokens per minute|requests per minute)/.test(errBody) && !/(per day|tpd|rpd)/.test(errBody);
-            if (!isTransientTpm) {
-              this.quota.exhausted = true;
-              this.quota.stop_reason = `HTTP ${res.status}`;
-              this.persistLocalQuota();
-              return {
-                text: "",
-                engine: "",
-                blockedBanner: `> ⚠️ **Đã ngắt kết nối API LLM hôm nay (HTTP ${res.status})** để bảo vệ hạn mức tài khoản. Dưới đây là kết quả tra cứu trực tiếp từ kho EBM & NCBI PubMed:\n\n`
-              };
-            }
-            return { text: "", engine: "", blockedBanner: "" };
-          }
-          if (!res.ok) return { text: "", engine: "", blockedBanner: "" };
-          const d = await res.json();
-          const txt = this.ensureCompleteSentence(d.choices?.[0]?.message?.content || "");
-          return { text: txt, engine: `${botName} • AI + EBM`, blockedBanner: "" };
-        } catch (_) {
-          return { text: "", engine: "", blockedBanner: "" };
-        }
-      },
-
       async sendQuestion(query) {
         this.isBusy = true;
         Dom.btnSendChat.disabled = true;
@@ -9079,7 +8956,7 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             } catch (_) {}
           }
 
-          // Client-side engine (GitHub Pages & Mobile PWA — Background Groq AI + EBM + PubMed + OpenFDA)
+          // Client-side engine (GitHub Pages & Mobile PWA — EBM + PubMed + OpenFDA)
           const priorUsers = priorHistory.filter((m) => m.role === "user").map((m) => m.content);
           const searchQuery = (!_SC_MEDICAL_RE.test(query) && priorUsers.length > 0)
             ? `${priorUsers[priorUsers.length - 1]} ${query}`.trim()
@@ -9097,15 +8974,11 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
             this.fetchLivePubMedAbstracts(searchQuery, primary),
             this.fetchOpenFdaDrugNote(searchQuery)
           ]);
-          const llmOut = await this.callQuotaGuardedClientLLM(query, primary, pubmedHits, fdaNote, lang, priorHistory, this.verbosity || "medium");
           const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium");
-          const finalMd = llmOut.text ? llmOut.text : ((llmOut.blockedBanner || "") + det.markdown);
-          const engineLabel = llmOut.text
-            ? llmOut.engine
-            : (fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`);
+          const engineLabel = fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`;
 
           typingEl.remove();
-          this.appendMessage("assistant", finalMd, det.sources, engineLabel);
+          this.appendMessage("assistant", det.markdown, det.sources, engineLabel);
         } catch (err) {
           typingEl.remove();
           this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
@@ -9957,7 +9830,6 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
 
       async runClientSocratic(primary, sess, action, userAnswer, lang, selectedChoice = "") {
         const isEn = lang === "en";
-        const key = window.EbmChat ? EbmChat._k() : "";
         let choice = String(selectedChoice || "").trim().toUpperCase();
         if (!choice && userAnswer) {
           const mCh = String(userAnswer).trim().match(/^([ABCD])(?:\b|[\.\:\)])/i);
@@ -9982,69 +9854,6 @@ EXCERPT: ${((lang === "en" ? primary.part2_en_markdown : primary.part1_vi_markdo
           options: [],
           correct_key: ""
         };
-
-        if (key && window.EbmChat && !(EbmChat.quota.exhausted || EbmChat.quota.used >= EbmChat.quota.limit)) {
-          EbmChat.quota.used += 1;
-          if (EbmChat.quota.used >= EbmChat.quota.limit) {
-            EbmChat.quota.exhausted = true;
-            EbmChat.quota.stop_reason = "Daily cap reached";
-          }
-          EbmChat.persistLocalQuota();
-
-          const botName = isEn ? "Med Bro" : "Soái ca Y khoa";
-          const trialsCompact = (primary?.landmark_trials || []).slice(0, 3).map((t) => ({
-            name: t.name, value: t.value, p: t.p,
-            changes: (isEn ? t.changes_en : t.changes_vi || "").slice(0, 200),
-            caution: (isEn ? t.caution_en : t.caution_vi || "").slice(0, 200)
-          }));
-          const sysPrompt = `You are '${botName}' acting as a strict Multiple-Choice Socratic Cardiology Tutor (maieutic method, 4 options A/B/C/D). Rules: 1) NO greetings, NO theatrical banter, NO flattery, NEVER mix random foreign words (strictly standard ${isEn ? "English only" : "Vietnamese + standard medical acronyms only"}). 2) Output feedback + ONE sharp MCQ stem in the prose body; NEVER list A/B/C/D options in prose because the UI renders meta.options as buttons. 3) When ACTION=='answer' and PREV_CORRECT_KEY is given, trust IS_CHOICE_CORRECT (true->eval:'correct', false->eval:'wrong'). 4) Diagnostic phase: place previous choice briefly, ask 1 probing MCQ for subskills[diag_step], transition to 'loop' after diag_step 3. 5) Teaching loop: if wrong and action!='just_tell_me' and attempts<2, explain why the chosen trap fails WITHOUT revealing PREV_CORRECT_KEY, then ask a narrower MCQ; only reveal PREV_CORRECT_KEY when action=='just_tell_me' or attempts>=2, then re-test from a new angle. If right, play devil's advocate with an edge-case MCQ. 6) When all 4 subskills>=4 run final_exam MCQ; if passed set phase:'mastered' and options:[]. 7) Vary correct_key across A/B/C/D. Translate white-coat = áo choàng trắng. Last line MUST be exact JSON: <socratic_meta>{"eval":"start|correct|wrong|partial","new_level":0,"next_focus":0,"phase":"diagnostic|loop|final_exam|mastered","correct_key":"A|B|C|D","options":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}]}</socratic_meta> /no_think`;
-          const userMsg = `STATE:${JSON.stringify({ phase: sess.phase, diag_step: sess.diag_step, focus_idx: sess.focus_idx, difficulty: sess.difficulty, attempts: sess.attempts_on_current, subskills: sess.subskills })}\nACTION:${action}\nUSER_SELECTED_CHOICE:${choice || "(none)"}\nPREV_CORRECT_KEY:${prevCorrectKey || "(none)"}\nIS_CHOICE_CORRECT:${JSON.stringify(isChoiceCorrect)}\nPREV_Q:${sess.last_question}\nUSER_ANS:${userAnswer || "(start)"}\nGUIDELINE:${JSON.stringify(primary?.guideline_evolution?.current_guideline || {})}\nTRIALS:${JSON.stringify(trialsCompact)}\nEXCERPT:${((isEn ? primary?.part2_en_markdown : primary?.part1_vi_markdown) || "").slice(0, 700)}`;
-          try {
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-              body: JSON.stringify({
-                model: "qwen/qwen3.8-27b",
-                messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userMsg }],
-                temperature: 0.2,
-                max_tokens: 900
-              })
-            });
-            if (res.ok) {
-              const d = await res.json();
-              let raw = String(d.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-              const m = raw.match(/<socratic_meta>\s*(\{[\s\S]*?\})\s*<\/socratic_meta>/);
-              if (m) {
-                try { meta = { ...meta, ...JSON.parse(m[1]) }; } catch (_) {}
-                raw = raw.slice(0, m.index).trim();
-              }
-              let normOpts = this.normalizeMcqOptions(meta.options);
-              if (!normOpts.length) normOpts = this.parseInlineMcqFromText(raw);
-              const ckey = String(meta.correct_key || "").trim().toUpperCase().slice(0, 1);
-              const metaPhase = String(meta.phase || sess.phase).toLowerCase();
-              if (metaPhase === "mastered" && action === "answer" && isChoiceCorrect) {
-                reply = this.stripDuplicateMcqLines(raw);
-                meta.options = [];
-                meta.correct_key = "";
-              } else if (normOpts.length === 4 && ["A", "B", "C", "D"].includes(ckey)) {
-                reply = this.stripDuplicateMcqLines(raw);
-                meta.options = normOpts;
-                meta.correct_key = ckey;
-              } else {
-                reply = "";
-              }
-            } else {
-              let errTxt = "";
-              try { errTxt = (await res.text()).toLowerCase(); } catch (_) {}
-              const isTransientTpm = res.status === 429 && /(per minute|tpm|rpm|tokens per minute|requests per minute)/.test(errTxt) && !/(per day|tpd|rpd)/.test(errTxt);
-              if (res.status === 402 || res.status === 403 || (res.status === 429 && !isTransientTpm)) {
-                EbmChat.quota.exhausted = true;
-                EbmChat.quota.stop_reason = `HTTP ${res.status}`;
-                EbmChat.persistLocalQuota();
-              }
-            }
-          } catch (_) {}
-        }
 
         if (!reply) {
           const diff = sess.difficulty || "normal";
