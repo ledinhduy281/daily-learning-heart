@@ -66,7 +66,8 @@ const DeviceProfile = (() => {
   function reconcile(base, local, latest) {
     const next = {...latest, progress: {...latest.progress}};
     if (local.display_name !== base.display_name) next.display_name = local.display_name;
-    next.read_ids = [...new Set([...latest.read_ids, ...local.read_ids.filter(id => !base.read_ids.includes(id))])];
+    const unread = new Set(base.read_ids.filter(id => !local.read_ids.includes(id)));
+    next.read_ids = [...new Set([...latest.read_ids.filter(id => !unread.has(id)), ...local.read_ids.filter(id => !base.read_ids.includes(id))])];
     const removed = new Set(base.bookmarked_ids.filter(id => !local.bookmarked_ids.includes(id)));
     const added = local.bookmarked_ids.filter(id => !base.bookmarked_ids.includes(id));
     next.bookmarked_ids = [...new Set([...latest.bookmarked_ids.filter(id => !removed.has(id)), ...added])];

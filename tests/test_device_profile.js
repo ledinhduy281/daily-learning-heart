@@ -158,8 +158,9 @@ assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'app
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
   const legacyStorage = new Storage({ebm_auth_token:'old-session'});
-  const replacement = create(legacyStorage, crypto), staleTab = create(legacyStorage, crypto);
+  const replacement = create(legacyStorage, crypto);
   replacement.activity(['legacy-lesson'], []);
+  const staleTab = create(legacyStorage, crypto);
   replacement.importJSON(JSON.stringify({...JSON.parse(backup), read_ids:[], bookmarked_ids:[], progress:{}}), 'replace');
   assert.equal(replacement.get('ebm_legacy_server_migrated'),'1');
   assert.equal(legacyStorage.getItem('ebm_auth_token'),null);
