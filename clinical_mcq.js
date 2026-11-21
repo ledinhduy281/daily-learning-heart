@@ -51,9 +51,12 @@ const ClinicalQuiz = (() => {
       kind=card.kind;
       ({question,texts,reasons,types}=card);
     }
-    let seed=Array.from(String(primary.id||'')).reduce((n,c)=>n+c.codePointAt(0),0)+slotIdx*17+variantIdx*31;
+    const briefingSeed=Array.from(String(primary.id||'')).reduce((n,c)=>n+c.codePointAt(0),0);
+    let seed=briefingSeed+slotIdx*17+variantIdx*31;
     const order=[0,1,2,3];
-    for (let i=3;i>0;i--) {seed=(seed*1664525+1013904223)>>>0;const j=seed%(i+1);[order[i],order[j]]=[order[j],order[i]];}
+    for (let i=3;i>0;i--) {seed=(seed*1664525+1013904223)>>>0;const j=(seed>>>16)%(i+1);[order[i],order[j]]=[order[j],order[i]];}
+    const target=(briefingSeed+variantIdx)%4,correctPosition=order.indexOf(0);
+    [order[target],order[correctPosition]]=[order[correctPosition],order[target]];
     const options=order.map((n,i)=>({key:'ABCD'[i],text:texts[n]})),correct_key='ABCD'[order.indexOf(0)];
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
     return {question,options,correct_key,explanation,question_kind:kind,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};

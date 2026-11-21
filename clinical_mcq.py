@@ -99,12 +99,16 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         kind = card['kind']
         question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
-    seed = sum(ord(c) for c in str(primary.get('id', ''))) + int(slot_idx) * 17 + int(variant_idx) * 31
+    briefing_seed = sum(ord(c) for c in str(primary.get('id', '')))
+    seed = briefing_seed + int(slot_idx) * 17 + int(variant_idx) * 31
     order = [0, 1, 2, 3]
     for i in range(3, 0, -1):
         seed = (seed * 1664525 + 1013904223) % 4294967296
-        j = seed % (i + 1)
+        j = (seed >> 16) % (i + 1)
         order[i], order[j] = order[j], order[i]
+    target = (briefing_seed + int(variant_idx)) % 4
+    correct_position = order.index(0)
+    order[target], order[correct_position] = order[correct_position], order[target]
     options = [{'key': 'ABCD'[i], 'text': texts[n]} for i, n in enumerate(order)]
     correct_key = 'ABCD'[order.index(0)]
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]

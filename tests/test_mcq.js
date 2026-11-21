@@ -6,6 +6,12 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const b of briefings) for (const lang of ['vi','en']) {
+  let {state}=quiz.turn(b,{},lang,'start_diagnostic');
+  const keys=[];
+  for (let i=0;i<4;i++) {keys.push(state.correct_key);({state}=quiz.turn(b,state,lang,'answer','',state.correct_key));}
+  assert.equal(new Set(keys).size,4,`${b.id}: ${keys}`);
+}
 for (const lang of ['vi','en']) {
   const b=briefings.find(b=>b.id==='ebm-2026-08-25-p6-hist1'),q=quiz.build(b,0,0,lang);
   const correct=q.options.find(o=>o.key===q.correct_key).text;

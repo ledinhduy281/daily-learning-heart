@@ -7,6 +7,17 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_key_positions_vary_within_each_quiz(self):
+        from socratic_quiz import turn
+        for b in self.briefings:
+            for lang in ('vi', 'en'):
+                _, state, _ = turn(b, {}, lang, 'start_diagnostic')
+                keys = []
+                for _ in range(4):
+                    keys.append(state['correct_key'])
+                    _, state, _ = turn(b, state, lang, 'answer', selected_choice=state['correct_key'])
+                self.assertEqual(set(keys), set('ABCD'), (b['id'], lang, keys))
+
     def test_icd_threshold_retains_population_and_risk_criteria(self):
         b = next(b for b in self.briefings if b['id'] == 'ebm-2026-08-25-p6-hist1')
         for lang in ('vi', 'en'):
