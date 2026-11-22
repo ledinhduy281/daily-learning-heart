@@ -18,6 +18,7 @@ assert.equal(render('**bold with *italic***'), '<p><strong>bold with <em>italic<
 assert.equal(render('- Parent\n  * Child **bold**\n    1. Grandchild\n    2. Another\n  * Child two\n- Parent two'), '<ul><li>Parent<ul><li>Child <strong>bold</strong><ol><li>Grandchild</li><li>Another</li></ol></li><li>Child two</li></ul></li><li>Parent two</li></ul>');
 assert.equal(render('1. One\n2. Two\n\nParagraph\n* Star\n- Dash'), '<ol><li>One</li><li>Two</li></ol><p>Paragraph</p><ul><li>Star</li><li>Dash</li></ul>');
 assert.equal(render('- One\n  continuation\n\n  - Child\n\n- Two'), '<ul><li>One<br>continuation<ul><li>Child</li></ul></li><li>Two</li></ul>');
+assert.equal(render('3. Third\n4. Fourth'), '<ol start="3"><li>Third</li><li>Fourth</li></ol>');
 const sample = '**Chủ đề hôm nay:** Cập nhật ...\n\n- **Phân nhóm PE cấp AHA/ACC 2026 + hợp nhất PAD‑ĐMC (ESC 2024):**\n  - AHA/ACC 2026 đưa ra 4 mức độ ...\n  - ESC 2024 hợp nhất ...\n- **Sotatercept (STELLAR) – trụ cột thứ tư cho PAH:**\n  - Trial STELLAR ...\n\nNhững cập nhật này giúp ...';
 const sampleHtml = render(sample);
 assert.match(sampleHtml, /^<p><strong>Chủ đề hôm nay:<\/strong>/);

@@ -5236,8 +5236,10 @@
       const heading = (line) => /^ {0,3}(#{1,3})\s+(.+)$/.exec(line);
       let pos = 0;
       function list(indent) {
-        const tag = /\d/.test(marker(lines[pos])[2]) ? "ol" : "ul";
-        let result = `<${tag}>`;
+        const first = marker(lines[pos])[2];
+        const tag = /\d/.test(first) ? "ol" : "ul";
+        const start = tag === "ol" ? parseInt(first, 10) : 1;
+        let result = start !== 1 ? `<ol start="${start}">` : `<${tag}>`;
         while (pos < lines.length) {
           const item = marker(lines[pos]);
           if (!item || item[1].length !== indent || (/\d/.test(item[2]) ? "ol" : "ul") !== tag) break;
