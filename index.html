@@ -5318,7 +5318,10 @@
     }
 
     function initializeCloudSync() {
-      const status = code => { cloudStatus = code; renderCloudSync(); };
+      const status = code => {
+        cloudStatus = code; renderCloudSync();
+        if (["EMAIL_CONFIRMED", "EMAIL_CONFIRM_INVALID", "NOT_CONFIGURED"].includes(code)) showToast(document.getElementById("cloudSyncStatus").textContent);
+      };
       try {
         cloudSync = CloudSync.create({profile:deviceStore, endpoint:window.EBM_SYNC_ENDPOINT || "",
           storage:{getItem:key=>{try{return localStorage.getItem(key);}catch(_){return null;}},setItem:(key,value)=>localStorage.setItem(key,value)},

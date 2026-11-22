@@ -112,6 +112,7 @@ async function main() {
   await assert.rejects(failed.sync(),/offline/);assert.equal(statuses.at(-1),'SYNC_FAILED');failed.stop();
   const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');
   assert.ok(html.includes('id="cloudEmailSection" hidden'));
+  assert.match(html,/\["EMAIL_CONFIRMED", "EMAIL_CONFIRM_INVALID", "NOT_CONFIGURED"\]\.includes\(code\)\) showToast/);
   console.log('Cloud sync mocked push/pull/merge, revision retry, debounced writes, restore ID/URL, email privacy, disabled state and invalid/oversized profiles: OK');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
