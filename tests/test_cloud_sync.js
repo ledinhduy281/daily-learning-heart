@@ -155,6 +155,90 @@ async function main() {
     unsubscribe();sync.stop();
   }
   {
+    for(const initial of [null,'allowed','denied']) {
+      const storage=new Storage(),profile=DeviceProfile.create(new Storage(),webcrypto);
+      if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
+      storage.setItem=()=>{throw Error('Storage blocked');};
+      const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+      profile.activity(['session-only read'],[]);
+      assert.doesNotThrow(()=>sync.setConsent(false));
+      assert.equal(sync.consent,'denied');
+      const before=calls.length;await sync.sync();assert.equal(calls.length,before);
+      assert.doesNotThrow(()=>sync.setConsent(true));assert.equal(sync.consent,'allowed');
+      await sync.sync();assert.ok(records.get(sync.userId).profile.read_ids.includes('session-only read'));
+      assert.doesNotThrow(()=>sync.setConsent(false));assert.equal(sync.consent,'denied');sync.stop();
+    }
+    const profile=DeviceProfile.create(new Storage(),webcrypto);
+    const storage={getItem(){throw Error('Storage blocked');},setItem(){throw Error('Storage blocked');}};
+    const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    assert.doesNotThrow(()=>sync.setConsent(true));assert.equal(sync.consent,'allowed');
+    assert.doesNotThrow(()=>sync.setConsent(false));assert.equal(sync.consent,'denied');sync.stop();
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    profile.activity(['shared tab read'],[]);
+    const first=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    let releasePull,entered;
+    const pausedPull=new Promise(resolve=>releasePull=resolve),pulled=new Promise(resolve=>entered=resolve);
+    const second=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:60000,fetch:async(url,options)=>{
+      const response=await fetch(url,options);
+      if(JSON.parse(options.body).action==='pull') {entered();await pausedPull;}
+      return response;
+    }});
+    const before=calls.filter(q=>q.action==='push').length;
+    const inFlight=second.sync();await pulled;
+    first.setConsent(false);releasePull();
+    await assert.rejects(inFlight,/CONSENT_REQUIRED/);
+    assert.equal(second.consent,'denied');assert.equal(calls.filter(q=>q.action==='push').length,before);
+    const stopped=calls.length;await second.sync();second.schedule();
+    await new Promise(r=>setTimeout(r,30));assert.equal(calls.length,stopped);
+    first.setConsent(true);await second.sync();
+    assert.equal(second.consent,'allowed');assert.equal(calls.filter(q=>q.action==='push').length,before+1);
+    first.stop();second.stop();
+  }
+  {
+    for(const initial of [null,'denied','allowed']) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
+      const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:5});
+      const start=calls.length;
+      await sync.email('restore_request','test@example.test');
+      assert.equal(sync.consent,initial);assert.equal(storage.getItem(Cloud.CONSENT_KEY),initial);
+      assert.deepEqual(calls.slice(start).map(q=>q.action),['restore_request']);
+      if(initial!=='allowed') {
+        profile.activity(['still private'],[]);await sync.sync();
+        await new Promise(r=>setTimeout(r,30));assert.equal(calls.length,start+1);
+      }
+      sync.stop();
+    }
+  }
+  {
+    for(const initial of [null,'denied','allowed']) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
+      profile.activity(['restore local read'],[]);
+      let rejectMerge=false;
+      const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        if(rejectMerge)return {ok:true,text:async()=>JSON.stringify({ok:true,profile:{version:1},revision:1})};
+        return fetch(url,options);
+      }});
+      const priorId=sync.userId;
+      const start=calls.filter(q=>q.action==='push').length;
+      for(const viaLink of [false,true]) {
+        const missing='00000000-0000-4000-8000-000000000000';
+        await assert.rejects(viaLink?sync.start({url:'https://example.test/?restore='+missing,confirm:()=>true,replaceUrl:()=>{}}):sync.restore(missing),/BACKUP_NOT_FOUND/);
+        assert.equal(sync.consent,initial);assert.equal(storage.getItem(Cloud.CONSENT_KEY),initial);
+        assert.equal(sync.userId,priorId);assert.equal(storage.getItem('dlh_sync_baseline_v1'),null);
+      }
+      assert.equal(calls.filter(q=>q.action==='push').length,start);
+      rejectMerge=true;await assert.rejects(sync.restore(c.userId));assert.equal(sync.consent,initial);
+      rejectMerge=false;
+      await sync.start({url:'https://example.test/?restore='+c.userId,confirm:()=>true,replaceUrl:()=>{}});
+      assert.equal(sync.consent,'allowed');assert.equal(storage.getItem(Cloud.CONSENT_KEY),'allowed');
+      assert.ok(profile.profile.read_ids.includes('local'));sync.stop();
+    }
+  }
+  {
     const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
     const make=()=>Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:5});
     let sync=make();const start=calls.length;

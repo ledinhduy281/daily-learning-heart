@@ -14,11 +14,21 @@ const CloudSync = (() => {
     try {stored=storage.getItem(ID_KEY);}catch(_){}
     let id=uuid.test(stored||'')?validId(stored):validId(profile.profile.device_id),timer,queue=Promise.resolve(),lastSynced='';
     let baseline=null;
-    let consent=null,merging=false,blockedSnapshot=null;
-    try {const saved=storage.getItem(CONSENT_KEY);if(['allowed','denied'].includes(saved))consent=saved;}catch(_){}
+    let consent=null,storedConsent=null,sessionConsent=false,merging=false,blockedSnapshot=null;
+    function readConsent() {
+      try {
+        const value=storage.getItem(CONSENT_KEY),saved=['allowed','denied'].includes(value)?value:null;
+        if(!sessionConsent||saved!==storedConsent) {consent=saved;sessionConsent=false;}
+        storedConsent=saved;
+      } catch(_){}
+      return consent;
+    }
+    readConsent();
     function rememberConsent(allow) {
+      readConsent();
       consent=allow?'allowed':'denied';
-      storage.setItem(CONSENT_KEY,consent);
+      sessionConsent=true;
+      try {storage.setItem(CONSENT_KEY,consent);storedConsent=consent;sessionConsent=false;}catch(_){}
       clearTimeout(timer);
     }
     try {
@@ -28,7 +38,7 @@ const CloudSync = (() => {
     const status=code=>onStatus(code);
     async function request(action,fields={}) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
-      if(action==='push'&&consent!=='allowed')throw new Error('CONSENT_REQUIRED');
+      if(action==='push'&&readConsent()!=='allowed')throw new Error('CONSENT_REQUIRED');
       const body=JSON.stringify({action,...fields});
       if(bytes(body)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
@@ -56,12 +66,12 @@ const CloudSync = (() => {
     }
     async function exchange(target,adopt=false,force=false) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
-      if(consent!=='allowed')return;
+      if(!adopt&&readConsent()!=='allowed')return;
       let remote=await request('pull',{userId:target});
       if(adopt&&remote.profile==null)throw new Error('BACKUP_NOT_FOUND');
       let base=target===id?baseline:null;
       merge(remote.profile,base);
-      if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';}
+      if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';rememberConsent(true);}
       base=remote.profile;remember(target,base);
       for(let attempt=0;attempt<4;attempt++) {
         const text=profile.exportJSON(),data=JSON.parse(text);
@@ -87,7 +97,7 @@ const CloudSync = (() => {
     }
     function sync() {return enqueue(()=>exchange(id));}
     function schedule() {
-      if(!enabled||consent!=='allowed'||merging)return;
+      if(!enabled||readConsent()!=='allowed'||merging)return;
       clearTimeout(timer);
       timer=setTimeout(()=>{
         const text=profile.exportJSON();
@@ -96,11 +106,10 @@ const CloudSync = (() => {
     }
     const unsubscribe=profile.subscribe?profile.subscribe(schedule):()=>{};
     return {
-      enabled,get userId(){return id;},get consent(){return consent;},sync,schedule,
+      enabled,get userId(){return id;},get consent(){return readConsent();},sync,schedule,
       setConsent(allow) {rememberConsent(allow);status(allow?'SYNC_ALLOWED':'CONSENT_REQUIRED');if(allow){lastSynced='';schedule();}},
       restore(value) {
         const target=validId(value);
-        if(enabled)rememberConsent(true);
         return enqueue(()=>exchange(target,true));
       },
       async start({url,confirm,replaceUrl}) {
@@ -119,11 +128,11 @@ const CloudSync = (() => {
         if(restore!==null) {
           try {validId(restore);if(await confirm(restore))await this.restore(restore);}
           finally {parsed.searchParams.delete('restore');replaceUrl(parsed.href);}
-        } else if(enabled&&consent==='allowed')await sync();
+        } else if(enabled&&readConsent()==='allowed')await sync();
       },
       async email(action,email,lang='vi') {
         if(!['backup','restore_request'].includes(action)||typeof email!=='string'||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))throw new Error('INVALID_EMAIL');
-        if(enabled)rememberConsent(true);
+        if(enabled&&action==='backup')rememberConsent(true);
         return enqueue(async()=>{
           if(action==='backup')await exchange(id,false,true);
           await request(action,{userId:id,email:email.trim(),lang});
