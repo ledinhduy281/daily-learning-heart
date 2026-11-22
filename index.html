@@ -7682,7 +7682,6 @@
       },
 
       loadSessions() {
-        this.knownSessionIds ||= new Set();
         this.deletedSessionIds ||= new Set();
         try {
           const raw = safeStorageGet(CHAT_SESSIONS_KEY);
@@ -7690,7 +7689,6 @@
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed.length > 0) {
               this.sessions = parsed.filter((s) => s && s.id && Array.isArray(s.messages) && !this.deletedSessionIds.has(s.id));
-              this.sessions.forEach(s => this.knownSessionIds.add(s.id));
               if (this.sessions.length > 0) {
                 const latest = this.sessions.find(s => s.id === this.currentSessionId) || this.sessions[0];
                 this.currentSessionId = latest.id;
@@ -7707,18 +7705,16 @@
       },
 
       saveSessions() {
-        this.knownSessionIds ||= new Set(this.sessions.map(s => s.id));
         this.deletedSessionIds ||= new Set();
         try {
           const saved = JSON.parse(safeStorageGet(CHAT_SESSIONS_KEY) || 'null');
           if (Array.isArray(saved)) {
-            for (const session of saved) {
-              if (session && session.id && Array.isArray(session.messages) && !this.knownSessionIds.has(session.id) && !this.deletedSessionIds.has(session.id) && !this.sessions.some(s => s.id === session.id)) this.sessions.push(session);
-            }
+            const active = this.sessions.find(s => s.id === this.currentSessionId);
+            this.sessions = saved.filter(s => s && s.id && Array.isArray(s.messages) && s.id !== this.currentSessionId);
+            if (active) this.sessions.unshift(active);
           }
         } catch (_) {}
         this.sessions = this.sessions.filter(s => !this.deletedSessionIds.has(s.id));
-        this.sessions.forEach(s => this.knownSessionIds.add(s.id));
         const curIdx = this.sessions.findIndex((s) => s.id === this.currentSessionId);
         const firstUser = (this.messages || []).find((m) => m && m.role === "user" && String(m.markdownText || "").trim());
         const rawTitle = firstUser ? String(firstUser.markdownText).trim().replace(/\s+/g, " ") : "";
@@ -7798,7 +7794,6 @@
 
       deleteSession(sessionId) {
         if (this.isBusy) return;
-        this.knownSessionIds ||= new Set(this.sessions.map(s => s.id));
         this.deletedSessionIds ||= new Set();
         this.deletedSessionIds.add(sessionId);
         this.sessions = (this.sessions || []).filter((s) => s.id !== sessionId);
@@ -8481,6 +8476,7 @@
             : "### Soái ca Y khoa — Giới hạn Chuyên môn\n\nTôi là **Soái ca Y khoa**, trợ lý chuyên sâu về **Nội khoa Tim mạch & Y học Chứng cứ (EBM)**. Tôi xin phép **từ chối trả lời** các câu hỏi ngoài phạm vi y khoa để tiết kiệm tài nguyên hệ thống.\n\n*Bác sĩ có thể hỏi về: Guideline Tim mạch 08–11/2026, 10 Trụ cột chuyên khoa, thử nghiệm RCT bản lề, liều dùng – chống chỉ định thuốc tim mạch hoặc tra cứu PubMed.*";
           this.appendMessage("assistant", refusal, [], lang === "en" ? "Med Bro • Medical Scope Filter" : "Soái ca Y khoa • Bộ lọc Y khoa");
           this.isBusy = false;
+          this.loadSessions();
           Dom.btnSendChat.disabled = false;
           Dom.chatInputField.focus();
           return;
@@ -8592,6 +8588,7 @@
           this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
         } finally {
           this.isBusy = false;
+          this.loadSessions();
           Dom.btnSendChat.disabled = false;
           Dom.chatInputField.focus();
         }

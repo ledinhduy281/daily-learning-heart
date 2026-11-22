@@ -6,7 +6,7 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 const object = html.slice(html.indexOf('    const EbmChat = {') + '    const EbmChat = '.length, html.indexOf('    window.EbmChat = EbmChat;')).trim().replace(/;$/, '');
 async function check(mode) {
   const calls = [], messages = [], timers = [];
-  let removed = false, cleared = false;
+  let removed = false, cleared = false, refreshed = 0;
   const primary = {pillar_id: 5, guideline_evolution: {current_guideline: {name: 'Test guideline'}, steps: Array(5).fill({title_en: 'Step', desc_en: 'x'.repeat(200)})}, landmark_trials: Array(4).fill({name: 'Trial', changes_en: 'Evidence'}), pearls: Array(5).fill({text_en: 'Pearl'}), part2_en_markdown: 'x'.repeat(10000)};
   const priorHistory = Array(6).fill({role: 'user', content: 'x'.repeat(600)});
   const sandbox = {
@@ -30,6 +30,7 @@ async function check(mode) {
   };
   const chat = vm.runInNewContext(`(${object})`, sandbox);
   Object.assign(chat, {
+    loadSessions: () => { assert.equal(chat.isBusy,false);refreshed++; },
     getRecentHistory: () => priorHistory, appendMessage: (...args) => messages.push(args),
     isMedicalOrCardiologyQuery: () => true, scoreBriefing: () => 1,
     fetchLivePubMedAbstracts: async () => [{pmid: '123', title: 'Test', snippet: 'Study'}],
@@ -42,6 +43,7 @@ async function check(mode) {
   assert.equal(answer[2][0].pmid, '123');
   assert.equal(answer[3].includes('AI (Groq)'), mode === 'ok');
   assert.equal(chat.isBusy, false); assert.equal(sandbox.Dom.btnSendChat.disabled, false); assert.ok(removed);
+  assert.equal(refreshed,1);
   if (mode === 'unset') assert.equal(calls.length, 0);
   else {
     assert.equal(calls.length, 1); assert.ok(cleared);

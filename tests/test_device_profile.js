@@ -429,14 +429,17 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
 {
   const key='soaica_chat_sessions_v1', local=create(new Storage(),crypto);
   const active={id:'streaming',messages:[{role:'user',markdownText:'Question'}]};
-  local.set(key,JSON.stringify([active]));
-  const chat={isBusy:true,currentSessionId:active.id,sessions:[active],messages:[...active.messages,{role:'assistant',markdownText:'Finished answer'}],renderHistoryDrawer:()=>{}};
-  local.importJSON(JSON.stringify({...JSON.parse(local.exportJSON()),progress:{[key]:JSON.stringify([active,{id:'remote',messages:[{role:'user',markdownText:'Remote conversation'}]}])}}));
+  const inactive={id:'inactive',updatedAt:'2026-11-20T00:00:00Z',messages:[{role:'user',markdownText:'Old inactive conversation'}]};
+  local.set(key,JSON.stringify([active,inactive]));
+  const chat={isBusy:true,currentSessionId:active.id,sessions:[active,inactive],messages:[...active.messages,{role:'assistant',markdownText:'Finished answer'}],renderHistoryDrawer:()=>{}};
+  local.importJSON(JSON.stringify({...JSON.parse(local.exportJSON()),progress:{[key]:JSON.stringify([active,{...inactive,updatedAt:'2026-11-22T00:00:00Z',messages:[{role:'user',markdownText:'Updated inactive conversation'}]},{id:'remote',messages:[{role:'user',markdownText:'Remote conversation'}]}])}}));
   const source=html.match(/      saveSessions\(\) \{([\s\S]*?)\n      \},/)[1];
   const save=vm.runInNewContext(`(function(){${source}})`,{App:{selected:{pillar_id:1}},CHAT_SESSIONS_KEY:key,safeStorageGet:k=>local.get(k),safeStorageSet:(k,v)=>local.set(k,v)});
   save.call(chat);
   const saved=JSON.parse(local.get(key));
   assert.equal(saved.find(s=>s.id==='remote').messages[0].markdownText,'Remote conversation');
+  assert.equal(saved.find(s=>s.id==='inactive').messages[0].markdownText,'Updated inactive conversation');
+  assert.equal(chat.sessions.find(s=>s.id==='inactive').messages[0].markdownText,'Updated inactive conversation');
   assert.equal(saved.find(s=>s.id==='streaming').messages.at(-1).markdownText,'Finished answer');
   assert.equal(chat.currentSessionId,'streaming');
 }
