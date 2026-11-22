@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Daily cardiology evidence briefing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "date",
+    "sources",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pubmed",
+        "clinicaltrials",
+        "openfda"
+      ],
+      "properties": {
+        "pubmed": {
+          "$ref": "#/$defs/source_status"
+        },
+        "clinicaltrials": {
+          "$ref": "#/$defs/source_status"
+        },
+        "openfda": {
+          "$ref": "#/$defs/source_status"
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "$defs": {
+    "source_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "records"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "source",
+        "source_id",
+        "pmid",
+        "title",
+        "source_date",
+        "source_url",
+        "journal",
+        "study_type",
+        "topic",
+        "evidence_type",
+        "journal_tier",
+        "evidence_score",
+        "relevance_score"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "enum": [
+            "pubmed",
+            "clinicaltrials",
+            "openfda"
+          ]
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pmid": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "journal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "study_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "topic": {
+          "enum": [
+            "hypertension_risk",
+            "lipids_atherosclerosis",
+            "coronary_disease",
+            "antithrombotic",
+            "heart_failure",
+            "arrhythmia",
+            "valvular_endocarditis",
+            "cardiomyopathy_pericardial_congenital",
+            "pulmonary_vascular_aortic",
+            "general_cardiology"
+          ]
+        },
+        "evidence_type": {
+          "enum": [
+            "drug_label",
+            "trial_registry",
+            "guideline",
+            "evidence_synthesis",
+            "randomized_trial",
+            "clinical_study",
+            "other_publication"
+          ]
+        },
+        "journal_tier": {
+          "enum": [
+            "selected_journal",
+            "other_journal",
+            "not_applicable"
+          ]
+        },
+        "evidence_score": {
+          "$ref": "#/$defs/score"
+        },
+        "relevance_score": {
+          "$ref": "#/$defs/score"
+        }
+      }
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

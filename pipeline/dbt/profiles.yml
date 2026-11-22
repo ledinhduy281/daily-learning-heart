@@ -1,0 +1,7 @@
+heart_evidence:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('HEART_DUCKDB') }}"
+      threads: 2

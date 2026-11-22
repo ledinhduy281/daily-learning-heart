@@ -38,6 +38,32 @@ python3 fetch_daily_ebm.py --verify-pubmed 'FINEARTS-HF Solomon NEJM 2024'
 
 Do not use the bare `python3 fetch_daily_ebm.py` command for the free refresh path. It selects optional model-based generation. The app must remain usable with no paid AI service; see the [AI guide](AGENTS.md) for the difference between search, refresh, and optional generation.
 
+## Daily evidence pipeline
+
+The [daily evidence workflow](.github/workflows/evidence_pipeline.yml) runs at 21:28 UTC and can also run on demand. It uses public APIs and standard GitHub-hosted runners and Pages for this public repo: no cloud account, credit card, API key, or AI service is needed. It runs separately from the curated daily pillar refresh above.
+
+| Layer | What it does |
+| --- | --- |
+| Raw JSON | Fetches recent cardiology publication metadata from PubMed E-utilities, recently updated ClinicalTrials.gov API v2 registrations, and openFDA labels for selected cardiovascular drugs. Responses and source status are stored under `raw/date=YYYY-MM-DD/` (UTC). Calls are capped and transient errors are retried. |
+| Bronze Parquet | Normalizes identifiers, titles, dates and source-specific metadata into one typed Parquet file per source under `bronze/date=YYYY-MM-DD/`. Raw and bronze snapshots are available as Actions artifacts for 14 days. |
+| dbt on DuckDB | Staging unifies the three files; intermediate models deduplicate by source and identifier (PMID for PubMed), apply one pillar-inspired topic tag, and rank records with separate evidence and relevance scores. Evidence uses publication type and a selected-journal list; relevance uses topic matches and recency at the snapshot date. Scores are browsing heuristics, not clinical quality grades. The mart retains source IDs and links. |
+| Published data | `dbt build` checks keys, required fields, categories and score ranges. The export is then checked against [the briefing JSON Schema](pipeline/briefing.schema.json). Only a passing run commits [briefing JSON](https://ledinhduy281.github.io/daily-learning-heart/data/pipeline/briefing.json) (up to ten ranked records per source) and [mart Parquet](https://ledinhduy281.github.io/daily-learning-heart/data/pipeline/evidence.parquet) (all deduplicated records) to `data/pipeline/`. An outage marks the affected source unavailable; if all fail, the mart is empty, or validation fails, the previous snapshot remains in place. |
+| App | The **Daily cardiology evidence** panel reads the same relative JSON URL from the local server and static site. It shows the snapshot date, provenance and any source outage. After a successful online visit, the app shell and last valid snapshot can be opened offline on the same browser and origin. If the JSON has never loaded or storage is unavailable, the existing bilingual briefing remains available; the pipeline does not replace it. |
+
+To build a snapshot locally with Python 3.12:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r pipeline/requirements.txt
+python -m pipeline.run --work-dir ../heart-evidence
+# Optional: preview this snapshot with either local app mode.
+mkdir -p data/pipeline
+cp ../heart-evidence/publish/briefing.json ../heart-evidence/publish/evidence.parquet data/pipeline/
+```
+
+The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after main changes or a successful legacy refresh or evidence run. Use **Settings → Pages → Build and deployment → Source → GitHub Actions** for this workflow (a one-time change from branching off `main`). The site URL is unchanged. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger GitHub Pages branch builds. Raw/bronze snapshots and backend files are not part of the deployed site.
+
 ## Repository guide
 
 | Path | Role |
@@ -47,6 +73,7 @@ Do not use the bare `python3 fetch_daily_ebm.py` command for the free refresh pa
 | [`fetch_daily_ebm.py`](fetch_daily_ebm.py) · [`crawl_cardiology_news.py`](crawl_cardiology_news.py) | Local server, refresh, and PubMed retrieval |
 | [`pillar_library.py`](pillar_library.py) · [`build_seed_briefings.py`](build_seed_briefings.py) | Curated briefing library and seed-bundle generator |
 | [`data/briefings.js`](data/briefings.js) · [`data/rotation_state.json`](data/rotation_state.json) | Published briefing bundle and refresh state |
+| [`pipeline/`](pipeline/) · [`evidence_feed.js`](evidence_feed.js) | Evidence ingestion, transforms, contract, and browser loader |
 | [Architecture and data contract](AGENT_IMPLEMENTATION_PLAN.md) | Rotation, record fields, and how to change the app |
 | [Editorial prompt](PROMPT.md) · [Example briefing](expected_output.md) | Evidence standards and the expected format |
 | [AI guide](AGENTS.md) | Instructions for coding agents and limits of in-app AI |
@@ -55,7 +82,9 @@ Do not use the bare `python3 fetch_daily_ebm.py` command for the free refresh pa
 
 ```sh
 python3 -m unittest discover -s tests
-node tests/test_search.js
+for test in tests/*.js; do node "$test"; done
 ```
+
+Install `pipeline/requirements.txt` first to include the dbt integration tests; the remaining checks do not need extra Python packages.
 
 For browser changes, check both languages, a narrow viewport, and the static mode without API keys. Keep real patient information out of the app, local stores, and external queries.

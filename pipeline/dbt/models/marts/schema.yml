@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: evidence
+    columns:
+      - name: evidence_id
+        data_tests: [unique, not_null]
+      - name: source
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [pubmed, clinicaltrials, openfda]
+      - name: source_id
+        data_tests: [not_null]
+      - name: pmid
+        data_tests: [unique]
+      - name: title
+        data_tests: [not_null]
+      - name: source_url
+        data_tests: [not_null]
+      - name: topic
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [hypertension_risk, lipids_atherosclerosis, coronary_disease, antithrombotic, heart_failure, arrhythmia, valvular_endocarditis, cardiomyopathy_pericardial_congenital, pulmonary_vascular_aortic, general_cardiology]
+      - name: evidence_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [drug_label, trial_registry, guideline, evidence_synthesis, randomized_trial, clinical_study, other_publication]
+      - name: journal_tier
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [selected_journal, other_journal, not_applicable]
+      - name: evidence_score
+        data_tests: [not_null]
+      - name: relevance_score
+        data_tests: [not_null]
