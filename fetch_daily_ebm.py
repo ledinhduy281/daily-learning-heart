@@ -22,6 +22,7 @@ import copy
 import datetime
 import hashlib
 import hmac
+import io
 import json
 import os
 import re
@@ -29,6 +30,7 @@ import secrets
 import sys
 import threading
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -982,6 +984,8 @@ def _load_users_data_unlocked() -> dict:
 
 
 def _save_users_data_unlocked(data: dict) -> None:
+    for record in data.get('devices', {}).values():
+        _check_device_size(record)
     _atomic_write_text(USERS_PATH, json.dumps(data, indent=2, ensure_ascii=False))
 
 
@@ -1023,9 +1027,37 @@ def _create_session_for_user(data: dict, user_rec: dict) -> str:
     return token
 
 
-def _resolve_user_from_token_unlocked(data: dict, token: str) -> dict | None:
+def _resolve_user_from_token_unlocked(data: dict, token: str, create_device: bool = False) -> dict | None:
     if not token:
         return None
+    if token.startswith('device:'):
+        device_id = _validated_device_id(token[7:])
+        if not device_id:
+            return None
+        devices = data.get('devices', {})
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if device_id not in devices:
+            record = {'username': f'device:{device_id}', 'display_name': 'Doctor',
+                                  'device_id': device_id, 'read_ids': [], 'bookmarked_ids': [],
+                                  'created_at': now.isoformat(), 'updated_at': now.isoformat()}
+            if not create_device:
+                return record
+            if len(devices) >= MAX_ANONYMOUS_DEVICES:
+                def last_write(item):
+                    try:
+                        stamp = datetime.datetime.fromisoformat(item[1].get('updated_at') or item[1]['created_at'])
+                        return stamp.replace(tzinfo=datetime.timezone.utc) if stamp.tzinfo is None else stamp
+                    except (KeyError, ValueError, TypeError):
+                        return now
+                oldest = min(devices.items(), key=last_write)
+                if now - last_write(oldest) <= datetime.timedelta(days=DEVICE_IDLE_DAYS):
+                    raise DeviceStorageError(429, 'Anonymous device limit reached')
+                del devices[oldest[0]]
+            data.setdefault('devices', {})[device_id] = record
+            devices = data['devices']
+        if create_device:
+            devices[device_id]['updated_at'] = now.isoformat()
+        return devices[device_id]
     sessions = data.get("sessions", {})
     sess = sessions.get(token)
     if not isinstance(sess, dict):
@@ -1035,6 +1067,43 @@ def _resolve_user_from_token_unlocked(data: dict, token: str) -> dict | None:
     if not username or (sig_user is not None and sig_user != username):
         return None
     return _find_user_by_identifier(data.get("users", {}), username)
+
+
+MAX_ANONYMOUS_DEVICES = 1000
+DEVICE_IDLE_DAYS = 90
+MAX_DEVICE_BYTES = 256 * 1024
+
+
+class DeviceStorageError(ValueError):
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
+
+
+def _check_device_size(value):
+    if len(json.dumps(value, ensure_ascii=False).encode('utf-8')) > MAX_DEVICE_BYTES:
+        raise DeviceStorageError(413, 'Device data limit exceeded')
+
+
+def _validated_device_id(value: str) -> str | None:
+    if not re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', value or ''):
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return None
+
+
+def save_device_quiz(token: str, req_data: dict, payload: dict) -> None:
+    if not token.startswith('device:') or not payload.get('ok'):
+        return
+    with _users_lock:
+        data = _load_users_data_unlocked()
+        user = _resolve_user_from_token_unlocked(data, token, create_device=True)
+        if user:
+            key = str(req_data.get('briefing_id') or req_data.get('pillar_id') or 'current')
+            user.setdefault('socratic_state', {})[key] = payload.get('state', {})
+            _save_users_data_unlocked(data)
 
 
 def get_user_by_token(token: str) -> dict | None:
@@ -1135,19 +1204,34 @@ def logout_token(token: str) -> dict:
 def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
     briefing_id = str(req_data.get("briefing_id", "")).strip()
     action = str(req_data.get("action", "")).strip()
-    if not briefing_id or action not in ("read", "toggle_bookmark"):
+    if action == 'sync':
+        for key in ('read_ids', 'bookmarked_ids'):
+            values = req_data.get(key)
+            if not isinstance(values, list) or len(values) > 100000 or any(not isinstance(v, str) or len(v) > 500 for v in values):
+                return 400, {'ok': False, 'error': 'Invalid activity'}
+    elif not briefing_id or action not in ("read", "toggle_bookmark"):
         return 400, {"ok": False, "error": "Thiếu briefing_id hoặc action không hợp lệ."}
 
     with _users_lock:
         data = _load_users_data_unlocked()
-        user = _resolve_user_from_token_unlocked(data, token)
+        empty_sync = action == 'sync' and not req_data['read_ids'] and not req_data['bookmarked_ids'] and req_data.get('display_name', '') in ('', 'Doctor', 'Bác sĩ')
+        if empty_sync and token.startswith('device:') and token[7:] not in data.get('devices', {}):
+            user = _resolve_user_from_token_unlocked(data, token)
+            return (200, {'ok': True, 'user': _safe_user(user)}) if user else (401, {'ok': False, 'error': 'Unauthorized'})
+        user = _resolve_user_from_token_unlocked(data, token, create_device=True)
         if not user:
             return 401, {"ok": False, "error": "Unauthorized"}
 
         read_ids = list(dict.fromkeys(user.get("read_ids", [])))
         bookmarked_ids = list(dict.fromkeys(user.get("bookmarked_ids", [])))
 
-        if action == "read":
+        if action == 'sync':
+            user['read_ids'] = list(dict.fromkeys(req_data['read_ids']))
+            user['bookmarked_ids'] = list(dict.fromkeys(req_data['bookmarked_ids']))
+            name = req_data.get('display_name')
+            if isinstance(name, str) and 0 < len(name.strip()) <= 100:
+                user['display_name'] = name.strip()
+        elif action == "read":
             if briefing_id not in read_ids:
                 read_ids.append(briefing_id)
             user["read_ids"] = read_ids
@@ -1281,21 +1365,33 @@ def _get_feedback_summary(user_key: str | None = None) -> dict:
         return _compute_feedback_summary(data, user_key)
 
 
+def _feedback_author_id(user_key: str, *, authenticated: bool = False) -> str:
+    namespace = 'ebm-feedback-account:' if authenticated and user_key == 'guest' else 'ebm-feedback:'
+    return 'author:' + hashlib.sha256((namespace + user_key).encode()).hexdigest()
+
+
 def get_feedback_payload(user: dict | None) -> dict:
     user_key = user["username"] if user else "guest"
     with _feedback_lock:
         data = _load_feedback_data_unlocked()
         summary = _compute_feedback_summary(data, user_key)
         reports = data.get("reports", [])
-        if user and user.get("username") == "admin":
-            recent_reports = list(reversed(reports))[:20]
-        else:
-            recent_reports = [r for r in reversed(reports) if r.get("username") == user_key][:20]
+        recent_reports = []
+        if user:
+            author_id = _feedback_author_id(user_key, authenticated=True)
+            recent_reports = [r for r in reversed(reports)
+                              if r.get('author_id') == author_id or
+                              (user_key != 'guest' and r.get('username') == user_key)][:20]
+        safe_reports = []
+        for report in recent_reports:
+            safe = {key: report[key] for key in ('id', 'briefing_id', 'pillar_id', 'display_name', 'reason', 'comment', 'created_at') if key in report}
+            safe['author_id'] = report.get('author_id') or _feedback_author_id(report.get('username', 'guest'))
+            safe_reports.append(safe)
         return {
             "ok": True,
             "summary": summary,
             "reports_count": len(reports),
-            "recent_reports": recent_reports,
+            "recent_reports": safe_reports,
         }
 
 
@@ -1311,6 +1407,13 @@ def submit_feedback(user: dict | None, req_data: dict) -> tuple[int, dict]:
 
     user_key = user["username"] if user else "guest"
     display_name = user["display_name"] if user else "Khách"
+
+    if user_key.startswith('device:'):
+        _check_device_size(req_data)
+        with _users_lock:
+            users = _load_users_data_unlocked()
+            _resolve_user_from_token_unlocked(users, user_key, create_device=True)
+            _save_users_data_unlocked(users)
 
     with _feedback_lock:
         data = _load_feedback_data_unlocked()
@@ -1328,13 +1431,16 @@ def submit_feedback(user: dict | None, req_data: dict) -> tuple[int, dict]:
                 "id": f"rep-{int(time.time() * 1000)}-{secrets.token_hex(3)}",
                 "briefing_id": briefing_id,
                 "pillar_id": pid_val,
-                "username": user_key,
+                "author_id": _feedback_author_id(user_key, authenticated=bool(user)),
                 "display_name": display_name,
                 "reason": reason or "Góp ý nội dung",
                 "comment": comment,
                 "created_at": datetime.datetime.now().isoformat(),
             })
 
+        if user_key.startswith('device:'):
+            _check_device_size({'votes': {bid: votes[user_key] for bid, votes in data['votes'].items() if user_key in votes},
+                                'reports': [r for r in data['reports'] if r.get('author_id') == _feedback_author_id(user_key) or r.get('username') == user_key]})
         _save_feedback_data_unlocked(data)
         summary = _compute_feedback_summary(data, user_key)
         item_summary = summary.get(
@@ -2878,6 +2984,27 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
 
+    def send_head(self):
+        is_home = urllib.parse.urlparse(self.path).path in ('/', '/index.html')
+        target = (BASE_DIR / 'index.html' if is_home else Path(self.translate_path(self.path))).resolve()
+        public_assets = {'index.html', 'device_profile.js', 'search_ranking.js',
+                         'clinical_distractors.js', 'clinical_mcq.js',
+                         'manifest.json', 'icon.svg', 'data/briefings.js'}
+        allowed = {(BASE_DIR / name).resolve() for name in public_assets}
+        if target not in allowed or target in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
+            self._send_json(403, {'ok': False, 'error': 'Private data'})
+            return None
+        if is_home:
+            page = target.read_text(encoding='utf-8')
+            body = page.replace('<head>', '<head><script>window.EBM_SERVER = true;</script>', 1).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            return io.BytesIO(body)
+
+        return super().send_head()
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         super().end_headers()
@@ -2888,14 +3015,18 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id")
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != 'HEAD':
+            self.wfile.write(body)
 
     def _extract_token(self, query_params: dict | None = None, body_data: dict | None = None) -> str:
         auth_header = self.headers.get("Authorization", "").strip()
         if auth_header.lower().startswith("bearer "):
             return auth_header[7:].strip()
+        device_id = _validated_device_id(self.headers.get('X-Device-Id', ''))
+        if device_id:
+            return f'device:{device_id}'
         if query_params and query_params.get("token"):
             return str(query_params["token"][0]).strip()
         if body_data and body_data.get("token"):
@@ -2906,7 +3037,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id")
         self.end_headers()
 
     def do_GET(self):
@@ -2914,6 +3045,9 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         path = parsed.path
         query_params = urllib.parse.parse_qs(parsed.query)
 
+        if Path(self.translate_path(path)).resolve() in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
+            self._send_json(403, {'ok': False, 'error': 'Private data'})
+            return
         if path == "/api/refresh-stream":
             self.close_connection = True
             self.send_response(200)
@@ -3038,6 +3172,12 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        try:
+            self._handle_POST()
+        except DeviceStorageError as exc:
+            self._send_json(exc.status, {'ok': False, 'error': str(exc)})
+
+    def _handle_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         query_params = urllib.parse.parse_qs(parsed.query)
@@ -3046,6 +3186,10 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0") or "0")
         except ValueError:
             length = 0
+        if _validated_device_id(self.headers.get('X-Device-Id', '')) and length > MAX_DEVICE_BYTES:
+            self.close_connection = True
+            self._send_json(413, {'ok': False, 'error': 'Device request limit exceeded'})
+            return
         raw_body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
         try:
             req_data = json.loads(raw_body)
@@ -3145,7 +3289,10 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/socratic":
             try:
                 payload = handle_socratic_turn(req_data)
+                save_device_quiz(self._extract_token(body_data=req_data), req_data, payload)
                 self._send_json(200 if payload.get("ok") else 400, payload)
+            except DeviceStorageError:
+                raise
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
