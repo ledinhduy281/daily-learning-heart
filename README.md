@@ -13,6 +13,8 @@ Clone the repository and run these commands from its root. Use Python 3.12 to ma
 
 Open `http://127.0.0.1:8080/` or `http://127.0.0.1:8088/` in your browser. Static hosting (such as GitHub Pages) does not run the Python APIs. The local server is for development and personal use, not a public production server.
 
+No account is required: progress is stored in a device profile in both modes. The local server no longer offers legacy password reset or demo sign-in.
+
 ## Read and search
 
 - Browse the daily or archived briefing, then switch between Vietnamese and English.
