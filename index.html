@@ -42,6 +42,7 @@
   <script src="clinical_mcq.js"></script>
   <script src="device_profile.js"></script>
   <script src="search_ranking.js"></script>
+  <script src="evidence_feed.js"></script>
 
   <style>
     /* ==========================================================================
@@ -4314,6 +4315,13 @@
         <!-- Rendered by Marked.js -->
       </div>
 
+      <details class="sources-console-card" id="dailyEvidence" hidden>
+        <summary id="dailyEvidenceTitle">Dữ liệu tim mạch hằng ngày</summary>
+        <p id="dailyEvidenceStatus"></p>
+        <ul id="dailyEvidenceList"></ul>
+        <a id="dailyEvidenceDownload" href="data/pipeline/evidence.parquet" download>Tải Parquet</a>
+      </details>
+
       <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
       <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText">
         <div class="socratic-header-row">
@@ -4841,6 +4849,7 @@
       token: null,
       offlineDemo: false,
       serverAvailable: false,
+      evidenceFeed: null,
       feedbackMap: {}, // briefingId -> { likes, dislikes, reports, user_reaction }
       selectedReportReason: "Sai lệch số liệu / Guideline"
     };
@@ -5138,7 +5147,44 @@
       setLanguage(App.currentLang, { rerender: false, persist: false });
       bootstrapSessionAndStatus();
       scheduleDailyRefresh();
+      loadDailyEvidence();
+      if ("serviceWorker" in navigator && !isFileOrigin()) {
+        navigator.serviceWorker.register("offline.js").catch(() => {});
+      }
     });
+
+    async function loadDailyEvidence() {
+      let storage;
+      try { storage = window.localStorage; } catch (_) {}
+      App.evidenceFeed = await EvidenceFeed.load({ storage });
+      renderDailyEvidence();
+    }
+
+    function renderDailyEvidence() {
+      const feed = App.evidenceFeed;
+      if (!feed) return;
+      const vi = App.currentLang === "vi";
+      const names = { pubmed: "PubMed", clinicaltrials: "ClinicalTrials.gov", openfda: "openFDA" };
+      document.getElementById("dailyEvidenceTitle").textContent =
+        vi ? `Dữ liệu tim mạch hằng ngày · ${feed.date}` : `Daily cardiology evidence · ${feed.date}`;
+      const missing = Object.keys(names).filter(source => feed.sources[source].status === "unavailable");
+      const note = vi ? "Dữ liệu từ nguồn; không phải khuyến cáo lâm sàng." : "Source metadata, not clinical recommendations.";
+      const unavailable = missing.map(source => names[source]).join(", ");
+      document.getElementById("dailyEvidenceStatus").textContent = missing.length
+        ? `${note} ${vi ? "Nguồn không khả dụng" : "Sources unavailable"}: ${unavailable}.`
+        : note;
+      document.getElementById("dailyEvidenceDownload").textContent = vi ? "Tải Parquet" : "Download Parquet";
+      const items = feed.items.map(item => {
+        const row = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = EvidenceFeed.sourceLink(item);
+        link.textContent = item.title;
+        row.append(link, ` · ${names[item.source]}`);
+        return row;
+      });
+      document.getElementById("dailyEvidenceList").replaceChildren(...items);
+      document.getElementById("dailyEvidence").hidden = false;
+    }
 
     function loadSeedData() {
       if (window.EBM_BRIEFINGS_DATA) {
@@ -5577,6 +5623,7 @@
       [Dom.btnLangEn, Dom.btnNavLangEn].forEach(el => { if (el) el.classList.toggle("active", !isVi); });
 
       applyLocalizationChrome();
+      renderDailyEvidence();
       if (!rerender) {
         if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
           window.EbmChat.onLanguageChanged();

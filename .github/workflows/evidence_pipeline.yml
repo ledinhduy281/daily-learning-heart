@@ -1,0 +1,106 @@
+name: Daily Cardiology Evidence Pipeline
+
+on:
+  schedule:
+    - cron: '28 21 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pipeline/**'
+      - '.github/workflows/evidence_pipeline.yml'
+      - '.github/workflows/pages.yml'
+      - 'evidence_feed.js'
+      - 'offline.js'
+      - 'index.html'
+      - 'fetch_daily_ebm.py'
+      - 'tests/**'
+  push:
+    branches: [main]
+    paths:
+      - 'pipeline/**'
+      - '.github/workflows/evidence_pipeline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - name: Install pinned pipeline dependencies
+        run: python -m pip install -r pipeline/requirements.txt
+      - name: Run repository tests
+        if: github.event_name == 'pull_request'
+        run: |
+          python -m unittest discover tests
+          for test in tests/*.js; do node "$test"; done
+      - name: Ingest sources, run dbt build, and validate the briefing contract
+        run: python -m pipeline.run --work-dir "$RUNNER_TEMP/heart-evidence"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidence-snapshot
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/heart-evidence/raw/
+            ${{ runner.temp }}/heart-evidence/bronze/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidence-public
+          retention-days: 7
+          path: ${{ runner.temp }}/heart-evidence/publish/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: evidence-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: evidence-public
+          path: ${{ runner.temp }}/evidence-public
+      - name: Commit validated JSON and Parquet
+        env:
+          SNAPSHOT: ${{ runner.temp }}/evidence-public
+        run: |
+          set -euo pipefail
+          mkdir -p data/pipeline
+          if [[ -f data/pipeline/briefing.json ]]; then
+            current=$(jq -er '.date' data/pipeline/briefing.json)
+            candidate=$(jq -er '.date' "$SNAPSHOT/briefing.json")
+            if [[ "$candidate" < "$current" ]]; then
+              echo "A newer snapshot is already published."
+              exit 0
+            fi
+          fi
+          cp "$SNAPSHOT/briefing.json" "$SNAPSHOT/evidence.parquet" data/pipeline/
+          git add data/pipeline/briefing.json data/pipeline/evidence.parquet
+          if git diff --staged --quiet; then
+            echo "No snapshot changes."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "chore(data): publish cardiology evidence $(jq -er '.date' data/pipeline/briefing.json)"
+          for attempt in 1 2 3; do
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1

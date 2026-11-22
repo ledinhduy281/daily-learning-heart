@@ -2941,7 +2941,9 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         target = (BASE_DIR / 'index.html' if is_home else Path(self.translate_path(self.path))).resolve()
         public_assets = {'index.html', 'device_profile.js', 'search_ranking.js',
                          'clinical_distractors.js', 'clinical_mcq.js',
-                         'manifest.json', 'icon.svg', 'data/briefings.js'}
+                         'manifest.json', 'icon.svg', 'data/briefings.js',
+                         'offline.js', 'evidence_feed.js', 'data/pipeline/briefing.json',
+                         'data/pipeline/evidence.parquet'}
         allowed = {(BASE_DIR / name).resolve() for name in public_assets}
         if target not in allowed or target in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
             self._send_json(403, {'ok': False, 'error': 'Private data'})
