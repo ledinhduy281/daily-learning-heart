@@ -4,20 +4,26 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(require.resolve('../backend/apps_script/Chat.gs'), 'utf8');
 function setup(properties = {GROQ_API_KEY: 'test-only-placeholder'}) {
-  const state = {properties, calls: [], cache: new Map(), logs: [], status: 200,
+  const state = {properties, calls: [], logs: [], status: 200, now: Date.parse('2026-11-22T03:00:00Z'), locked: false, canLock: true,
     body: JSON.stringify({choices: [{message: {content: '<think>private reasoning</think> Answer.'}}]})};
   const sandbox = {
-    PropertiesService: {getScriptProperties: () => ({getProperty: name => state.properties[name] || null})},
-    CacheService: {getScriptCache: () => ({get: key => state.cache.get(key), put: (key, value, ttl) => {
-      assert.equal(ttl, 21600); state.cache.set(key, value);
-    }})},
+    Date: class extends Date {constructor(...args){super(...(args.length?args:[state.now]));}},
+    PropertiesService: {getScriptProperties: () => ({
+      getProperty: name => state.properties[name] || null,
+      getProperties: () => ({...state.properties}),
+      setProperty: (name,value) => {assert.ok(state.locked);state.properties[name]=value;},
+      deleteProperty: name => {assert.ok(state.locked);delete state.properties[name];}
+    })},
+    LockService: {getScriptLock: () => ({tryLock: () => {state.locked=state.canLock;return state.canLock;},releaseLock: () => {assert.ok(state.locked);state.locked=false;}})},
     Utilities: {formatDate: (date, timezone, format) => {
-      assert.equal(timezone, 'Asia/Ho_Chi_Minh'); assert.equal(format, 'yyyy-MM-dd'); return '2026-11-22';
+      assert.equal(timezone, 'Asia/Ho_Chi_Minh'); assert.equal(format, 'yyyy-MM-dd'); return new Date(date.getTime()+7*3600000).toISOString().slice(0,10);
     }},
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: text => ({
       getContent: () => text, setMimeType(type) { assert.equal(type, 'json'); return this; }
     })},
     UrlFetchApp: {fetch: (url, options) => {
+      assert.equal(state.locked,false);
+      assert.ok(Number(state.properties['chat_daily_'+new Date(state.now+7*3600000).toISOString().slice(0,10)])>0);
       state.calls.push({url, options});
       if (state.throw) throw Error('sensitive upstream failure');
       return {getResponseCode: () => state.status, getContentText: () => state.body};
@@ -43,9 +49,21 @@ const capped = setup({GROQ_API_KEY: 'test-only-placeholder', CHAT_DAILY_CAP: '1'
 assert.equal(capped.request().ok, true);
 assert.equal(capped.request().error, 'daily_cap');
 assert.equal(capped.calls.length, 1);
+capped.now+=7*3600000;
+assert.equal(capped.request().error,'daily_cap');assert.equal(capped.calls.length,1);
+assert.equal(capped.properties['chat_daily_2026-11-22'],'1');
+capped.now+=24*3600000;
+assert.equal(capped.request().ok,true);assert.equal(capped.calls.length,2);
+assert.equal(capped.properties['chat_daily_2026-11-22'],undefined);
+assert.equal(capped.properties['chat_daily_2026-11-23'],'1');
+assert.equal(capped.locked,false);
+const busy=setup();busy.canLock=false;
+assert.equal(busy.request().error,'busy');assert.equal(busy.calls.length,0);
 const defaults = setup();
-defaults.cache.set('chat_daily_2026-11-22', '300');
+defaults.properties.chat_daily_2026_ignored='keep';
+defaults.properties['chat_daily_2026-11-22']='300';
 assert.equal(defaults.request().error, 'daily_cap');
+assert.equal(defaults.locked,false);assert.equal(defaults.properties.chat_daily_2026_ignored,'keep');
 for (const mode of ['http', 'empty', 'invalid', 'throw']) {
   const s = setup();
   if (mode === 'http') { s.status = 500; s.body = 'test-only-placeholder'; }
@@ -53,6 +71,7 @@ for (const mode of ['http', 'empty', 'invalid', 'throw']) {
   if (mode === 'invalid') s.body = 'invalid JSON';
   if (mode === 'throw') s.throw = true;
   assert.deepEqual(s.request(), {ok: false, error: 'upstream'});
+  assert.equal(s.properties['chat_daily_2026-11-22'],'1');assert.equal(s.locked,false);
 }
 const s = setup();
 assert.deepEqual(s.request(), {ok: true, answer_markdown: 'Answer.', model: 'openai/gpt-oss-120b'});

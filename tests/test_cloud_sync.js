@@ -6,6 +6,7 @@ class Storage {
   constructor(){this.values=new Map();}get length(){return this.values.size;}key(i){return [...this.values.keys()][i];}
   getItem(k){return this.values.get(k)??null;}setItem(k,v){this.values.set(k,String(v));}removeItem(k){this.values.delete(k);}
 }
+const consented=options=>{options.storage.setItem(Cloud.CONSENT_KEY,'allowed');return Cloud.create(options);};
 async function main() {
   const records=new Map(),calls=[],statuses=[];
   let poison=null,conflict=false,conflicts=[];
@@ -32,7 +33,7 @@ async function main() {
   let stripped='';
   await assert.rejects(disabled.start({url:'https://example.test/?restore='+profile.profile.device_id,confirm:()=>true,replaceUrl:url=>stripped=url}),/NOT_CONFIGURED/);
   assert.equal(stripped,'https://example.test/');
-  const c=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,onStatus:s=>statuses.push(s),delay:5});
+  const c=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,onStatus:s=>statuses.push(s),delay:5});
   await c.sync();assert.equal(calls.filter(c=>c.action==='push').length,0);
   profile.activity(['local'],['saved']);
   await new Promise(resolve=>setTimeout(resolve,30));await c.sync();
@@ -51,6 +52,16 @@ async function main() {
   await other.start({url:'https://example.test/?restore='+c.userId+'&keep=1',confirm:()=>{asked++;return true;},replaceUrl:u=>replaced=u});
   assert.equal(asked,1);assert.equal(replaced,'https://example.test/?keep=1');
   const previous=other.userId;
+  const missing='00000000-0000-4000-8000-000000000000';
+  const missingBefore={profile:otherProfile.exportJSON(),id:otherStorage.getItem(Cloud.ID_KEY),base:otherStorage.getItem('dlh_sync_baseline_v1'),pushes:calls.filter(q=>q.action==='push').length};
+  await assert.rejects(other.restore(missing),/BACKUP_NOT_FOUND/);
+  assert.equal(statuses.at(-1),'BACKUP_NOT_FOUND');
+  assert.equal(other.userId,previous);assert.equal(otherProfile.exportJSON(),missingBefore.profile);
+  assert.equal(otherStorage.getItem(Cloud.ID_KEY),missingBefore.id);
+  assert.equal(otherStorage.getItem('dlh_sync_baseline_v1'),missingBefore.base);
+  assert.equal(calls.filter(q=>q.action==='push').length,missingBefore.pushes);
+  await assert.rejects(other.start({url:'https://example.test/?restore='+missing,confirm:()=>true,replaceUrl:u=>replaced=u}),/BACKUP_NOT_FOUND/);
+  assert.equal(replaced,'https://example.test/');assert.equal(other.userId,previous);
   await other.start({url:'https://example.test/?restore='+profile.profile.device_id,confirm:()=>false,replaceUrl:u=>replaced=u});
   assert.equal(other.userId,previous);assert.ok(!replaced.includes('restore='));
   assert.throws(()=>other.restore('bad'),/INVALID_ID/);
@@ -81,7 +92,7 @@ async function main() {
     local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:1},2:{correct_count:2}}));
     local.set('ebm_theme','dark');
     let merged=0;
-    let sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch,delay:60000,onMerged:()=>merged++});
+    let sync=consented({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch,delay:60000,onMerged:()=>merged++});
     await sync.sync();
     local.rename('Local rename');local.activity(['read'],['keep']);local.remove('ebm_theme');
     local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:5},2:{correct_count:2}}));
@@ -117,15 +128,63 @@ async function main() {
     assert.ok(local.profile.read_ids.includes('third remote read'));
     sync.stop();
     local.rename('After reload');local.activity(local.profile.read_ids,[]);
-    sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch});
+    sync=consented({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch});
     await sync.sync();
     assert.equal(local.profile.display_name,'After reload');assert.deepEqual(local.profile.bookmarked_ids,[]);
     sync.stop();
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    profile.activity(['large test'],[]);
+    const sync=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:5});
+    await sync.sync();
+    let notified=0;const unsubscribe=profile.subscribe(()=>notified++);
+    profile.importJSON(profile.exportJSON());assert.equal(notified,0);
+    const pulls=()=>calls.filter(q=>q.action==='pull'&&q.userId===sync.userId).length;
+    const start=pulls();
+    profile.set('ebm_ui_lang','é'.repeat(140000));
+    await new Promise(r=>setTimeout(r,80));
+    assert.equal(pulls(),start+1);
+    sync.schedule();profile.importJSON(profile.exportJSON());
+    await new Promise(r=>setTimeout(r,80));assert.equal(pulls(),start+1);
+    profile.rename('Changed oversized profile');
+    await new Promise(r=>setTimeout(r,80));assert.equal(pulls(),start+2);
+    profile.remove('ebm_ui_lang');
+    await new Promise(r=>setTimeout(r,80));assert.equal(pulls(),start+3);
+    assert.equal(records.get(sync.userId).profile.display_name,'Changed oversized profile');
+    unsubscribe();sync.stop();
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    const make=()=>Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:5});
+    let sync=make();const start=calls.length;
+    profile.activity(['private read'],[]);
+    await sync.start({url:'https://example.test/'});await sync.sync();
+    await new Promise(r=>setTimeout(r,30));assert.equal(calls.length,start);
+    assert.equal(sync.consent,null);
+    sync.setConsent(false);assert.equal(sync.consent,'denied');sync.stop();
+    sync=make();assert.equal(sync.consent,'denied');
+    await sync.start({url:'https://example.test/'});assert.equal(calls.length,start);
+    sync.setConsent(true);
+    await new Promise(r=>setTimeout(r,30));
+    assert.ok(records.get(sync.userId).profile.read_ids.includes('private read'));
+    sync.setConsent(false);const paused=calls.length;
+    profile.activity(['private read','off'],[]);await sync.sync();
+    await new Promise(r=>setTimeout(r,30));assert.equal(calls.length,paused);
+    await sync.restore(c.userId);assert.equal(sync.consent,'allowed');
+    assert.equal(storage.getItem(Cloud.CONSENT_KEY),'allowed');sync.stop();
+    sync=make();sync.setConsent(false);
+    await sync.email('backup','test@example.test');assert.equal(sync.consent,'allowed');
+    sync.setConsent(false);
+    await sync.start({url:'https://example.test/?restore='+c.userId,confirm:()=>true,replaceUrl:()=>{}});
+    assert.equal(sync.consent,'allowed');sync.stop();
   }
   const failed=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch:async()=>{throw Error('offline');},onStatus:s=>statuses.push(s)});
   await assert.rejects(failed.sync(),/offline/);assert.equal(statuses.at(-1),'SYNC_FAILED');failed.stop();
   const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');
   assert.ok(html.includes('id="cloudEmailSection" hidden'));
+  for(const id of ['cloudConsentNotice','cloudConsentText','btnAllowCloudSync','btnDeclineCloudSync','cloudSyncEnabled'])assert.ok(html.includes(`id="${id}"`));
+  assert.match(html,/No backup found for this ID/);assert.match(html,/Không tìm thấy bản sao lưu cho mã này/);
   assert.match(html,/\["EMAIL_CONFIRMED", "EMAIL_CONFIRM_INVALID", "NOT_CONFIGURED"\]\.includes\(code\)\) showToast/);
   console.log('Cloud sync mocked push/pull/merge, revision retry, debounced writes, restore ID/URL, email privacy, disabled state and invalid/oversized profiles: OK');
 }

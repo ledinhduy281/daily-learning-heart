@@ -4465,6 +4465,19 @@
     </div>
   </div>
 
+  <div class="modal-backdrop-supa" id="cloudConsentNotice" role="dialog" aria-modal="true" aria-labelledby="cloudConsentTitle" aria-describedby="cloudConsentText" inert>
+    <div class="modal-dialog-supa">
+      <div class="modal-head"><h2 id="cloudConsentTitle" class="modal-head-title">Sao lưu giữa các thiết bị?</h2></div>
+      <div class="modal-body">
+        <p id="cloudConsentText">Bạn có muốn sao lưu không? Tiến độ học và các cuộc trò chuyện đã lưu sẽ được gửi tới bản sao lưu Google Apps Script của dự án. Nếu chưa muốn, dữ liệu vẫn được lưu trên thiết bị này. Bạn có thể đổi lựa chọn trong Hồ sơ.</p>
+        <div class="profile-controls">
+          <button type="button" id="btnAllowCloudSync" class="btn btn-primary-green">Cho phép</button>
+          <button type="button" id="btnDeclineCloudSync" class="btn btn-secondary-outline">Để sau</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-backdrop-supa" id="myAccountModal" role="dialog" aria-modal="true" aria-labelledby="myAccountModalTitle" aria-describedby="deviceProfileNote" inert>
     <div class="modal-dialog-supa profile-dialog">
       <div class="modal-head">
@@ -4490,6 +4503,7 @@
           <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Không cần email.</strong> <span id="profileKeepIdPrivate">Chỉ chia sẻ mã giữa các thiết bị của bạn.</span></p>
           <p class="profile-note" id="profileServerNote" hidden>Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ.</p>
           <p class="profile-note" id="cloudDisclosure"></p>
+          <label class="profile-note"><input type="checkbox" id="cloudSyncEnabled"> <span id="labelCloudSyncEnabled">Bật đồng bộ đám mây</span></label>
           <div class="profile-field">
             <label class="form-field-label" for="restoreSyncId" id="labelRestoreSyncId">Mã từ thiết bị khác</label>
             <div class="profile-controls">
@@ -5289,6 +5303,17 @@
       const vi = App.currentLang !== "en";
       const text = (id, en, vn) => { document.getElementById(id).textContent = vi ? vn : en; };
       if (cloudSync) Dom.profileDeviceId.value = cloudSync.userId;
+      const notice = document.getElementById("cloudConsentNotice");
+      const needsConsent = !!cloudSync?.enabled && cloudSync.consent === null;
+      notice.classList.toggle("active", needsConsent);
+      notice.inert = !needsConsent;
+      document.getElementById("cloudSyncEnabled").checked = cloudSync?.consent === "allowed";
+      document.getElementById("cloudSyncEnabled").disabled = !cloudSync?.enabled;
+      text("labelCloudSyncEnabled", "Enable cloud sync", "Bật đồng bộ đám mây");
+      text("cloudConsentTitle", "Back up across devices?", "Sao lưu giữa các thiết bị?");
+      text("cloudConsentText", "Would you like a backup? Your learning progress and saved chats will be sent to the project's Google Apps Script backup. If not now, everything stays on this device. You can change this in Profile.", "Bạn có muốn sao lưu không? Tiến độ học và các cuộc trò chuyện đã lưu sẽ được gửi tới bản sao lưu Google Apps Script của dự án. Nếu chưa muốn, dữ liệu vẫn được lưu trên thiết bị này. Bạn có thể đổi lựa chọn trong Hồ sơ.");
+      text("btnAllowCloudSync", "Allow", "Cho phép");
+      text("btnDeclineCloudSync", "Not now", "Để sau");
       document.getElementById("cloudEmailSection").hidden = !cloudSync?.enabled;
       text("labelProfileDeviceId", "Your user ID", "Mã người dùng của bạn");
       text("btnDownloadSyncId", "Download ID", "Tải mã");
@@ -5308,6 +5333,9 @@
         NOT_CONFIGURED: ["Cloud sync is not configured. Restore a local JSON backup instead.", "Chưa cấu hình đồng bộ đám mây. Hãy khôi phục từ bản sao JSON cục bộ."],
         SYNC_FAILED: ["Could not sync. Your local progress is safe; try again later.", "Chưa thể đồng bộ. Tiến độ trên thiết bị vẫn an toàn, hãy thử lại sau."],
         SYNCED: ["Progress synced.", "Đã đồng bộ tiến độ."],
+        SYNC_ALLOWED: ["Cloud sync enabled.", "Đã bật đồng bộ đám mây."],
+        CONSENT_REQUIRED: ["Cloud sync is off. Your progress stays on this device.", "Đồng bộ đám mây đang tắt. Tiến độ được lưu trên thiết bị này."],
+        BACKUP_NOT_FOUND: ["No backup found for this ID. Check the ID and try again.", "Không tìm thấy bản sao lưu cho mã này. Hãy kiểm tra mã rồi thử lại."],
         EMAIL_SENT: ["If available, a confirmation or restore link will be emailed to that address. Confirm a new backup before restoring by email. Wait at least 10 minutes before requesting again.", "Nếu có thể, liên kết xác nhận hoặc khôi phục sẽ được gửi tới địa chỉ đó. Hãy xác nhận bản sao lưu mới trước khi khôi phục bằng email. Vui lòng đợi ít nhất 10 phút trước khi yêu cầu lại."],
         EMAIL_CONFIRMED: ["Email backup confirmed.", "Đã xác nhận sao lưu bằng email."],
         EMAIL_CONFIRM_INVALID: ["This confirmation link has expired or was already used. Request a new backup email.", "Liên kết xác nhận đã hết hạn hoặc đã được sử dụng. Hãy yêu cầu email sao lưu mới."],
@@ -5328,14 +5356,17 @@
           onStatus:status, onMerged:refreshCloudProfile
         });
         renderCloudSync();
+        document.getElementById("btnAllowCloudSync").addEventListener("click", () => {cloudSync.setConsent(true);Dom.userProfilePill.focus();});
+        document.getElementById("btnDeclineCloudSync").addEventListener("click", () => {cloudSync.setConsent(false);Dom.userProfilePill.focus();});
+        document.getElementById("cloudSyncEnabled").addEventListener("change", event => cloudSync.setConsent(event.target.checked));
         document.getElementById("btnRestoreSyncId").addEventListener("click", async () => {
           try {
             const id = CloudSync.validId(document.getElementById("restoreSyncId").value);
             if (!cloudSync.enabled) { status("NOT_CONFIGURED"); return; }
-            if (window.confirm(App.currentLang === "en" ? "Use this ID and merge both devices' progress? Anyone with this ID can access the synced profile." : "Dùng mã này và hợp nhất tiến độ của hai thiết bị? Ai có mã đều có thể truy cập hồ sơ đã đồng bộ.")) {
+            if (window.confirm(App.currentLang === "en" ? "Send this device's progress and saved chats to the project's Google Apps Script backup and merge both devices' progress? Anyone with this ID can access the synced profile." : "Gửi tiến độ và các cuộc trò chuyện đã lưu trên thiết bị này tới bản sao lưu Google Apps Script của dự án và hợp nhất tiến độ của hai thiết bị? Ai có mã đều có thể truy cập hồ sơ đã đồng bộ.")) {
               await cloudSync.restore(id); renderCloudSync();
             }
-          } catch (error) { status(error.message === "INVALID_ID" ? "INVALID_ID" : "SYNC_FAILED"); }
+          } catch (error) { status(["INVALID_ID", "BACKUP_NOT_FOUND", "CONSENT_REQUIRED"].includes(error.message) ? error.message : "SYNC_FAILED"); }
         });
         document.getElementById("btnDownloadSyncId").addEventListener("click", () => {
           const url = URL.createObjectURL(new Blob([cloudSync.userId],{type:"text/plain"}));
@@ -5355,7 +5386,7 @@
           catch (_) {status("SYNC_FAILED");}finally{button.disabled=false;}
         });
         window.addEventListener("storage",event=>{if(event.key===DeviceProfile.KEY)cloudSync.schedule();});
-        cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress will be merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ trên thiết bị này sẽ được hợp nhất vào bản sao đám mây của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(error.message==="INVALID_ID"?"INVALID_ID":error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":error.message==="NOT_CONFIGURED"?"NOT_CONFIGURED":"SYNC_FAILED"));
+        cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress and saved chats will be sent to the project's Google Apps Script backup and merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ và các cuộc trò chuyện đã lưu trên thiết bị này sẽ được gửi tới bản sao lưu Google Apps Script của dự án và hợp nhất vào bản sao của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(["INVALID_ID","NOT_CONFIGURED","BACKUP_NOT_FOUND","CONSENT_REQUIRED"].includes(error.message)?error.message:error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":"SYNC_FAILED"));
       } catch (_) {status("SYNC_FAILED");}
     }
 
@@ -7979,7 +8010,7 @@
       renderMessageDom(msgObj) {
         const { id, role, markdownText, sources = [], engineLabel = "" } = msgObj;
         const wrap = document.createElement("div");
-        wrap.className = `chat-msg ${role}`;
+        wrap.className = `chat-msg ${role === "user" ? "user" : "assistant"}`;
         wrap.id = id || `cmsg-${Date.now()}`;
 
         const bubble = document.createElement("div");
@@ -7990,13 +8021,18 @@
         if (Array.isArray(sources) && sources.length > 0) {
           const srcRow = document.createElement("div");
           srcRow.className = "chat-sources-row";
-          srcRow.innerHTML = sources.slice(0, 5).map((s) => {
+          sources.slice(0, 5).filter(s => s && typeof s === "object").forEach((s) => {
             const pmidUrl = s.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(s.pmid)}/` : "";
             const url = safeChatSourceUrl(pmidUrl || (s.doi ? formatDoiUrl(s.doi) : s.url));
-            return `<a class="chat-source-pill" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(s.title || "")}">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> PMID ${escapeHtml(s.pmid)}${s.pubdate ? ` • ${escapeHtml(s.pubdate)}` : ""}
-            </a>`;
-          }).join("");
+            const link = document.createElement("a");
+            link.className = "chat-source-pill";
+            link.href = url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.title = String(s.title || "");
+            link.textContent = `↗ PMID ${s.pmid || ""}${s.pubdate ? ` • ${s.pubdate}` : ""}`;
+            srcRow.appendChild(link);
+          });
           wrap.appendChild(srcRow);
         }
 
@@ -8004,7 +8040,9 @@
           const meta = document.createElement("div");
           meta.className = "chat-msg-meta";
           const defBot = App.currentLang === "en" ? "Med Bro" : "Soái ca Y khoa";
-          meta.innerHTML = `<span>${escapeHtml(engineLabel || defBot)}</span>`;
+          const engine = document.createElement("span");
+          engine.textContent = engineLabel || defBot;
+          meta.appendChild(engine);
           const cpBtn = document.createElement("button");
           cpBtn.type = "button";
           cpBtn.className = "chat-copy-btn";

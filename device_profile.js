@@ -186,7 +186,7 @@ const DeviceProfile = (() => {
     let p;
     try { p = validate(JSON.parse(read(KEY))); } catch (_) {}
     let baseline = p && JSON.parse(JSON.stringify(p));
-    const persist = (replace = false, importing = false) => {
+    const persist = (replace = false, importing = false, notify = true) => {
       try {
         let latest;
         try { latest = validate(JSON.parse(read(KEY))); } catch (_) {}
@@ -199,7 +199,7 @@ const DeviceProfile = (() => {
         }
         storage.setItem(KEY, JSON.stringify(next));
         p = next; baseline = JSON.parse(JSON.stringify(p));
-        for (const listener of listeners) { try { listener(); } catch (_) {} }
+        if (notify) for (const listener of listeners) { try { listener(); } catch (_) {} }
         return true;
       } catch (_) { return false; }
     };
@@ -291,6 +291,7 @@ const DeviceProfile = (() => {
         return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(progress)}, null, 2);
       },
       importJSON(text, mode = 'merge', syncBase = null) {
+        const before = this.exportJSON();
         if (typeof text !== 'string' || text.length > 5 * 1024 * 1024 || !['merge','replace'].includes(mode)) throw new Error('Invalid import');
         const parsed = JSON.parse(text);
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
@@ -320,7 +321,7 @@ const DeviceProfile = (() => {
         }
         const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
-        if (!persist(mode === 'replace', true)) {
+        if (!persist(mode === 'replace', true, this.exportJSON() !== before)) {
           p = previous;
           const error = new Error('Progress could not be saved to browser storage');
           error.code = 'STORAGE_WRITE_FAILED';

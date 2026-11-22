@@ -23,12 +23,20 @@ function chatHandle_(req) {
     if (!key) return output({ok: false, error: 'not_configured'});
     var capValue = Number(props.getProperty('CHAT_DAILY_CAP') || 300);
     var cap = isFinite(capValue) && capValue >= 0 ? Math.floor(capValue) : 300;
-    var cache = CacheService.getScriptCache();
-    var day = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
-    var cacheKey = 'chat_daily_' + day;
-    var used = Number(cache.get(cacheKey) || 0);
-    if (used >= cap) return output({ok: false, error: 'daily_cap'});
-    cache.put(cacheKey, String(used + 1), 21600);
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) return output({ok: false, error: 'busy'});
+    try {
+      var day = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+      var countKey = 'chat_daily_' + day;
+      Object.keys(props.getProperties()).forEach(function (name) {
+        if (/^chat_daily_\d{4}-\d{2}-\d{2}$/.test(name) && name < countKey) props.deleteProperty(name);
+      });
+      var used = Number(props.getProperty(countKey) || 0);
+      if (!isFinite(used) || used < 0 || used >= cap) return output({ok: false, error: 'daily_cap'});
+      props.setProperty(countKey, String(used + 1));
+    } finally {
+      lock.releaseLock();
+    }
     var lang = req.lang === 'en' ? 'en' : 'vi';
     var bot = lang === 'en' ? 'Med Bro' : 'Soái ca Y khoa';
     var site = lang === 'en' ? 'Daily Learning Heart' : 'Xem Tim Mỗi Ngày';
