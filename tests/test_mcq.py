@@ -7,6 +7,27 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_articles_and_keys_agree_on_guideline_conditions(self):
+        from pillar_library import build_initial_briefings_dataset
+        source = {b['id']: b for b in build_initial_briefings_dataset()}
+        cases = [('ebm-2026-08-30-p3-hist2', ['3 nhánh có ý nghĩa chức năng', 'functionally significant three-vessel disease'], ['LVEF >35%']),
+                 ('ebm-2026-08-25-p6-hist1', ['≥2 yếu tố nguy cơ', '≥2 risk factors'], ['LVEF <50%', 'CMR-LGE', 'LMNA', 'PLN', 'FLNC', 'RBM20']),
+                 ('ebm-2026-09-15-p7-hist1', ['lịch sử', 'historical'], ['2021', '75'])]
+        for bid, localized, common in cases:
+            b = next(b for b in self.briefings if b['id'] == bid)
+            for lang, field, term in zip(('vi', 'en'), ('part1_vi_markdown', 'part2_en_markdown'), localized):
+                article = b[field]
+                self.assertEqual(article, source[bid][field])
+                q = app._build_socratic_mcq(b, 0, 0, lang)
+                correct = next(o['text'] for o in q['options'] if o['key'] == q['correct_key'])
+                for text in (article, correct):
+                    for condition in common + [term]:
+                        self.assertIn(condition, text.replace('≥ ', '≥'))
+            self.assertNotIn('restricts prognostic revascularization', b['part2_en_markdown'])
+            if 'p7-' in bid:
+                self.assertNotIn('**Current Guideline:**', b['part2_en_markdown'])
+                self.assertNotIn('**Khuyến cáo hiện hành:**', b['part1_vi_markdown'])
+
     def test_tavr_75_is_explicitly_historical_2021_guidance(self):
         b = next(b for b in self.briefings if b['id'] == 'ebm-2026-09-15-p7-hist1')
         for lang, historical in (('vi', 'lịch sử'), ('en', 'historical')):

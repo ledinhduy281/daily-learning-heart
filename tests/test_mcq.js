@@ -6,6 +6,14 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const [id,terms,common] of [
+  ['ebm-2026-08-30-p3-hist2',['3 nhánh có ý nghĩa chức năng','functionally significant three-vessel disease'],['LVEF >35%']],
+  ['ebm-2026-08-25-p6-hist1',['≥2 yếu tố nguy cơ','≥2 risk factors'],['LVEF <50%','CMR-LGE','LMNA','PLN','FLNC','RBM20']],
+  ['ebm-2026-09-15-p7-hist1',['lịch sử','historical'],['2021','75']]
+]) for (const [i,lang] of ['vi','en'].entries()) {
+  const b=briefings.find(b=>b.id===id),q=quiz.build(b,0,0,lang),correct=q.options.find(o=>o.key===q.correct_key).text;
+  for (const text of [b[lang==='vi'?'part1_vi_markdown':'part2_en_markdown'],correct]) for (const term of [...common,terms[i]]) assert.ok(text.replace(/≥ /g,'≥').includes(term),term);
+}
 for (const lang of ['vi','en']) {
   const b=briefings.find(b=>b.id==='ebm-2026-09-15-p7-hist1'),historical=lang==='en'?'historical':'lịch sử';
   const stage=b.guideline_evolution.steps.at(-1);
