@@ -129,6 +129,30 @@ class DeviceProfileTests(unittest.TestCase):
         stored = json.loads(self.feedback.read_text())
         self.assertIn('device:' + one, stored['votes']['feedback-lesson'])
 
+    def test_feedback_authors_are_not_credentials_and_moderators_are_provisioned(self):
+        device = str(uuid.uuid4())
+        self.request('/api/feedback', device, {'briefing_id': 'private-report', 'type': 'report', 'comment': 'Check source'})
+        own = self.request('/api/feedback', device)[1]['recent_reports']
+        self.assertEqual(len(own), 1)
+        self.assertNotIn(device, json.dumps(own))
+        stored = json.loads(self.feedback.read_text())['reports'][-1]
+        self.assertNotIn('username', stored)
+        self.assertEqual(stored['author_id'], app._feedback_author_id('device:' + device))
+        status, login = self.request('/api/auth/register', body={'username': 'admin', 'password': 'test-password'})
+        self.assertEqual(status, 200)
+        headers = {'Authorization': 'Bearer ' + login['token']}
+        with patch.dict(app.os.environ, {'EBM_FEEDBACK_MODERATORS': ''}):
+            self.assertEqual(self.request('/api/feedback', headers=headers)[1]['recent_reports'], [])
+        with app._feedback_lock:
+            data = app._load_feedback_data_unlocked()
+            data['reports'].append({'id': 'legacy', 'username': 'device:' + device, 'token': 'hidden', 'email': 'hidden@example.com', 'comment': 'Old report'})
+            app._save_feedback_data_unlocked(data)
+        with patch.dict(app.os.environ, {'EBM_FEEDBACK_MODERATORS': 'admin'}):
+            reports = self.request('/api/feedback', headers=headers)[1]['recent_reports']
+            self.assertTrue(any(r['id'] == stored['id'] for r in reports))
+            self.assertNotRegex(json.dumps(reports), device + '|hidden|username|token|email')
+        self.assertEqual(self.request('/api/feedback', str(uuid.uuid4()))[1]['recent_reports'], [])
+
     def test_sync_and_quiz_persistence(self):
         device = str(uuid.uuid4())
         body = {'action': 'sync', 'read_ids': ['one', 'one'], 'bookmarked_ids': ['two'], 'display_name': 'Doctor A'}
