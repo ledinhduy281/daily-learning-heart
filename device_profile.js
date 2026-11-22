@@ -312,7 +312,7 @@ const DeviceProfile = (() => {
         if (syncBase && mode === 'merge') {
           const base = validate({...syncBase, device_id:p.device_id});
           validateProgress(base.progress);
-          Object.assign(next, reconcile(base, p, incoming));
+          Object.assign(next, reconcile(base, {...p, display_name:JSON.parse(before).display_name}, incoming));
           for (const key of Object.keys(p.progress)) {
             if (p.progress[key] === base.progress[key] || !(key in incoming.progress)) continue;
             try {

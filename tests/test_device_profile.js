@@ -234,6 +234,27 @@ const broken = create(new Storage({[KEY]: 'broken', ebm_ui_lang: 'en'}), crypto)
 assert.equal(broken.get('ebm_ui_lang'), 'en');
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 {
+  const storage=new Storage(),first=create(storage,crypto),second=create(storage,crypto),key='ebm_socratic_state_v1';
+  first.set(key,JSON.stringify({1:{answered_count:0},2:{answered_count:0}}));
+  const source=html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+  const getter=html.match(/function safeStorageGet\([^\n]+/)[0];
+  const tab=deviceStore=>vm.runInNewContext(`${getter}\n${source};SocraticTutor`,{
+    deviceStore,SOCRATIC_STATE_KEY:key,safeStorageSet:(key,value)=>deviceStore.set(key,value)
+  });
+  const a=tab(first),b=tab(second);a.loadStore();b.loadStore();
+  a.store[1].answered_count=1;a.saveStore();second.snapshot();
+  b.store[2].answered_count=1;b.saveStore();
+  assert.equal(JSON.parse(second.get(key))[1].answered_count,1);
+  assert.equal(JSON.parse(second.get(key))[2].answered_count,1);
+  a.store[1].answered_count=2;a.saveStore();
+  assert.equal(JSON.parse(first.get(key))[2].answered_count,1);
+  delete a.store[2];a.saveStore();b.saveStore();
+  assert.equal(JSON.parse(second.get(key))[1].answered_count,2);
+  assert.equal(JSON.parse(second.get(key))[2],undefined);
+  first.set(key,'{invalid');b.loadStore();assert.equal(Object.keys(b.store).length,0);
+  first.remove(key);b.loadStore();b.saveStore();assert.equal(second.get(key),'{}');
+}
+{
   const profile = create(new Storage(),crypto);
   const pending = label => ({
     started:true, phase:'loop', last_question:`Question ${label}?`,

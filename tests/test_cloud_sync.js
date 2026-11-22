@@ -432,6 +432,71 @@ async function main() {
       assert.ok(records.get(target).profile.read_ids.includes('during push'));sync.stop();
     }
   }
+  {
+    const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');
+    const source=['saveOfflineActivityStore','recordBriefingRead','toggleBriefingBookmark'].map(name=>
+      html.match(new RegExp(`(?:async )?function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n    \\}`))[0]).join('\n');
+    const storage=new Storage(),a=DeviceProfile.create(storage,webcrypto),b=DeviceProfile.create(storage,webcrypto);
+    const tab=profile=>require('node:vm').runInNewContext(`${source};({App,recordBriefingRead,toggleBriefingBookmark,saveOfflineActivityStore})`,{
+      deviceStore:profile,App:{user:{read_ids:[],bookmarked_ids:[]},selected:null},
+      renderUserWorkspace(){},updateBookmarkButtonUI(){},renderBriefingsList(){},showToast(){},tt:key=>key,syncDeviceActivity:async()=>{}
+    });
+    const first=tab(a),second=tab(b);
+    const syncA=consented({profile:a,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    const syncB=Cloud.create({profile:b,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    first.App.selected={id:'A'};await first.toggleBriefingBookmark();await first.recordBriefingRead('A');await syncA.sync();
+    assert.equal(syncB.consent,'allowed');
+    assert.deepEqual(second.App.user.bookmarked_ids,[]);
+    second.App.selected={id:'B'};await second.toggleBriefingBookmark();await second.recordBriefingRead('B');await syncB.sync();
+    assert.deepEqual(new Set(b.profile.bookmarked_ids),new Set(['A','B']));
+    assert.deepEqual(new Set(b.profile.read_ids),new Set(['A','B']));
+    assert.deepEqual(new Set(second.App.user.bookmarked_ids),new Set(['A','B']));
+    assert.deepEqual(new Set(records.get(syncB.userId).profile.bookmarked_ids),new Set(['A','B']));
+    assert.equal(syncA.consent,'allowed');
+    await first.toggleBriefingBookmark();first.saveOfflineActivityStore('read_ids','A',false);await syncA.sync();
+    assert.deepEqual(a.profile.bookmarked_ids,['B']);assert.deepEqual(a.profile.read_ids,['B']);
+    assert.deepEqual(Array.from(first.App.user.bookmarked_ids),['B']);
+    assert.deepEqual(records.get(syncA.userId).profile.bookmarked_ids,['B']);syncA.stop();syncB.stop();
+  }
+  {
+    for(const retry of [false,true]) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      profile.activity(['local'],['re-added']);storage.setItem(Cloud.CONSENT_KEY,'denied');
+      const other=DeviceProfile.create(storage,webcrypto),remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
+      remote.activity(['remote'],['re-added']);records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+      let releasePull,releasePush,pulled,pushed,pausePull=true,pausePush=true;
+      const pullGate=new Promise(resolve=>releasePull=resolve),pushGate=new Promise(resolve=>releasePush=resolve);
+      const pullStarted=new Promise(resolve=>pulled=resolve),pushStarted=new Promise(resolve=>pushed=resolve);
+      const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        const response=await fetch(url,options),action=JSON.parse(options.body).action;
+        if(pausePull&&action==='pull'){pausePull=false;pulled();await pullGate;}
+        if(pausePush&&action==='push'){pausePush=false;pushed();await pushGate;}
+        return response;
+      }});
+      if(retry)conflicts=[data=>data.read_ids.push('conflict')];
+      const pending=sync.restore(target);await pullStarted;
+      other.activity(other.snapshot().read_ids,[]);releasePull();await pushStarted;
+      other.activity(other.snapshot().read_ids,['re-added']);releasePush();await pending;
+      assert.ok(profile.snapshot().bookmarked_ids.includes('re-added'));
+      await new Promise(r=>setTimeout(r,50));
+      assert.ok(records.get(target).profile.bookmarked_ids.includes('re-added'));sync.stop();
+    }
+  }
+  {
+    const storage=new Storage();let profile=DeviceProfile.create(storage,webcrypto);
+    storage.setItem('ebm_cloud_users_db',JSON.stringify({legacy:{display_name:'Legacy Doctor'}}));
+    storage.setItem(DeviceProfile.KEY,JSON.stringify({...profile.profile,display_name:'Legacy Doctor'}));
+    profile=DeviceProfile.create(storage,webcrypto);
+    assert.equal(profile.profile.display_name,'Legacy Doctor');assert.equal(JSON.parse(profile.exportJSON()).display_name,'Bác sĩ');
+    const remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
+    remote.rename('Restored name');remote.activity(['restored'],[]);
+    records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+    const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:5});
+    await sync.restore(target);await new Promise(r=>setTimeout(r,50));
+    assert.equal(profile.profile.display_name,'Restored name');assert.equal(JSON.parse(profile.exportJSON()).display_name,'Restored name');
+    assert.equal(records.get(target).profile.display_name,'Restored name');
+    assert.ok(!JSON.stringify(records.get(target)).includes('Legacy Doctor'));sync.stop();
+  }
   const failed=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch:async()=>{throw Error('offline');},onStatus:s=>statuses.push(s)});
   await assert.rejects(failed.sync(),/offline/);assert.equal(statuses.at(-1),'SYNC_FAILED');failed.stop();
   const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');

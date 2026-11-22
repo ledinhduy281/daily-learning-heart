@@ -5401,7 +5401,7 @@
       renderAllViewsAfterAuth(true);renderProfileHistory();
     }
 
-    function safeStorageGet(key) { return deviceStore.get(key); }
+    function safeStorageGet(key, fresh = false) { return fresh ? deviceStore.snapshot().progress[key] ?? null : deviceStore.get(key); }
     function safeStorageSet(key, value) { deviceStore.set(key, value); }
     function safeStorageRemove(key) { deviceStore.remove(key); }
 
@@ -5462,12 +5462,13 @@
     }
 
     function setAuthenticatedUser(userObj) {
-      const profile = deviceStore.profile;
+      const profile = deviceStore.snapshot();
       const readIds = [...new Set([...profile.read_ids, ...(userObj.read_ids || [])])];
       const savedIds = [...new Set([...profile.bookmarked_ids, ...(userObj.bookmarked_ids || [])])];
       deviceStore.activity(readIds, savedIds);
-      App.user = {username: profile.device_id, full_name: profile.display_name,
-        display_name: profile.display_name, read_ids: readIds, bookmarked_ids: savedIds};
+      const saved = deviceStore.snapshot();
+      App.user = {username: saved.device_id, full_name: saved.display_name,
+        display_name: saved.display_name, read_ids: saved.read_ids, bookmarked_ids: saved.bookmarked_ids};
       renderUserWorkspace();
     }
 
@@ -5487,13 +5488,19 @@
       safeStorageSet(OFFLINE_FEEDBACK_KEY, JSON.stringify(App.feedbackMap));
     }
 
-    function saveOfflineActivityStore() {
-      if (App.user) {
-        deviceStore.activity(App.user.read_ids, App.user.bookmarked_ids);
-        const profile = deviceStore.profile;
-        App.user.read_ids = profile.read_ids;
-        App.user.bookmarked_ids = profile.bookmarked_ids;
-      }
+    function saveOfflineActivityStore(field, id, enabled) {
+      const current = deviceStore.snapshot();
+      const items = new Set(current[field]);
+      const wasEnabled = items.has(id);
+      enabled = enabled ?? !wasEnabled;
+      if (enabled) items.add(id);
+      else items.delete(id);
+      current[field] = [...items];
+      if (enabled !== wasEnabled) deviceStore.activity(current.read_ids, current.bookmarked_ids);
+      const saved = deviceStore.snapshot();
+      Object.assign(App.user, {full_name:saved.display_name, display_name:saved.display_name,
+        read_ids:saved.read_ids, bookmarked_ids:saved.bookmarked_ids});
+      return {enabled, changed:enabled !== wasEnabled};
     }
 
     async function syncDeviceActivity() {
@@ -5644,24 +5651,20 @@
     }
 
     async function recordBriefingRead(briefingId) {
-      if (!App.user || !briefingId || App.user.read_ids.includes(briefingId)) return;
-      App.user.read_ids.push(briefingId);
-      saveOfflineActivityStore();
+      if (!App.user || !briefingId) return;
+      const {changed} = saveOfflineActivityStore('read_ids', briefingId, true);
       renderUserWorkspace();
-      await syncDeviceActivity();
+      if (changed) await syncDeviceActivity();
     }
 
     async function toggleBriefingBookmark() {
       if (!App.user || !App.selected) return;
       const id = App.selected.id;
-      const index = App.user.bookmarked_ids.indexOf(id);
-      if (index < 0) App.user.bookmarked_ids.push(id);
-      else App.user.bookmarked_ids.splice(index, 1);
-      saveOfflineActivityStore();
+      const {enabled} = saveOfflineActivityStore('bookmarked_ids', id);
       updateBookmarkButtonUI();
       renderUserWorkspace();
       renderBriefingsList();
-      showToast(tt(index < 0 ? "toastBookmarkAdded" : "toastBookmarkRemoved"));
+      showToast(tt(enabled ? "toastBookmarkAdded" : "toastBookmarkRemoved"));
       await syncDeviceActivity();
     }
 
@@ -8651,19 +8654,34 @@
       },
 
       loadStore() {
+        this.store = {};
         try {
-          const raw = safeStorageGet(SOCRATIC_STATE_KEY);
+          const raw = safeStorageGet(SOCRATIC_STATE_KEY, true);
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") this.store = parsed;
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) this.store = parsed;
           }
         } catch (_) {
           this.store = {};
         }
+        this.storeBaseline = JSON.stringify(this.store);
       },
 
       saveStore() {
-        safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(this.store));
+        let latest = {};
+        try {
+          const parsed = JSON.parse(safeStorageGet(SOCRATIC_STATE_KEY, true));
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) latest = parsed;
+        } catch (_) {}
+        const base = JSON.parse(this.storeBaseline || '{}');
+        for (const id of new Set([...Object.keys(base), ...Object.keys(this.store)])) {
+          if (JSON.stringify(this.store[id]) === JSON.stringify(base[id])) continue;
+          if (Object.hasOwn(this.store, id)) latest[id] = this.store[id];
+          else delete latest[id];
+        }
+        safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(latest));
+        this.store = latest;
+        this.storeBaseline = JSON.stringify(latest);
       },
 
       clipText(txt, limit = 160) {

@@ -121,7 +121,7 @@ const CloudSync = (() => {
       const initialConsent=readConsent();
       const initialConsentVersion=consentVersion;
       profile.snapshot();
-      const initialLocal=JSON.parse(profile.exportJSON());
+      let localBase=JSON.parse(profile.exportJSON());
       let draft=adopt?profile.fork():profile;
       let remote=await request('pull',{userId:target},initialId,adopt);
       if(adopt&&remote.profile==null)throw new Error('BACKUP_NOT_FOUND');
@@ -132,8 +132,10 @@ const CloudSync = (() => {
       for(let attempt=0;attempt<4;attempt++) {
         if(adopt) {
           const latest=profile.fork();
-          latest.importJSON(draft.exportJSON(),'merge',initialLocal);
+          const attemptLocal=JSON.parse(latest.exportJSON());
+          latest.importJSON(draft.exportJSON(),'merge',localBase);
           draft=latest;
+          localBase=attemptLocal;
         }
         const text=draft.exportJSON(),data=JSON.parse(text);
         if(bytes(text)>MAX_BYTES)throw new Error('TOO_LARGE');
@@ -145,7 +147,7 @@ const CloudSync = (() => {
             const before=profile.exportJSON();
             merging=true;
             try {
-              profile.snapshot();profile.importJSON(text,'merge',initialLocal);
+              profile.snapshot();profile.importJSON(text,'merge',localBase);
               storage.setItem(ID_KEY,target);id=target;blockedSnapshot=null;
               remember(target,data);
               if(readConsent()===initialConsent&&consentVersion===initialConsentVersion)rememberConsent(true);
