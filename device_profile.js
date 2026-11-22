@@ -7,7 +7,7 @@ const DeviceProfile = (() => {
   const legacyKeys = /legacy_users|progress_by_user/i;
   const privateField = /email|username|full.?name|display.?name|password|token|secret|api.?key|^name$|@/i;
   const learningKeys = new Set(['ebm_offline_user_activity', 'ebm_socratic_state_v1', 'ebm_ui_lang', 'ebm_font_scale', 'ebm_theme', 'ebm_streak', 'ebm_quiz_progress', 'ebm_ui_prefs']);
-  const localHistoryKeys = ['soaica_chat_sessions_v1', 'soaica_chat_verbosity_v1', 'ebm_offline_feedback'];
+  const localHistoryKeys = ['soaica_chat_sessions_v1', 'soaica_chat_verbosity_v1', 'soaica_daily_quota_v1', 'ebm_offline_feedback'];
   const syncKeys = ['ebm_device_server_synced', 'ebm_legacy_server_migrated'];
   function learningData(value) {
     if (Array.isArray(value)) return value.map(learningData);

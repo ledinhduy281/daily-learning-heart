@@ -1,4 +1,5 @@
 import json
+import socket
 import tempfile
 import threading
 import unittest
@@ -60,6 +61,32 @@ class DeviceProfileTests(unittest.TestCase):
             self.assertEqual(self.request(path)[0], 403)
         with urllib.request.urlopen(self.base + '/device_profile.js') as response:
             self.assertEqual(response.status, 200)
+
+    def test_head_matches_get_headers_without_writing_a_body(self):
+        def request(method, path):
+            with socket.create_connection(self.server.server_address, timeout=5) as connection:
+                connection.sendall(f'{method} {path} HTTP/1.0\r\n\r\n'.encode('ascii'))
+                with connection.makefile('rb') as stream:
+                    response = stream.read()
+            headers, body = response.split(b'\r\n\r\n', 1)
+            status, *headers = headers.split(b'\r\n')
+            headers = dict(header.split(b': ', 1) for header in headers)
+            headers.pop(b'Date')
+            return int(status.split()[1]), headers, body
+
+        for path, expected_status in (('/', 200), ('/index.html', 200), ('/fetch_daily_ebm.py', 403)):
+            with self.subTest(path=path):
+                get_status, get_headers, get_body = request('GET', path)
+                head_status, head_headers, head_body = request('HEAD', path)
+                self.assertEqual(get_status, expected_status)
+                self.assertEqual(head_status, get_status)
+                self.assertEqual(head_headers, get_headers)
+                self.assertEqual(head_headers[b'Content-Length'], str(len(get_body)).encode('ascii'))
+                self.assertEqual(head_body, b'')
+                if expected_status == 200:
+                    self.assertIn(b'<script>window.EBM_SERVER = true;</script>', get_body)
+                else:
+                    self.assertEqual(json.loads(get_body)['error'], 'Private data')
 
     def test_anonymous_storage_is_write_only_and_bounded(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'), patch.object(app, 'FEEDBACK_PATH', Path(directory) / 'feedback.json'), patch.object(app, 'MAX_ANONYMOUS_DEVICES', 1):

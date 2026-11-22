@@ -22,6 +22,7 @@ import copy
 import datetime
 import hashlib
 import hmac
+import io
 import json
 import os
 import re
@@ -3643,13 +3644,23 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
 
     def send_head(self):
+        is_home = urllib.parse.urlparse(self.path).path in ('/', '/index.html')
+        target = (BASE_DIR / 'index.html' if is_home else Path(self.translate_path(self.path))).resolve()
         public_assets = {'index.html', 'device_profile.js', 'search_ranking.js',
                          'manifest.json', 'icon.svg', 'data/briefings.js'}
-        target = Path(self.translate_path(self.path)).resolve()
         allowed = {(BASE_DIR / name).resolve() for name in public_assets}
         if target not in allowed or target in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
             self._send_json(403, {'ok': False, 'error': 'Private data'})
             return None
+        if is_home:
+            page = target.read_text(encoding='utf-8')
+            body = page.replace('<head>', '<head><script>window.EBM_SERVER = true;</script>', 1).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            return io.BytesIO(body)
+
         return super().send_head()
 
     def end_headers(self):
@@ -3664,7 +3675,8 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id")
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != 'HEAD':
+            self.wfile.write(body)
 
     def _extract_token(self, query_params: dict | None = None, body_data: dict | None = None) -> str:
         auth_header = self.headers.get("Authorization", "").strip()
@@ -3694,16 +3706,6 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         if Path(self.translate_path(path)).resolve() in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
             self._send_json(403, {'ok': False, 'error': 'Private data'})
             return
-        if path in ('/', '/index.html'):
-            page = (BASE_DIR / 'index.html').read_text(encoding='utf-8')
-            body = page.replace('<head>', '<head><script>window.EBM_SERVER = true;</script>', 1).encode('utf-8')
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-            return
-
         if path == "/api/refresh-stream":
             self.close_connection = True
             self.send_response(200)

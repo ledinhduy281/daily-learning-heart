@@ -137,6 +137,7 @@ assert.ok(legacy.getItem('ebm_cloud_users_db').includes('private-password'));
     soaica_chat_sessions_v1: JSON.stringify([{id: 'old-chat', title: 'Old chat', pillarId: 1, updatedAt: '2026-11-19T00:00:00Z',
       messages: [{id: 'old-message', role: 'user', markdownText: 'My saved question', sources: [], engineLabel: ''}]}]),
     soaica_chat_verbosity_v1: 'detailed',
+    soaica_daily_quota_v1: JSON.stringify({date: '2026-11-19', used: 7, limit: 500, exhausted: false, stop_reason: ''}),
     ebm_offline_feedback: JSON.stringify({lesson: {likes: 1, dislikes: 0, reports: 1, user_reaction: 'like', user_reported: true}})
   };
   const oldStorage = new Storage({...legacyHistory, ebm_cloud_current_user: 'doctor',
@@ -152,7 +153,8 @@ assert.ok(legacy.getItem('ebm_cloud_users_db').includes('private-password'));
     assert.equal(oldStorage.getItem(key), value);
   }
   const malformed = create(new Storage({...legacyHistory, soaica_chat_sessions_v1: '[{"id":"bad","messages":[null]}]',
-    soaica_chat_verbosity_v1: 'extra', ebm_offline_feedback: '{"lesson":{"likes":[],"user_reaction":"bad"}}', ebm_ui_lang: 'en'}), crypto);
+    soaica_chat_verbosity_v1: 'extra', soaica_daily_quota_v1: '{"used":[]}',
+    ebm_offline_feedback: '{"lesson":{"likes":[],"user_reaction":"bad"}}', ebm_ui_lang: 'en'}), crypto);
   assert.deepEqual(JSON.parse(malformed.exportJSON()).progress, {ebm_ui_lang: 'en'});
   for (const mode of ['merge', 'replace']) {
     upgraded.importJSON(create(new Storage(), crypto).exportJSON(), mode);
