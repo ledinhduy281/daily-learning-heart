@@ -26,7 +26,7 @@ def numeric_targets(text, shared_value=None, include_duplicates=False):
     number = r'([+-]?[0-9]+(?:[.,][0-9]+)?)'
     patterns = [
         (r'\b(HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*' + number, 2, None, 0),
-        (r'\b(LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\s*II)\s*[<>≤≥]=?\s*' + number, 2, None, re.I),
+        (r'\b(LVEF|EF|BMI|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\s*II)\s*[<>≤≥]=?\s*' + number, 2, None, re.I),
         (r'[<>≤≥]=?\s*' + number + r'\s*(?:years?|tuổi)\b', 1, 'age', re.I),
         (number + r'\s*(mmHg|WU|mL/min|mmol/L|mg/dL)\b', 1, None, re.I),
         (number + r'\s*%', 1, 'percent', 0),
@@ -118,7 +118,7 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
                     ('renal', r'renal|kidney'), ('septal', r'septal'), ('bp', r'blood pressure|mmhg')]
         return {key for key, pattern in patterns if re.search(pattern, label, re.I)}
 
-    def finish(kind, question, correct, source, distractors, source_id='guideline', shared_value=''):
+    def finish(kind, question, correct, source, distractors, source_id='guideline', shared_value='', fallbacks=()):
         if not correct:
             return
         correct = clean(correct).rstrip('.!?') + '.'
@@ -139,6 +139,7 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
                 identities.append(identity)
             if target['numeric']:
                 groups[target['id']] = identities
+        candidates.extend((typ, clean(text).rstrip('.!?') + '.', reason, identity) for typ, text, reason, identity in fallbacks if clean(text))
         chosen = []
         seen = {normalized(correct)}
         for distinct in (True, False):
@@ -214,7 +215,20 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
             new_fact, old_fact = prefix + new_fact, prefix + old_fact
             wrong = [('old_guideline', old_fact, (f'This describes the earlier stage ({old_era}), not the new update ({current_era}).' if en else
                       f'Đây là nội dung giai đoạn trước ({old_era}), không phải cập nhật mới ({current_era}).'), 'old_guideline')]
-            finish('guideline', question, new_fact, current_era, wrong)
+            fallbacks = []
+            for stage_idx, stage in enumerate(steps[1:-1], 1):
+                fact = clean(stage.get('desc_' + suffix))
+                era = stage.get('era_label_' + suffix, '')
+                if fact:
+                    fallbacks.append(('old_guideline', prefix + clause(fact),
+                                      (f'This belongs to the earlier stage ({era}), not the final update ({current_era}).' if en else
+                                       f'Đây là nội dung giai đoạn trước ({era}), không phải cập nhật cuối ({current_era}).'), f'old_guideline:stage:{stage_idx}'))
+            attribution = (f'The initial stage ({old_era}), rather than the final stage, introduced this update: {new_fact[len(prefix):]}' if en else
+                           f'Giai đoạn đầu ({old_era}), chứ không phải giai đoạn cuối, đưa ra cập nhật này: {new_fact[len(prefix):]}')
+            fallbacks.append(('old_guideline', prefix + attribution,
+                              (f'The briefing places this update in the final stage ({current_era}), not the initial stage ({old_era}).' if en else
+                               f'Bản tin đặt cập nhật này ở giai đoạn cuối ({current_era}), không phải giai đoạn đầu ({old_era}).'), 'old_guideline:attribution'))
+            finish('guideline', question, new_fact, current_era, wrong, fallbacks=fallbacks)
     if not paired:
         return cards
     peers = {c['source_id']: c for c in rich_cards(primary, 'vi' if en else 'en', numeric_alternatives, False)}

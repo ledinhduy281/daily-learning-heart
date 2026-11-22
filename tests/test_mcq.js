@@ -7,6 +7,18 @@ const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
 const {numericTargets}=require('../clinical_distractors.js');
+for(const b of briefings)for(const lang of ['vi','en']) {
+  const q=quiz.build(b,0,0,lang);
+  assert.equal(q.question_kind,'guideline',`${b.id} ${lang}`);
+  assert.equal(q.generation.source_id,'guideline');
+  if(b.id==='ebm-2026-10-01-p10-hist3')for(const difficulty of ['easy','normal','hard']) {
+    const bmi=quiz.build(b,0,0,lang,difficulty);
+    assert.equal(bmi.generation.source_id,'guideline');
+    assert.ok(bmi.options.find(o=>o.key===bmi.correct_key).text.includes('BMI ≥ 30'));
+    assert.ok(Object.values(bmi.option_ids).some(id=>id.includes('numeric:bmi:30')));
+    if(difficulty==='hard')assert.deepEqual(new Set(bmi.options.map(o=>o.text.match(/BMI ≥ (\d+)/)[1])),new Set(['25','30','35','40']));
+  }
+}
 const parameterChanges=(q,key)=>{
   const correct=q.options.find(o=>o.key===q.correct_key).text,option=q.options.find(o=>o.key===key).text;
   const counts=text=>numericTargets(text,null,true).reduce((r,t)=>(r[t.id]=(r[t.id]||0)+1,r),{});

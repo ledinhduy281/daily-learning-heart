@@ -16,7 +16,7 @@ const ClinicalDistractors = (() => {
     const number='([+-]?[0-9]+(?:[.,][0-9]+)?)';
     const patterns=[
       [new RegExp('\\b(HR|RR|OR|Win Ratio)\\s*(?:=|:)?\\s*'+number,'g'),2,null],
-      [new RegExp('\\b(LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\\s*II)\\s*[<>≤≥]=?\\s*'+number,'gi'),2,null],
+      [new RegExp('\\b(LVEF|EF|BMI|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\\s*II)\\s*[<>≤≥]=?\\s*'+number,'gi'),2,null],
       [new RegExp('[<>≤≥]=?\\s*'+number+'\\s*(?:years?|tuổi)\\b','gi'),1,'age'],
       [new RegExp(number+'\\s*(mmHg|WU|mL/min|mmol/L|mg/dL)\\b','gi'),1,null],
       [new RegExp(number+'\\s*%','g'),1,'percent'],
@@ -62,7 +62,7 @@ const ClinicalDistractors = (() => {
       const patterns=[['death',/death|mortality|mace/i],['stroke',/stroke|mace/i],['mi',/infarction|\bmi\b|mace/i],['hf',/\bhf\b|heart failure/i],['bleeding',/bleed|barc/i],['function',/pvo2|functional|oxygen uptake/i],['quality',/kccq|quality/i],['rhythm',/af recurrence|procedural failure|ablation/i],['renal',/renal|kidney/i],['septal',/septal/i],['bp',/blood pressure|mmhg/i]];
       return patterns.filter(([,p])=>p.test(label)).map(([key])=>key).join(',');
     }
-    function finish(kind,question,correct,source,distractors,sourceId='guideline',sharedValue='') {
+    function finish(kind,question,correct,source,distractors,sourceId='guideline',sharedValue='',fallbacks=[]) {
       if (!correct) return;
       correct=clean(correct).replace(/[.!?]+$/,'')+'.';
       const candidates=distractors.filter(([,text])=>clean(text)).map(([typ,text,reason,identity])=>[typ,clean(text).replace(/[.!?]+$/,'')+'.',reason,identity]);
@@ -78,6 +78,7 @@ const ClinicalDistractors = (() => {
         }
         if(target.numeric)groups[target.id]=identities;
       }
+      candidates.push(...fallbacks.filter(([,text])=>clean(text)).map(([typ,text,reason,identity])=>[typ,clean(text).replace(/[.!?]+$/,'')+'.',reason,identity]));
       const chosen=[],seen=new Set([normalized(correct)]);
       for (const distinct of [true,false]) {
         for (const [typ,text,reason,identity] of candidates) {
@@ -132,7 +133,14 @@ const ClinicalDistractors = (() => {
         const prefix=en?'Recommendation: ':'Khuyến cáo: ';
         newFact=prefix+newFact;oldFact=prefix+oldFact;
         const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}).`,'old_guideline']];
-        finish('guideline',question,newFact,currentEra,wrong);
+        const fallbacks=[];
+        for(const [i,stage]of steps.slice(1,-1).entries()) {
+          const fact=clean(stage['desc_'+suffix]),era=stage['era_label_'+suffix]||'';
+          if(fact)fallbacks.push(['old_guideline',prefix+clause(fact),en?`This belongs to the earlier stage (${era}), not the final update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${era}), không phải cập nhật cuối (${currentEra}).`,`old_guideline:stage:${i+1}`]);
+        }
+        const attribution=en?`The initial stage (${oldEra}), rather than the final stage, introduced this update: ${newFact.slice(prefix.length)}`:`Giai đoạn đầu (${oldEra}), chứ không phải giai đoạn cuối, đưa ra cập nhật này: ${newFact.slice(prefix.length)}`;
+        fallbacks.push(['old_guideline',prefix+attribution,en?`The briefing places this update in the final stage (${currentEra}), not the initial stage (${oldEra}).`:`Bản tin đặt cập nhật này ở giai đoạn cuối (${currentEra}), không phải giai đoạn đầu (${oldEra}).`,'old_guideline:attribution']);
+        finish('guideline',question,newFact,currentEra,wrong,'guideline','',fallbacks);
       }
     }
     if (!paired) return result;

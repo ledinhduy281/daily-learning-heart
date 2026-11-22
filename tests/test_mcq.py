@@ -7,6 +7,28 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_bmi_thresholds_and_every_briefing_guideline_card_survive(self):
+        from clinical_mcq import alternatives, build_mcq
+        from clinical_distractors import rich_cards
+        for b in self.briefings:
+            for lang in ('vi', 'en'):
+                cards = [c for c in rich_cards(b, lang, alternatives) if c['kind'] == 'guideline']
+                self.assertEqual(len(cards), 1, (b['id'], lang))
+                q = build_mcq(b, 0, 0, lang)
+                self.assertEqual(q['question_kind'], 'guideline')
+                if b['id'] == 'ebm-2026-10-01-p10-hist3':
+                    self.assertIn('BMI ≥ 30', cards[0]['texts'][0])
+                    for difficulty in ('easy', 'normal', 'hard'):
+                        q = build_mcq(b, 0, 0, lang, difficulty)
+                        self.assertEqual(q['generation']['source_id'], 'guideline')
+                        self.assertTrue(any('numeric:bmi:30' in i for i in q['option_ids'].values()))
+        for lang, text in [('en', 'Obese HFpEF requires BMI ≥30 kg/m².'), ('vi', 'HFpEF béo phì với BMI ≥30 kg/m².')]:
+            variants = alternatives(text)
+            self.assertEqual([parameter for _, parameter in variants], ['30', '25', '35', '40'])
+            self.assertEqual(len({t for t, _ in variants}), 4)
+            self.assertTrue(all(t.endswith('kg/m².') for t, _ in variants))
+        self.assertIsNone(alternatives('No numeric eligibility threshold is documented.'))
+
     def test_hypertension_and_twilight_endpoints_are_localized_in_choices_and_reasons(self):
         from clinical_mcq import build_mcq, translate_mcq
         b = next(b for b in self.briefings if b['id'] == 'ebm-2026-07-26-p1-hist3')
