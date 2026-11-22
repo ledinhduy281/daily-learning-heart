@@ -1,0 +1,97 @@
+/* No external services: this script uses the owner's free Sheets and Mail quotas. */
+var SYNC_LIMITS = {bytes: 256 * 1024, cooldown: 10 * 60 * 1000, daily: 70, records: 5000};
+var SYNC_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var SYNC_GENERIC = {ok: true, message: 'If a backup is available, a link will be emailed to that address.'};
+
+function syncFingerprint(email, pepper, hmac) {
+  if (!pepper) throw new Error('Set PEPPER before deploying');
+  return hmac(String(email).trim().toLowerCase(), pepper);
+}
+function syncCanMail(now, emailTime, idTime, count, remaining) {
+  return (!emailTime || now - emailTime >= SYNC_LIMITS.cooldown) &&
+    (!idTime || now - idTime >= SYNC_LIMITS.cooldown) && count < SYNC_LIMITS.daily && remaining > 0;
+}
+function syncValidateProfile(p, byteLength) {
+  if (!p || p.version !== 1 || typeof p.display_name !== 'string' || !p.display_name.trim() || p.display_name.length > 100 ||
+      typeof p.created_at !== 'string' || !isFinite(Date.parse(p.created_at)) || !p.progress || Array.isArray(p.progress) || typeof p.progress !== 'object' ||
+      ['read_ids', 'bookmarked_ids'].some(function(k) { return !Array.isArray(p[k]) || p[k].some(function(id) { return typeof id !== 'string' || id.length > 500; }); }) ||
+      Object.keys(p.progress).some(function(k) { return typeof p.progress[k] !== 'string'; }) ||
+      Object.keys(p).some(function(k) { return ['version','display_name','created_at','read_ids','bookmarked_ids','progress'].indexOf(k) < 0; }) ||
+      byteLength(JSON.stringify(p)) > SYNC_LIMITS.bytes) throw new Error('Invalid or oversized profile');
+  return p;
+}
+function syncHandle(request, env) {
+  var a = request.action, now = env.now(), generic = Object.assign({}, SYNC_GENERIC);
+  if (['push','pull','backup','restore_request'].indexOf(a) < 0) throw new Error('Invalid action');
+  var id = String(request.userId || '').toLowerCase();
+  if (a !== 'restore_request' && !SYNC_UUID.test(id)) throw new Error('Invalid user ID');
+  var key = id ? 'p:' + env.hash(id) : '', record = key ? env.get(key) : null;
+  if (a === 'pull') return {ok: true, profile: record ? record.profile : null, revision: record ? record.revision : 0};
+  if (a === 'push') {
+    syncValidateProfile(request.profile, env.bytes);
+    var revision = record ? record.revision : 0;
+    if (request.revision !== revision) return {ok: true, conflict: true, profile: record ? record.profile : null, revision: revision};
+    env.set(key, {revision: revision + 1, profile: request.profile});
+    return {ok: true, revision: revision + 1};
+  }
+  var email = String(request.email || '').trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return generic;
+  var fingerprint = syncFingerprint(email, env.pepper, env.hmac), emailKey = 'e:' + fingerprint;
+  if (a === 'restore_request') id = env.get(emailKey);
+  if (!id || !SYNC_UUID.test(id) || !env.get('p:' + env.hash(id))) return generic;
+  var dayKey = 'day:' + new Date(now).toISOString().slice(0,10), emailRate = 'rate:e:' + fingerprint, idRate = 'rate:i:' + env.hash(id);
+  if (!syncCanMail(now, env.get(emailRate), env.get(idRate), env.get(dayKey) || 0, env.remaining())) return generic;
+  if (a === 'backup') env.set(emailKey, id);
+  env.set(emailRate, now); env.set(idRate, now); env.set(dayKey, (env.get(dayKey) || 0) + 1);
+  var link = env.site.replace(/\/$/, '/') + (env.site.indexOf('?') < 0 ? '?' : '&') + 'restore=' + encodeURIComponent(id);
+  env.mail(email, request.lang === 'vi' ? 'Khôi phục tiến độ Xem Tim Mỗi Ngày' : 'Restore your Daily Learning Heart progress',
+    'Khôi phục và hợp nhất tiến độ trên thiết bị này:\n' + link + '\n\nRestore and merge your progress on this device:\n' + link +
+    '\n\nAi có liên kết này đều có thể đọc và đồng bộ tiến độ của bạn. Chỉ mở trên thiết bị tin cậy. Nếu không yêu cầu, hãy bỏ qua email này.\nAnyone with this link can read and sync your progress. Open it only on a trusted device. If you did not request this, ignore this email.');
+  return generic;
+}
+function syncSheetStore() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('SYNC_SHEET_ID'), sheet;
+  if (!id) {
+    var book = SpreadsheetApp.create('Daily Learning Heart private sync');
+    props.setProperty('SYNC_SHEET_ID', book.getId()); sheet = book.getSheets()[0];
+    sheet.appendRow(['key','json chunks (private)']);
+  } else sheet = SpreadsheetApp.openById(id).getSheets()[0];
+  function row(key) {
+    if (sheet.getLastRow() < 2) return null;
+    var found = sheet.getRange(2,1,sheet.getLastRow()-1,1).createTextFinder(key).matchEntireCell(true).useRegularExpression(false).findNext();
+    return found ? found.getRow() : null;
+  }
+  return {
+    get: function(key) { var r = row(key); return r ? JSON.parse(Utilities.newBlob(Utilities.base64Decode(sheet.getRange(r,2,1,12).getValues()[0].join(''))).getDataAsString('UTF-8')) : null; },
+    set: function(key,value) {
+      var r = row(key), text = Utilities.base64Encode(JSON.stringify(value), Utilities.Charset.UTF_8), chunks = [];
+      if (!r && sheet.getLastRow() >= SYNC_LIMITS.records) throw new Error('Sync storage is full');
+      for (var i=0;i<12;i++) chunks.push(text.slice(i*30000,(i+1)*30000));
+      sheet.getRange(r || sheet.getLastRow()+1,1,1,13).setValues([[key].concat(chunks)]);
+    }
+  };
+}
+function doPost(event) {
+  var lock = LockService.getScriptLock(), result, request;
+  try {
+    if (!lock.tryLock(5000)) throw new Error('Busy');
+    var props = PropertiesService.getScriptProperties(), pepper = props.getProperty('PEPPER');
+    if (!pepper) throw new Error('Not configured');
+    var body = event.postData.contents;
+    if (Utilities.newBlob(body).getBytes().length > SYNC_LIMITS.bytes + 4096) throw new Error('Request too large');
+    request = JSON.parse(body);
+    var store = syncSheetStore();
+    function hex(bytes) { return bytes.map(function(b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join(''); }
+    result = syncHandle(request, {
+      get: store.get, set: store.set, pepper: pepper, now: Date.now,
+      hash: function(value) { return hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)); },
+      hmac: function(value,key) { return hex(Utilities.computeHmacSha256Signature(value,key,Utilities.Charset.UTF_8)); },
+      bytes: function(value) { return Utilities.newBlob(value).getBytes().length; },
+      remaining: function() { return MailApp.getRemainingDailyQuota(); },
+      mail: function(to,subject,body) { MailApp.sendEmail({to:to,subject:subject,body:body}); },
+      site: props.getProperty('SITE_URL') || 'https://ledinhduy281.github.io/daily-learning-heart/'
+    });
+  } catch (_) { result = request && ['backup','restore_request'].indexOf(request.action) >= 0 ? Object.assign({},SYNC_GENERIC) : {ok:false,error:'Sync unavailable. Try again later.'}; }
+  finally { if (lock.hasLock()) lock.releaseLock(); }
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+}
