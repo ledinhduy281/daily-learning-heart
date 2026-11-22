@@ -59,8 +59,9 @@ class DeviceProfileTests(unittest.TestCase):
         self.assertEqual(len(checked), 2)
         for path in ('/.env', '/fetch_daily_ebm.py', '/data/', '/data/users.json.1.2.tmp', '/data/feedback.json', '/data/%75sers.json'):
             self.assertEqual(self.request(path)[0], 403)
-        with urllib.request.urlopen(self.base + '/device_profile.js') as response:
-            self.assertEqual(response.status, 200)
+        for asset in ('device_profile.js', 'clinical_distractors.js', 'clinical_mcq.js'):
+            with urllib.request.urlopen(self.base + '/' + asset) as response:
+                self.assertEqual(response.status, 200)
 
     def test_head_matches_get_headers_without_writing_a_body(self):
         def request(method, path):

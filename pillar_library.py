@@ -2199,8 +2199,8 @@ Legacy Diamond–Forrester probability tables systematically overestimated obstr
                     "Directive B • 2024 ESC CCS (Current)",
                     "OMT Toàn diện là Bắt buộc; Tái thông Tiên lượng Cho Giải phẫu Nguy cơ Cao",
                     "Universal OMT Mandate; Prognostic Revascularization Reserved for High-Risk Anatomy",
-                    "ESC 2024 giới hạn chỉ định tái thông cải thiện tiên lượng ở hẹp thân chung trái (LM), bệnh 3 nhánh kèm LVEF ≤35% (ưu tiên CABG nếu phù hợp phẫu thuật) hoặc hẹp đoạn gần LAD nặng; PCI giữ vai trò chủ yếu giảm đau ngực kháng trị.",
-                    "ESC 2024 restricts prognostic revascularization largely to left main disease, multivessel disease with LVEF ≤35% (favoring CABG in surgical candidates), or proximal LAD disease, framing PCI primarily for refractory angina.",
+                    "ESC 2024 khuyến cáo tái thông cải thiện tiên lượng ở CCS có bệnh 3 nhánh có ý nghĩa chức năng và LVEF >35% (Class I, LOE A), ngoài các chỉ định như hẹp thân chung trái hoặc bệnh nhiều nhánh kèm LVEF ≤35% phù hợp CABG. Lựa chọn CABG hay PCI cần xét giải phẫu, bệnh đồng mắc và hội chẩn Heart Team.",
+                    "ESC 2024 recommends prognostic revascularization in CCS with functionally significant three-vessel disease and LVEF >35% (Class I, LOE A), in addition to indications such as left main disease or multivessel disease with LVEF ≤35% suitable for CABG. CABG versus PCI depends on anatomy, comorbidities and Heart Team assessment.",
                 ),
             ],
         },
@@ -2285,7 +2285,7 @@ Legacy Diamond–Forrester probability tables systematically overestimated obstr
 - **Bước ngoặt chuyển dịch:** Chuỗi thử nghiệm bản lề **COURAGE** (2007), **ISCHEMIA** (2020) và **REVIVED-BCIS2** (2022) đã chứng minh nhất quán trên hàng nghìn bệnh nhân rằng ở bệnh nhân CCS ổn định (không hẹp thân chung), chiến lược PCI thường quy bổ sung vào điều trị nội khoa tối ưu (OMT/GDMT) **không làm giảm tử vong hay suy tim**.
 - **Điểm dừng hiện tại (ESC 2024 CCS):**
   - **OMT là nền tảng bắt buộc cho mọi bệnh nhân CCS**, bất kể có tái thông hay không.
-  - **Chỉ định tái thông cải thiện tiên lượng sống còn (Class I):** Giới hạn ở giải phẫu nguy cơ cao như **hẹp thân chung trái (LM) ≥ 50%**, **bệnh 3 nhánh kèm LVEF ≤ 35%** (ưu tiên phẫu thuật CABG hơn PCI nếu nguy cơ phẫu thuật chấp nhận được), hoặc hẹp nặng đoạn gần LAD/bệnh nhiều nhánh có gánh nặng thiếu máu lớn không ổn định.
+  - **Chỉ định tái thông cải thiện tiên lượng sống còn (Class I):** Bao gồm **bệnh 3 nhánh có ý nghĩa chức năng và LVEF >35%**: khuyến cáo tái thông để cải thiện sống còn dài hạn và giảm tử vong tim mạch (**Class I, LOE A**), bên cạnh hẹp thân chung trái hoặc bệnh nhiều nhánh kèm LVEF ≤35% phù hợp CABG. Lựa chọn CABG hay PCI cần hội chẩn Heart Team.
   - **Chỉ định PCI giảm triệu chứng (Class I):** Dành cho bệnh nhân **còn đau thắt ngực hạn chế sinh hoạt dù đã tối ưu hóa thuốc chống đau ngực**.
 
 ### 2. Cơ sở sinh lý bệnh & Điểm nhấn tại giường bệnh
@@ -2316,7 +2316,7 @@ Legacy Diamond–Forrester probability tables systematically overestimated obstr
 
 1. **[LANDMARK TRIAL]** **COURAGE** và **ISCHEMIA** chứng minh chiến lược xâm lấn sớm không giảm tử vong hoặc NMCT ở CCS ổn định không hẹp thân chung với LVEF bảo tồn.
 2. **[LANDMARK TRIAL]** **REVIVED-BCIS2** khẳng định ở bệnh nhân LVEF ≤ 35%, PCI không cải thiện sống còn hay phục hồi LVEF so với GDMT suy tim hiện đại (HR 0,99; p = 0,96).
-3. **[GUIDELINE EVOLUTION]** ESC 2024 đặt OMT toàn diện ở vị trí trung tâm; ưu tiên CABG cho bệnh 3 nhánh kèm LVEF ≤35% hoặc hẹp thân chung phức tạp, và dùng PCI để giải quyết đau thắt ngực kháng trị.
+3. **[GUIDELINE EVOLUTION]** ESC 2024 đặt OMT toàn diện ở vị trí trung tâm; tái thông được khuyến cáo ở bệnh 3 nhánh có ý nghĩa chức năng và LVEF >35% để cải thiện sống còn dài hạn và giảm tử vong tim mạch (Class I, LOE A). CABG hay PCI tùy giải phẫu và Heart Team; CABG vẫn quan trọng ở hẹp thân chung phức tạp hoặc LVEF ≤35% phù hợp phẫu thuật.
 
 ---
 
@@ -2334,7 +2334,7 @@ Legacy Diamond–Forrester probability tables systematically overestimated obstr
 **Current Guideline:** *2024 ESC Guidelines for the management of chronic coronary syndromes* (*European Heart Journal*, 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
-Historical cardiology relied heavily on mechanical stenosis relief ("oculostenotic reflex"). Landmark trials (**COURAGE**, **ISCHEMIA**, and **REVIVED-BCIS2**) systematically refuted survival advantages for routine upfront PCI in stable CAD without left main disease or in ischemic LV dysfunction on modern GDMT. Acute plaque rupture most often arises from non-obstructive lipid-rich lesions stabilized systemically by high-intensity statins, antiplatelets, and vascular anti-inflammatory therapy, rather than focal stenting. Accordingly, ESC 2024 restricts prognostic revascularization largely to left main stenosis ≥50%, multivessel CAD with LVEF ≤35% (favoring CABG in surgical candidates), or proximal LAD disease, positioning PCI primarily for refractory angina.
+Historical cardiology relied heavily on mechanical stenosis relief ("oculostenotic reflex"). Landmark trials (**COURAGE**, **ISCHEMIA**, and **REVIVED-BCIS2**) systematically refuted survival advantages for routine upfront PCI in stable CAD without left main disease or in ischemic LV dysfunction on modern GDMT. Acute plaque rupture most often arises from non-obstructive lipid-rich lesions stabilized systemically by high-intensity statins, antiplatelets, and vascular anti-inflammatory therapy, rather than focal stenting. ESC 2024 recommends revascularization in functionally significant three-vessel disease with LVEF >35% to improve long-term survival and reduce cardiovascular death (Class I, LOE A), alongside indications such as left main disease or multivessel CAD with LVEF ≤35% suitable for CABG. CABG versus PCI requires anatomical and Heart Team assessment; revascularization also treats refractory angina.
 
 ---
 
@@ -2358,7 +2358,7 @@ Historical cardiology relied heavily on mechanical stenosis relief ("oculostenot
 
 * **[LANDMARK TRIAL]** COURAGE and ISCHEMIA establish conservative OMT as a safe initial strategy in stable CAD after left main disease is excluded.
 * **[LANDMARK TRIAL]** REVIVED-BCIS2 proves PCI confers neither survival nor LVEF benefits atop modern HFrEF GDMT (HR 0.99; p = 0.96).
-* **[GUIDELINE EVOLUTION]** Reserve prognostic revascularization for left main disease or multivessel CAD with LVEF ≤35% (CABG preferred), and deploy PCI for refractory angina.
+* **[GUIDELINE EVOLUTION]** Recommend revascularization for functionally significant three-vessel disease with LVEF >35% to improve long-term survival and reduce cardiovascular death (Class I, LOE A), in addition to left main disease or multivessel CAD with LVEF ≤35% suitable for CABG. Select CABG versus PCI through Heart Team review.
 
 ---
 
@@ -4407,8 +4407,8 @@ _PILLAR_6_SERIES = [
                     "Directive B • 2022 ESC VA (Current)",
                     "Hạ NICM LVEF ≤35% xuống Class IIa & Bổ sung Tiêu chí CMR-LGE / Đột biến Gen",
                     "NICM LVEF ≤35% Reclassified Class IIa; CMR-LGE & Genetic Triggers",
-                    "ESC 2022 hạ đặt ICD ở DCM/HNDCM có LVEF ≤35% từ Class I xuống Class IIa, đồng thời mở chỉ định ICD cho bệnh nhân LVEF >35% nếu có xơ hóa CMR-LGE kết hợp đột biến nguy cơ cao (LMNA, FLNC, PLN, RBM20).",
-                    "ESC 2022 downgrades primary-prevention ICD in DCM/HNDCM with LVEF ≤35% to Class IIa, while introducing CMR-LGE and high-risk pathogenic variants (LMNA, FLNC, PLN, RBM20) as ICD triggers even at LVEF >35%.",
+                    "ESC 2022: nên cân nhắc ICD ở DCM/HNDCM có LVEF <50% VÀ ≥2 yếu tố nguy cơ: ngất, CMR-LGE, gây được nhịp nhanh thất đơn dạng khi thăm dò điện sinh lý, hoặc đột biến gây bệnh LMNA, PLN, FLNC, RBM20 (Class IIa). Không dùng riêng mốc LVEF >35% hay một dấu ấn đơn lẻ để xác định chỉ định mở rộng này.",
+                    "ESC 2022: ICD should be considered in DCM/HNDCM with LVEF <50% AND ≥2 risk factors: syncope, CMR-LGE, inducible sustained monomorphic VT at electrophysiological study, or pathogenic LMNA, PLN, FLNC, RBM20 variants (Class IIa). LVEF >35% alone or one isolated marker does not establish this expanded indication.",
                 ),
             ],
         },
@@ -4453,8 +4453,8 @@ _PILLAR_6_SERIES = [
             ),
             _pearl(
                 "guideline",
-                "Không chỉ nhìn con số LVEF ≤ 35%: bệnh nhân DCM mang đột biến gen nguy cơ cao (**LMNA, FLNC, PLN, RBM20**) kèm ngất hoặc xơ hóa LGE trên CMR cần cân nhắc đặt ICD ngay cả khi **LVEF > 35%** (**Class IIa**).",
-                "Look beyond LVEF ≤35%: patients with **LMNA, FLNC, PLN, or RBM20** pathogenic variants plus syncope or CMR-LGE warrant ICD evaluation even at **LVEF > 35%** (**Class IIa**).",
+                "Ở DCM/HNDCM, cân nhắc ICD khi **LVEF <50% VÀ ≥2 yếu tố nguy cơ**: ngất, CMR-LGE, gây được nhịp nhanh thất đơn dạng kéo dài hoặc đột biến gây bệnh LMNA, PLN, FLNC, RBM20 (Class IIa).",
+                "In DCM/HNDCM, consider ICD with **LVEF <50% AND ≥2 risk factors**: syncope, CMR-LGE, inducible sustained monomorphic VT or pathogenic LMNA, PLN, FLNC, RBM20 variants (Class IIa).",
             ),
         ],
         pubmed_anchors=[
@@ -4480,7 +4480,7 @@ _PILLAR_6_SERIES = [
 - **Bước ngoặt chuyển dịch:** Thử nghiệm **DANISH** (2016) trên 1.116 bệnh nhân suy tim không thiếu máu cục bộ (58% đang mang máy tái đồng bộ CRT) chứng minh trên nền điều trị suy tim hiện đại, đặt ICD thường quy **không làm giảm tử vong mọi nguyên nhân**, vì nguy cơ đột tử bị triệt tiêu phần lớn ở người cao tuổi nhiều bệnh đồng mắc trong khi vẫn chịu tỷ lệ nhiễm trùng thiết bị và sốc điện không thích hợp. Ngược lại, nhiều ca đột tử lại xảy ra ở người mang sẹo xơ cơ tim (CMR-LGE) hoặc đột biến gen ác tính dù LVEF còn bảo tồn (>35%).
 - **Điểm dừng hiện tại (ESC 2022 VA):**
   - **DCM/HNDCM có triệu chứng (NYHA II–III) và LVEF ≤ 35%** sau ≥3 tháng GDMT tối ưu: Hạ từ Class I xuống **Class IIa, LOE A** (cá thể hóa theo tuổi, nguy cơ đột tử vs nguy cơ tử vong không loạn nhịp).
-  - **Mở rộng chỉ định cho DCM có LVEF > 35% (Class IIa):** Đặt ICD dự phòng nguyên phát khi có **≥2 yếu tố nguy cơ** (ngất, LGE dương tính trên CMR, nhịp nhanh thất không bền bỉ NSVT, hoặc gây được nhịp nhanh thất đơn dạng qua thăm dò điện sinh lý) hoặc mang đột biến gen nguy cơ cao (**LMNA, FLNC, PLN, RBM20**) kết hợp công cụ tính nguy cơ chuyên biệt.
+  - **Chỉ định mở rộng ở DCM/HNDCM (Class IIa):** Nên cân nhắc ICD khi **LVEF <50% VÀ ≥2 yếu tố nguy cơ**: ngất, CMR-LGE, gây được nhịp nhanh thất đơn dạng kéo dài khi thăm dò điện sinh lý, hoặc đột biến gây bệnh **LMNA, PLN, FLNC, RBM20**. Không dùng LVEF >35% hay một dấu ấn đơn lẻ làm chỉ định độc lập.
   - **Không dùng Amiodarone** để dự phòng nguyên phát đột tử tim (**Class III**).
 
 ### 2. Cơ sở sinh lý bệnh & Điểm nhấn tại giường bệnh
@@ -4507,7 +4507,7 @@ _PILLAR_6_SERIES = [
 
 1. **[GUIDELINE EVOLUTION]** ESC 2022 VA hạ đặt ICD dự phòng nguyên phát ở **DCM không thiếu máu cục bộ LVEF ≤ 35%** từ Class I xuống **Class IIa, LOE A**; bệnh cơ tim thiếu máu sau NMCT vẫn giữ **Class I**.
 2. **[LANDMARK TRIAL]** **DANISH** chứng minh đặt ICD ở NICM giảm **50% đột tử tim** (HR 0,50; p = 0,005) nhưng không giảm tử vong chung trên nền CRT/GDMT hiện đại (HR 0,87; p = 0,28) — ưu tiên bệnh nhân trẻ ít bệnh nền.
-3. **[GUIDELINE EVOLUTION]** Tích hợp **CMR-LGE** và **xét nghiệm gen (LMNA, FLNC, PLN, RBM20)** để chỉ định ICD kịp thời ngay cả khi LVEF > 35%, và luôn tối ưu hóa Tứ trụ GDMT đủ ≥ 3 tháng trước khi đặt máy.
+3. **[GUIDELINE EVOLUTION]** Chỉ định ICD mở rộng ở DCM/HNDCM cần **LVEF <50% VÀ ≥2 yếu tố nguy cơ**: ngất, CMR-LGE, gây được nhịp nhanh thất đơn dạng kéo dài hoặc đột biến gây bệnh LMNA, PLN, FLNC, RBM20. Luôn đánh giá sau tối ưu GDMT.
 
 ---
 
@@ -4525,7 +4525,7 @@ _PILLAR_6_SERIES = [
 **Current Guideline:** *2022 ESC Guidelines for the management of patients with ventricular arrhythmias and the prevention of sudden cardiac death* (*European Heart Journal*, 2022; 43:3997–4126; DOI: `10.1093/eurheartj/ehac262`; PMID: `36017572`).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
-Historically, primary-prevention ICD candidacy relied almost exclusively on LVEF ≤35% (**Class I** in 2015 ESC VA). Following **DANISH** (2016)—where contemporary GDMT and 58% CRT utilization neutralized overall mortality gains in non-ischemic cardiomyopathy—the **2022 ESC VA Guidelines** reclassified primary-prevention ICD in DCM with LVEF ≤35% to **Class IIa, LOE A**, while introducing **CMR-LGE myocardial fibrosis** and high-risk genetic variants (**LMNA, FLNC, PLN, RBM20**) as triggers for ICD implantation even when LVEF >35%. Always optimize four-pillar GDMT for ≥3 months prior to ICD evaluation.
+Historically, primary-prevention ICD candidacy relied almost exclusively on LVEF ≤35% (**Class I** in 2015 ESC VA). Following **DANISH** (2016)—where contemporary GDMT and 58% CRT utilization neutralized overall mortality gains in non-ischemic cardiomyopathy—the **2022 ESC VA Guidelines** reclassified primary-prevention ICD in DCM with LVEF ≤35% to **Class IIa, LOE A**. The expanded Class IIa indication in DCM/HNDCM requires **LVEF <50% AND ≥2 risk factors**: syncope, CMR-LGE, inducible sustained monomorphic VT at electrophysiological study, or pathogenic **LMNA, PLN, FLNC, RBM20** variants. LVEF >35% or one isolated marker is not an independent indication. Always optimize four-pillar GDMT for ≥3 months prior to ICD evaluation.
 
 ---
 
@@ -4545,7 +4545,7 @@ Historically, primary-prevention ICD candidacy relied almost exclusively on LVEF
 
 * **[GUIDELINE EVOLUTION]** ESC 2022 reclassifies primary-prevention ICD in non-ischemic DCM (LVEF ≤35%) to **Class IIa, LOE A** while maintaining **Class I** for ischemic cardiomyopathy.
 * **[LANDMARK TRIAL]** DANISH proved ICD therapy halves sudden cardiac death (HR 0.50) without altering overall mortality across older non-ischemic cohorts receiving CRT.
-* **[GUIDELINE EVOLUTION]** Integrate CMR-LGE and genetic testing (*LMNA, FLNC, PLN, RBM20*) to catch high-risk SCD phenotypes at LVEF >35%.
+* **[GUIDELINE EVOLUTION]** Consider the expanded ICD indication in DCM/HNDCM only with **LVEF <50% AND ≥2 risk factors**: syncope, CMR-LGE, inducible sustained monomorphic VT, or pathogenic LMNA, PLN, FLNC, RBM20 variants.
 
 ---
 
@@ -5159,12 +5159,12 @@ _PILLAR_7_SERIES = [
                     "PARTNER 3 (balloon-expandable, n=1,000; 1y composite 8.5% vs. 15.1%; HR 0.54; p=0.001) and Evolut Low Risk (self-expanding, n=1,468; 24mo 5.3% vs. 6.7%) validated low-risk TAVR.",
                 ),
                 _step(
-                    "Chỉ dẫn B • ESC/EACTS 2021 VHD (Hiện hành)",
-                    "Directive B • 2021 ESC/EACTS VHD (Current)",
-                    "Mốc Tuổi ≥ 75: TAVR Qua Động mạch Đùi Class I, LOE A Bất kể Điểm Nguy cơ",
-                    "Age ≥ 75 Years: Transfemoral TAVR Class I, LOE A Across Risk Spectra",
-                    "ESC/EACTS 2021 chuyển sang mô hình phân tầng kết hợp tuổi–kỳ vọng sống–giải phẫu: khuyến cáo TAVR (Class I, LOE A) cho bệnh nhân ≥75 tuổi hoặc nguy cơ phẫu thuật cao (STS/EuroSCORE II ≥8%), trong khi SAVR ưu tiên ở người <75 tuổi nguy cơ thấp.",
-                    "ESC/EACTS 2021 integrates age and lifetime durability, endorsing transfemoral TAVR (Class I, LOE A) in patients aged ≥75 years or high surgical risk, and SAVR in younger (<75y) low-risk candidates.",
+                    "Chỉ dẫn B • ESC/EACTS 2021 VHD (Lịch sử)",
+                    "Directive B • 2021 ESC/EACTS VHD (Historical)",
+                    "ESC/EACTS 2021 (Lịch sử) — Mốc Tuổi ≥75: TAVR Qua Đường Đùi Class I, LOE A",
+                    "ESC/EACTS 2021 (Historical) — Age ≥75: Transfemoral TAVR Class I, LOE A",
+                    "Theo ESC/EACTS 2021 (khuyến cáo lịch sử, không phải hướng dẫn hiện hành), TAVR qua đường đùi (Class I, LOE A) được khuyến cáo cho bệnh nhân ≥75 tuổi hoặc nguy cơ phẫu thuật cao (STS/EuroSCORE II ≥8%), trong khi SAVR ưu tiên ở người <75 tuổi nguy cơ thấp.",
+                    "Under ESC/EACTS 2021 (historical guidance, not the current guideline), transfemoral TAVR (Class I, LOE A) was recommended in patients aged ≥75 years or high surgical risk, and SAVR in younger (<75y) low-risk candidates.",
                 ),
             ],
         },
@@ -5227,14 +5227,14 @@ _PILLAR_7_SERIES = [
 
 ## BLOCK A — Cập nhật & Tiến hóa Khuyến cáo (Guideline Update & Evolution)
 
-**Khuyến cáo hiện hành:** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (*European Heart Journal*, 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
+**Khuyến cáo lịch sử được khảo sát (không phải hướng dẫn hiện hành):** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (*European Heart Journal*, 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
 
 **Phiên bản tiền nhiệm để đối chiếu:** *2012 ESC/EACTS VHD* (PMID: `22922415`) & *2017 ESC/EACTS VHD* (DOI: `10.1093/eurheartj/ehx391`; PMID: `28886619`).
 
 ### 1. Diễn tiến tư duy qua các thế hệ khuyến cáo
 - **Lập trường trước đây (ESC 2012 → 2017):** TAVR ra đời năm 2002 và ban đầu chỉ là "cứu cánh" cho bệnh nhân hẹp van ĐMC nặng không thể phẫu thuật (PARTNER 1B) hoặc nguy cơ phẫu thuật cao (STS ≥8%). Năm 2017, TAVR mở rộng sang nhóm nguy cơ trung bình (STS 4–8%), trong khi bệnh nhân nguy cơ thấp (STS <4%) vẫn gần như mặc định phẫu thuật thay van tim hở (SAVR).
 - **Bước ngoặt chuyển dịch:** Hai thử nghiệm ngẫu nhiên kinh điển năm 2019 — **PARTNER 3** (van bóng nở) và **Evolut Low Risk** (van tự bung) — chứng minh trên bệnh nhân nguy cơ thấp (STS ~1,9%), TAVR đạt kết cục lâm sàng 1–2 năm vượt trội hoặc không thua kém mổ hở, kèm thời gian nằm viện ngắn hơn và ít rung nhĩ/chảy máu cấp hơn.
-- **Điểm dừng hiện tại (ESC/EACTS 2021 VHD):**
+- **Giai đoạn lịch sử ESC/EACTS 2021 VHD (mốc ≥75 tuổi không phải ngưỡng hiện hành):**
   - Chuyển từ phân tầng chỉ dựa vào điểm nguy cơ sang **phối hợp Tuổi + Kỳ vọng sống + Giải phẫu + Quyết định Heart Team** (**Class I**):
   - **SAVR (Class I, LOE B):** Ưu tiên cho bệnh nhân trẻ tuổi **< 75 tuổi** có nguy cơ phẫu thuật thấp (STS/EuroSCORE II < 4%) và không có chống chỉ định mổ.
   - **TAVR qua đường động mạch đùi (Class I, LOE A):** Khuyến cáo cho bệnh nhân lớn tuổi **≥ 75 tuổi**, hoặc mọi lứa tuổi có nguy cơ phẫu thuật cao (STS/EuroSCORE II ≥ 8%) hoặc không phù hợp phẫu thuật.
@@ -5261,7 +5261,7 @@ _PILLAR_7_SERIES = [
 
 ## III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS
 
-1. **[GUIDELINE EVOLUTION]** ESC/EACTS 2021 VHD phân tầng theo mốc **75 tuổi & Heart Team**: TAVR qua đường đùi đạt **Class I, LOE A** cho người ≥ 75 tuổi hoặc nguy cơ cao; SAVR ưu tiên ở người < 75 tuổi nguy cơ thấp.
+1. **[GUIDELINE EVOLUTION]** Khuyến cáo lịch sử ESC/EACTS 2021 VHD phân tầng theo mốc **75 tuổi & Heart Team**: TAVR qua đường đùi đạt **Class I, LOE A** cho người ≥ 75 tuổi hoặc nguy cơ cao; SAVR ưu tiên ở người < 75 tuổi nguy cơ thấp.
 2. **[LANDMARK TRIAL]** **PARTNER 3** chứng minh TAVR bóng nở ở nhóm nguy cơ thấp giảm 46% tử vong, đột quỵ hoặc tái nhập viện sau 1 năm (8,5% vs 15,1%; HR 0,54; p = 0,001).
 3. **[LANDMARK TRIAL]** **Evolut Low Risk** xác nhận tính không thua kém ở mốc 24 tháng (5,3% vs 6,7%) nhưng đòi hỏi cảnh giác tỷ lệ cần máy tạo nhịp vĩnh viễn cao hơn (17,4% vs 6,1%).
 
@@ -5278,10 +5278,10 @@ _PILLAR_7_SERIES = [
 
 ## BLOCK A — Guideline Update & Evolution
 
-**Current Guideline:** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (*European Heart Journal*, 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
+**Historical guideline studied (not current guidance):** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (*European Heart Journal*, 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
-Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2017) AS patients, **PARTNER 3** and **Evolut Low Risk** proved TAVR superiority or non-inferiority in low-surgical-risk adults (mean STS ~1.9%). Consequently, **2021 ESC/EACTS VHD** transitions to an age-and-lifetime Heart Team framework: **transfemoral TAVR holds a Class I, LOE A** recommendation for age ≥75 years or high surgical risk (STS/EuroSCORE II ≥8%), whereas **SAVR** (**Class I, LOE B**) remains preferred for fit low-risk patients <75 years considering long-term structural durability, bicuspid anatomy, and future coronary re-access.
+Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2017) AS patients, **PARTNER 3** and **Evolut Low Risk** proved TAVR superiority or non-inferiority in low-surgical-risk adults (mean STS ~1.9%). Under the **historical 2021 ESC/EACTS VHD guideline (not current guidance)**, the age-and-lifetime Heart Team framework was: **transfemoral TAVR holds a Class I, LOE A** recommendation for age ≥75 years or high surgical risk (STS/EuroSCORE II ≥8%), whereas **SAVR** (**Class I, LOE B**) remains preferred for fit low-risk patients <75 years considering long-term structural durability, bicuspid anatomy, and future coronary re-access.
 
 ---
 
@@ -5299,7 +5299,7 @@ Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2
 
 ## Take-Home Clinical Pearls for Rounds
 
-* **[GUIDELINE EVOLUTION]** ESC/EACTS 2021 VHD mandates Heart Team age-based allocation: TAVR (Class I, LOE A) for age ≥75y or high risk; SAVR for fit low-risk adults <75y.
+* **[GUIDELINE EVOLUTION]** Historical ESC/EACTS 2021 VHD guidance used Heart Team age-based allocation: TAVR (Class I, LOE A) for age ≥75y or high risk; SAVR for fit low-risk adults <75y.
 * **[LANDMARK TRIAL]** PARTNER 3 reduced 1-year death, stroke, or rehospitalization by 46% (HR 0.54; p = 0.001) in low-risk AS.
 * **[LANDMARK TRIAL]** Account for lifetime valve durability, coronary access, and conduction-system block risk when counseling younger low-risk AS patients.
 
@@ -5427,7 +5427,7 @@ Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2
 
 ## BLOCK A — Cập nhật & Tiến hóa Khuyến cáo (Guideline Update & Evolution)
 
-**Khuyến cáo hiện hành:** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`) và bằng chứng *RESHAPE-HF2* (2024).
+**Khuyến cáo lịch sử được khảo sát (không phải hướng dẫn hiện hành):** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`) và bằng chứng *RESHAPE-HF2* (2024).
 
 **Phiên bản tiền nhiệm để đối chiếu:** *2017 ESC/EACTS VHD Guidelines* (DOI: `10.1093/eurheartj/ehx391`; PMID: `28886619`).
 
@@ -5477,7 +5477,7 @@ Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2
 
 ## BLOCK A — Guideline Update & Evolution
 
-**Current Guideline:** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`), supported by *RESHAPE-HF2* (2024).
+**Historical guideline studied (not current guidance):** *2021 ESC/EACTS Guidelines for the management of valvular heart disease* (DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`), supported by *RESHAPE-HF2* (2024).
 
 ### 1. Guideline Evolution & Pathophysiological Basis
 In functional (secondary) mitral regurgitation, valve leaflets are structurally normal and incompetence results from papillary muscle tethering and annular dilation. After **MITRA-FR** (neutral) and **COAPT** (dramatic hospitalization and survival benefit) yielded opposing results in 2018, patient selection converged on two rules: (1) complete **GDMT and CRT optimization** before intervention, and (2) targeting **disproportionate MR** (large EROA without extreme LV dilation, LVESD ≤70 mm). **2021 ESC/EACTS VHD** elevates M-TEER to **Class IIa, LOE B** in COAPT-like candidates, and **RESHAPE-HF2** (2024) confirms significant reductions in recurrent HF events and KCCQ symptom burden in moderate-to-severe functional MR.
@@ -6912,8 +6912,8 @@ The **2019 ESC PE Guidelines** elevated **DOACs** over VKA to **Class I, LOE A**
                     "Directive B • 2022 ESC/ERS PH (Current)",
                     "Định nghĩa Mới mPAP > 20 mmHg, PVR > 2 WU & Phối hợp Kép Đầu tay (Class I)",
                     "Redefined mPAP > 20 mmHg, PVR > 2 WU & Upfront Dual Therapy (Class I)",
-                    "ESC/ERS 2022 hạ ngưỡng chẩn đoán PH xuống mPAP > 20 mmHg và tiền mao mạch PVR > 2 WU để phát hiện sớm; quy định khởi đầu bằng phối hợp đôi ERA + PDE5i (Class I, LOE B) ở PAH nguy cơ thấp–trung bình không mắc bệnh đồng mắc tim phổi.",
-                    "ESC/ERS 2022 lowers diagnostic PH to mPAP >20 mmHg and precapillary PVR >2 WU, and mandates initial dual ERA + PDE5i therapy (Class I, LOE B) in low/intermediate-risk idiopathic PAH.",
+                    "ESC/ERS 2022 định nghĩa PH tiền mao mạch bằng mPAP >20 mmHg, PAWP ≤15 mmHg VÀ PVR >2 WU. Khuyến cáo khởi trị ERA + PDE5i (Class I, LOE B) cho PAH vô căn, di truyền hoặc liên quan thuốc ở nguy cơ thấp–trung bình KHÔNG có bệnh đồng mắc tim phổi.",
+                    "ESC/ERS 2022 defines precapillary PH as mPAP >20 mmHg, PAWP ≤15 mmHg AND PVR >2 WU. Initial ERA + PDE5i therapy is recommended (Class I, LOE B) for low/intermediate-risk idiopathic, heritable or drug-associated PAH WITHOUT cardiopulmonary comorbidities.",
                 ),
             ],
         },

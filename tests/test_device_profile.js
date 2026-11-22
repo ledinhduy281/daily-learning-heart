@@ -238,10 +238,10 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   const app = {currentLang:'vi',selected:{pillar_id:1}};
   const tutor = vm.runInNewContext(`${tutorCode}; SocraticTutor`,{
     App:app,SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',getPillarDisplayName:()=> 'Pillar',
-    safeStorageGet:key=>profile.get(key),safeStorageSet:(key,value)=>profile.set(key,value)
+    safeStorageGet:key=>profile.get(key),safeStorageSet:(key,value)=>profile.set(key,value),ClinicalQuiz:require('../clinical_mcq.js')
   });
   let generated = 0;
-  const fresh = {question:'Replacement question?',options:pending('fresh').current_options,correct_key:'B',explanation:'Replacement explanation'};
+  const fresh = require('../clinical_mcq.js').build(app.selected,0,0,'vi');
   tutor.buildDeterministicMcq = () => {generated++;return fresh;};
   tutor.loadStore();
   let session = tutor.getSession();
@@ -249,6 +249,59 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
     assert.deepEqual(JSON.parse(JSON.stringify(session[key])),second[key]);
   }
   assert.equal(generated,0);
+  for (const explanation of [undefined, '', '   ']) {
+    const progress={answered_count:12,correct_count:9,streak:3,diag_step:4,focus_idx:1,attempts_on_current:2,
+      subskills:[0,1,2,3].map(i=>({level:i+1,checks:4,answered:3,correct:2}))};
+    const legacy={...second,...progress,messages:second.messages.map(m=>({...m})),explanation,current_question:undefined,question_revealed:true};
+    tutor.store={1:legacy};
+    const before=generated;
+    const repaired=tutor.getSession();
+    assert.equal(repaired.started,true);
+    assert.equal(repaired.phase,'loop');
+    assert.equal(repaired.question_revealed,false);
+    assert.equal(generated,before+1);
+    for(const key of Object.keys(progress).filter(k=>k!=='subskills'))assert.equal(repaired[key],progress[key]);
+    assert.deepEqual(Array.from(repaired.subskills,s=>({level:s.level,checks:s.checks,answered:s.answered,correct:s.correct})),progress.subskills);
+    assert.deepEqual(JSON.parse(JSON.stringify(repaired.messages.slice(0,-1))),second.messages);
+    assert.equal(repaired.messages.at(-1).text,fresh.question);
+    assert.equal(repaired.current_question,fresh);
+    assert.equal(require('../clinical_mcq.js').turn(app.selected,repaired,'vi','answer','',fresh.correct_key).eval,'correct');
+    tutor.loadStore();
+    const saved=tutor.getSession();
+    assert.equal(saved.answered_count,12);
+    assert.equal(saved.current_question.explanation,fresh.explanation);
+    assert.equal(saved.messages.length,second.messages.length+1);
+    assert.equal(generated,before+1);
+  }
+  {
+    const build=tutor.buildDeterministicMcq;
+    const question={...fresh,required_subskills:[0,1]};
+    tutor.buildDeterministicMcq=()=>question;
+    tutor.store={1:{...pending('resumed'),phase:'diagnostic',diag_step:3,answered_count:3,correct_count:3,
+      explanation:'',subskills:[0,1,2,3].map(()=>({level:1,answered:1,correct:1,checks:1}))}};
+    const resumed=tutor.getSession();
+    assert.equal(resumed.question_index,3);
+    assert.equal(resumed.diag_step,3);
+    assert.equal(resumed.phase,'diagnostic');
+    assert.equal(resumed.answered_count,3);
+    tutor.loadStore();
+    const saved=tutor.getSession();
+    assert.equal(saved.question_index,3);
+    const result=require('../clinical_mcq.js').turn(app.selected,saved,'vi','answer','',question.correct_key);
+    assert.equal(result.state.question_index,4);
+    assert.equal(result.state.answered_count,4);
+    assert.equal(result.state.phase,'loop');
+    tutor.store={1:{...pending('indexed'),phase:'diagnostic',diag_step:3,question_index:7}};
+    assert.equal(tutor.getSession().question_index,7);
+    tutor.buildDeterministicMcq=build;
+  }
+  const recoverable={...second,last_question:fresh.question,current_options:fresh.options,correct_key:fresh.correct_key,explanation:'',current_question:{...fresh,explanation:''}};
+  tutor.store={1:recoverable};
+  const restored=tutor.getSession();
+  assert.equal(restored.started,true);
+  assert.equal(restored.current_question.explanation,fresh.explanation);
+  assert.equal(restored.explanation,fresh.explanation);
+  assert.equal(require('../clinical_mcq.js').turn(app.selected,restored,'vi','answer','',fresh.correct_key).eval,'correct');
   for (const broken of [
     {...second,current_options:[...first.current_options,...second.current_options]},
     {...second,current_options:[]},
@@ -270,11 +323,11 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
     assert.equal(generated,before);
   }
   app.currentLang = 'en';
-  fresh.question = 'English replacement question?';
-  fresh.explanation = 'English replacement explanation';
+  const translated = require('../clinical_mcq.js').translate(app.selected,fresh,'en');
   tutor.renderUI = () => {};
   tutor.onLanguageChanged();
-  assert.equal(session.explanation,fresh.explanation);
+  assert.equal(session.explanation,translated.explanation);
+  assert.deepEqual(session.current_question.option_ids,fresh.option_ids);
   assert.equal(session.options_lang,'en');
   assert.equal(session.messages.at(-1).text,session.last_question);
   tutor.store = {};

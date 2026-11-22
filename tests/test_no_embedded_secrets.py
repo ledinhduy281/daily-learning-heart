@@ -43,7 +43,12 @@ class NoEmbeddedSecretsTests(unittest.TestCase):
         self.assertFalse("api.groq.com" in source, "Browser Groq endpoint detected")
         self.assertFalse("callQuotaGuardedClientLLM" in source)
         self.assertIn("await this.composeClientDeterministicAnswer(", source)
-        self.assertIn("this.buildDeterministicMcq(primary, 0, 0, lang, diff)", source)
+        self.assertTrue(
+            "this.buildDeterministicMcq(primary, 0, 0, lang, diff)" in source
+            or "return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);" in source
+        )
+        for filename in ROOT.glob("*.js"):
+            self.assertNotIn("api.groq.com", filename.read_text(), str(filename))
 
 
 if __name__ == "__main__":
