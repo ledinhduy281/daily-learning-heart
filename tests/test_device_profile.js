@@ -18,6 +18,8 @@ const storage = new Storage();
   const shared = new Storage(), a = create(shared, crypto), b = create(shared, crypto);
   a.activity(['a'], ['a']); a.set('ebm_ui_lang', 'en'); a.rename('New name');
   b.activity(['b'], ['b']); b.set('ebm_font_scale', '1.2');
+  assert.deepEqual(JSON.parse(a.exportJSON()).bookmarked_ids, ['a','b']);
+  assert.deepEqual(JSON.parse(a.exportJSON()).read_ids, ['a','b']);
   const restored = create(shared, crypto);
   assert.deepEqual(restored.profile.read_ids, ['a','b']);
   assert.deepEqual(restored.profile.bookmarked_ids, ['a','b']);
@@ -26,6 +28,7 @@ const storage = new Storage();
   assert.equal(restored.get('ebm_font_scale'), '1.2');
   restored.activity(['a','b'], ['b']);
   assert.deepEqual(create(shared, crypto).profile.bookmarked_ids, ['b']);
+  assert.deepEqual(JSON.parse(a.exportJSON()).bookmarked_ids, ['b']);
 }
 calls = 0;
 let device = create(storage, crypto);
@@ -268,6 +271,25 @@ assert.equal(headers()['X-Device-Id'], id);
 assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'application/json');
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
+  {
+    const shared = new Storage(), first = create(shared, crypto), stale = create(shared, crypto);
+    first.activity(['one'], ['one']);
+    const app = {serverAvailable: true, user: {read_ids: [], bookmarked_ids: []}};
+    let sent;
+    const body = html.match(/async function syncDeviceActivity\(\) \{([\s\S]*?)\n    \}/)[1];
+    const sync = vm.runInNewContext(`(async function() {${body}})`, {
+      App: app, deviceStore: stale, getAuthHeaders: value => value,
+      fetch: async (url, options) => {sent = JSON.parse(options.body); return {ok: true};}
+    });
+    await sync();
+    assert.deepEqual(sent.read_ids, ['one']);
+    assert.deepEqual(sent.bookmarked_ids, ['one']);
+    assert.deepEqual(app.user.bookmarked_ids, ['one']);
+    first.activity(['one', 'two'], []);
+    await sync();
+    assert.deepEqual(sent.read_ids, ['one', 'two']);
+    assert.deepEqual(sent.bookmarked_ids, []);
+  }
   {
     const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
     let stored;

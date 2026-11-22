@@ -196,14 +196,24 @@ const DeviceProfile = (() => {
       p.progress = portableProgress(p.progress);
       persist();
     }
+    const refresh = () => {
+      try {
+        const latest = validate(JSON.parse(read(KEY)));
+        if (baseline && latest.device_id === p.device_id) {
+          p = reconcile(baseline, p, latest);
+          baseline = JSON.parse(JSON.stringify(latest));
+        }
+      } catch (_) {}
+    };
     return {
-      get profile() { return JSON.parse(JSON.stringify(p)); },
+      get profile() { refresh(); return JSON.parse(JSON.stringify(p)); },
       get(key) { return p.progress[key] ?? null; },
       set(key, value) { if (!owned(key)) return; p.progress[key] = String(value); persist(); },
       remove(key) { delete p.progress[key]; persist(); },
       activity(readIds, savedIds) { p.read_ids = [...new Set(readIds)]; p.bookmarked_ids = [...new Set(savedIds)]; persist(); },
       rename(name) { name = String(name).trim(); if (!name || name.length > 100) throw new Error('Invalid name'); p.display_name = name; persist(); },
       exportJSON() {
+        refresh();
         const {version, display_name, created_at, read_ids, bookmarked_ids} = p;
         return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(p.progress)}, null, 2);
       },

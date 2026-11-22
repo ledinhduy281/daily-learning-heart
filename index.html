@@ -5192,16 +5192,24 @@
     }
 
     function saveOfflineActivityStore() {
-      if (App.user) deviceStore.activity(App.user.read_ids, App.user.bookmarked_ids);
+      if (App.user) {
+        deviceStore.activity(App.user.read_ids, App.user.bookmarked_ids);
+        const profile = deviceStore.profile;
+        App.user.read_ids = profile.read_ids;
+        App.user.bookmarked_ids = profile.bookmarked_ids;
+      }
     }
 
     async function syncDeviceActivity() {
       if (!App.serverAvailable) return;
+      const profile = deviceStore.profile;
+      App.user.read_ids = profile.read_ids;
+      App.user.bookmarked_ids = profile.bookmarked_ids;
       try {
         await fetch("/api/user/activity", {
           method: "POST", headers: getAuthHeaders({"Content-Type": "application/json"}),
-          body: JSON.stringify({action: "sync", read_ids: App.user.read_ids,
-            bookmarked_ids: App.user.bookmarked_ids, display_name: deviceStore.profile.display_name})
+          body: JSON.stringify({action: "sync", read_ids: profile.read_ids,
+            bookmarked_ids: profile.bookmarked_ids, display_name: profile.display_name})
         });
       } catch (_) {
         App.serverAvailable = false;
