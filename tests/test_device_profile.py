@@ -268,6 +268,96 @@ class DeviceProfileTests(unittest.TestCase):
         with patch.object(app, 'USERS_PATH', app.BASE_DIR / 'data' / 'users.json'):
             self.assertEqual(self.request('/data/users.json')[0], 403)
 
+    def test_retired_password_reset_cannot_issue_a_session_or_change_passwords(self):
+        username, email = 'reset-owner', 'reset-owner@example.com'
+        original_password = 'original-test-password'
+        status, owner = self.request('/api/auth/register', body={
+            'username': username, 'email': email, 'password': original_password,
+        })
+        self.assertEqual(status, 200)
+        before = self.users.read_bytes()
+        device = str(uuid.uuid4())
+        for identifier, value, device_id, headers in (
+            ('username', username, None, None),
+            ('email', email, None, {'Authorization': 'Bearer invalid-test-token'}),
+            ('username', username, device, None),
+            ('email', email, None, {'Authorization': 'Bearer ' + owner['token']}),
+        ):
+            with self.subTest(identifier=identifier, device=bool(device_id), signed_in=bool(headers)):
+                status, payload = self.request('/api/auth/reset-password', device_id, {
+                    identifier: value, 'new_password': 'replacement-test-password',
+                }, headers)
+                self.assertEqual(status, 410)
+                self.assertFalse(payload['ok'])
+                self.assertNotIn('token', payload)
+        self.assertEqual(self.users.read_bytes(), before)
+        self.assertEqual(self.request('/api/auth/login', body={'username': username, 'password': 'replacement-test-password'})[0], 401)
+        self.assertEqual(self.request('/api/auth/login', body={'username': username, 'password': original_password})[0], 200)
+
+        activity = {'action': 'sync', 'read_ids': ['reset-lesson'], 'bookmarked_ids': ['reset-lesson'], 'display_name': 'Device user'}
+        self.assertEqual(self.request('/api/user/activity', device, activity)[0], 200)
+        self.assertEqual(self.request('/api/status', device)[1]['user']['bookmarked_ids'], ['reset-lesson'])
+        self.assertEqual(self.request('/api/status', str(uuid.uuid4()))[1]['user']['bookmarked_ids'], [])
+
+    def test_retired_demo_cannot_sign_in_or_use_an_old_session(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'):
+            username, email = 'bs.timmach', 'demo@example.com'
+            password = 'demo-fixture-password'
+            status, payload = self.request('/api/auth/login', body={'demo': True})
+            self.assertEqual(status, 410)
+            self.assertNotIn('token', payload)
+            self.assertEqual(self.request('/api/auth/register', body={'username': username, 'password': password})[0], 409)
+            data = json.loads(app.USERS_PATH.read_text())
+            self.assertNotIn(username, data['users'])
+
+            with app._users_lock:
+                salt, password_hash = app._hash_password(password)
+                demo = {'username': username, 'email': email, 'salt': salt, 'password_hash': password_hash}
+                data['users'][username] = demo
+                token = app._create_session_for_user(data, demo)
+                app._save_users_data_unlocked(data)
+
+            for identifier in (username, email):
+                with self.subTest(identifier=identifier):
+                    status, payload = self.request('/api/auth/login', body={'username': identifier, 'password': password})
+                    self.assertEqual(status, 401)
+                    self.assertNotIn('token', payload)
+            headers = {'Authorization': 'Bearer ' + token}
+            self.assertEqual(self.request('/api/auth/me', headers=headers)[0], 401)
+
+    def test_legacy_session_stays_bound_to_its_account_when_an_email_changes(self):
+        status, first = self.request('/api/auth/register', body={'username': 'alias-owner', 'password': 'first-test-password'})
+        self.assertEqual(status, 200)
+        username = 'MixedCase@example.com'
+        status, second = self.request('/api/auth/register', body={'username': username, 'password': 'second-test-password'})
+        self.assertEqual(status, 200)
+        first_headers = {'Authorization': 'Bearer ' + first['token']}
+        self.assertEqual(self.request('/api/auth/profile', body={'email': username}, headers=first_headers)[0], 200)
+        second_headers = {'Authorization': 'Bearer ' + second['token']}
+        status, payload = self.request('/api/auth/me', headers=second_headers)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload['user']['username'], username)
+
+    def test_demo_retirement_preserves_legacy_account_with_similar_username(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'):
+            username, email = 'bs. timmach', 'legacy-owner@example.com'
+            password = 'legacy-owner-password'
+            with app._users_lock:
+                data = app._load_users_data_unlocked()
+                salt, password_hash = app._hash_password(password)
+                user = {'username': username, 'email': email, 'salt': salt, 'password_hash': password_hash}
+                data['users'][username] = user
+                existing_token = app._create_session_for_user(data, user)
+                app._save_users_data_unlocked(data)
+
+            status, payload = self.request('/api/auth/login', body={'email': email, 'password': password})
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['user']['username'], username)
+            for token in (existing_token, payload['token']):
+                status, session = self.request('/api/auth/me', headers={'Authorization': 'Bearer ' + token})
+                self.assertEqual(status, 200)
+                self.assertEqual(session['user']['username'], username)
+
 
 if __name__ == '__main__':
     unittest.main()

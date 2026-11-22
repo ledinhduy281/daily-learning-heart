@@ -885,6 +885,9 @@ _feedback_lock = threading.Lock()
 # User Authentication & Personalized Activity Persistence (data/users.json)
 # ---------------------------------------------------------------------------
 
+_LEGACY_DEMO_USERNAME = 'bs.timmach'
+
+
 def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     if salt is None:
         salt = secrets.token_hex(16)
@@ -954,25 +957,6 @@ def _load_users_data_unlocked() -> dict:
         dirty = True
     if not isinstance(data.get("sessions"), dict):
         data["sessions"] = {}
-        dirty = True
-
-    if "bs.timmach" not in data["users"]:
-        salt, pw_hash = _hash_password("123456")
-        data["users"]["bs.timmach"] = {
-            "username": "bs.timmach",
-            "email": "timmach@ebm.vn",
-            "display_name": "BS. Đặng Quốc Tình",
-            "role": "Bác sĩ Nội trú Tim mạch",
-            "specialty": "Nội Tim mạch & Hồi sức Tim mạch",
-            "salt": salt,
-            "password_hash": pw_hash,
-            "read_ids": ["ebm-2026-11-15-p10-main"],
-            "bookmarked_ids": ["ebm-2026-11-16-p1-main"],
-            "created_at": datetime.datetime.now().isoformat(),
-        }
-        dirty = True
-    elif data["users"]["bs.timmach"].get("display_name") == "BS. Nguyễn Minh Tâm":
-        data["users"]["bs.timmach"]["display_name"] = "BS. Đặng Quốc Tình"
         dirty = True
 
     if dirty:
@@ -1061,9 +1045,11 @@ def _resolve_user_from_token_unlocked(data: dict, token: str, create_device: boo
         return None
     sig_user = _verify_session_token_signature(token, data.get("token_secret", ""))
     username = sess.get("username")
-    if not username or (sig_user is not None and sig_user != username):
+    if (not username or username == _LEGACY_DEMO_USERNAME
+            or (sig_user is not None and sig_user != username)):
         return None
-    return _find_user_by_identifier(data.get("users", {}), username)
+    user = data.get("users", {}).get(username)
+    return user if isinstance(user, dict) and user.get("username") == username else None
 
 
 MAX_ANONYMOUS_DEVICES = 1000
@@ -1113,16 +1099,10 @@ def get_user_by_token(token: str) -> dict | None:
 
 
 def login_user(req_data: dict) -> tuple[int, dict]:
+    if req_data.get("demo"):
+        return 410, {"ok": False, "error": "Demo sign-in is no longer available."}
     with _users_lock:
         data = _load_users_data_unlocked()
-        if req_data.get("demo"):
-            user = _find_user_by_identifier(data["users"], "bs.timmach")
-            if not user:
-                return 404, {"ok": False, "error": "Demo physician account unavailable."}
-            token = _create_session_for_user(data, user)
-            _save_users_data_unlocked(data)
-            return 200, {"ok": True, "token": token, "user": _safe_user(user)}
-
         identifier = _normalize_identifier(str(req_data.get("username") or req_data.get("email") or ""))
         password = str(req_data.get("password") or "")
         trimmed_pw = password.strip()
@@ -1132,6 +1112,7 @@ def login_user(req_data: dict) -> tuple[int, dict]:
         user = _find_user_by_identifier(data["users"], identifier)
         pw_ok = bool(
             user
+            and user["username"] != _LEGACY_DEMO_USERNAME
             and (
                 _verify_password(password, user.get("salt", ""), user.get("password_hash", ""))
                 or (trimmed_pw and _verify_password(trimmed_pw, user.get("salt", ""), user.get("password_hash", "")))
@@ -1164,8 +1145,10 @@ def register_user(req_data: dict) -> tuple[int, dict]:
 
     with _users_lock:
         data = _load_users_data_unlocked()
-        if _find_user_by_identifier(data["users"], username) or (
-            email and _find_user_by_identifier(data["users"], email)
+        if (
+            username == _LEGACY_DEMO_USERNAME
+            or _find_user_by_identifier(data["users"], username)
+            or (email and _find_user_by_identifier(data["users"], email))
         ):
             return 409, {"ok": False, "error": "Tên đăng nhập hoặc email đã được sử dụng."}
 
@@ -1241,37 +1224,6 @@ def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
 
         _save_users_data_unlocked(data)
         return 200, {"ok": True, "user": _safe_user(user)}
-
-
-def reset_user_password(token: str, req_data: dict) -> tuple[int, dict]:
-    """
-    Resets password either via an active Bearer session token or by looking up
-    username/email (Forgot Password flow on the login screen).
-    """
-    identifier = str(req_data.get("username") or req_data.get("email") or "").strip()
-    new_password = str(req_data.get("new_password") or req_data.get("password") or "")
-    if len(new_password) < 4:
-        return 400, {"ok": False, "error": "Mật khẩu mới cần tối thiểu 4 ký tự."}
-
-    with _users_lock:
-        data = _load_users_data_unlocked()
-        user = _resolve_user_from_token_unlocked(data, token) if token else None
-        if user is None and identifier:
-            user = _find_user_by_identifier(data["users"], identifier)
-        if not user:
-            return 404, {"ok": False, "error": "Không tìm thấy tài khoản phù hợp với tên đăng nhập hoặc email."}
-
-        salt, pw_hash = _hash_password(new_password)
-        user["salt"] = salt
-        user["password_hash"] = pw_hash
-        new_token = _create_session_for_user(data, user)
-        _save_users_data_unlocked(data)
-        return 200, {
-            "ok": True,
-            "token": new_token,
-            "user": _safe_user(user),
-            "message": "Đã đặt lại mật khẩu thành công.",
-        }
 
 
 def update_user_profile(token: str, req_data: dict) -> tuple[int, dict]:
@@ -3630,7 +3582,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
     - GET  /api/refresh-stream -> SSE progress stream refreshing today's single pillar briefing
     - POST /api/refresh        -> Refreshes today's single pillar briefing
     - POST /api/chat           -> Soái ca Y khoa EBM clinical Q&A chatbot (EBM RAG + Live PubMed + OpenFDA)
-    - POST /api/auth/login     -> Email/username + password or demo 1-click sign-in
+    - POST /api/auth/login     -> Email/username + password for legacy accounts
     - POST /api/auth/register  -> Register physician account
     - GET  /api/auth/me        -> Current authenticated user from Bearer token
     - POST /api/auth/logout    -> Invalidate Bearer token
@@ -3875,9 +3827,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/auth/reset-password":
-            token = self._extract_token(query_params=query_params, body_data=req_data)
-            status, payload = reset_user_password(token, req_data)
-            self._send_json(status, payload)
+            self._send_json(410, {"ok": False, "error": "Password reset is no longer available."})
             return
 
         if path == "/api/auth/profile":
@@ -4182,7 +4132,7 @@ def main():
         return
 
     if args.serve:
-        # Pre-initialize demo user & feedback store on server start
+        # Pre-initialize local user and feedback stores on server start
         with _users_lock:
             _load_users_data_unlocked()
         with _feedback_lock:
