@@ -113,7 +113,7 @@ def rich_cards(primary, lang, numeric_alternatives):
                     break
         if len(chosen) != 3:
             return
-        cards.append({'kind': kind, 'question': question, 'texts': [correct] + [x[1] for x in chosen],
+        cards.append({'kind': kind, 'source_id': kind + (':' + source if kind == 'trial' else ''), 'question': question, 'texts': [correct] + [x[1] for x in chosen],
                       'reasons': [correct if correct.startswith(f'{source}: ') else f'{source}: {correct}'] + [x[2] for x in chosen],
                       'types': ['correct'] + [x[0] for x in chosen]})
 

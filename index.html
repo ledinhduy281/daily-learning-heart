@@ -9271,15 +9271,26 @@
         const sess = this.getSession(this.curPillarId, b);
         const curLang = App.currentLang || "vi";
         if (sess.started && sess.phase !== "mastered" && b && sess.options_lang !== curLang) {
-          const mcq = this.buildDeterministicMcq(b, sess.focus_idx || 0, (sess.diag_step || 0) + (sess.attempts_on_current || 0), curLang, sess.difficulty || "normal");
-          sess.current_options = mcq.options;
-          sess.correct_key = mcq.correct_key;
-          sess.current_question = mcq;
-          sess.explanation = mcq.explanation;
-          sess.options_lang = curLang;
-          sess.last_question = mcq.question;
-          sess.messages.push({ role: "assistant", text: mcq.question });
-          this.saveStore();
+          const previous = sess.current_question;
+          const mcq = ClinicalQuiz.translate(b, previous, curLang);
+          if (mcq) {
+            sess.current_options = mcq.options;
+            sess.correct_key = mcq.correct_key;
+            sess.current_question = mcq;
+            sess.explanation = mcq.explanation;
+            sess.options_lang = curLang;
+            sess.last_question = mcq.question;
+            for (let i = sess.messages.length - 1; i >= 0; i--) {
+              const message = sess.messages[i];
+              if (message.role !== "assistant") continue;
+              if (message.text.includes(previous.explanation)) message.text = message.text.replace(previous.explanation, mcq.explanation);
+              if (message.text.includes(previous.question)) {
+                message.text = message.text.replace(previous.question, mcq.question);
+                break;
+              }
+            }
+            this.saveStore();
+          }
         }
         this.renderUI();
       },

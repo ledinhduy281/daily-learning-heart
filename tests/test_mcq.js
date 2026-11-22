@@ -162,6 +162,38 @@ print(json.dumps([a._build_socratic_mcq(b,1,0,l,d) for b in a.load_existing_brie
 assert.equal(pyDifficult.status,0,pyDifficult.stderr);
 assert.deepEqual(difficult,JSON.parse(pyDifficult.stdout));
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
+const tutorContext={ClinicalQuiz:quiz,App:{selected:briefings[0],currentLang:'en'},window:{}};
+vm.runInNewContext(html.slice(html.indexOf('    const SocraticTutor = {'),html.indexOf('    window.SocraticTutor = SocraticTutor;'))+'\nwindow.tutor=SocraticTutor;',tutorContext);
+const tutor=tutorContext.window.tutor;
+for (const b of [...briefings,{}]) for (const slot of [0,1]) {
+  const original=quiz.build(b,slot,8,'vi'),translated=quiz.translate(b,original,'en');
+  assert.ok(translated,b.id);
+  assert.deepEqual(translated.generation,original.generation);
+  assert.equal(translated.correct_key,original.correct_key);
+  assert.deepEqual(quiz.translate(b,translated,'vi'),original);
+}
+{
+  const b=briefings[0],original=quiz.build(b,1,8,'vi');
+  const session={started:true,phase:'loop',focus_idx:1,diag_step:3,attempts_on_current:2,question_index:8,answered_count:8,question_revealed:true,
+    current_question:original,current_options:original.options,correct_key:original.correct_key,explanation:original.explanation,
+    last_question:original.question,options_lang:'vi',messages:[{role:'assistant',text:'Feedback. '+original.question},{role:'assistant',text:original.explanation}]};
+  let saved=0,rendered=0;
+  tutor.getSession=()=>session;tutor.saveStore=()=>saved++;tutor.renderUI=()=>rendered++;
+  tutor.onLanguageChanged();
+  assert.deepEqual(session.current_question,quiz.translate(b,original,'en'));
+  assert.equal(session.messages.length,2);
+  assert.equal(session.messages[0].text,'Feedback. '+session.current_question.question);
+  assert.equal(session.messages[1].text,session.current_question.explanation);
+  assert.equal(session.question_index,8);assert.equal(session.answered_count,8);assert.equal(session.question_revealed,true);
+  assert.equal(saved,1);assert.equal(rendered,1);
+  tutorContext.App.currentLang='vi';tutor.onLanguageChanged();
+  assert.deepEqual(session.current_question,original);
+  assert.equal(session.messages.length,2);
+  session.current_question={...original,generation:{...original.generation,source_id:'trial:missing'}};
+  session.options_lang='en';const before=JSON.stringify(session);tutor.onLanguageChanged();
+  assert.equal(JSON.stringify(session),before);
+}
+assert.equal(quiz.translate({},null,'en'),null);
 assert.ok(html.includes('question_revealed: sess.question_revealed === true'));
 for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(m[1]);
 console.log(`JS MCQs, stored-question flows, Python parity (${generated.length} questions), SPA syntax: OK`);

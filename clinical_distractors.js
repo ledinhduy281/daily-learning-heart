@@ -57,7 +57,7 @@ const ClinicalDistractors = (() => {
         if (chosen.length===3) break;
       }
       if (chosen.length!==3) return;
-      result.push({kind,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
+      result.push({kind,source_id:kind+(kind==='trial'?':'+source:''),question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
     }
     for (const t of trials) {
       const name=t.name||'',value=clean(t.value),fact=clean(t['changes_'+suffix]),endpoint=clean(t.endpoint_label);

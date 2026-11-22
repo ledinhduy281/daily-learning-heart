@@ -38,7 +38,7 @@ def alternatives(text):
     return [(text, original)] + [(text[:start] + r + text[end:], r) for r in replacements]
 
 
-def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
+def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_id=None):
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
     ge = primary.get('guideline_evolution') or {}
@@ -58,7 +58,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
 
     slot = int(slot_idx) % 4
     candidates = []
-    for source, fact, pool_idx in [(s, f, i) for i in (slot, 1, 0, 2, 3) for s, f in pools[i]]:
+    for source, fact, pool_idx, entry_idx in [(s, f, i, j) for i in (slot, 1, 0, 2, 3) for j, (s, f) in enumerate(pools[i])]:
         fact = ' '.join(str(fact or '').split())
         if not fact or '...' in fact or '…' in fact:
             continue
@@ -66,8 +66,9 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
             continue
         variants = alternatives(fact)
         if variants and len({normalized(t) for t, _ in variants}) == 4:
-            candidates.append((source, variants, pool_idx))
+            candidates.append((source, variants, pool_idx, f'fact:{pool_idx}:{entry_idx}'))
     subskill_idx = None
+    selected_id = 'appraisal'
     if not candidates:
         question = ('A briefing lacks the trial population and safety criteria. What is the best next step before applying its result?' if en else
                     'Bản tin chưa nêu quần thể nghiên cứu và tiêu chí an toàn. Cần làm gì trước khi áp dụng kết quả?')
@@ -82,7 +83,8 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         reasons = ([texts[0], 'An effect estimate does not establish eligibility.', 'A conclusion alone does not establish dosing.', 'A title does not define eligibility.'] if en else
                    [texts[0], 'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.', 'Kết luận tóm tắt không đủ để xác định liều.', 'Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'])
     else:
-        source, variants, subskill_idx = candidates[int(variant_idx) % len(candidates)]
+        available = [c for c in candidates if c[3] == source_id] if source_id else candidates
+        source, variants, subskill_idx, selected_id = (available or candidates)[int(variant_idx) % len(available or candidates)]
         question = (f'According to {source}, which statement is correct?' if en else
                     f'Theo {source}, nhận định nào đúng?')
         texts = [t for t, _ in variants]
@@ -93,14 +95,17 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     types = ['correct', 'numeric', 'numeric', 'numeric']
     kind = 'fact' if candidates else 'appraisal'
     cards = rich_cards(primary, lang, alternatives)
-    required = sorted({0 if c['kind'] == 'guideline' else 1 for c in cards} if cards else {idx for _, _, idx in candidates})
+    required = sorted({0 if c['kind'] == 'guideline' else 1 for c in cards} if cards else {c[2] for c in candidates})
     preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
-    if preferred or cards:
-        available = preferred or cards
+    available = [c for c in cards if c['source_id'] == source_id] if source_id else (preferred or cards)
+    if available:
         card = available[int(variant_idx) % len(available)]
+        selected_id = card['source_id']
         kind = card['kind']
         subskill_idx = 0 if kind == 'guideline' else 1
         question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
+    if source_id and selected_id != source_id:
+        return None
     if difficulty == 'hard':
         variants = alternatives(texts[0])
         if variants and len({normalized(t) for t, _ in variants}) == 4:
@@ -135,5 +140,13 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
+            'generation': {'slot_idx': int(slot_idx), 'variant_idx': int(variant_idx), 'source_id': selected_id, 'difficulty': difficulty},
             'question_kind': kind, 'difficulty': difficulty, 'subskill_idx': subskill_idx, 'required_subskills': required, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}
+
+
+def translate_mcq(primary, current, lang):
+    ref = current.get('generation') if current else None
+    if not ref:
+        return None
+    return build_mcq(primary, ref['slot_idx'], ref['variant_idx'], lang, ref['difficulty'], ref['source_id'])

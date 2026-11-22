@@ -7,6 +7,20 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_translation_uses_stored_question_identity_not_session_counters(self):
+        from clinical_mcq import build_mcq, translate_mcq
+        for b in self.briefings + [{}]:
+            for slot in (0, 1):
+                original = build_mcq(b, slot, 8, 'vi')
+                translated = translate_mcq(b, original, 'en')
+                self.assertIsNotNone(translated, b.get('id'))
+                self.assertEqual(original['generation'], translated['generation'])
+                self.assertEqual(original['correct_key'], translated['correct_key'])
+                self.assertEqual(original, translate_mcq(b, translated, 'vi'))
+        self.assertIsNone(translate_mcq({}, {}, 'en'))
+        self.assertIsNone(translate_mcq({}, {'generation': {'slot_idx': 0, 'variant_idx': 8,
+            'difficulty': 'normal', 'source_id': 'trial:missing'}}, 'en'))
+
     def test_difficulty_changes_support_and_distractor_similarity(self):
         for lang in ('vi', 'en'):
             b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-20-p5-main')
