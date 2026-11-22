@@ -352,6 +352,78 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   select(lesson);
   assert.deepEqual(reads, ['today']);
 }
+async function checkProfilePanel() {
+  const markup = html.slice(html.indexOf('id="myAccountModal"'), html.indexOf('id="btnBackToTop"'));
+  assert.match(markup, /<input[^>]+id="profileDeviceId"[^>]+readonly/);
+  assert.match(markup, /<input type="file" id="progressImportFile"/);
+  assert.doesNotMatch(markup, /<input[^>]+type="email"/);
+
+  const profile = create(new Storage(), crypto);
+  profile.activity(['old', 'saved', 'new', 'missing'], ['saved']);
+  const briefings = ['old', 'saved', 'new'].map((id, index) => ({
+    id, title_vi: `VI ${id}`, title_en: `EN ${id}`, pillar_id: index + 1, date: '2026-11-22'
+  }));
+  const element = () => ({
+    children: [], listeners: {}, append(...children) { this.children.push(...children); },
+    replaceChildren() { this.children = []; },
+    addEventListener(event, listener) { this.listeners[event] = listener; }
+  });
+  const App = {currentLang: 'vi', briefings};
+  const opened = [], toasts = [], copied = [];
+  const Dom = {
+    profileHistoryList: element(), profileReadCount: {}, profileSavedCount: {},
+    profileDeviceId: {value: profile.profile.device_id, focus() {}, select() { this.selected = true; }}
+  };
+  const navigator = {clipboard: {writeText: async text => copied.push(text)}};
+  let fallbackCopies = 0;
+  const document = {createElement: element, execCommand(command) {
+    assert.equal(command, 'copy');
+    assert.equal(Dom.profileDeviceId.selected, true);
+    return ++fallbackCopies === 1;
+  }};
+  const context = vm.createContext({
+    App, Dom, deviceStore: profile, navigator, document, cleanHeadline: title => title,
+    formatShortDdMm: () => '22/11',
+    t: key => (App.currentLang === 'vi'
+      ? {filterSaved: 'Đã lưu', filterRead: 'Đã đọc'}
+      : {filterSaved: 'Saved', filterRead: 'Read'})[key],
+    openProfileBriefing: briefing => opened.push(briefing), showToast: message => toasts.push(message)
+  });
+  for (const name of ['renderProfileHistory', 'copyProfileDeviceId']) {
+    const [source] = html.match(new RegExp(`(?:async )?function ${name}\\(\\) \\{[\\s\\S]*?\\n    \\}`));
+    vm.runInContext(source, context);
+  }
+  context.renderProfileHistory();
+  assert.equal(Dom.profileReadCount.textContent, '4');
+  assert.equal(Dom.profileSavedCount.textContent, '1');
+  const items = () => Dom.profileHistoryList.children;
+  assert.deepEqual(items().map(button => button.children[0].textContent), [
+    '#2 • 22/11 — VI saved', '#3 • 22/11 — VI new', '#1 • 22/11 — VI old'
+  ]);
+  assert.deepEqual(items().map(button => button.children[1].textContent), ['Đã lưu', 'Đã đọc', 'Đã đọc']);
+  items()[1].listeners.click();
+  assert.equal(opened[0], briefings[2]);
+  App.currentLang = 'en';
+  context.renderProfileHistory();
+  assert.equal(items()[0].children[0].textContent, '#2 • 22/11 — EN saved');
+  assert.equal(items()[0].children[1].textContent, 'Saved');
+  profile.activity([], []);
+  context.renderProfileHistory();
+  assert.equal(Dom.profileReadCount.textContent, '0');
+  assert.equal(Dom.profileSavedCount.textContent, '0');
+  assert.match(items()[0].textContent, /No read or saved briefings/);
+
+  await context.copyProfileDeviceId();
+  assert.deepEqual(copied, [profile.profile.device_id]);
+  assert.equal(toasts.at(-1), 'Device ID copied.');
+  navigator.clipboard.writeText = async () => { throw new Error('Clipboard unavailable'); };
+  await context.copyProfileDeviceId();
+  assert.equal(toasts.at(-1), 'Device ID copied.');
+  await context.copyProfileDeviceId();
+  assert.equal(toasts.at(-1), 'Copy the selected ID manually.');
+  console.log('Profile recent items/counts, bilingual history, read-only ID, file restore control, and clipboard fallback: OK');
+}
+
 async function checkStreams() {
   {
     const store = new Storage(), profile = create(store, crypto);
@@ -547,4 +619,4 @@ async function checkStreams() {
   await assert.rejects(() => consume('/api/refresh-stream', () => {}), /unavailable/);
   console.log('Device profile UUID/reuse, progress, import/export, migration, invalid/empty/storage errors, API headers/streams, static no-gate DOM, SPA syntax: OK');
 }
-checkStreams().catch(error => {console.error(error); process.exitCode = 1;});
+checkProfilePanel().then(checkStreams).catch(error => {console.error(error); process.exitCode = 1;});

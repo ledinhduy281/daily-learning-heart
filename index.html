@@ -446,6 +446,73 @@
       background-color: var(--color-canvas-soft);
     }
 
+    .profile-dialog {
+      max-width: 720px;
+    }
+
+    .profile-dialog .modal-head {
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .profile-dialog .modal-head-title {
+      font-size: clamp(22px, 4vw, 30px);
+      font-weight: 700;
+    }
+
+    .profile-dialog h3 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .profile-note {
+      color: var(--color-ink-mute);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .profile-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .profile-field .form-field-label {
+      margin: 0;
+    }
+
+    .profile-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .profile-controls .supa-text-input {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+
+    #profileDeviceId {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .profile-restore {
+      border-top: 1px solid var(--color-hairline);
+      padding-top: 12px;
+    }
+
+    .profile-restore select.supa-text-input {
+      flex: 0 1 auto;
+      width: auto;
+    }
+
+    .profile-history-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .user-avatar-dot {
       width: 24px;
       height: 24px;
@@ -4386,26 +4453,53 @@
     </div>
   </div>
 
-  <div class="modal-backdrop-supa" id="myAccountModal" role="dialog" aria-modal="true" aria-labelledby="myAccountModalTitle">
-    <div class="modal-dialog-supa" style="max-width: 520px;">
+  <div class="modal-backdrop-supa" id="myAccountModal" role="dialog" aria-modal="true" aria-labelledby="myAccountModalTitle" aria-describedby="deviceProfileNote" inert>
+    <div class="modal-dialog-supa profile-dialog">
       <div class="modal-head">
-        <h2 class="modal-head-title" id="myAccountModalTitle">Hồ sơ trên thiết bị</h2>
+        <div>
+          <h2 class="modal-head-title" id="myAccountModalTitle">Hồ sơ của bạn</h2>
+          <p class="profile-note" id="deviceProfileNote">Không cần tài khoản. Tiến độ được lưu theo mã ẩn danh trên thiết bị này.</p>
+        </div>
         <button type="button" class="btn-close-supa" id="btnCloseAccountModal" aria-label="Đóng">×</button>
       </div>
       <div class="modal-body">
-        <p id="deviceProfileNote">Tiến độ được tự động lưu trên thiết bị này. Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt.</p>
-        <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
-        <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
-        <button type="button" class="btn btn-primary-green" id="btnSaveProfile">Lưu tên</button>
-        <div class="account-section-box" style="margin-top: 16px;">
-          <button type="button" class="btn btn-secondary-outline" id="btnExportProgress">Xuất tiến độ (JSON)</button>
-          <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách nhập</label>
-          <select id="progressImportMode" class="supa-text-input">
-            <option value="merge" id="labelImportMerge">Hợp nhất</option>
-            <option value="replace" id="labelImportReplace">Thay thế</option>
-          </select>
-          <button type="button" class="btn btn-secondary-outline" id="btnImportProgress">Nhập tiến độ (JSON)</button>
-          <input type="file" id="progressImportFile" accept=".json,application/json" hidden>
+        <section class="account-section-box" aria-labelledby="profileSyncTitle">
+          <h3 id="profileSyncTitle">Đồng bộ thiết bị</h3>
+          <p class="profile-note" id="profileSyncNote">Tải xuống bản sao JSON, rồi mở tệp đó trên thiết bị khác để khôi phục. Chỉ có mã thiết bị thì không thể khôi phục.</p>
+          <div class="profile-field">
+            <label class="form-field-label" for="profileDeviceId" id="labelProfileDeviceId">Mã thiết bị của bạn</label>
+            <div class="profile-controls">
+              <input type="text" id="profileDeviceId" class="supa-text-input" readonly spellcheck="false" autocomplete="off">
+              <button type="button" class="btn btn-secondary-outline" id="btnCopyProfileId">Sao chép</button>
+              <button type="button" class="btn btn-primary-green" id="btnExportProgress">Tải xuống (JSON)</button>
+            </div>
+          </div>
+          <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Bạn không bao giờ cần email.</strong> <span id="profileKeepIdPrivate">Hãy giữ mã thiết bị riêng tư.</span></p>
+          <p class="profile-note" id="profileServerNote" hidden>Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ.</p>
+          <div class="profile-controls profile-restore">
+            <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách khôi phục</label>
+            <select id="progressImportMode" class="supa-text-input">
+              <option value="merge" id="labelImportMerge">Hợp nhất</option>
+              <option value="replace" id="labelImportReplace">Thay thế</option>
+            </select>
+            <button type="button" class="btn btn-secondary-outline" id="btnImportProgress">Khôi phục từ tệp</button>
+            <input type="file" id="progressImportFile" accept=".json,application/json" hidden>
+          </div>
+        </section>
+        <section class="account-section-box" aria-labelledby="profileHistoryTitle">
+          <h3 id="profileHistoryTitle">Bản tin gần đây</h3>
+          <div class="account-stats-grid">
+            <div class="account-stat-card"><span id="labelProfileReadCount">Đã đọc</span><span class="account-stat-num" id="profileReadCount">0</span></div>
+            <div class="account-stat-card"><span id="labelProfileSavedCount">Đã lưu</span><span class="account-stat-num" id="profileSavedCount">0</span></div>
+          </div>
+          <div class="account-history-list" id="profileHistoryList"></div>
+        </section>
+        <div class="profile-field">
+          <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
+          <div class="profile-controls">
+            <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
+            <button type="button" class="btn btn-secondary-outline" id="btnSaveProfile">Lưu tên</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4815,6 +4909,11 @@
 
       myAccountModal: document.getElementById("myAccountModal"),
       btnCloseAccountModal: document.getElementById("btnCloseAccountModal"),
+      profileDeviceId: document.getElementById("profileDeviceId"),
+      profileServerNote: document.getElementById("profileServerNote"),
+      profileReadCount: document.getElementById("profileReadCount"),
+      profileSavedCount: document.getElementById("profileSavedCount"),
+      profileHistoryList: document.getElementById("profileHistoryList"),
       accFullName: document.getElementById("accFullName"),
       btnSaveProfile: document.getElementById("btnSaveProfile"),
 
@@ -5225,11 +5324,92 @@
     }
 
     function openMyAccountModal() {
-      Dom.accFullName.value = deviceStore.profile.display_name;
+      const profile = deviceStore.profile;
+      Dom.accFullName.value = profile.display_name;
+      Dom.profileDeviceId.value = profile.device_id;
+      Dom.profileServerNote.hidden = !App.serverAvailable;
+      renderProfileHistory();
+      Dom.myAccountModal.inert = false;
       Dom.myAccountModal.classList.add("active");
+      Dom.btnCloseAccountModal.focus();
     }
 
-    function closeMyAccountModal() { Dom.myAccountModal.classList.remove("active"); }
+    function closeMyAccountModal() {
+      Dom.myAccountModal.classList.remove("active");
+      Dom.myAccountModal.inert = true;
+      Dom.userProfilePill.focus();
+    }
+
+    function renderProfileHistory() {
+      const {read_ids, bookmarked_ids} = deviceStore.profile;
+      Dom.profileReadCount.textContent = String(read_ids.length);
+      Dom.profileSavedCount.textContent = String(bookmarked_ids.length);
+      Dom.profileHistoryList.replaceChildren();
+      const isVi = App.currentLang === "vi";
+      const saved = new Set(bookmarked_ids);
+      const ids = new Set([...saved, ...read_ids.slice().reverse()]);
+      const briefings = new Map(App.briefings.map(briefing => [briefing.id, briefing]));
+      const recent = Array.from(ids, id => briefings.get(id)).filter(Boolean).slice(0, 6);
+      if (!recent.length) {
+        const note = document.createElement("p");
+        note.className = "profile-note";
+        note.textContent = isVi ? "Chưa có bản tin đã đọc hoặc đã lưu trong danh mục này." : "No read or saved briefings in this archive yet.";
+        Dom.profileHistoryList.append(note);
+        return;
+      }
+      for (const briefing of recent) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "account-history-item";
+        const title = document.createElement("span");
+        title.className = "profile-history-title";
+        const headline = cleanHeadline(isVi ? briefing.title_vi : (briefing.title_en || briefing.title_vi));
+        title.textContent = `#${briefing.pillar_id} • ${formatShortDdMm(briefing.date)} — ${headline}`;
+        const badge = document.createElement("span");
+        badge.className = "brand-tag-briefing";
+        badge.textContent = t(saved.has(briefing.id) ? "filterSaved" : "filterRead");
+        button.append(title, badge);
+        button.addEventListener("click", () => openProfileBriefing(briefing));
+        Dom.profileHistoryList.append(button);
+      }
+    }
+
+    function openProfileBriefing(briefing) {
+      closeMyAccountModal();
+      App.mode = "history";
+      App.historyPillarId = Number(briefing.pillar_id);
+      App.savedGlobalMode = false;
+      App.historyFilter = "all";
+      App.searchQuery = "";
+      Dom.searchBriefingInput.value = "";
+      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
+        chip.classList.toggle("active", chip.dataset.hfilter === "all");
+      });
+      applyLocalizationChrome();
+      renderModeSpecificPanels();
+      selectBriefing(briefing);
+      renderUserWorkspace();
+    }
+
+    async function copyProfileDeviceId() {
+      const input = Dom.profileDeviceId;
+      let copied = false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(input.value);
+          copied = true;
+        }
+      } catch (_) {}
+      if (!copied) {
+        input.focus();
+        input.select();
+        try { copied = document.execCommand("copy"); } catch (_) {}
+      }
+      const isVi = App.currentLang === "vi";
+      showToast(copied
+        ? (isVi ? "Đã sao chép mã thiết bị." : "Device ID copied.")
+        : (isVi ? "Hãy sao chép mã đã chọn theo cách thủ công." : "Copy the selected ID manually."));
+    }
 
     function handleProfileSaveRequest() {
       try {
@@ -5483,13 +5663,26 @@
         if (topSpan) topSpan.textContent = isVi ? "Đầu trang" : "Top";
       }
 
-      setTxt("#myAccountModalTitle", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
-      setTxt("#deviceProfileNote", isVi ? "Tiến độ được tự động lưu trên thiết bị này. Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt." : "Progress is saved automatically on this device. In server mode, your display name, reading history and bookmarks are also sent to the server. Export a backup before clearing browser data.");
+      setTxt("#myAccountModalTitle", isVi ? "Hồ sơ của bạn" : "Your profile");
+      Dom.btnCloseAccountModal.setAttribute("aria-label", isVi ? "Đóng" : "Close");
+      Dom.userProfilePill.setAttribute("aria-label", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
+      setTxt("#deviceProfileNote", isVi ? "Không cần tài khoản. Tiến độ được lưu theo mã ẩn danh trên thiết bị này." : "No account needed. Progress is stored under an anonymous ID on this device.");
+      setTxt("#profileSyncTitle", isVi ? "Đồng bộ thiết bị" : "Sync devices");
+      setTxt("#profileSyncNote", isVi ? "Tải xuống bản sao JSON, rồi mở tệp đó trên thiết bị khác để khôi phục. Chỉ có mã thiết bị thì không thể khôi phục." : "Download a JSON backup and open that file on the other device to restore. The device ID alone cannot restore progress.");
+      setTxt("#labelProfileDeviceId", isVi ? "Mã thiết bị của bạn" : "Your device ID");
+      setTxt("#btnCopyProfileId", isVi ? "Sao chép" : "Copy");
+      setTxt("#profileNoEmail", isVi ? "Bạn không bao giờ cần email." : "You never need an email.");
+      setTxt("#profileKeepIdPrivate", isVi ? "Hãy giữ mã thiết bị riêng tư." : "Keep your device ID private.");
+      setTxt("#profileServerNote", isVi ? "Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ." : "In server mode, your display name, reading history and bookmarks are also sent to the server.");
+      setTxt("#profileHistoryTitle", isVi ? "Bản tin gần đây" : "Recent briefings");
+      setTxt("#labelProfileReadCount", t("filterRead"));
+      setTxt("#labelProfileSavedCount", t("filterSaved"));
+      if (Dom.myAccountModal.classList.contains("active")) renderProfileHistory();
       setTxt("#labelDeviceName", isVi ? "Tên hiển thị" : "Display name");
       setTxt("#btnSaveProfile", isVi ? "Lưu tên" : "Save name");
-      setTxt("#btnExportProgress", isVi ? "Xuất tiến độ (JSON)" : "Export progress (JSON)");
-      setTxt("#btnImportProgress", isVi ? "Nhập tiến độ (JSON)" : "Import progress (JSON)");
-      setTxt("#labelImportMode", isVi ? "Cách nhập" : "Import mode");
+      setTxt("#btnExportProgress", isVi ? "Tải xuống (JSON)" : "Download (JSON)");
+      setTxt("#btnImportProgress", isVi ? "Khôi phục từ tệp" : "Restore from file");
+      setTxt("#labelImportMode", isVi ? "Cách khôi phục" : "Restore mode");
       setTxt("#labelImportMerge", isVi ? "Hợp nhất" : "Merge");
       setTxt("#labelImportReplace", isVi ? "Thay thế" : "Replace");
 
@@ -6820,6 +7013,7 @@
         if (e.target === Dom.myAccountModal) closeMyAccountModal();
       });
       Dom.btnSaveProfile.addEventListener("click", handleProfileSaveRequest);
+      document.getElementById("btnCopyProfileId").addEventListener("click", copyProfileDeviceId);
       document.getElementById("btnExportProgress").addEventListener("click", () => {
         const url = URL.createObjectURL(new Blob([deviceStore.exportJSON()], {type: "application/json"}));
         const link = document.createElement("a");
