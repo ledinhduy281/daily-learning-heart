@@ -458,6 +458,10 @@
     .profile-dialog .modal-head {
       align-items: flex-start;
       gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--color-canvas);
     }
 
     .profile-dialog .modal-head-title {
@@ -468,6 +472,139 @@
     .profile-dialog h3 {
       font-size: 16px;
       font-weight: 700;
+    }
+
+    .profile-dialog .btn {
+      white-space: normal;
+      line-height: 1.35;
+      min-height: 40px;
+    }
+
+    .profile-overview .account-history-list {
+      max-height: 124px;
+    }
+
+    .profile-dialog .modal-body > *,
+    .profile-option-content > * {
+      min-width: 0;
+    }
+
+    .profile-overview {
+      background: var(--color-canvas-soft);
+    }
+
+    .profile-backup-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .profile-option {
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md);
+      background: var(--color-canvas);
+    }
+
+    .profile-option > summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .profile-option > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .profile-option > summary::after {
+      content: "+";
+      margin-left: auto;
+      font-size: 22px;
+      color: var(--color-ink-mute);
+    }
+
+    .profile-option[open] > summary::after {
+      content: "−";
+    }
+
+    .profile-option > summary:hover {
+      background: var(--color-canvas-soft);
+      border-radius: var(--rounded-md);
+    }
+
+    .profile-option > summary:focus-visible {
+      outline: 2px solid var(--color-primary-deep);
+      outline-offset: 2px;
+      border-radius: var(--rounded-md);
+    }
+
+    .profile-option-icon {
+      color: var(--color-primary-deep);
+      width: 20px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .profile-option-label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .profile-option-label strong {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .profile-option-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 16px 16px;
+    }
+
+    .profile-sync-switch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    .profile-sync-switch input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--color-primary-deep);
+      flex-shrink: 0;
+    }
+
+    .profile-email-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .profile-email-tabs [aria-selected="true"] {
+      border-color: var(--color-primary-deep);
+      background: var(--color-canvas-soft);
+      color: var(--color-primary-deep);
+      box-shadow: inset 0 -2px var(--color-primary-deep);
+    }
+
+    .profile-status:empty {
+      display: none;
+    }
+
+    .profile-status:not(:empty) {
+      padding: 12px 16px;
+      border-radius: var(--rounded-sm);
+      background: var(--color-canvas-soft);
+      overflow-wrap: anywhere;
     }
 
     .profile-note {
@@ -511,6 +648,12 @@
     .profile-restore select.supa-text-input {
       flex: 0 1 auto;
       width: auto;
+      max-width: 100%;
+    }
+
+    .profile-restore > summary {
+      padding: 8px 0;
+      cursor: pointer;
     }
 
     .profile-history-title {
@@ -4483,73 +4626,106 @@
       <div class="modal-head">
         <div>
           <h2 class="modal-head-title" id="myAccountModalTitle">Hồ sơ của bạn</h2>
-          <p class="profile-note" id="deviceProfileNote">Không cần tài khoản. Tiến độ được lưu theo mã ẩn danh trên thiết bị này.</p>
+          <p class="profile-note" id="deviceProfileNote">Cứ học, tiến độ tự lưu trên thiết bị này. Không cần đăng ký.</p>
         </div>
         <button type="button" class="btn-close-supa" id="btnCloseAccountModal" aria-label="Đóng">×</button>
       </div>
       <div class="modal-body">
-        <section class="account-section-box" aria-labelledby="profileSyncTitle">
-          <h3 id="profileSyncTitle">Đồng bộ thiết bị</h3>
-          <p class="profile-note" id="profileSyncNote">Chưa cấu hình đồng bộ đám mây. Bạn vẫn có thể sao chép/tải mã và khôi phục tiến độ từ tệp JSON.</p>
-          <div class="profile-field">
-            <label class="form-field-label" for="profileDeviceId" id="labelProfileDeviceId">Mã người dùng của bạn</label>
-            <div class="profile-controls">
-              <input type="text" id="profileDeviceId" class="supa-text-input" readonly spellcheck="false" autocomplete="off">
-              <button type="button" class="btn btn-secondary-outline" id="btnCopyProfileId">Sao chép</button>
-              <button type="button" class="btn btn-secondary-outline" id="btnDownloadSyncId">Tải mã</button>
-              <button type="button" class="btn btn-primary-green" id="btnExportProgress">Tải xuống (JSON)</button>
-            </div>
-          </div>
-          <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Không cần email.</strong> <span id="profileKeepIdPrivate">Chỉ chia sẻ mã giữa các thiết bị của bạn.</span></p>
-          <p class="profile-note" id="profileServerNote" hidden>Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ.</p>
-          <p class="profile-note" id="cloudDisclosure"></p>
-          <label class="profile-note"><input type="checkbox" id="cloudSyncEnabled"> <span id="labelCloudSyncEnabled">Bật đồng bộ đám mây</span></label>
-          <div class="profile-field">
-            <label class="form-field-label" for="restoreSyncId" id="labelRestoreSyncId">Mã từ thiết bị khác</label>
-            <div class="profile-controls">
-              <input id="restoreSyncId" type="text" class="supa-text-input" spellcheck="false" autocomplete="off">
-              <button id="btnRestoreSyncId" type="button" class="btn btn-secondary-outline">Khôi phục</button>
-            </div>
-          </div>
-          <section id="cloudEmailSection" hidden aria-labelledby="cloudEmailTitle">
-            <h4 id="cloudEmailTitle">Sao lưu bằng email (không bắt buộc)</h4>
-            <div class="profile-controls" role="tablist" aria-label="Email backup">
-              <button type="button" role="tab" aria-selected="true" aria-controls="cloudEmailPanel" id="cloudBackupTab" class="btn btn-secondary-outline">Sao lưu thiết bị này</button>
-              <button type="button" role="tab" aria-selected="false" aria-controls="cloudEmailPanel" id="cloudRestoreTab" class="btn btn-secondary-outline">Khôi phục trên thiết bị này</button>
-            </div>
-            <form id="cloudEmailPanel" role="tabpanel" aria-labelledby="cloudBackupTab">
-              <label for="cloudEmail" id="labelCloudEmail">Email của bạn</label>
-              <input id="cloudEmail" type="email" class="supa-text-input" autocomplete="email" maxlength="254" required>
-              <button type="submit" id="btnCloudEmail" class="btn btn-primary-green">Gửi liên kết sao lưu cho tôi</button>
-            </form>
-            <p class="profile-note" id="cloudEmailPrivacy"></p>
-          </section>
-          <p class="profile-note" id="cloudSyncStatus" role="status" aria-live="polite"></p>
-          <div class="profile-controls profile-restore">
-            <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách khôi phục</label>
-            <select id="progressImportMode" class="supa-text-input">
-              <option value="merge" id="labelImportMerge">Hợp nhất</option>
-              <option value="replace" id="labelImportReplace">Thay thế</option>
-            </select>
-            <button type="button" class="btn btn-secondary-outline" id="btnImportProgress">Khôi phục từ tệp</button>
-            <input type="file" id="progressImportFile" accept=".json,application/json" hidden>
-          </div>
-        </section>
-        <section class="account-section-box" aria-labelledby="profileHistoryTitle">
-          <h3 id="profileHistoryTitle">Bản tin gần đây</h3>
+        <section class="account-section-box profile-overview" aria-labelledby="profileOverviewTitle">
+          <h3 id="profileOverviewTitle">Việc học của bạn</h3>
           <div class="account-stats-grid">
             <div class="account-stat-card"><span id="labelProfileReadCount">Đã đọc</span><span class="account-stat-num" id="profileReadCount">0</span></div>
             <div class="account-stat-card"><span id="labelProfileSavedCount">Đã lưu</span><span class="account-stat-num" id="profileSavedCount">0</span></div>
           </div>
-          <div class="account-history-list" id="profileHistoryList"></div>
-        </section>
-        <div class="profile-field">
-          <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
-          <div class="profile-controls">
-            <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
-            <button type="button" class="btn btn-secondary-outline" id="btnSaveProfile">Lưu tên</button>
+          <div class="profile-field">
+            <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
+            <div class="profile-controls">
+              <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
+              <button type="button" class="btn btn-secondary-outline" id="btnSaveProfile">Lưu tên</button>
+            </div>
           </div>
-        </div>
+          <h3 id="profileHistoryTitle">Bản tin gần đây</h3>
+          <div class="account-history-list" id="profileHistoryList" aria-labelledby="profileHistoryTitle"></div>
+          <p class="profile-note" id="profileServerNote" hidden>Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ.</p>
+        </section>
+        <section class="profile-backup-heading" aria-labelledby="profileBackupTitle">
+          <h3 id="profileBackupTitle">Giữ tiến độ của bạn</h3>
+          <p class="profile-note" id="profileBackupNote">Chọn cách phù hợp khi đổi thiết bị hoặc cần bản dự phòng.</p>
+        </section>
+        <details class="profile-option">
+          <summary>
+            <i class="fa-solid fa-file-arrow-down profile-option-icon" aria-hidden="true"></i>
+            <span class="profile-option-label"><strong id="profileFileTitle">Lưu một bản về máy</strong><span class="profile-note" id="profileFileSummary">Không cần mạng · Không cần email</span></span>
+          </summary>
+          <div class="profile-option-content">
+            <p class="profile-note" id="profileFileNote">Tải tệp sao lưu (JSON) và giữ ở nơi an toàn. Dùng tệp này để khôi phục khi cần.</p>
+            <div class="profile-controls">
+              <button type="button" class="btn btn-primary-green" id="btnExportProgress">Tải bản sao lưu (JSON)</button>
+            </div>
+            <details class="profile-restore">
+              <summary class="profile-note" id="profileFileRestoreTitle">Đã có tệp sao lưu? Khôi phục tại đây</summary>
+              <div class="profile-field">
+                <p class="profile-note" id="profileImportNote">Hợp nhất để giữ cả tiến độ hiện tại và trong tệp. Thay thế sẽ ghi đè tiến độ trên thiết bị này.</p>
+                <div class="profile-controls">
+                  <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách khôi phục</label>
+                  <select id="progressImportMode" class="supa-text-input" aria-describedby="profileImportNote">
+                    <option value="merge" id="labelImportMerge">Hợp nhất (giữ cả hai)</option>
+                    <option value="replace" id="labelImportReplace">Thay thế tiến độ hiện tại</option>
+                  </select>
+                  <button type="button" class="btn btn-secondary-outline" id="btnImportProgress">Chọn tệp để khôi phục</button>
+                  <input type="file" id="progressImportFile" accept=".json,application/json" hidden>
+                </div>
+              </div>
+            </details>
+          </div>
+        </details>
+        <details class="profile-option">
+          <summary>
+            <i class="fa-solid fa-laptop-medical profile-option-icon" aria-hidden="true"></i>
+            <span class="profile-option-label"><strong id="profileSyncTitle">Dùng trên thiết bị khác</strong><span class="profile-note" id="profileCloudSummary">Đồng bộ bằng mã người dùng · Đang tắt</span></span>
+          </summary>
+          <div class="profile-option-content">
+            <p class="profile-note" id="profileSyncNote">Bật đồng bộ, rồi nhập cùng mã người dùng trên thiết bị còn lại.</p>
+            <label class="profile-sync-switch"><input type="checkbox" id="cloudSyncEnabled" aria-describedby="cloudDisclosure"> <span id="labelCloudSyncEnabled">Bật đồng bộ đám mây</span></label>
+            <p class="profile-note" id="cloudDisclosure"></p>
+            <div class="profile-field">
+              <label class="form-field-label" for="profileDeviceId" id="labelProfileDeviceId">Mã người dùng của bạn</label>
+              <div class="profile-controls">
+                <input type="text" id="profileDeviceId" class="supa-text-input" readonly spellcheck="false" autocomplete="off" aria-describedby="profilePrivacyNote">
+                <button type="button" class="btn btn-secondary-outline" id="btnCopyProfileId">Sao chép</button>
+                <button type="button" class="btn btn-secondary-outline" id="btnDownloadSyncId">Tải mã</button>
+              </div>
+            </div>
+            <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Không cần email.</strong> <span id="profileKeepIdPrivate">Chỉ chia sẻ mã giữa các thiết bị của bạn.</span></p>
+            <div class="profile-field profile-restore">
+              <label class="form-field-label" for="restoreSyncId" id="labelRestoreSyncId">Đã có mã từ thiết bị khác?</label>
+              <div class="profile-controls">
+                <input id="restoreSyncId" type="text" class="supa-text-input" spellcheck="false" autocomplete="off" aria-describedby="profilePrivacyNote">
+                <button id="btnRestoreSyncId" type="button" class="btn btn-secondary-outline">Khôi phục và hợp nhất</button>
+              </div>
+            </div>
+          </div>
+        </details>
+        <details id="cloudEmailSection" hidden class="profile-option" aria-labelledby="cloudEmailTitle">
+          <summary>
+            <i class="fa-regular fa-envelope profile-option-icon" aria-hidden="true"></i>
+            <span class="profile-option-label"><strong id="cloudEmailTitle">Sao lưu bằng email</strong><span class="profile-note" id="profileEmailSummary">Không bắt buộc · Nhận liên kết qua hộp thư</span></span>
+          </summary>
+          <div class="profile-option-content">
+            <div class="profile-email-tabs" role="tablist" aria-label="Email backup" id="cloudEmailTabs">
+              <button type="button" role="tab" aria-selected="true" aria-controls="cloudEmailPanel" id="cloudBackupTab" class="btn btn-secondary-outline">Sao lưu thiết bị này</button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="cloudEmailPanel" id="cloudRestoreTab" class="btn btn-secondary-outline">Khôi phục trên thiết bị này</button>
+            </div>
+            <p class="profile-note" id="profileEmailHelp">Nhập email, nhận liên kết và mở thư để xác nhận sao lưu.</p>
+            <form id="cloudEmailPanel" class="profile-field" role="tabpanel" aria-labelledby="cloudBackupTab" aria-describedby="profileEmailHelp cloudEmailPrivacy">
+              <label class="form-field-label" for="cloudEmail" id="labelCloudEmail">Email của bạn</label>
+              <input id="cloudEmail" type="email" class="supa-text-input" autocomplete="email" maxlength="254" required>
+              <button type="submit" id="btnCloudEmail" class="btn btn-primary-green">Gửi liên kết sao lưu cho tôi</button>
+            </form>
+            <p class="profile-note" id="cloudEmailPrivacy"></p>
+          </div>
+        </details>
+        <p class="profile-note profile-status" id="cloudSyncStatus" role="status" aria-live="polite"></p>
       </div>
     </div>
   </div>
@@ -5317,13 +5493,16 @@
       document.getElementById("cloudEmailSection").hidden = !cloudSync?.enabled;
       text("labelProfileDeviceId", "Your user ID", "Mã người dùng của bạn");
       text("btnDownloadSyncId", "Download ID", "Tải mã");
-      text("profileNoEmail", "You never need an email here.", "Không cần email.");
-      text("profileSyncNote", cloudSync?.enabled ? "Use your ID to merge progress across your own devices. JSON backups also work offline." : "Cloud sync is not configured. Copy/download your ID or restore progress from a local JSON backup.", cloudSync?.enabled ? "Dùng mã để hợp nhất tiến độ giữa các thiết bị của bạn. Bản sao JSON vẫn dùng được khi ngoại tuyến." : "Chưa cấu hình đồng bộ đám mây. Bạn vẫn có thể sao chép/tải mã và khôi phục tiến độ từ tệp JSON.");
+      text("profileNoEmail", "No email needed for ID sync.", "Đồng bộ bằng mã không cần email.");
+      text("profileSyncNote", cloudSync?.enabled ? "On your current device, turn on sync and copy your user ID. On the other device, open Profile and enter that ID below to merge your progress." : "Cloud sync is unavailable. You can still download a backup file and restore it on another device.", cloudSync?.enabled ? "Trên thiết bị đang dùng, bật đồng bộ rồi sao chép mã người dùng. Trên thiết bị còn lại, mở Hồ sơ và nhập mã đó bên dưới để hợp nhất tiến độ." : "Đồng bộ đám mây chưa khả dụng. Bạn vẫn có thể tải tệp sao lưu và khôi phục trên thiết bị khác.");
+      text("profileCloudSummary", !cloudSync?.enabled ? "Cloud sync unavailable · Use a backup file" : cloudSync.consent === "allowed" ? "Sync by user ID · On" : "Sync by user ID · Off", !cloudSync?.enabled ? "Đồng bộ chưa khả dụng · Hãy dùng tệp sao lưu" : cloudSync.consent === "allowed" ? "Đồng bộ bằng mã người dùng · Đang bật" : "Đồng bộ bằng mã người dùng · Đang tắt");
       text("profileKeepIdPrivate", "Anyone with this ID can read and change your synced progress. Share it only with your own devices.", "Ai có mã này đều có thể đọc và thay đổi tiến độ đã đồng bộ. Chỉ chia sẻ giữa các thiết bị của bạn.");
       text("cloudDisclosure", "When cloud sync is on, your display name and learning activity (including saved chats) are sent to the owner's sync server. Local backups still work without cloud sync.", "Khi bật đồng bộ đám mây, tên hiển thị và hoạt động học (gồm các cuộc trò chuyện đã lưu) được gửi tới máy chủ đồng bộ của chủ ứng dụng. Bản sao cục bộ vẫn dùng được khi không đồng bộ.");
-      text("labelRestoreSyncId", "ID from another device", "Mã từ thiết bị khác");
+      text("labelRestoreSyncId", "Already have an ID from another device?", "Đã có mã từ thiết bị khác?");
       text("btnRestoreSyncId", "Restore and merge", "Khôi phục và hợp nhất");
-      text("cloudEmailTitle", "Back up with email (optional)", "Sao lưu bằng email (không bắt buộc)");
+      text("cloudEmailTitle", "Back up with email", "Sao lưu bằng email");
+      text("profileEmailHelp", cloudEmailAction === "backup" ? "Enter your email, then open the link in your inbox to confirm your backup." : "Use the email address you confirmed for your backup. Open the restore link on the device you want to use.", cloudEmailAction === "backup" ? "Nhập email, rồi mở liên kết trong hộp thư để xác nhận sao lưu." : "Nhập email đã xác nhận sao lưu trước đó. Mở liên kết khôi phục trên thiết bị bạn muốn dùng.");
+      document.getElementById("cloudEmailTabs").setAttribute("aria-label", vi ? "Sao lưu hoặc khôi phục bằng email" : "Email backup or restore");
       text("cloudBackupTab", "Back up this device", "Sao lưu thiết bị này");
       text("cloudRestoreTab", "Restore on this device", "Khôi phục trên thiết bị này");
       text("labelCloudEmail", "Your email", "Email của bạn");
@@ -5880,8 +6059,17 @@
       setTxt("#myAccountModalTitle", isVi ? "Hồ sơ của bạn" : "Your profile");
       Dom.btnCloseAccountModal.setAttribute("aria-label", isVi ? "Đóng" : "Close");
       Dom.userProfilePill.setAttribute("aria-label", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
-      setTxt("#deviceProfileNote", isVi ? "Không cần tài khoản. Tiến độ được lưu theo mã ẩn danh trên thiết bị này." : "No account needed. Progress is stored under an anonymous ID on this device.");
-      setTxt("#profileSyncTitle", isVi ? "Đồng bộ thiết bị" : "Sync devices");
+      setTxt("#deviceProfileNote", isVi ? "Cứ học, tiến độ tự lưu trên thiết bị này. Không cần đăng ký." : "Keep learning. Progress saves on this device, no sign-up needed.");
+      setTxt("#profileOverviewTitle", isVi ? "Việc học của bạn" : "Your learning");
+      setTxt("#profileBackupTitle", isVi ? "Giữ tiến độ của bạn" : "Keep your progress safe");
+      setTxt("#profileBackupNote", isVi ? "Chọn cách phù hợp khi đổi thiết bị hoặc cần bản dự phòng." : "Choose what works for you when switching devices or keeping a spare copy.");
+      setTxt("#profileFileTitle", isVi ? "Lưu một bản về máy" : "Save a copy to your device");
+      setTxt("#profileFileSummary", isVi ? "Không cần mạng · Không cần email" : "Works offline · No email needed");
+      setTxt("#profileFileNote", isVi ? "Tải tệp sao lưu (JSON) và giữ ở nơi an toàn. Dùng tệp này để khôi phục khi cần." : "Download a backup file (JSON) and keep it somewhere safe. Use this file to restore your progress later.");
+      setTxt("#profileFileRestoreTitle", isVi ? "Đã có tệp sao lưu? Khôi phục tại đây" : "Already have a backup file? Restore it here");
+      setTxt("#profileImportNote", isVi ? "Hợp nhất để giữ cả tiến độ hiện tại và trong tệp. Thay thế sẽ ghi đè tiến độ trên thiết bị này." : "Merge keeps both your current progress and the file's progress. Replace overwrites progress on this device.");
+      setTxt("#profileSyncTitle", isVi ? "Dùng trên thiết bị khác" : "Use another device");
+      setTxt("#profileEmailSummary", isVi ? "Không bắt buộc · Nhận liên kết qua hộp thư" : "Optional · Get a link in your inbox");
       setTxt("#btnCopyProfileId", isVi ? "Sao chép" : "Copy");
       setTxt("#profileServerNote", isVi ? "Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ." : "In server mode, your display name, reading history and bookmarks are also sent to the server.");
       setTxt("#profileHistoryTitle", isVi ? "Bản tin gần đây" : "Recent briefings");
@@ -5890,11 +6078,11 @@
       if (Dom.myAccountModal.classList.contains("active")) renderProfileHistory();
       setTxt("#labelDeviceName", isVi ? "Tên hiển thị" : "Display name");
       setTxt("#btnSaveProfile", isVi ? "Lưu tên" : "Save name");
-      setTxt("#btnExportProgress", isVi ? "Tải xuống (JSON)" : "Download (JSON)");
-      setTxt("#btnImportProgress", isVi ? "Khôi phục từ tệp" : "Restore from file");
+      setTxt("#btnExportProgress", isVi ? "Tải bản sao lưu (JSON)" : "Download backup (JSON)");
+      setTxt("#btnImportProgress", isVi ? "Chọn tệp để khôi phục" : "Choose backup file");
       setTxt("#labelImportMode", isVi ? "Cách khôi phục" : "Restore mode");
-      setTxt("#labelImportMerge", isVi ? "Hợp nhất" : "Merge");
-      setTxt("#labelImportReplace", isVi ? "Thay thế" : "Replace");
+      setTxt("#labelImportMerge", isVi ? "Hợp nhất (giữ cả hai)" : "Merge (keep both)");
+      setTxt("#labelImportReplace", isVi ? "Thay thế tiến độ hiện tại" : "Replace current progress");
       renderCloudSync();
 
       document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
