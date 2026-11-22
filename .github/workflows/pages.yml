@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p site/data
           cp index.html icon.svg manifest.json clinical_distractors.js clinical_mcq.js \
-            device_profile.js search_ranking.js evidence_feed.js offline.js site/
+            device_profile.js sync_config.js cloud_sync.js search_ranking.js evidence_feed.js offline.js site/
           cp data/briefings.js site/data/
           if [[ -f data/pipeline/briefing.json && -f data/pipeline/evidence.parquet ]]; then
             mkdir site/data/pipeline
