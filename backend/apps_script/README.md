@@ -6,26 +6,29 @@ Google can change quotas or availability; this is best-effort sync, not a guaran
 backup service. Local progress and JSON export/import always work without it.
 
 1. Open https://script.google.com and create a **New project** under your own account.
-2. Paste `Code.gs` into the project's `Code.gs` file and save. If `Chat.gs` is present
-   in the repo, add it as a second script file in the same Apps Script project.
+2. Copy both `Code.gs` and `Chat.gs` into the same Apps Script project as separate
+   script files (or use `clasp push` to upload both).
 3. In **Project Settings → Script Properties**, set **PEPPER** to a long random string
    (keep it private and stable). Optionally set **SITE_URL** to your Pages URL; the
-   default is `https://ledinhduy281.github.io/daily-learning-heart/`. If using
-   `Chat.gs`, also set **GROQ_API_KEY** in Script Properties, never in browser code.
+   default is `https://ledinhduy281.github.io/daily-learning-heart/`. Also set
+   **GROQ_API_KEY**, never in browser code. Optional chat properties:
+   **CHAT_DAILY_CAP** (default `300`) and **GROQ_MODEL** (default `openai/gpt-oss-120b`).
 4. Choose **Deploy → New deployment → Web app**, **Execute as: Me**,
    **Who has access: Anyone**. Authorize Sheets and sending mail from your account.
    If your Workspace administrator forbids anonymous web apps, this setup cannot
    work there; leave cloud sync disabled. Never enable billing to work around it.
-5. One deployment serves both sync and optional chat. Copy its **/exec** URL
+5. One deployment serves both sync and chat. Copy its **/exec** URL
    (not `/dev`) into `sync_config.js` and commit it.
    This URL is public, not a secret. Leave it empty to disable cloud sync.
-6. Visit the site, read a lesson, and try restore on another browser. Test an email
+6. After deploying, select **testChat** in the Apps Script editor and click **Run**.
+   Authorize it if prompted. The execution log should start with **OK:**.
+7. Visit the site, read a lesson, and try restore on another browser. Test an email
    backup and restore email. Apps Script creates a **private** spreadsheet on the
    first request. Follow the backup email's confirmation link before requesting
    a restore email; unconfirmed email links never become active. Confirmation
    tokens are stored hashed, expire after 24 hours, and can only be used once.
    Its ID is stored in `SYNC_SHEET_ID`. Do not publish/share the Sheet.
-7. For code updates, deploy a **new version** using Manage deployments. Keep PEPPER,
+8. For code updates, deploy a **new version** using Manage deployments. Keep PEPPER,
    the spreadsheet, and its property stable or email lookups will be lost.
 
 ## Security, limits, and operations
