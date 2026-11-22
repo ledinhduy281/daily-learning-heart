@@ -56,10 +56,15 @@ function chatHandle_(req) {
     var messages = [{role: 'system', content: system}].concat(history.map(function (m) {
       return {role: m.role, content: String(m.content || '')};
     }), [{role: 'user', content: 'CONTEXT:\n' + context + '\n\nQUESTION:\n' + question}]);
+    var payload = {model: model, messages: messages, temperature: 0.15, max_tokens: 1200};
+    if (model.indexOf('openai/gpt-oss') === 0) {
+      payload.reasoning_effort = 'low';
+      payload.include_reasoning = false;
+    }
     var response = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       headers: {Authorization: 'Bearer ' + key},
-      payload: JSON.stringify({model: model, messages: messages, temperature: 0.15, max_tokens: 1200})
+      payload: JSON.stringify(payload)
     });
     if (response.getResponseCode() !== 200) return output({ok: false, error: 'upstream'});
     var data = JSON.parse(response.getContentText());

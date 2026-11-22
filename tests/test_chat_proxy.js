@@ -63,6 +63,9 @@ assert.equal(url, 'https://api.groq.com/openai/v1/chat/completions');
 assert.equal(options.muteHttpExceptions, true);
 assert.equal(options.method, 'post');
 assert.equal(payload.temperature, 0.15); assert.equal(payload.max_tokens, 1200);
+assert.equal(payload.reasoning_effort, 'low');
+assert.equal(payload.include_reasoning, false);
+assert.ok(!('reasoning_format' in payload));
 assert.match(payload.messages[0].content, /Cardiology EBM/);
 assert.match(payload.messages[0].content, /Never invent PMIDs\/stats/);
 assert.ok(!payload.messages[0].content.includes('/no_think'));
@@ -75,6 +78,12 @@ assert.ok(!JSON.parse(override.calls[0].options.payload).messages[0].content.inc
 const custom = setup({GROQ_API_KEY: 'test-only-placeholder', GROQ_MODEL: 'custom-model'});
 assert.equal(custom.request({lang: 'vi', verbosity: 'short', question: 'A. First\nB. Second\nC. Third\nD. Fourth'}).model, 'custom-model');
 const prompt = JSON.parse(custom.calls[0].options.payload).messages[0].content;
+assert.ok(!('reasoning_effort' in JSON.parse(custom.calls[0].options.payload)));
+assert.ok(!('include_reasoning' in JSON.parse(custom.calls[0].options.payload)));
+const ossOverride = setup({GROQ_API_KEY: 'test-only-placeholder', GROQ_MODEL: 'openai/gpt-oss-20b'});
+ossOverride.request();
+assert.equal(JSON.parse(ossOverride.calls[0].options.payload).reasoning_effort, 'low');
+assert.equal(JSON.parse(ossOverride.calls[0].options.payload).include_reasoning, false);
 assert.match(prompt, /Vietnamese/); assert.match(prompt, /MCQ OVERRIDE/); assert.match(prompt, /20-55 words/);
 for (const verbosity of ['short', 'medium', 'detailed']) {
   const caseState = setup(); caseState.request({verbosity});
