@@ -409,7 +409,8 @@ async function checkProfilePanel() {
   const markup = html.slice(html.indexOf('id="myAccountModal"'), html.indexOf('id="btnBackToTop"'));
   assert.match(markup, /<input[^>]+id="profileDeviceId"[^>]+readonly/);
   assert.match(markup, /<input type="file" id="progressImportFile"/);
-  assert.doesNotMatch(markup, /<input[^>]+type="email"/);
+  assert.match(markup, /id="cloudEmailSection" hidden/);
+  assert.match(markup, /<input[^>]+type="email"/);
 
   const profile = create(new Storage(), crypto);
   profile.activity(['old', 'saved', 'new', 'missing'], ['saved']);

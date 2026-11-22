@@ -41,6 +41,8 @@
   <script src="clinical_distractors.js"></script>
   <script src="clinical_mcq.js"></script>
   <script src="device_profile.js"></script>
+  <script src="sync_config.js"></script>
+  <script src="cloud_sync.js"></script>
   <script src="search_ranking.js"></script>
   <script src="evidence_feed.js"></script>
 
@@ -4475,17 +4477,40 @@
       <div class="modal-body">
         <section class="account-section-box" aria-labelledby="profileSyncTitle">
           <h3 id="profileSyncTitle">Đồng bộ thiết bị</h3>
-          <p class="profile-note" id="profileSyncNote">Tải xuống bản sao JSON, rồi mở tệp đó trên thiết bị khác để khôi phục. Chỉ có mã thiết bị thì không thể khôi phục.</p>
+          <p class="profile-note" id="profileSyncNote">Chưa cấu hình đồng bộ đám mây. Bạn vẫn có thể sao chép/tải mã và khôi phục tiến độ từ tệp JSON.</p>
           <div class="profile-field">
-            <label class="form-field-label" for="profileDeviceId" id="labelProfileDeviceId">Mã thiết bị của bạn</label>
+            <label class="form-field-label" for="profileDeviceId" id="labelProfileDeviceId">Mã người dùng của bạn</label>
             <div class="profile-controls">
               <input type="text" id="profileDeviceId" class="supa-text-input" readonly spellcheck="false" autocomplete="off">
               <button type="button" class="btn btn-secondary-outline" id="btnCopyProfileId">Sao chép</button>
+              <button type="button" class="btn btn-secondary-outline" id="btnDownloadSyncId">Tải mã</button>
               <button type="button" class="btn btn-primary-green" id="btnExportProgress">Tải xuống (JSON)</button>
             </div>
           </div>
-          <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Bạn không bao giờ cần email.</strong> <span id="profileKeepIdPrivate">Hãy giữ mã thiết bị riêng tư.</span></p>
+          <p class="profile-note" id="profilePrivacyNote"><strong id="profileNoEmail">Không cần email.</strong> <span id="profileKeepIdPrivate">Chỉ chia sẻ mã giữa các thiết bị của bạn.</span></p>
           <p class="profile-note" id="profileServerNote" hidden>Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ.</p>
+          <p class="profile-note" id="cloudDisclosure"></p>
+          <div class="profile-field">
+            <label class="form-field-label" for="restoreSyncId" id="labelRestoreSyncId">Mã từ thiết bị khác</label>
+            <div class="profile-controls">
+              <input id="restoreSyncId" type="text" class="supa-text-input" spellcheck="false" autocomplete="off">
+              <button id="btnRestoreSyncId" type="button" class="btn btn-secondary-outline">Khôi phục</button>
+            </div>
+          </div>
+          <section id="cloudEmailSection" hidden aria-labelledby="cloudEmailTitle">
+            <h4 id="cloudEmailTitle">Sao lưu bằng email (không bắt buộc)</h4>
+            <div class="profile-controls" role="tablist" aria-label="Email backup">
+              <button type="button" role="tab" aria-selected="true" aria-controls="cloudEmailPanel" id="cloudBackupTab" class="btn btn-secondary-outline">Sao lưu thiết bị này</button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="cloudEmailPanel" id="cloudRestoreTab" class="btn btn-secondary-outline">Khôi phục trên thiết bị này</button>
+            </div>
+            <form id="cloudEmailPanel" role="tabpanel" aria-labelledby="cloudBackupTab">
+              <label for="cloudEmail" id="labelCloudEmail">Email của bạn</label>
+              <input id="cloudEmail" type="email" class="supa-text-input" autocomplete="email" maxlength="254" required>
+              <button type="submit" id="btnCloudEmail" class="btn btn-primary-green">Gửi liên kết sao lưu cho tôi</button>
+            </form>
+            <p class="profile-note" id="cloudEmailPrivacy"></p>
+          </section>
+          <p class="profile-note" id="cloudSyncStatus" role="status" aria-live="polite"></p>
           <div class="profile-controls profile-restore">
             <label class="form-field-label" for="progressImportMode" id="labelImportMode">Cách khôi phục</label>
             <select id="progressImportMode" class="supa-text-input">
@@ -5145,7 +5170,7 @@
       populatePillarSelect();
       bindAppEvents();
       setLanguage(App.currentLang, { rerender: false, persist: false });
-      bootstrapSessionAndStatus();
+      bootstrapSessionAndStatus().finally(initializeCloudSync);
       scheduleDailyRefresh();
       loadDailyEvidence();
       window.addEventListener("online", loadDailyEvidence);
@@ -5256,6 +5281,86 @@
     const deviceStore = DeviceProfile.create((() => {
       try { return window.localStorage; } catch (_) { return null; }
     })());
+    let cloudSync = null;
+    let cloudEmailAction = "backup";
+    let cloudStatus = "";
+
+    function renderCloudSync() {
+      const vi = App.currentLang !== "en";
+      const text = (id, en, vn) => { document.getElementById(id).textContent = vi ? vn : en; };
+      if (cloudSync) Dom.profileDeviceId.value = cloudSync.userId;
+      document.getElementById("cloudEmailSection").hidden = !cloudSync?.enabled;
+      text("labelProfileDeviceId", "Your user ID", "Mã người dùng của bạn");
+      text("btnDownloadSyncId", "Download ID", "Tải mã");
+      text("profileNoEmail", "You never need an email here.", "Không cần email.");
+      text("profileSyncNote", cloudSync?.enabled ? "Use your ID to merge progress across your own devices. JSON backups also work offline." : "Cloud sync is not configured. Copy/download your ID or restore progress from a local JSON backup.", cloudSync?.enabled ? "Dùng mã để hợp nhất tiến độ giữa các thiết bị của bạn. Bản sao JSON vẫn dùng được khi ngoại tuyến." : "Chưa cấu hình đồng bộ đám mây. Bạn vẫn có thể sao chép/tải mã và khôi phục tiến độ từ tệp JSON.");
+      text("profileKeepIdPrivate", "Anyone with this ID can read and change your synced progress. Share it only with your own devices.", "Ai có mã này đều có thể đọc và thay đổi tiến độ đã đồng bộ. Chỉ chia sẻ giữa các thiết bị của bạn.");
+      text("cloudDisclosure", "When cloud sync is on, your display name and learning activity (including saved chats) are sent to the owner's sync server. Local backups still work without cloud sync.", "Khi bật đồng bộ đám mây, tên hiển thị và hoạt động học (gồm các cuộc trò chuyện đã lưu) được gửi tới máy chủ đồng bộ của chủ ứng dụng. Bản sao cục bộ vẫn dùng được khi không đồng bộ.");
+      text("labelRestoreSyncId", "ID from another device", "Mã từ thiết bị khác");
+      text("btnRestoreSyncId", "Restore and merge", "Khôi phục và hợp nhất");
+      text("cloudEmailTitle", "Back up with email (optional)", "Sao lưu bằng email (không bắt buộc)");
+      text("cloudBackupTab", "Back up this device", "Sao lưu thiết bị này");
+      text("cloudRestoreTab", "Restore on this device", "Khôi phục trên thiết bị này");
+      text("labelCloudEmail", "Your email", "Email của bạn");
+      text("btnCloudEmail", cloudEmailAction === "backup" ? "Email me a backup link" : "Email me a restore link", cloudEmailAction === "backup" ? "Gửi liên kết sao lưu cho tôi" : "Gửi liên kết khôi phục cho tôi");
+      text("cloudEmailPrivacy", "We never store your email address, only a fingerprint of it. Google processes the address to deliver your email.", "Chúng tôi không lưu địa chỉ email, chỉ lưu dấu vân tay của địa chỉ đó. Google xử lý địa chỉ để gửi email cho bạn.");
+      const messages = {
+        NOT_CONFIGURED: ["Cloud sync is not configured. Restore a local JSON backup instead.", "Chưa cấu hình đồng bộ đám mây. Hãy khôi phục từ bản sao JSON cục bộ."],
+        SYNC_FAILED: ["Could not sync. Your local progress is safe; try again later.", "Chưa thể đồng bộ. Tiến độ trên thiết bị vẫn an toàn, hãy thử lại sau."],
+        SYNCED: ["Progress synced.", "Đã đồng bộ tiến độ."],
+        EMAIL_SENT: ["If a backup is available, a link will be emailed to that address. Please wait up to 10 minutes before requesting again.", "Nếu có bản sao lưu, liên kết sẽ được gửi tới địa chỉ đó. Vui lòng đợi ít nhất 10 phút trước khi yêu cầu lại."],
+        INVALID_ID: ["Enter a valid user ID.", "Vui lòng nhập mã người dùng hợp lệ."]
+      };
+      const message = messages[cloudStatus];
+      document.getElementById("cloudSyncStatus").textContent = message ? message[vi ? 1 : 0] : "";
+    }
+
+    function initializeCloudSync() {
+      const status = code => { cloudStatus = code; renderCloudSync(); };
+      try {
+        cloudSync = CloudSync.create({profile:deviceStore, endpoint:window.EBM_SYNC_ENDPOINT || "",
+          storage:{getItem:key=>{try{return localStorage.getItem(key);}catch(_){return null;}},setItem:(key,value)=>localStorage.setItem(key,value)},
+          onStatus:status, onMerged:()=>{
+            setAuthenticatedUser({});
+            SocraticTutor.loadStore();
+            EbmChat.loadSessions();EbmChat.loadQuota();EbmChat.loadVerbosity();
+            loadOfflineFeedbackStore();
+            const lang=deviceStore.get(UI_LANG_KEY);
+            if (lang==="vi"||lang==="en")setLanguage(lang,{rerender:false,persist:false});
+            renderAllViewsAfterAuth();renderProfileHistory();
+          }
+        });
+        renderCloudSync();
+        document.getElementById("btnRestoreSyncId").addEventListener("click", async () => {
+          try {
+            const id = CloudSync.validId(document.getElementById("restoreSyncId").value);
+            if (!cloudSync.enabled) { status("NOT_CONFIGURED"); return; }
+            if (window.confirm(App.currentLang === "en" ? "Use this ID and merge both devices' progress? Anyone with this ID can access the synced profile." : "Dùng mã này và hợp nhất tiến độ của hai thiết bị? Ai có mã đều có thể truy cập hồ sơ đã đồng bộ.")) {
+              await cloudSync.restore(id); renderCloudSync();
+            }
+          } catch (error) { status(error.message === "INVALID_ID" ? "INVALID_ID" : "SYNC_FAILED"); }
+        });
+        document.getElementById("btnDownloadSyncId").addEventListener("click", () => {
+          const url = URL.createObjectURL(new Blob([cloudSync.userId],{type:"text/plain"}));
+          const a = document.createElement("a");a.href=url;a.download="daily-learning-heart-user-id.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        });
+        for (const [id, action] of [["cloudBackupTab","backup"],["cloudRestoreTab","restore_request"]]) {
+          document.getElementById(id).addEventListener("click", () => {
+            cloudEmailAction=action;
+            document.getElementById("cloudBackupTab").setAttribute("aria-selected",String(action==="backup"));
+            document.getElementById("cloudRestoreTab").setAttribute("aria-selected",String(action==="restore_request"));
+            document.getElementById("cloudEmailPanel").setAttribute("aria-labelledby",id);renderCloudSync();
+          });
+        }
+        document.getElementById("cloudEmailPanel").addEventListener("submit", async event => {
+          event.preventDefault();const button=document.getElementById("btnCloudEmail");button.disabled=true;
+          try {await cloudSync.email(cloudEmailAction,document.getElementById("cloudEmail").value,App.currentLang);document.getElementById("cloudEmail").value="";}
+          catch (_) {status("SYNC_FAILED");}finally{button.disabled=false;}
+        });
+        window.addEventListener("storage",event=>{if(event.key===DeviceProfile.KEY)cloudSync.schedule();});
+        cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "Restore this ID and merge its progress with this device? Only accept links you trust." : "Khôi phục mã này và hợp nhất tiến độ với thiết bị? Chỉ chấp nhận liên kết bạn tin cậy."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(error.message==="INVALID_ID"?"INVALID_ID":error.message==="NOT_CONFIGURED"?"NOT_CONFIGURED":"SYNC_FAILED"));
+      } catch (_) {status("SYNC_FAILED");}
+    }
 
     function safeStorageGet(key) { return deviceStore.get(key); }
     function safeStorageSet(key, value) { deviceStore.set(key, value); }
@@ -5378,6 +5483,7 @@
       const profile = deviceStore.profile;
       Dom.accFullName.value = profile.display_name;
       Dom.profileDeviceId.value = profile.device_id;
+      renderCloudSync();
       Dom.profileServerNote.hidden = !App.serverAvailable;
       renderProfileHistory();
       Dom.myAccountModal.inert = false;
@@ -5720,11 +5826,7 @@
       Dom.userProfilePill.setAttribute("aria-label", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
       setTxt("#deviceProfileNote", isVi ? "Không cần tài khoản. Tiến độ được lưu theo mã ẩn danh trên thiết bị này." : "No account needed. Progress is stored under an anonymous ID on this device.");
       setTxt("#profileSyncTitle", isVi ? "Đồng bộ thiết bị" : "Sync devices");
-      setTxt("#profileSyncNote", isVi ? "Tải xuống bản sao JSON, rồi mở tệp đó trên thiết bị khác để khôi phục. Chỉ có mã thiết bị thì không thể khôi phục." : "Download a JSON backup and open that file on the other device to restore. The device ID alone cannot restore progress.");
-      setTxt("#labelProfileDeviceId", isVi ? "Mã thiết bị của bạn" : "Your device ID");
       setTxt("#btnCopyProfileId", isVi ? "Sao chép" : "Copy");
-      setTxt("#profileNoEmail", isVi ? "Bạn không bao giờ cần email." : "You never need an email.");
-      setTxt("#profileKeepIdPrivate", isVi ? "Hãy giữ mã thiết bị riêng tư." : "Keep your device ID private.");
       setTxt("#profileServerNote", isVi ? "Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ." : "In server mode, your display name, reading history and bookmarks are also sent to the server.");
       setTxt("#profileHistoryTitle", isVi ? "Bản tin gần đây" : "Recent briefings");
       setTxt("#labelProfileReadCount", t("filterRead"));
@@ -5737,6 +5839,7 @@
       setTxt("#labelImportMode", isVi ? "Cách khôi phục" : "Restore mode");
       setTxt("#labelImportMerge", isVi ? "Hợp nhất" : "Merge");
       setTxt("#labelImportReplace", isVi ? "Thay thế" : "Replace");
+      renderCloudSync();
 
       document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
       document.getElementById("todaySidebarDesc").textContent = t("todaySidebarDesc");

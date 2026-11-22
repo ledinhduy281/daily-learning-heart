@@ -159,6 +159,7 @@ const DeviceProfile = (() => {
     return next;
   }
   function create(storage, cryptoSource = globalThis.crypto, lang = 'vi') {
+    const listeners = new Set();
     const read = key => { try { return storage.getItem(key); } catch (_) { return null; } };
     let p;
     try { p = validate(JSON.parse(read(KEY))); } catch (_) {}
@@ -176,6 +177,7 @@ const DeviceProfile = (() => {
         }
         storage.setItem(KEY, JSON.stringify(next));
         p = next; baseline = JSON.parse(JSON.stringify(p));
+        for (const listener of listeners) { try { listener(); } catch (_) {} }
         return true;
       } catch (_) { return false; }
     };
@@ -243,6 +245,7 @@ const DeviceProfile = (() => {
       return JSON.parse(JSON.stringify(current));
     };
     return {
+      subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
       get profile() { return JSON.parse(JSON.stringify(p)); },
       snapshot() { return snapshot(true); },
       get(key) { return p.progress[key] ?? null; },
