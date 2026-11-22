@@ -1,6 +1,6 @@
 /* Optional cloud transport; DeviceProfile remains the validation/merge authority. */
 const CloudSync = (() => {
-  const ID_KEY='dlh_sync_identity_v1',MAX_BYTES=256*1024;
+  const ID_KEY='dlh_sync_identity_v1',BASE_KEY='dlh_sync_baseline_v1',MAX_BYTES=256*1024;
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const bytes=value=>new TextEncoder().encode(value).length;
   function validId(value) {
@@ -13,6 +13,11 @@ const CloudSync = (() => {
     let stored;
     try {stored=storage.getItem(ID_KEY);}catch(_){}
     let id=uuid.test(stored||'')?validId(stored):validId(profile.profile.device_id),timer,queue=Promise.resolve(),lastSynced='';
+    let baseline=null;
+    try {
+      const cached=JSON.parse(storage.getItem(BASE_KEY));
+      if(cached?.userId===id && cached.profile && bytes(JSON.stringify(cached.profile))<=MAX_BYTES)baseline=cached.profile;
+    } catch(_) {}
     const status=code=>onStatus(code);
     async function request(action,fields={}) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
@@ -27,24 +32,29 @@ const CloudSync = (() => {
         return result;
       } finally {clearTimeout(timeout);}
     }
-    function merge(remote) {
+    function merge(remote,base) {
       if(remote==null)return;
       const text=JSON.stringify(remote);
       if(bytes(text)>MAX_BYTES||typeof remote!=='object'||Array.isArray(remote)||'device_id' in remote)throw new Error('INVALID_PROFILE');
-      profile.importJSON(text,'merge');onMerged();
+      profile.importJSON(text,'merge',base);onMerged();
     }
     const meaningful=p=>p.read_ids.length||p.bookmarked_ids.length||Object.keys(p.progress).length;
     async function exchange(target,adopt=false,force=false) {
       let remote=await request('pull',{userId:target});
-      merge(remote.profile);
+      const base=target===id?baseline:null;
+      merge(remote.profile,base);
       if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';}
       for(let attempt=0;attempt<4;attempt++) {
         const text=profile.exportJSON(),data=JSON.parse(text);
         if(bytes(text)>MAX_BYTES)throw new Error('TOO_LARGE');
         if(!meaningful(data)&&!adopt&&!force)return;
         const result=await request('push',{userId:target,profile:data,revision:remote.revision});
-        if(!result.conflict) {lastSynced=text;status('SYNCED');return;}
-        merge(result.profile);remote=result;
+        if(!result.conflict) {
+          lastSynced=text;baseline=data;
+          try {storage.setItem(BASE_KEY,JSON.stringify({userId:target,profile:data}));}catch(_){}
+          status('SYNCED');return;
+        }
+        merge(result.profile,base);remote=result;
       }
       throw new Error('SYNC_CONFLICT');
     }

@@ -158,6 +158,28 @@ const DeviceProfile = (() => {
     }
     return next;
   }
+  function reconcileData(base, local, remote, atomic = false) {
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    if (same(local, base)) return remote;
+    if (same(remote, base) || atomic) return local;
+    if (object(local) && object(remote)) {
+      const next = {...remote};
+      for (const key of new Set([...Object.keys(base || {}), ...Object.keys(local)])) {
+        if (!Object.hasOwn(local, key)) delete next[key];
+        else next[key] = reconcileData(base?.[key], local[key], remote[key]);
+      }
+      return next;
+    }
+    if (Array.isArray(local) && Array.isArray(remote)) {
+      const key = item => object(item) && typeof item.id === 'string' ? `id:${item.id}` : JSON.stringify(item);
+      const index = items => new Map((items || []).map(item => [key(item), item]));
+      const before = index(Array.isArray(base) ? base : []), current = index(local), next = index(remote);
+      for (const id of before.keys()) if (!current.has(id)) next.delete(id);
+      for (const [id, value] of current) if (!same(value, before.get(id))) next.set(id, reconcileData(before.get(id), value, next.get(id)));
+      return [...next.values()];
+    }
+    return local;
+  }
   function create(storage, cryptoSource = globalThis.crypto, lang = 'vi') {
     const listeners = new Set();
     const read = key => { try { return storage.getItem(key); } catch (_) { return null; } };
@@ -268,7 +290,7 @@ const DeviceProfile = (() => {
         }
         return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(progress)}, null, 2);
       },
-      importJSON(text, mode = 'merge') {
+      importJSON(text, mode = 'merge', syncBase = null) {
         if (typeof text !== 'string' || text.length > 5 * 1024 * 1024 || !['merge','replace'].includes(mode)) throw new Error('Invalid import');
         const parsed = JSON.parse(text);
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
@@ -277,6 +299,25 @@ const DeviceProfile = (() => {
         validateProgress(incoming.progress);
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key], key);
+        if (syncBase && mode === 'merge') {
+          const base = validate({...syncBase, device_id:p.device_id});
+          validateProgress(base.progress);
+          Object.assign(next, reconcile(base, p, incoming));
+          for (const key of Object.keys(p.progress)) {
+            if (p.progress[key] === base.progress[key] || !(key in incoming.progress)) continue;
+            try {
+              const before = JSON.parse(base.progress[key] || 'null'), local = JSON.parse(p.progress[key]), remote = JSON.parse(incoming.progress[key]);
+              if (key === 'ebm_socratic_state_v1' && object(local) && object(remote)) {
+                const records = {...remote};
+                for (const id of new Set([...Object.keys(before || {}), ...Object.keys(local)])) {
+                  if (!Object.hasOwn(local,id)) delete records[id];
+                  else records[id] = reconcileData(before?.[id],local[id],remote[id],true);
+                }
+                next.progress[key] = JSON.stringify(records);
+              } else next.progress[key] = JSON.stringify(reconcileData(before,local,remote));
+            } catch (_) { next.progress[key] = p.progress[key]; }
+          }
+        }
         const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
         if (!persist(mode === 'replace', true)) {

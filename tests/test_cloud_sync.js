@@ -74,6 +74,37 @@ async function main() {
   poison=null;
   profile.set('ebm_ui_lang','é'.repeat(140000));await assert.rejects(c.sync(),/TOO_LARGE/);
   c.stop();other.stop();
+  {
+    const localStorage=new Storage(),local=DeviceProfile.create(localStorage,webcrypto);
+    local.rename('Before');local.activity(['read'],['remove','keep']);
+    local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:1},2:{correct_count:2}}));
+    local.set('ebm_theme','dark');
+    let sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    await sync.sync();
+    local.rename('Local rename');local.activity(['read'],['keep']);local.remove('ebm_theme');
+    local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:5},2:{correct_count:2}}));
+    await sync.sync();
+    assert.equal(local.profile.display_name,'Local rename');assert.deepEqual(local.profile.bookmarked_ids,['keep']);
+    assert.equal(local.get('ebm_theme'),null);
+    assert.equal(JSON.parse(local.get('ebm_socratic_state_v1'))[1].correct_count,5);
+    const row=records.get(sync.userId);
+    row.revision++;row.profile.read_ids.push('another device');row.profile.bookmarked_ids.push('remote saved');
+    row.profile.display_name='Remote rename';
+    row.profile.progress.ebm_socratic_state_v1=JSON.stringify({1:{correct_count:6},2:{correct_count:8}});
+    local.rename('Latest local rename');
+    local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:9},2:{correct_count:2}}));
+    await sync.sync();
+    assert.equal(local.profile.display_name,'Latest local rename');
+    assert.deepEqual(local.profile.bookmarked_ids,['keep','remote saved']);
+    assert.ok(local.profile.read_ids.includes('another device'));
+    assert.deepEqual(JSON.parse(local.get('ebm_socratic_state_v1')),{1:{correct_count:9},2:{correct_count:8}});
+    sync.stop();
+    local.rename('After reload');local.activity(local.profile.read_ids,[]);
+    sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch});
+    await sync.sync();
+    assert.equal(local.profile.display_name,'After reload');assert.deepEqual(local.profile.bookmarked_ids,[]);
+    sync.stop();
+  }
   const failed=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch:async()=>{throw Error('offline');},onStatus:s=>statuses.push(s)});
   await assert.rejects(failed.sync(),/offline/);assert.equal(statuses.at(-1),'SYNC_FAILED');failed.stop();
   const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');
