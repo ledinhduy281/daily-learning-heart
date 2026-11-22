@@ -4,6 +4,23 @@ const DeviceProfile = (() => {
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const owned = key => /^(ebm_|soaica_)/.test(key) && !/auth|cloud|password|token|secret|api.?key/i.test(key) && key !== KEY;
   const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+  const legacyKeys = /legacy_users|progress_by_user/i;
+  const privateField = /email|username|full.?name|display.?name|password|token|secret|api.?key|^name$|@/i;
+  const learningKeys = new Set(['ebm_offline_user_activity', 'ebm_socratic_state_v1', 'ebm_ui_lang', 'ebm_font_scale', 'ebm_theme', 'ebm_streak', 'ebm_quiz_progress', 'ebm_ui_prefs']);
+  function learningData(value) {
+    if (Array.isArray(value)) return value.map(learningData);
+    if (object(value)) return Object.fromEntries(Object.entries(value).filter(([key]) => !privateField.test(key)).map(([key, child]) => [key, learningData(child)]));
+    return value;
+  }
+  function portableProgress(progress) {
+    const result = {};
+    for (const [key, raw] of Object.entries(progress)) {
+      if (legacyKeys.test(key) || privateField.test(key)) continue;
+      try { result[key] = JSON.stringify(learningData(JSON.parse(raw))); }
+      catch (_) { result[key] = raw; }
+    }
+    return result;
+  }
   function validateTree(value, depth = 0) {
     if (depth > 40) throw new Error('Data is too deeply nested');
     if (value && typeof value === 'object') for (const key of Object.keys(value)) {
@@ -105,25 +122,34 @@ const DeviceProfile = (() => {
       try {
         for (let i = 0; i < storage.length; i++) {
           const key = storage.key(i);
-          if (owned(key)) p.progress[key] = read(key);
+          if (learningKeys.has(key)) p.progress[key] = read(key);
         }
       } catch (_) {}
-      const collect = (value, depth = 0) => {
-        if (!value || typeof value !== 'object' || depth > 20) return;
+      const collect = value => {
+        if (!object(value)) return;
         for (const key of ['read_ids', 'bookmarked_ids']) if (Array.isArray(value[key])) p[key] = [...new Set([...p[key], ...value[key].filter(x => typeof x === 'string')])];
-        for (const [key, child] of Object.entries(value)) if (!/password|token|secret|api.?key/i.test(key)) collect(child, depth + 1);
       };
-      for (const value of Object.values(p.progress)) { try { collect(JSON.parse(value)); } catch (_) {} }
+      let active;
       try {
         const users = JSON.parse(read('ebm_cloud_users_db'));
         validateTree(users);
-        collect(users);
-        const active = users?.[read('ebm_cloud_current_user')];
-        const name = active?.display_name || active?.full_name;
-        if (typeof name === 'string' && name.trim()) p.display_name = name.trim().slice(0,100);
-        const sanitized = JSON.parse(JSON.stringify(users, (key, value) => /password|token|secret|api.?key/i.test(key) ? undefined : value));
-        p.progress.ebm_legacy_users_progress = JSON.stringify(sanitized);
+        active = users?.[read('ebm_cloud_current_user')];
       } catch (_) {}
+      if (object(active)) {
+        delete p.progress.ebm_offline_user_activity;
+        collect(active);
+        const fields = {streak: 'ebm_streak', quiz: 'ebm_quiz_progress', language: 'ebm_ui_lang', ui_prefs: 'ebm_ui_prefs'};
+        for (const [field, key] of Object.entries(fields)) if (active[field] !== undefined) {
+          p.progress[key] = typeof active[field] === 'string' ? active[field] : JSON.stringify(learningData(active[field]));
+        }
+        if (object(active.progress)) for (const [key, value] of Object.entries(active.progress)) if (learningKeys.has(key)) {
+          p.progress[key] = typeof value === 'string' ? value : JSON.stringify(learningData(value));
+        }
+        try { collect(JSON.parse(read('ebm_progress_by_user'))?.[read('ebm_cloud_current_user')]); } catch (_) {}
+      } else {
+        try { collect(JSON.parse(p.progress.ebm_offline_user_activity)); } catch (_) {}
+      }
+      p.progress = portableProgress(p.progress);
       persist();
     }
     return {
@@ -133,7 +159,10 @@ const DeviceProfile = (() => {
       remove(key) { delete p.progress[key]; persist(); },
       activity(readIds, savedIds) { p.read_ids = [...new Set(readIds)]; p.bookmarked_ids = [...new Set(savedIds)]; persist(); },
       rename(name) { name = String(name).trim(); if (!name || name.length > 100) throw new Error('Invalid name'); p.display_name = name; persist(); },
-      exportJSON() { const {device_id, ...backup} = p; return JSON.stringify(backup, null, 2); },
+      exportJSON() {
+        const {version, display_name, created_at, read_ids, bookmarked_ids} = p;
+        return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(p.progress)}, null, 2);
+      },
       importJSON(text, mode = 'merge') {
         if (typeof text !== 'string' || text.length > 5 * 1024 * 1024 || !['merge','replace'].includes(mode)) throw new Error('Invalid import');
         const parsed = JSON.parse(text);

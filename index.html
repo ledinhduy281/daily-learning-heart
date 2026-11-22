@@ -5166,10 +5166,6 @@
     }
 
     function setAuthenticatedUser(userObj) {
-      const legacyName = userObj.display_name || userObj.full_name;
-      if (legacyName && ['Bác sĩ', 'Doctor'].includes(deviceStore.profile.display_name)) {
-        deviceStore.rename(String(legacyName).slice(0, 100));
-      }
       const profile = deviceStore.profile;
       const readIds = [...new Set([...profile.read_ids, ...(userObj.read_ids || [])])];
       const savedIds = [...new Set([...profile.bookmarked_ids, ...(userObj.bookmarked_ids || [])])];

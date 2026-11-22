@@ -102,19 +102,35 @@ const legacy = new Storage({
   ebm_offline_user_activity: JSON.stringify({read_ids: ['old'], bookmarked_ids: ['bookmark']}),
   ebm_cloud_current_user: 'doctor@example.com',
   ebm_auth_token: 'private-session',
-  ebm_cloud_users_db: JSON.stringify({'doctor@example.com': {password: 'private-password', full_name: 'Legacy Doctor', read_ids: ['email-read'], bookmarked_ids: ['email-saved'], quiz: {score: 4}}}),
+  ebm_cloud_users_db: JSON.stringify({
+    'doctor@example.com': {email: 'doctor@example.com', password: 'private-password', full_name: 'Legacy Doctor', read_ids: ['email-read'], bookmarked_ids: ['email-saved'], streak: 5, quiz: {score: 4, token: 'quiz-secret'}, language: 'en', ui_prefs: {theme: 'dark', email: 'doctor@example.com'}},
+    'other@example.com': {email: 'other@example.com', full_name: 'Other Doctor', read_ids: ['other-read'], bookmarked_ids: ['other-saved'], quiz: {score: 99}}
+  }),
   ebm_progress_by_user: JSON.stringify({'other@example.com': {read_ids: ['other-read']}}),
   ebm_ui_lang: 'en',
   ebm_socratic_state_v1: JSON.stringify({1: {streak: 3}})
 });
 const migrated = create(legacy, crypto);
-assert.deepEqual(migrated.profile.read_ids, ['old', 'other-read', 'email-read']);
-assert.deepEqual(migrated.profile.bookmarked_ids, ['bookmark', 'email-saved']);
-assert.equal(migrated.profile.display_name, 'Legacy Doctor');
+assert.deepEqual(migrated.profile.read_ids, ['email-read']);
+assert.deepEqual(migrated.profile.bookmarked_ids, ['email-saved']);
+assert.equal(migrated.profile.display_name, 'Bác sĩ');
 assert.equal(migrated.get('ebm_ui_lang'), 'en');
-assert.equal(JSON.parse(migrated.get('ebm_legacy_users_progress'))['doctor@example.com'].quiz.score, 4);
-assert.ok(!/private-password|private-session/.test(migrated.exportJSON()));
+assert.equal(JSON.parse(migrated.get('ebm_quiz_progress')).score, 4);
+assert.equal(migrated.get('ebm_streak'), '5');
+assert.deepEqual(JSON.parse(migrated.get('ebm_ui_prefs')), {theme: 'dark'});
+assert.ok(!/private-password|private-session|@|Legacy Doctor|Other Doctor|other-read|other-saved|token|quiz-secret/.test(migrated.exportJSON()));
 assert.ok(legacy.getItem('ebm_cloud_users_db').includes('private-password'));
+const oldCopy = create(new Storage({[KEY]: JSON.stringify({...device.profile, progress: {
+  ebm_legacy_users_progress: legacy.getItem('ebm_cloud_users_db'),
+  ebm_progress_by_user: legacy.getItem('ebm_progress_by_user'),
+  ebm_quiz_progress: JSON.stringify({score: 4, email: 'doctor@example.com', full_name: 'Legacy Doctor', token: 'private-session'})
+}})}), crypto);
+oldCopy.rename('Chosen name');
+assert.equal(JSON.parse(oldCopy.exportJSON()).display_name, 'Chosen name');
+assert.ok(!/@|Legacy Doctor|Other Doctor|private-session|token|legacy_users|progress_by_user/.test(oldCopy.exportJSON()));
+const noActive = create(new Storage({ebm_cloud_users_db: legacy.getItem('ebm_cloud_users_db')}), crypto);
+assert.deepEqual(noActive.profile.read_ids, []);
+assert.ok(!/@|Legacy Doctor|Other Doctor/.test(noActive.exportJSON()));
 const before = migrated.exportJSON();
 for (const bad of ['{}', 'null', 'not-json', JSON.stringify({...device.profile, device_id: '../bad'}),
   JSON.stringify({...device.profile, read_ids: [null]}),
