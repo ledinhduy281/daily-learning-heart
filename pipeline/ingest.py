@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from http.client import IncompleteRead
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -13,6 +14,8 @@ TRIALS = "https://clinicaltrials.gov/api/v2/studies"
 FDA = "https://api.fda.gov/drug/label.json"
 SOURCES = ("pubmed", "clinicaltrials", "openfda")
 LOGGER = logging.getLogger(__name__)
+TRANSIENT_READ_ERRORS = (URLError, TimeoutError, ConnectionError, IncompleteRead,
+                         json.JSONDecodeError, UnicodeDecodeError)
 
 
 def get_json(url, params):
@@ -29,7 +32,7 @@ def get_json(url, params):
                 raise
             retry_after = exc.headers.get("Retry-After", "")
             time.sleep(min(120, int(retry_after)) if retry_after.isdecimal() else 2 ** (attempt + 1))
-        except (URLError, TimeoutError):
+        except TRANSIENT_READ_ERRORS:
             if attempt == 2:
                 raise
             time.sleep(2 ** (attempt + 1))
@@ -148,7 +151,7 @@ def ingest(connection, work_dir: Path, run_date: dt.date):
             payload = fetch(run_date)
             raw.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
             rows = list(normalize(payload))
-        except (URLError, TimeoutError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        except (*TRANSIENT_READ_ERRORS, ValueError, KeyError, TypeError, AttributeError) as exc:
             LOGGER.warning("%s ingestion failed: %s", source, exc)
             source_status[source] = {"status": "unavailable", "records": 0}
             rows = []

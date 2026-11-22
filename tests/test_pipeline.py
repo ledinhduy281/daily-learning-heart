@@ -3,6 +3,8 @@ import importlib.util
 import json
 import subprocess
 import unittest
+from http.client import IncompleteRead
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -34,6 +36,13 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(next(ingest.fda_records(FDA))[2], dt.date(2025, 12, 15))
         self.assertIsNone(ingest.as_date("undated"))
 
+    def test_retries_connection_reset_and_truncated_json(self):
+        responses = [ConnectionResetError(), BytesIO(b'{"results": ['), BytesIO(b'{"results": []}')]
+        with (patch.object(ingest, "urlopen", side_effect=responses) as urlopen,
+              patch.object(ingest.time, "sleep")):
+            self.assertEqual(ingest.get_json(ingest.FDA, {}), {"results": []})
+        self.assertEqual(urlopen.call_count, 3)
+
 
 @unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("duckdb", "dbt", "jsonschema")),
                      "Install pipeline/requirements.txt to run dbt integration tests")
@@ -42,6 +51,20 @@ class PipelineTests(unittest.TestCase):
         self.work = TemporaryDirectory()
         self.addCleanup(self.work.cleanup)
         self.path = Path(self.work.name)
+
+    def test_incomplete_reads_exhaust_retries_and_leave_other_sources_available(self):
+        import duckdb
+
+        with (patch.object(ingest, "fetch_pubmed", return_value=PUBMED),
+              patch.object(ingest, "fetch_trials", return_value=TRIALS),
+              patch.object(ingest, "urlopen", side_effect=IncompleteRead(b'{"results": [')) as urlopen,
+              patch.object(ingest.time, "sleep"),
+              duckdb.connect() as connection):
+            _, status = ingest.ingest(connection, self.path, RUN_DATE)
+        self.assertEqual(urlopen.call_count, 3)
+        self.assertEqual(status["openfda"], {"status": "unavailable", "records": 0})
+        self.assertEqual(status["pubmed"]["status"], "ok")
+        self.assertEqual(status["clinicaltrials"]["status"], "ok")
 
     def test_dbt_dedupes_and_scores_a_partial_snapshot(self):
         import duckdb
