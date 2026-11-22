@@ -5322,15 +5322,7 @@
       try {
         cloudSync = CloudSync.create({profile:deviceStore, endpoint:window.EBM_SYNC_ENDPOINT || "",
           storage:{getItem:key=>{try{return localStorage.getItem(key);}catch(_){return null;}},setItem:(key,value)=>localStorage.setItem(key,value)},
-          onStatus:status, onMerged:()=>{
-            setAuthenticatedUser({});
-            SocraticTutor.loadStore();
-            EbmChat.loadSessions();EbmChat.loadQuota();EbmChat.loadVerbosity();
-            loadOfflineFeedbackStore();
-            const lang=deviceStore.get(UI_LANG_KEY);
-            if (lang==="vi"||lang==="en")setLanguage(lang,{rerender:false,persist:false});
-            renderAllViewsAfterAuth();renderProfileHistory();
-          }
+          onStatus:status, onMerged:refreshCloudProfile
         });
         renderCloudSync();
         document.getElementById("btnRestoreSyncId").addEventListener("click", async () => {
@@ -5362,6 +5354,17 @@
         window.addEventListener("storage",event=>{if(event.key===DeviceProfile.KEY)cloudSync.schedule();});
         cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress will be merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ trên thiết bị này sẽ được hợp nhất vào bản sao đám mây của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(error.message==="INVALID_ID"?"INVALID_ID":error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":error.message==="NOT_CONFIGURED"?"NOT_CONFIGURED":"SYNC_FAILED"));
       } catch (_) {status("SYNC_FAILED");}
+    }
+
+    function refreshCloudProfile() {
+      setAuthenticatedUser({});
+      SocraticTutor.loadStore();
+      if (!EbmChat.isBusy) EbmChat.loadSessions();
+      EbmChat.loadQuota();EbmChat.loadVerbosity();
+      loadOfflineFeedbackStore();
+      const lang=deviceStore.get(UI_LANG_KEY);
+      if (lang==="vi"||lang==="en")setLanguage(lang,{rerender:false,persist:false});
+      renderAllViewsAfterAuth(true);renderProfileHistory();
     }
 
     function safeStorageGet(key) { return deviceStore.get(key); }
@@ -5653,14 +5656,17 @@
       }
     }
 
-    function renderAllViewsAfterAuth() {
+    function renderAllViewsAfterAuth(preserveSelection = false) {
+      const selected = App.selected;
       applyLocalizationChrome();
       renderUserWorkspace();
       renderDailyRotationBanner();
       renderPillarsTiles();
       renderModeSpecificPanels();
 
-      if (App.mode === "today") {
+      if (preserveSelection && selected && App.briefings.some(b => b.id === selected.id)) {
+        selectBriefing(selected, {markRead: false});
+      } else if (App.mode === "today") {
         const b = getTodaySingleBriefing();
         if (b) {
           selectBriefing(b, {markRead: false});
@@ -7680,7 +7686,7 @@
             if (Array.isArray(parsed) && parsed.length > 0) {
               this.sessions = parsed.filter((s) => s && s.id && Array.isArray(s.messages));
               if (this.sessions.length > 0) {
-                const latest = this.sessions[0];
+                const latest = this.sessions.find(s => s.id === this.currentSessionId) || this.sessions[0];
                 this.currentSessionId = latest.id;
                 this.messages = [...latest.messages];
                 this.renderCurrentMessages();

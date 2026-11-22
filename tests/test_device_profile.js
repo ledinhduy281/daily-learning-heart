@@ -390,7 +390,7 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   const app = {mode: 'today', user: {}}, lesson = {id: 'today'};
   const reads = [];
   const noop = () => {};
-  const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\(\) \{[\s\S]*?\n    \}/)[0]})`, {
+  const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\([^)]*\) \{[\s\S]*?\n    \}/)[0]})`, {
     App: app, applyLocalizationChrome: noop, renderUserWorkspace: noop, renderDailyRotationBanner: noop,
     renderPillarsTiles: noop, renderModeSpecificPanels: noop, getTodaySingleBriefing: () => lesson,
     selectBriefing: (...args) => select(...args)
@@ -402,8 +402,29 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   init();
   assert.equal(app.selected, lesson);
   assert.deepEqual(reads, []);
+  const current={id:'older lesson'};
+  app.briefings=[lesson,current];app.selected=current;
+  init(true);
+  assert.equal(app.selected,current);assert.deepEqual(reads,[]);
   select(lesson);
   assert.deepEqual(reads, ['today']);
+}
+{
+  const noop=()=>{};
+  const chat={currentSessionId:'active',renderCurrentMessages:noop,renderHistoryDrawer:noop};
+  const source=html.match(/      loadSessions\(\) \{([\s\S]*?)\n      \},/)[1];
+  const load=vm.runInNewContext(`(function(){${source}})`,{
+    CHAT_SESSIONS_KEY:'chats',safeStorageGet:()=>JSON.stringify([{id:'first',messages:[]},{id:'active',messages:[{role:'user',markdownText:'Stay here'}]}])
+  });
+  load.call(chat);
+  assert.equal(chat.currentSessionId,'active');assert.equal(chat.messages[0].markdownText,'Stay here');
+  let preserved=false,loaded=0;
+  const refresh=vm.runInNewContext(`(${html.match(/function refreshCloudProfile\(\) \{[\s\S]*?\n    \}/)[0]})`,{
+    setAuthenticatedUser:noop,SocraticTutor:{loadStore:noop},EbmChat:{loadSessions:()=>loaded++,loadQuota:noop,loadVerbosity:noop},
+    loadOfflineFeedbackStore:noop,deviceStore:{get:()=>null},UI_LANG_KEY:'lang',
+    renderAllViewsAfterAuth:value=>preserved=value,renderProfileHistory:noop
+  });
+  refresh();assert.equal(preserved,true);assert.equal(loaded,1);
 }
 async function checkProfilePanel() {
   const markup = html.slice(html.indexOf('id="myAccountModal"'), html.indexOf('id="btnBackToTop"'));

@@ -79,7 +79,8 @@ async function main() {
     local.rename('Before');local.activity(['read'],['remove','keep']);
     local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:1},2:{correct_count:2}}));
     local.set('ebm_theme','dark');
-    let sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    let merged=0;
+    let sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch,delay:60000,onMerged:()=>merged++});
     await sync.sync();
     local.rename('Local rename');local.activity(['read'],['keep']);local.remove('ebm_theme');
     local.set('ebm_socratic_state_v1',JSON.stringify({1:{correct_count:5},2:{correct_count:2}}));
@@ -87,6 +88,7 @@ async function main() {
     assert.equal(local.profile.display_name,'Local rename');assert.deepEqual(local.profile.bookmarked_ids,['keep']);
     assert.equal(local.get('ebm_theme'),null);
     assert.equal(JSON.parse(local.get('ebm_socratic_state_v1'))[1].correct_count,5);
+    assert.equal(merged,0);
     const row=records.get(sync.userId);
     row.revision++;row.profile.read_ids.push('another device');row.profile.bookmarked_ids.push('remote saved');
     row.profile.display_name='Remote rename';
@@ -98,6 +100,7 @@ async function main() {
     assert.deepEqual(local.profile.bookmarked_ids,['keep','remote saved']);
     assert.ok(local.profile.read_ids.includes('another device'));
     assert.deepEqual(JSON.parse(local.get('ebm_socratic_state_v1')),{1:{correct_count:9},2:{correct_count:8}});
+    assert.equal(merged,1);await sync.sync();assert.equal(merged,1);
     sync.stop();
     local.rename('After reload');local.activity(local.profile.read_ids,[]);
     sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch});

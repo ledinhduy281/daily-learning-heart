@@ -36,7 +36,9 @@ const CloudSync = (() => {
       if(remote==null)return;
       const text=JSON.stringify(remote);
       if(bytes(text)>MAX_BYTES||typeof remote!=='object'||Array.isArray(remote)||'device_id' in remote)throw new Error('INVALID_PROFILE');
-      profile.importJSON(text,'merge',base);onMerged();
+      const before=profile.exportJSON();
+      profile.importJSON(text,'merge',base);
+      if(profile.exportJSON()!==before)onMerged();
     }
     const meaningful=p=>p.read_ids.length||p.bookmarked_ids.length||Object.keys(p.progress).length;
     async function exchange(target,adopt=false,force=false) {
