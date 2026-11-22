@@ -6,6 +6,17 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const lang of ['vi','en']) {
+  const b=briefings.find(b=>b.id==='ebm-2026-11-20-p5-main');
+  const [easy,normal,hard]=['easy','normal','hard'].map(d=>quiz.build(b,1,0,lang,d));
+  assert.equal(new Set([easy.question,normal.question,hard.question]).size,3);
+  assert.ok(easy.question.includes(lang==='en'?'Hint:':'Gợi ý:'));
+  assert.ok(easy.question.split(':').pop().includes(easy.correct_key));
+  assert.deepEqual(easy.options,normal.options);
+  assert.notDeepEqual(hard.options,normal.options);
+  assert.deepEqual(new Set(Object.values(hard.distractor_types)),new Set(['numeric']));
+  for (const q of [easy,hard]) assert.equal(q.options.find(o=>o.key===q.correct_key).text,normal.options.find(o=>o.key===normal.correct_key).text);
+}
 for (const b of [...briefings,{}]) for (const lang of ['vi','en']) {
   let {state}=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');
   for (let i=0;i<24 && state.phase!=='mastered';i++) ({state}=quiz.turn(b,state,lang,'answer','',state.correct_key));
@@ -145,6 +156,11 @@ const py=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
 print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefings() for l in ('vi','en') for s in range(4) for v in range(3)],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
 assert.equal(py.status,0,py.stderr);
 assert.deepEqual(generated,JSON.parse(py.stdout));
+const difficult=Array.from(briefings).concat({}).flatMap(b=>['vi','en'].flatMap(l=>['easy','hard'].map(d=>quiz.build(b,1,0,l,d))));
+const pyDifficult=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
+print(json.dumps([a._build_socratic_mcq(b,1,0,l,d) for b in a.load_existing_briefings()+[{}] for l in ('vi','en') for d in ('easy','hard')],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
+assert.equal(pyDifficult.status,0,pyDifficult.stderr);
+assert.deepEqual(difficult,JSON.parse(pyDifficult.stdout));
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
 assert.ok(html.includes('question_revealed: sess.question_revealed === true'));
 for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(m[1]);

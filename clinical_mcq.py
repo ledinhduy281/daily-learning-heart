@@ -101,6 +101,14 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
         kind = card['kind']
         subskill_idx = 0 if kind == 'guideline' else 1
         question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
+    if difficulty == 'hard':
+        variants = alternatives(texts[0])
+        if variants and len({normalized(t) for t, _ in variants}) == 4:
+            texts = [t for t, _ in variants]
+            reasons = [reasons[0]] + [(f'The reported parameter is {variants[0][1]}, not {r}.' if en else
+                                      f'Thông số được báo cáo là {variants[0][1]}, không phải {r}.') for _, r in variants[1:]]
+            types = ['correct', 'numeric', 'numeric', 'numeric']
+        question = ('Precision check — ' if en else 'Kiểm tra thông số chính xác — ') + question
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
     briefing_seed = sum(ord(c) for c in str(primary.get('id', '')))
     seed = briefing_seed + int(slot_idx) * 17 + int(variant_idx) * 31
@@ -121,8 +129,11 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     order[target], order[correct_position] = order[correct_position], order[target]
     options = [{'key': 'ABCD'[i], 'text': texts[n]} for i, n in enumerate(order)]
     correct_key = 'ABCD'[order.index(0)]
+    if difficulty == 'easy':
+        choices = ', '.join('ABCD'[i] for i, n in enumerate(order) if n in (0, 1))
+        question += (f' Hint: compare only options {choices}.' if en else f' Gợi ý: chỉ cần so sánh hai lựa chọn {choices}.')
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
-            'question_kind': kind, 'subskill_idx': subskill_idx, 'required_subskills': required, 'option_kinds': {o['key']: kind for o in options},
+            'question_kind': kind, 'difficulty': difficulty, 'subskill_idx': subskill_idx, 'required_subskills': required, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}

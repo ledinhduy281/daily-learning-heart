@@ -7,6 +7,22 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_difficulty_changes_support_and_distractor_similarity(self):
+        for lang in ('vi', 'en'):
+            b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-20-p5-main')
+            easy, normal, hard = [app._build_socratic_mcq(b, 1, 0, lang, d) for d in ('easy', 'normal', 'hard')]
+            self.assertEqual(len({q['question'] for q in (easy, normal, hard)}), 3)
+            self.assertIn('Hint:' if lang == 'en' else 'Gợi ý:', easy['question'])
+            self.assertIn(easy['correct_key'], easy['question'].split(':')[-1])
+            self.assertEqual(easy['options'], normal['options'])
+            self.assertNotEqual(hard['options'], normal['options'])
+            self.assertEqual(set(hard['distractor_types'].values()), {'numeric'})
+            for q in (easy, normal, hard):
+                self.assertEqual(next(o['text'] for o in q['options'] if o['key'] == q['correct_key']),
+                                 next(o['text'] for o in normal['options'] if o['key'] == normal['correct_key']))
+        for d in ('easy', 'hard'):
+            self.assertEqual(len(app._build_socratic_mcq({}, 0, 0, 'en', d)['options']), 4)
+
     def test_perfect_answers_finish_all_briefings_in_bounded_turns(self):
         from socratic_quiz import turn
         for b in self.briefings + [{}]:

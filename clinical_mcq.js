@@ -54,6 +54,15 @@ const ClinicalQuiz = (() => {
       subskillIdx=kind==='guideline'?0:1;
       ({question,texts,reasons,types}=card);
     }
+    if (difficulty==='hard') {
+      const variants=alternatives(texts[0]);
+      if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) {
+        texts=variants.map(([t])=>t);
+        reasons=[reasons[0],...variants.slice(1).map(([,r])=>en?`The reported parameter is ${variants[0][1]}, not ${r}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${r}.`)];
+        types=['correct','numeric','numeric','numeric'];
+      }
+      question=(en?'Precision check — ':'Kiểm tra thông số chính xác — ')+question;
+    }
     const briefingSeed=Array.from(String(primary.id||'')).reduce((n,c)=>n+c.codePointAt(0),0);
     let seed=briefingSeed+slotIdx*17+variantIdx*31;
     const order=[0,1,2,3];
@@ -63,8 +72,12 @@ const ClinicalQuiz = (() => {
     const target=targets[variantIdx%4],correctPosition=order.indexOf(0);
     [order[target],order[correctPosition]]=[order[correctPosition],order[target]];
     const options=order.map((n,i)=>({key:'ABCD'[i],text:texts[n]})),correct_key='ABCD'[order.indexOf(0)];
+    if (difficulty==='easy') {
+      const choices=order.map((n,i)=>[n,'ABCD'[i]]).filter(([n])=>n===0||n===1).map(([,k])=>k).join(', ');
+      question+=en?` Hint: compare only options ${choices}.`:` Gợi ý: chỉ cần so sánh hai lựa chọn ${choices}.`;
+    }
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
-    return {question,options,correct_key,explanation,question_kind:kind,subskill_idx:subskillIdx,required_subskills:required,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
+    return {question,options,correct_key,explanation,question_kind:kind,difficulty,subskill_idx:subskillIdx,required_subskills:required,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en',current=state.current_question;
