@@ -47,7 +47,9 @@ class NoEmbeddedSecretsTests(unittest.TestCase):
             "this.buildDeterministicMcq(primary, 0, 0, lang, diff)" in source
             or "return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);" in source
         )
-        for filename in ROOT.glob("*.js"):
+        for filename in ROOT.rglob("*.js"):
+            if "backend/apps_script" in filename.relative_to(ROOT).as_posix() or "tests" in filename.relative_to(ROOT).parts:
+                continue
             self.assertNotIn("api.groq.com", filename.read_text(), str(filename))
 
 
