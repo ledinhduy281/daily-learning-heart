@@ -7,6 +7,22 @@ const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
 for (const lang of ['vi','en']) {
+  const b=briefings.find(b=>b.id==='ebm-2026-09-15-p7-hist1'),historical=lang==='en'?'historical':'lịch sử';
+  const stage=b.guideline_evolution.steps.at(-1);
+  for (const field of ['era_label_','title_','desc_']) {
+    assert.ok(stage[field+lang].includes('2021'));
+    assert.ok(stage[field+lang].toLowerCase().includes(historical));
+  }
+  for (const difficulty of ['easy','normal','hard']) {
+    const q=quiz.build(b,0,0,lang,difficulty);
+    for (const o of q.options.filter(o=>o.text.includes('75'))) {
+      assert.ok(o.text.includes('2021'));
+      assert.ok(o.text.toLowerCase().includes(historical));
+    }
+    assert.ok(q.explanation.toLowerCase().includes(historical));
+  }
+}
+for (const lang of ['vi','en']) {
   const b=briefings.find(b=>b.id==='ebm-2026-11-20-p5-main');
   const [easy,normal,hard]=['easy','normal','hard'].map(d=>quiz.build(b,1,0,lang,d));
   assert.equal(new Set([easy.question,normal.question,hard.question]).size,3);

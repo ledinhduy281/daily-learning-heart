@@ -4800,12 +4800,12 @@ window.EBM_BRIEFINGS_DATA = {
             "desc_en": "PARTNER 3 (balloon-expandable, n=1,000; 1y composite 8.5% vs. 15.1%; HR 0.54; p=0.001) and Evolut Low Risk (self-expanding, n=1,468; 24mo 5.3% vs. 6.7%) validated low-risk TAVR."
           },
           {
-            "era_label_vi": "Chỉ dẫn B • ESC/EACTS 2021 VHD (Hiện hành)",
-            "era_label_en": "Directive B • 2021 ESC/EACTS VHD (Current)",
-            "title_vi": "Mốc Tuổi ≥ 75: TAVR Qua Động mạch Đùi Class I, LOE A Bất kể Điểm Nguy cơ",
-            "title_en": "Age ≥ 75 Years: Transfemoral TAVR Class I, LOE A Across Risk Spectra",
-            "desc_vi": "ESC/EACTS 2021 chuyển sang mô hình phân tầng kết hợp tuổi–kỳ vọng sống–giải phẫu: khuyến cáo TAVR (Class I, LOE A) cho bệnh nhân ≥75 tuổi hoặc nguy cơ phẫu thuật cao (STS/EuroSCORE II ≥8%), trong khi SAVR ưu tiên ở người <75 tuổi nguy cơ thấp.",
-            "desc_en": "ESC/EACTS 2021 integrates age and lifetime durability, endorsing transfemoral TAVR (Class I, LOE A) in patients aged ≥75 years or high surgical risk, and SAVR in younger (<75y) low-risk candidates."
+            "era_label_vi": "Chỉ dẫn B • ESC/EACTS 2021 VHD (Lịch sử)",
+            "era_label_en": "Directive B • 2021 ESC/EACTS VHD (Historical)",
+            "title_vi": "ESC/EACTS 2021 (Lịch sử) — Mốc Tuổi ≥75: TAVR Qua Đường Đùi Class I, LOE A",
+            "title_en": "ESC/EACTS 2021 (Historical) — Age ≥75: Transfemoral TAVR Class I, LOE A",
+            "desc_vi": "Theo ESC/EACTS 2021 (khuyến cáo lịch sử, không phải hướng dẫn hiện hành), TAVR qua đường đùi (Class I, LOE A) được khuyến cáo cho bệnh nhân ≥75 tuổi hoặc nguy cơ phẫu thuật cao (STS/EuroSCORE II ≥8%), trong khi SAVR ưu tiên ở người <75 tuổi nguy cơ thấp.",
+            "desc_en": "Under ESC/EACTS 2021 (historical guidance, not the current guideline), transfemoral TAVR (Class I, LOE A) was recommended in patients aged ≥75 years or high surgical risk, and SAVR in younger (<75y) low-risk candidates."
           }
         ]
       },

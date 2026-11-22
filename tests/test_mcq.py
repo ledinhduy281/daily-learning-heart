@@ -7,6 +7,21 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_tavr_75_is_explicitly_historical_2021_guidance(self):
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-09-15-p7-hist1')
+        for lang, historical in (('vi', 'lịch sử'), ('en', 'historical')):
+            stage = b['guideline_evolution']['steps'][-1]
+            for field in ('era_label_', 'title_', 'desc_'):
+                self.assertIn('2021', stage[field + lang])
+                self.assertIn(historical, stage[field + lang].lower())
+            for difficulty in ('easy', 'normal', 'hard'):
+                q = app._build_socratic_mcq(b, 0, 0, lang, difficulty)
+                for option in q['options']:
+                    if '75' in option['text']:
+                        self.assertIn('2021', option['text'])
+                        self.assertIn(historical, option['text'].lower())
+                self.assertIn(historical, q['explanation'].lower())
+
     def test_translation_uses_stored_question_identity_not_session_counters(self):
         from clinical_mcq import build_mcq, translate_mcq
         for b in self.briefings + [{}]:
