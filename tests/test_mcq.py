@@ -98,9 +98,23 @@ class ClinicalMcqTests(unittest.TestCase):
         for lang in ('vi', 'en'):
             q = app._build_socratic_mcq(b, 0, 0, lang)
             correct = next(o['text'] for o in q['options'] if o['key'] == q['correct_key'])
-            for criterion in ('DCM/HNDCM', '≤35%', '>35%', 'CMR-LGE', 'LMNA', 'FLNC', 'PLN', 'RBM20'):
+            for criterion in ('DCM/HNDCM', '<50%', '≥ 2', 'CMR-LGE', 'LMNA', 'FLNC', 'PLN', 'RBM20'):
                 self.assertIn(criterion, correct)
             self.assertNotIn('threshold', q['question'])
+
+    def test_pah_and_revascularization_keep_complete_eligibility(self):
+        cases = [('ebm-2026-09-03-p9-hist2', ['mPAP >20', 'PAWP ≤15', 'PVR >2', 'ERA + PDE5i'],
+                  ['KHÔNG có bệnh đồng mắc tim phổi', 'WITHOUT cardiopulmonary comorbidities']),
+                 ('ebm-2026-08-30-p3-hist2', ['LVEF >35%', 'Class I', 'LOE A'],
+                  ['3 nhánh có ý nghĩa chức năng', 'functionally significant three-vessel disease'])]
+        for bid, common, translations in cases:
+            b = next(b for b in self.briefings if b['id'] == bid)
+            for lang, condition in zip(('vi', 'en'), translations):
+                q = app._build_socratic_mcq(b, 0, 0, lang)
+                correct = next(o['text'] for o in q['options'] if o['key'] == q['correct_key'])
+                for criterion in common + [condition]:
+                    self.assertIn(criterion, correct)
+                self.assertIn(correct, q['explanation'])
 
     def test_safety_reverses_the_selected_clause(self):
         from clinical_distractors import rich_cards

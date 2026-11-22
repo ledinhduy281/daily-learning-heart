@@ -48,7 +48,17 @@ for (const b of briefings) for (const lang of ['vi','en']) {
 for (const lang of ['vi','en']) {
   const b=briefings.find(b=>b.id==='ebm-2026-08-25-p6-hist1'),q=quiz.build(b,0,0,lang);
   const correct=q.options.find(o=>o.key===q.correct_key).text;
-  for (const criterion of ['DCM/HNDCM','≤35%','>35%','CMR-LGE','LMNA','FLNC','PLN','RBM20']) assert.ok(correct.includes(criterion));
+  for (const criterion of ['DCM/HNDCM','<50%','≥ 2','CMR-LGE','LMNA','FLNC','PLN','RBM20']) assert.ok(correct.includes(criterion));
+}
+for (const lang of ['vi','en']) {
+  for (const [id,terms] of [
+    ['ebm-2026-09-03-p9-hist2',['mPAP >20','PAWP ≤15','PVR >2','ERA + PDE5i',lang==='en'?'WITHOUT cardiopulmonary comorbidities':'KHÔNG có bệnh đồng mắc tim phổi']],
+    ['ebm-2026-08-30-p3-hist2',['LVEF >35%','Class I','LOE A',lang==='en'?'functionally significant three-vessel disease':'3 nhánh có ý nghĩa chức năng']]
+  ]) {
+    const q=quiz.build(briefings.find(b=>b.id===id),0,0,lang),correct=q.options.find(o=>o.key===q.correct_key).text;
+    for (const term of terms) assert.ok(correct.includes(term),term);
+    assert.ok(q.explanation.includes(correct));
+  }
 }
 {
   const b=briefings.find(b=>b.landmark_trials.some(t=>t.name==='EXPLORER-HCM'));

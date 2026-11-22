@@ -5529,8 +5529,8 @@ window.EBM_BRIEFINGS_DATA = {
             "era_label_en": "Directive B • 2022 ESC/ERS PH (Current)",
             "title_vi": "Định nghĩa Mới mPAP > 20 mmHg, PVR > 2 WU & Phối hợp Kép Đầu tay (Class I)",
             "title_en": "Redefined mPAP > 20 mmHg, PVR > 2 WU & Upfront Dual Therapy (Class I)",
-            "desc_vi": "ESC/ERS 2022 hạ ngưỡng chẩn đoán PH xuống mPAP > 20 mmHg và tiền mao mạch PVR > 2 WU để phát hiện sớm; quy định khởi đầu bằng phối hợp đôi ERA + PDE5i (Class I, LOE B) ở PAH nguy cơ thấp–trung bình không mắc bệnh đồng mắc tim phổi.",
-            "desc_en": "ESC/ERS 2022 lowers diagnostic PH to mPAP >20 mmHg and precapillary PVR >2 WU, and mandates initial dual ERA + PDE5i therapy (Class I, LOE B) in low/intermediate-risk idiopathic PAH."
+            "desc_vi": "ESC/ERS 2022 định nghĩa PH tiền mao mạch bằng mPAP >20 mmHg, PAWP ≤15 mmHg VÀ PVR >2 WU. Khuyến cáo khởi trị ERA + PDE5i (Class I, LOE B) cho PAH vô căn, di truyền hoặc liên quan thuốc ở nguy cơ thấp–trung bình KHÔNG có bệnh đồng mắc tim phổi.",
+            "desc_en": "ESC/ERS 2022 defines precapillary PH as mPAP >20 mmHg, PAWP ≤15 mmHg AND PVR >2 WU. Initial ERA + PDE5i therapy is recommended (Class I, LOE B) for low/intermediate-risk idiopathic, heritable or drug-associated PAH WITHOUT cardiopulmonary comorbidities."
           }
         ]
       },
@@ -5800,8 +5800,8 @@ window.EBM_BRIEFINGS_DATA = {
             "era_label_en": "Directive B • 2024 ESC CCS (Current)",
             "title_vi": "OMT Toàn diện là Bắt buộc; Tái thông Tiên lượng Cho Giải phẫu Nguy cơ Cao",
             "title_en": "Universal OMT Mandate; Prognostic Revascularization Reserved for High-Risk Anatomy",
-            "desc_vi": "ESC 2024 giới hạn chỉ định tái thông cải thiện tiên lượng ở hẹp thân chung trái (LM), bệnh 3 nhánh kèm LVEF ≤35% (ưu tiên CABG nếu phù hợp phẫu thuật) hoặc hẹp đoạn gần LAD nặng; PCI giữ vai trò chủ yếu giảm đau ngực kháng trị.",
-            "desc_en": "ESC 2024 restricts prognostic revascularization largely to left main disease, multivessel disease with LVEF ≤35% (favoring CABG in surgical candidates), or proximal LAD disease, framing PCI primarily for refractory angina."
+            "desc_vi": "ESC 2024 khuyến cáo tái thông cải thiện tiên lượng ở CCS có bệnh 3 nhánh có ý nghĩa chức năng và LVEF >35% (Class I, LOE A), ngoài các chỉ định như hẹp thân chung trái hoặc bệnh nhiều nhánh kèm LVEF ≤35% phù hợp CABG. Lựa chọn CABG hay PCI cần xét giải phẫu, bệnh đồng mắc và hội chẩn Heart Team.",
+            "desc_en": "ESC 2024 recommends prognostic revascularization in CCS with functionally significant three-vessel disease and LVEF >35% (Class I, LOE A), in addition to indications such as left main disease or multivessel disease with LVEF ≤35% suitable for CABG. CABG versus PCI depends on anatomy, comorbidities and Heart Team assessment."
           }
         ]
       },
@@ -6107,8 +6107,8 @@ window.EBM_BRIEFINGS_DATA = {
             "era_label_en": "Directive B • 2022 ESC VA (Current)",
             "title_vi": "Hạ NICM LVEF ≤35% xuống Class IIa & Bổ sung Tiêu chí CMR-LGE / Đột biến Gen",
             "title_en": "NICM LVEF ≤35% Reclassified Class IIa; CMR-LGE & Genetic Triggers",
-            "desc_vi": "ESC 2022 hạ đặt ICD ở DCM/HNDCM có LVEF ≤35% từ Class I xuống Class IIa, đồng thời mở chỉ định ICD cho bệnh nhân LVEF >35% nếu có xơ hóa CMR-LGE kết hợp đột biến nguy cơ cao (LMNA, FLNC, PLN, RBM20).",
-            "desc_en": "ESC 2022 downgrades primary-prevention ICD in DCM/HNDCM with LVEF ≤35% to Class IIa, while introducing CMR-LGE and high-risk pathogenic variants (LMNA, FLNC, PLN, RBM20) as ICD triggers even at LVEF >35%."
+            "desc_vi": "ESC 2022: nên cân nhắc ICD ở DCM/HNDCM có LVEF <50% VÀ ≥2 yếu tố nguy cơ: ngất, CMR-LGE, gây được nhịp nhanh thất đơn dạng khi thăm dò điện sinh lý, hoặc đột biến gây bệnh LMNA, PLN, FLNC, RBM20 (Class IIa). Không dùng riêng mốc LVEF >35% hay một dấu ấn đơn lẻ để xác định chỉ định mở rộng này.",
+            "desc_en": "ESC 2022: ICD should be considered in DCM/HNDCM with LVEF <50% AND ≥2 risk factors: syncope, CMR-LGE, inducible sustained monomorphic VT at electrophysiological study, or pathogenic LMNA, PLN, FLNC, RBM20 variants (Class IIa). LVEF >35% alone or one isolated marker does not establish this expanded indication."
           }
         ]
       },
