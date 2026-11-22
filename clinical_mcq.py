@@ -93,6 +93,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     types = ['correct', 'numeric', 'numeric', 'numeric']
     kind = 'fact' if candidates else 'appraisal'
     cards = rich_cards(primary, lang, alternatives)
+    required = sorted({0 if c['kind'] == 'guideline' else 1 for c in cards} if cards else {idx for _, _, idx in candidates})
     preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
     if preferred or cards:
         available = preferred or cards
@@ -123,5 +124,5 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal'):
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
-            'question_kind': kind, 'subskill_idx': subskill_idx, 'option_kinds': {o['key']: kind for o in options},
+            'question_kind': kind, 'subskill_idx': subskill_idx, 'required_subskills': required, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}

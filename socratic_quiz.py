@@ -54,7 +54,8 @@ def turn(primary, state, lang, action, user_answer='', selected_choice=''):
         state['question_index'] = state.get('question_index', 0) + 1
         if state['question_index'] >= 4 and state.get('phase') != 'final_exam':
             state['phase'] = 'loop'
-        if earned and len(skills) == 4 and all(s['level'] >= 4 for s in skills):
+        required = current.get('required_subskills', list(range(4)))
+        if earned and state['question_index'] >= 4 and len(skills) == 4 and all(skills[i]['level'] >= 4 for i in required):
             if state.get('phase') == 'final_exam':
                 state.update(phase='mastered', current_options=[], correct_key='', explanation='', current_question=None)
                 return feedback + ('Review complete.' if en else 'Hoàn tất ôn tập.'), state, 'correct'
@@ -64,6 +65,7 @@ def turn(primary, state, lang, action, user_answer='', selected_choice=''):
         state['question_index'] = state.get('question_index', 0) + 1
     question = build_mcq(primary, state.get('focus_idx', 0), state.get('question_index', 0), lang, state.get('difficulty', 'normal'))
     state.update(current_question=question, correct_key=question['correct_key'], explanation=question['explanation'],
+                 required_subskills=question['required_subskills'],
                  current_options=question['options'], last_question=question['question'], options_lang=lang,
                  question_revealed=False, last_eval=evaluation if action == 'answer' else '')
     return feedback + question['question'], state, evaluation if action == 'answer' else 'start'

@@ -9353,15 +9353,16 @@
 
       renderProgressSummaryMarkdown(sess = this.getSession()) {
         const isVi = App.currentLang === "vi";
-        const subs = sess.subskills || [];
+        const subs = (sess.subskills || []).filter((s, i) => (sess.required_subskills || [0, 1, 2, 3]).includes(i));
+        const maxLevel = Math.max(1, subs.length) * 5;
         const totalLvl = subs.reduce((acc, s) => acc + Number(s.level || 0), 0);
-        const pct = Math.round((totalLvl / 20) * 100);
+        const pct = Math.round((totalLvl / maxLevel) * 100);
         const ans = Number(sess.answered_count || 0);
         const cor = Number(sess.correct_count || 0);
         const accPct = ans > 0 ? Math.round((cor / ans) * 100) : 0;
         const header = isVi
-          ? `**Báo cáo Tiến độ Trụ cột #${this.curPillarId}** — Tổng mức làm chủ: **${pct}%** (${totalLvl}/20 bậc) • Đúng: **${cor}/${ans}** (${accPct}%)\n\n| Mảng kiến thức | Bậc | Đã làm | Đúng |\n|---|---:|---:|---:|`
-          : `**Pillar #${this.curPillarId} Mastery Summary** — Overall: **${pct}%** (${totalLvl}/20) • Accuracy: **${cor}/${ans}** (${accPct}%)\n\n| Subskill | Level | Answered | Correct |\n|---|---:|---:|---:|`;
+          ? `**Báo cáo Tiến độ Trụ cột #${this.curPillarId}** — Các mảng được kiểm tra: **${pct}%** (${totalLvl}/${maxLevel} bậc) • Đúng: **${cor}/${ans}** (${accPct}%)\n\n| Mảng kiến thức | Bậc | Đã làm | Đúng |\n|---|---:|---:|---:|`
+          : `**Pillar #${this.curPillarId} Mastery Summary** — Assessed subskills: **${pct}%** (${totalLvl}/${maxLevel}) • Accuracy: **${cor}/${ans}** (${accPct}%)\n\n| Subskill | Level | Answered | Correct |\n|---|---:|---:|---:|`;
         const rows = subs.map((s) => `| ${s.label} | **${Number(s.level || 0)}/5** | ${Number(s.answered || 0)} | ${Number(s.correct || 0)} |`);
         return [header, ...rows].join("\n");
       },
@@ -9370,9 +9371,9 @@
         const dash = document.getElementById("socraticProgressDashboard");
         const legend = document.getElementById("socraticScaleLegend");
         const isVi = App.currentLang === "vi";
-        const subs = sess.subskills || [];
+        const subs = (sess.subskills || []).filter((s, i) => (sess.required_subskills || [0, 1, 2, 3]).includes(i));
         const totalLvl = subs.reduce((acc, s) => acc + Number(s.level || 0), 0);
-        const pct = Math.round((totalLvl / 20) * 100);
+        const pct = Math.round((totalLvl / (Math.max(1, subs.length) * 5)) * 100);
         const masteredCount = subs.filter((s) => Number(s.level || 0) >= 4).length;
         const answered = Number(sess.answered_count || 0);
         const correct = Number(sess.correct_count || 0);
@@ -9445,7 +9446,7 @@
                 <span class="socratic-stat-chip">${isVi ? "Đã làm" : "Answered"}: <strong>${answered}</strong></span>
                 <span class="socratic-stat-chip">${isVi ? "Chính xác" : "Accuracy"}: <strong>${correct}/${answered} (${accPct}%)</strong></span>
                 <span class="socratic-stat-chip">${streak >= 2 ? "🔥 " : ""}${isVi ? "Chuỗi đúng" : "Streak"}: <strong>${streak}</strong></span>
-                <span class="socratic-stat-chip">${isVi ? "Đạt chuẩn (≥4/5)" : "At Target (≥4/5)"}: <strong>${masteredCount}/4</strong></span>
+                <span class="socratic-stat-chip">${isVi ? "Mảng được kiểm tra đạt ≥4/5" : "Assessed subskills at ≥4/5"}: <strong>${masteredCount}/${subs.length}</strong></span>
               </div>
             </div>
           `;
@@ -9521,6 +9522,7 @@
         const icons = ["fa-scale-balanced", "fa-flask-vial", "fa-heart-pulse", "fa-shield-halved"];
         if (grid) {
           grid.innerHTML = (sess.subskills || []).map((s, idx) => {
+            if (!(sess.required_subskills || [0, 1, 2, 3]).includes(idx)) return '';
             const lvl = Number(s.level || 0);
             const ans = Number(s.answered || 0);
             const cor = Number(s.correct || 0);

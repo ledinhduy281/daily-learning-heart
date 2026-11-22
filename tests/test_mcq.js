@@ -6,6 +6,12 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (const b of [...briefings,{}]) for (const lang of ['vi','en']) {
+  let {state}=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');
+  for (let i=0;i<24 && state.phase!=='mastered';i++) ({state}=quiz.turn(b,state,lang,'answer','',state.correct_key));
+  assert.equal(state.phase,'mastered',`${b.id} ${lang}`);
+  assert.ok(state.required_subskills.every(i=>state.subskills[i].level>=4));
+}
 for (const lang of ['vi','en']) for (const reveal of ['just_tell_me','wrong']) {
   const b=briefings[0],first=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');
   const shown=quiz.turn(b,first.state,lang,reveal==='wrong'?'answer':reveal,'',first.state.correct_key==='A'?'B':'A');

@@ -7,6 +7,18 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_perfect_answers_finish_all_briefings_in_bounded_turns(self):
+        from socratic_quiz import turn
+        for b in self.briefings + [{}]:
+            for lang in ('vi', 'en'):
+                _, state, _ = turn(b, {'subskills': [{'level': 0} for _ in range(4)]}, lang, 'start_diagnostic')
+                for _ in range(24):
+                    _, state, _ = turn(b, state, lang, 'answer', selected_choice=state['correct_key'])
+                    if state['phase'] == 'mastered':
+                        break
+                self.assertEqual(state['phase'], 'mastered', (b.get('id'), lang))
+                self.assertTrue(all(state['subskills'][i]['level'] >= 4 for i in state['required_subskills']))
+
     def test_revealed_answers_do_not_earn_score_or_mastery(self):
         b = self.briefings[0]
         for lang in ('vi', 'en'):

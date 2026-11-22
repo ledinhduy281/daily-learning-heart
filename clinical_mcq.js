@@ -47,6 +47,7 @@ const ClinicalQuiz = (() => {
     let types=['correct','numeric','numeric','numeric'];
     let kind=candidates.length?'fact':'appraisal';
     const cards=distractors.cards(primary,lang,alternatives),preferred=cards.filter(c=>c.kind===(slotIdx%4===0?'guideline':'trial'));
+    const required=[...new Set(cards.length?cards.map(c=>c.kind==='guideline'?0:1):candidates.map(c=>c[2]))].sort();
     if (preferred.length || cards.length) {
       const available=preferred.length?preferred:cards,card=available[variantIdx%available.length];
       kind=card.kind;
@@ -63,7 +64,7 @@ const ClinicalQuiz = (() => {
     [order[target],order[correctPosition]]=[order[correctPosition],order[target]];
     const options=order.map((n,i)=>({key:'ABCD'[i],text:texts[n]})),correct_key='ABCD'[order.indexOf(0)];
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
-    return {question,options,correct_key,explanation,question_kind:kind,subskill_idx:subskillIdx,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
+    return {question,options,correct_key,explanation,question_kind:kind,subskill_idx:subskillIdx,required_subskills:required,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en',current=state.current_question;
@@ -91,13 +92,14 @@ const ClinicalQuiz = (() => {
       if (credit) {skills[idx].level=Math.min(5,Math.max(2,(skills[idx].level||0)+1));for (const k of ['checks','answered','correct']) skills[idx][k]=(skills[idx][k]||0)+1;}
       Object.assign(state,{last_updated_idx:credit?idx:-1,last_delta:credit?1:0,answered_count:(state.answered_count||0)+Number(earned),correct_count:(state.correct_count||0)+Number(earned),streak:earned?(state.streak||0)+1:0,attempts_on_current:0,focus_idx:((state.focus_idx||0)+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});
       if (state.question_index>=4 && state.phase!=='final_exam') state.phase='loop';
-      if (earned && skills.length===4 && skills.every(s=>s.level>=4)) {
+      const required=current.required_subskills||[0,1,2,3];
+      if (earned && state.question_index>=4 && skills.length===4 && required.every(i=>skills[i].level>=4)) {
         if (state.phase==='final_exam') {Object.assign(state,{phase:'mastered',current_options:[],correct_key:'',explanation:'',current_question:null});return {reply:feedback+(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:'correct'};}
         state.phase='final_exam';
       }
     } else if (['harder','easier'].includes(action)) {state.difficulty=action==='harder'?'hard':'easy';state.question_index=(state.question_index||0)+1;}
     const question=build(primary,state.focus_idx||0,state.question_index||0,lang,state.difficulty||'normal');
-    Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
+    Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,required_subskills:question.required_subskills,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
   return {build,turn,normalized};
