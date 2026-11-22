@@ -8,8 +8,9 @@ const ClinicalDistractors = (() => {
     '12-Month Freedom from Procedural Failure, AT/AF Recurrence, AAD, or Repeat Ablation':'Không thất bại thủ thuật, tái phát nhịp nhanh nhĩ/rung nhĩ, dùng thuốc chống loạn nhịp hoặc triệt đốt lại trong 12 tháng'
   };
   const isTrial=t=>!/guideline|consensus|\bClass\s+[IV]/i.test(['name','value','p'].map(k=>t[k]||'').join(' ')) && /(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)/i.test(t.value||'');
-  function cards(primary,lang,numericAlternatives) {
+  function cards(primary,lang,numericAlternatives,paired=true) {
     const en=lang==='en',suffix=en?'en':'vi',trials=(primary.landmark_trials||[]).filter(isTrial),steps=primary.guideline_evolution?.steps||[],result=[];
+    const trialId=t=>String(t.id||t.doi||t.pmid||(primary.landmark_trials||[]).indexOf(t));
     const clean=s=>{const t=String(s||'').split(/\s+/).join(' ').trim();return t.includes('...')||t.includes('…')?'':t;};
     const normalized=s=>clean(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
     function safety(text) {
@@ -20,16 +21,16 @@ const ClinicalDistractors = (() => {
     const traps=[];
     for (const t of trials) {
       const caution=clean(t['caution_'+suffix]),changed=safety(caution),source=t.name||'';
-      if (changed) traps.push(['safety',`${source}: ${changed.split(';')[0].trim()}`,en?`This reverses the safety instruction for ${source}: ${caution}`:`Lựa chọn này đảo ngược lưu ý an toàn của ${source}: ${caution}`]);
+      if (changed) traps.push(['safety',`${source}: ${changed.split(';')[0].trim()}`,en?`This reverses the safety instruction for ${source}: ${caution}`:`Lựa chọn này đảo ngược lưu ý an toàn của ${source}: ${caution}`,'safety:trial:'+trialId(t)]);
     }
-    for (const p of primary.pearls||[]) {
+    for (const [pearlIdx,p] of (primary.pearls||[]).entries()) {
       const fact=clean(p['text_'+suffix]),changed=safety(fact);
-      if (changed) traps.push(['safety',`${en?'Clinical practice':'Thực hành lâm sàng'}: ${changed.split(';')[0].trim()}`,en?`The clinical pearl instead states: ${fact}`:`Điểm thực hành nêu điều ngược lại: ${fact}`]);
+      if (changed) traps.push(['safety',`${en?'Clinical practice':'Thực hành lâm sàng'}: ${changed.split(';')[0].trim()}`,en?`The clinical pearl instead states: ${fact}`:`Điểm thực hành nêu điều ngược lại: ${fact}`,`safety:pearl:${pearlIdx}`]);
     }
-    for (const drug of Array.isArray(primary.drugs)?primary.drugs:[]) {
+    for (const [drugIdx,drug] of (Array.isArray(primary.drugs)?primary.drugs:[]).entries()) {
       if (!drug || typeof drug!=='object') continue;
       const fact=clean(drug['contraindication_'+suffix]||drug['caution_'+suffix]),changed=safety(fact),name=drug.name||'';
-      if (changed) traps.push(['safety',`${name}: ${changed.split(';')[0].trim()}`,en?`${name}: ${fact}`:`Lưu ý của ${name}: ${fact}`]);
+      if (changed) traps.push(['safety',`${name}: ${changed.split(';')[0].trim()}`,en?`${name}: ${fact}`:`Lưu ý của ${name}: ${fact}`,`safety:drug:${drugIdx}`]);
     }
     function endpointSignature(label) {
       const patterns=[['death',/death|mortality|mace/i],['stroke',/stroke|mace/i],['mi',/infarction|\bmi\b|mace/i],['hf',/\bhf\b|heart failure/i],['bleeding',/bleed|barc/i],['function',/pvo2|functional|oxygen uptake/i],['quality',/kccq|quality/i],['rhythm',/af recurrence|procedural failure|ablation/i],['renal',/renal|kidney/i],['septal',/septal/i],['bp',/blood pressure|mmhg/i]];
@@ -38,26 +39,23 @@ const ClinicalDistractors = (() => {
     function finish(kind,question,correct,source,distractors,sourceId='guideline') {
       if (!correct) return;
       correct=clean(correct).replace(/[.!?]+$/,'')+'.';
+      const candidates=distractors.filter(([,text])=>clean(text)).map(([typ,text,reason,identity])=>[typ,clean(text).replace(/[.!?]+$/,'')+'.',reason,identity]);
+      const variants=numericAlternatives(correct);
+      if (variants) for (const [idx,[text,parameter]] of variants.slice(1).entries()) {
+        const reason=en?`The reported parameter is ${variants[0][1]}, not ${parameter}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${parameter}.`;
+        candidates.push(['numeric',text,reason,`numeric:${idx}`]);
+      }
       const chosen=[],seen=new Set([normalized(correct)]);
       for (const distinct of [true,false]) {
-        for (const [typ,raw,reason] of distractors) {
-          const text=clean(raw)?clean(raw).replace(/[.!?]+$/,'')+'.':'';
+        for (const [typ,text,reason,identity] of candidates) {
           if (!text || seen.has(normalized(text)) || (distinct && chosen.some(x=>x[0]===typ))) continue;
-          chosen.push([typ,text,reason]);seen.add(normalized(text));
+          chosen.push([typ,text,reason,identity]);seen.add(normalized(text));
           if (chosen.length===3) break;
         }
         if (chosen.length===3) break;
       }
-      const variants=numericAlternatives(correct);
-      if (chosen.length<3 && variants) for (const [text,parameter] of variants.slice(1)) {
-        if (!seen.has(normalized(text))) {
-          const reason=en?`The reported parameter is ${variants[0][1]}, not ${parameter}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${parameter}.`;
-          chosen.push(['numeric',text,reason]);seen.add(normalized(text));
-        }
-        if (chosen.length===3) break;
-      }
       if (chosen.length!==3) return;
-      result.push({kind,source_id:sourceId,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
+      result.push({kind,source_id:sourceId,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])],choice_ids:['correct',...chosen.map(x=>x[3])],candidates});
     }
     for (const t of trials) {
       const name=t.name||'',value=clean(t.value),fact=clean(t['changes_'+suffix]),endpoint=clean(t.endpoint_label);
@@ -69,7 +67,7 @@ const ClinicalDistractors = (() => {
       for (const [population,other] of [['HFpEF','HFrEF'],['HFrEF','HFpEF']]) {
         if (new RegExp(`\\b${population}\\b`).test(fact) && !new RegExp(`\\b${other}\\b`).test(fact)) {
           const wrong=en?`${name}: The reported result was ${value} in patients with ${other}.`:`${name}: Kết quả ${value} được ghi nhận ở bệnh nhân ${other}.`;
-          distractors.push(['population',wrong,en?`This substitutes ${other} for the ${population} population described for ${name}.`:`Lựa chọn này đổi quần thể ${population} của ${name} thành ${other}.`]);
+          distractors.push(['population',wrong,en?`This substitutes ${other} for the ${population} population described for ${name}.`:`Lựa chọn này đổi quần thể ${population} của ${name} thành ${other}.`,'population:'+population]);
         }
       }
       for (const other of trials) {
@@ -78,19 +76,18 @@ const ClinicalDistractors = (() => {
           const otherLabel=en?otherEndpoint:(endpointVi[otherEndpoint]||otherEndpoint);
           const wrong=en?`${name}: The primary endpoint was “${otherLabel}” (${value}).`:`${name}: Tiêu chí chính là “${otherLabel}” (${value}).`;
           const reason=en?`“${otherEndpoint}” belongs to ${other.name}; ${name} reports “${endpoint}”.`:`“${otherEndpoint}” là tiêu chí của ${other.name}; ${name} báo cáo “${endpoint}”.`;
-          distractors.push(['endpoint',wrong,reason]);
+          distractors.push(['endpoint',wrong,reason,'endpoint:'+trialId(other)]);
         }
         if (other!==t && endpoint && clean(other.value) && other.value!==value) {
           const wrong=`${other.name}: ${claim}`;
           const reason=en?`This attributes the ${name} result to ${other.name}, whose reported estimate is ${other.value}.`:`Lựa chọn này gán kết quả của ${name} cho ${other.name}; ước lượng được báo cáo của ${other.name} là ${other.value}.`;
-          distractors.push(['trial_attribution',wrong,reason]);
+          distractors.push(['trial_attribution',wrong,reason,'attribution:'+trialId(other)]);
         }
       }
       distractors.push(...traps);
       let question=en?'Which statement about trial evidence and its clinical application is correct?':'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
       if (/\bHFpEF\b/.test(fact) && !fact.includes('HFrEF')) question=en?'A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?':'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
-      const trialId=t.id||t.doi||t.pmid||String((primary.landmark_trials||[]).indexOf(t));
-      finish('trial',question,correct,name,distractors,'trial:'+trialId);
+      finish('trial',question,correct,name,distractors,'trial:'+trialId(t));
     }
     if (steps.length>=2) {
       const old=steps[0],current=steps[steps.length-1],oldEra=old['era_label_'+suffix]||'',currentEra=current['era_label_'+suffix]||'';
@@ -101,11 +98,34 @@ const ClinicalDistractors = (() => {
         newFact=clause(newFact);oldFact=clause(oldFact);
         const prefix=en?'Recommendation: ':'Khuyến cáo: ';
         newFact=prefix+newFact;oldFact=prefix+oldFact;
-        const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}).`]];
+        const wrong=[['old_guideline',oldFact,en?`This describes the earlier stage (${oldEra}), not the new update (${currentEra}).`:`Đây là nội dung giai đoạn trước (${oldEra}), không phải cập nhật mới (${currentEra}).`,'old_guideline']];
         finish('guideline',question,newFact,currentEra,wrong);
       }
     }
-    return result;
+    if (!paired) return result;
+    const peers=new Map(cards(primary,en?'vi':'en',numericAlternatives,false).map(c=>[c.source_id,c]));
+    const matched=[];
+    for (const card of result) {
+      const peer=peers.get(card.source_id);
+      if (!peer) {delete card.candidates;matched.push(card);continue;}
+      const local=new Map(card.candidates.map(c=>[c[3],c])),remote=new Map(peer.candidates.map(c=>[c[3],c]));
+      const canonical=en?card:peer,selected=[],seenLocal=new Set([normalized(card.texts[0])]),seenRemote=new Set([normalized(peer.texts[0])]);
+      for (const distinct of [true,false]) {
+        for (const [typ,,,identity] of canonical.candidates) {
+          if (!local.has(identity)||!remote.has(identity)||selected.includes(identity)) continue;
+          if (distinct && selected.some(i=>local.get(i)[0]===typ)) continue;
+          if (seenLocal.has(normalized(local.get(identity)[1]))||seenRemote.has(normalized(remote.get(identity)[1]))) continue;
+          selected.push(identity);seenLocal.add(normalized(local.get(identity)[1]));seenRemote.add(normalized(remote.get(identity)[1]));
+          if (selected.length===3) break;
+        }
+        if (selected.length===3) break;
+      }
+      if (selected.length===3) {
+        Object.assign(card,{texts:[card.texts[0],...selected.map(i=>local.get(i)[1])],reasons:[card.reasons[0],...selected.map(i=>local.get(i)[2])],types:['correct',...selected.map(i=>local.get(i)[0])],choice_ids:['correct',...selected]});
+        delete card.candidates;matched.push(card);
+      }
+    }
+    return matched;
   }
   return {cards,isTrial};
 })();

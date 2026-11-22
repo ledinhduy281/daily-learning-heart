@@ -18,12 +18,15 @@ def is_trial(entry):
             and bool(re.search(r'(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)', str(entry.get('value') or ''), re.I)))
 
 
-def rich_cards(primary, lang, numeric_alternatives):
+def rich_cards(primary, lang, numeric_alternatives, paired=True):
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
     trials = [t for t in primary.get('landmark_trials') or [] if is_trial(t)]
     steps = (primary.get('guideline_evolution') or {}).get('steps') or []
     cards = []
+
+    def trial_id(t):
+        return str(t.get('id') or t.get('doi') or t.get('pmid') or (primary.get('landmark_trials') or []).index(t))
 
     def clean(s):
         s = ' '.join(str(s or '').split())
@@ -56,15 +59,15 @@ def rich_cards(primary, lang, numeric_alternatives):
             source = t.get('name', '')
             traps.append(('safety', f'{source}: {changed}',
                           (f'This reverses the safety instruction for {source}: {caution}' if en else
-                           f'Lựa chọn này đảo ngược lưu ý an toàn của {source}: {caution}')))
-    for p in primary.get('pearls') or []:
+                           f'Lựa chọn này đảo ngược lưu ý an toàn của {source}: {caution}'), 'safety:trial:' + trial_id(t)))
+    for pearl_idx, p in enumerate(primary.get('pearls') or []):
         fact = clean(p.get('text_' + suffix))
         changed = safety(fact)
         if changed:
             changed = changed.split(';')[0].strip()
-            traps.append(('safety', f'{"Clinical practice" if en else "Thực hành lâm sàng"}: {changed}', (f'The clinical pearl instead states: {fact}' if en else f'Điểm thực hành nêu điều ngược lại: {fact}')))
+            traps.append(('safety', f'{"Clinical practice" if en else "Thực hành lâm sàng"}: {changed}', (f'The clinical pearl instead states: {fact}' if en else f'Điểm thực hành nêu điều ngược lại: {fact}'), f'safety:pearl:{pearl_idx}'))
     drugs = primary.get('drugs') or []
-    for drug in drugs if isinstance(drugs, list) else []:
+    for drug_idx, drug in enumerate(drugs if isinstance(drugs, list) else []):
         if not isinstance(drug, dict):
             continue
         fact = clean(drug.get('contraindication_' + suffix) or drug.get('caution_' + suffix))
@@ -72,7 +75,7 @@ def rich_cards(primary, lang, numeric_alternatives):
         if changed:
             changed = changed.split(';')[0].strip()
             name = drug.get('name', '')
-            traps.append(('safety', f'{name}: {changed}', (f'{name}: {fact}' if en else f'Lưu ý của {name}: {fact}')))
+            traps.append(('safety', f'{name}: {changed}', (f'{name}: {fact}' if en else f'Lưu ý của {name}: {fact}'), f'safety:drug:{drug_idx}'))
 
     def endpoint_signature(label):
         patterns = [('death', r'death|mortality|mace'), ('stroke', r'stroke|mace'),
@@ -86,37 +89,31 @@ def rich_cards(primary, lang, numeric_alternatives):
         if not correct:
             return
         correct = clean(correct).rstrip('.!?') + '.'
+        candidates = [(typ, clean(text).rstrip('.!?') + '.', reason, identity)
+                      for typ, text, reason, identity in distractors if clean(text)]
+        variants = numeric_alternatives(correct)
+        if variants:
+            for idx, (text, parameter) in enumerate(variants[1:]):
+                reason = (f'The reported parameter is {variants[0][1]}, not {parameter}.' if en else
+                          f'Thông số được báo cáo là {variants[0][1]}, không phải {parameter}.')
+                candidates.append(('numeric', text, reason, f'numeric:{idx}'))
         chosen = []
         seen = {normalized(correct)}
         for distinct in (True, False):
-            for item in distractors:
-                typ, text, reason = item
-                text = clean(text)
-                if text:
-                    text = text.rstrip('.!?') + '.'
+            for typ, text, reason, identity in candidates:
                 if not text or normalized(text) in seen or (distinct and typ in [x[0] for x in chosen]):
                     continue
-                chosen.append((typ, text, reason))
+                chosen.append((typ, text, reason, identity))
                 seen.add(normalized(text))
                 if len(chosen) == 3:
                     break
             if len(chosen) == 3:
                 break
-        variants = numeric_alternatives(correct)
-        if len(chosen) < 3 and variants:
-            for text, parameter in variants[1:]:
-                if normalized(text) not in seen:
-                    reason = (f'The reported parameter is {variants[0][1]}, not {parameter}.' if en else
-                              f'Thông số được báo cáo là {variants[0][1]}, không phải {parameter}.')
-                    chosen.append(('numeric', text, reason))
-                    seen.add(normalized(text))
-                if len(chosen) == 3:
-                    break
         if len(chosen) != 3:
             return
         cards.append({'kind': kind, 'source_id': source_id, 'question': question, 'texts': [correct] + [x[1] for x in chosen],
                       'reasons': [correct if correct.startswith(f'{source}: ') else f'{source}: {correct}'] + [x[2] for x in chosen],
-                      'types': ['correct'] + [x[0] for x in chosen]})
+                      'types': ['correct'] + [x[0] for x in chosen], 'choice_ids': ['correct'] + [x[3] for x in chosen], 'candidates': candidates})
 
     for t in trials:
         name, value = t.get('name', ''), clean(t.get('value'))
@@ -136,7 +133,7 @@ def rich_cards(primary, lang, numeric_alternatives):
                 wrong = (f'{name}: The reported result was {value} in patients with {other}.' if en else
                          f'{name}: Kết quả {value} được ghi nhận ở bệnh nhân {other}.')
                 distractors.append(('population', wrong, (f'This substitutes {other} for the {population} population described for {name}.' if en else
-                                                         f'Lựa chọn này đổi quần thể {population} của {name} thành {other}.')))
+                                                         f'Lựa chọn này đổi quần thể {population} của {name} thành {other}.'), 'population:' + population))
         for other in trials:
             other_endpoint = clean(other.get('endpoint_label'))
             if (other is not t and endpoint_signature(endpoint) and endpoint_signature(other_endpoint)
@@ -146,20 +143,19 @@ def rich_cards(primary, lang, numeric_alternatives):
                          f'{name}: Tiêu chí chính là “{other_label}” ({value}).')
                 reason = (f'“{other_endpoint}” belongs to {other.get("name")}; {name} reports “{endpoint}”.' if en else
                           f'“{other_endpoint}” là tiêu chí của {other.get("name")}; {name} báo cáo “{endpoint}”.')
-                distractors.append(('endpoint', wrong, reason))
+                distractors.append(('endpoint', wrong, reason, 'endpoint:' + trial_id(other)))
             if other is not t and endpoint and clean(other.get('value')) and other.get('value') != value:
                 wrong = f'{other.get("name")}: {claim}'
                 reason = (f'This attributes the {name} result to {other.get("name")}, whose reported estimate is {other.get("value")}.' if en else
                           f'Lựa chọn này gán kết quả của {name} cho {other.get("name")}; ước lượng được báo cáo của {other.get("name")} là {other.get("value")}.')
-                distractors.append(('trial_attribution', wrong, reason))
+                distractors.append(('trial_attribution', wrong, reason, 'attribution:' + trial_id(other)))
         distractors.extend(traps)
         question = ('Which statement about trial evidence and its clinical application is correct?' if en else
                     'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
         if re.search(r'\bHFpEF\b', fact) and 'HFrEF' not in fact:
             question = ('A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?' if en else
                         'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
-        trial_id = t.get('id') or t.get('doi') or t.get('pmid') or str((primary.get('landmark_trials') or []).index(t))
-        finish('trial', question, correct, name, distractors, 'trial:' + str(trial_id))
+        finish('trial', question, correct, name, distractors, 'trial:' + trial_id(t))
 
     if len(steps) >= 2:
         old, current = steps[0], steps[-1]
@@ -175,6 +171,41 @@ def rich_cards(primary, lang, numeric_alternatives):
             prefix = 'Recommendation: ' if en else 'Khuyến cáo: '
             new_fact, old_fact = prefix + new_fact, prefix + old_fact
             wrong = [('old_guideline', old_fact, (f'This describes the earlier stage ({old_era}), not the new update ({current_era}).' if en else
-                      f'Đây là nội dung giai đoạn trước ({old_era}), không phải cập nhật mới ({current_era}).'))]
+                      f'Đây là nội dung giai đoạn trước ({old_era}), không phải cập nhật mới ({current_era}).'), 'old_guideline')]
             finish('guideline', question, new_fact, current_era, wrong)
-    return cards
+    if not paired:
+        return cards
+    peers = {c['source_id']: c for c in rich_cards(primary, 'vi' if en else 'en', numeric_alternatives, False)}
+    result = []
+    for card in cards:
+        peer = peers.get(card['source_id'])
+        if not peer:
+            card.pop('candidates')
+            result.append(card)
+            continue
+        local = {c[3]: c for c in card['candidates']}
+        remote = {c[3]: c for c in peer['candidates']}
+        canonical = card if en else peer
+        selected, seen_local, seen_remote = [], {normalized(card['texts'][0])}, {normalized(peer['texts'][0])}
+        for distinct in (True, False):
+            for typ, _, _, identity in canonical['candidates']:
+                if identity not in local or identity not in remote or identity in selected:
+                    continue
+                if distinct and any(local[i][0] == typ for i in selected):
+                    continue
+                if normalized(local[identity][1]) in seen_local or normalized(remote[identity][1]) in seen_remote:
+                    continue
+                selected.append(identity)
+                seen_local.add(normalized(local[identity][1]))
+                seen_remote.add(normalized(remote[identity][1]))
+                if len(selected) == 3:
+                    break
+            if len(selected) == 3:
+                break
+        if len(selected) == 3:
+            card.update(texts=[card['texts'][0]] + [local[i][1] for i in selected],
+                        reasons=[card['reasons'][0]] + [local[i][2] for i in selected],
+                        types=['correct'] + [local[i][0] for i in selected], choice_ids=['correct'] + selected)
+            card.pop('candidates')
+            result.append(card)
+    return result

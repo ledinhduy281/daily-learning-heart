@@ -19,6 +19,8 @@ class ClinicalMcqTests(unittest.TestCase):
                     translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
                     self.assertIsNotNone(translated, (b.get('id'), q['generation']))
                     self.assertEqual(q['generation'], translated['generation'])
+                    self.assertEqual(q['option_ids'], translated['option_ids'])
+                    self.assertEqual(q['distractor_types'], translated['distractor_types'])
                     self.assertEqual(q, translate_mcq(b, translated, lang))
         b = copy.deepcopy(next(b for b in self.briefings if b['id'] == 'ebm-2026-07-26-p1-hist3'))
         q = build_mcq(b, 1, 1, 'en')
@@ -27,6 +29,24 @@ class ClinicalMcqTests(unittest.TestCase):
         translated = translate_mcq(b, q, 'vi')
         self.assertIsNotNone(translated)
         self.assertEqual(q['generation'], translated['generation'])
+
+    def test_wrong_answer_letter_still_identifies_the_same_choice_after_translation(self):
+        from clinical_mcq import build_mcq, translate_mcq
+        from socratic_quiz import turn
+        b = next(b for b in self.briefings if any(t['name'] == 'EXPLORER-HCM' for t in b['landmark_trials']))
+        for lang in ('vi', 'en'):
+            original = build_mcq(b, 1, 0, lang)
+            for key in 'ABCD':
+                if key == original['correct_key']:
+                    continue
+                _, state, _ = turn(b, {'current_question': original}, lang, 'answer', selected_choice=key)
+                translated = translate_mcq(b, state['current_question'], 'en' if lang == 'vi' else 'vi')
+                self.assertEqual(translated['option_ids'][key], original['option_ids'][key])
+                self.assertEqual(translated['distractor_types'][key], original['distractor_types'][key])
+                self.assertIn(key + ':', translated['explanation'])
+                self.assertTrue(state['question_revealed'])
+        legacy = {k: v for k, v in original.items() if k != 'option_ids'}
+        self.assertIsNone(translate_mcq(b, legacy, 'en'))
 
     def test_articles_and_keys_agree_on_guideline_conditions(self):
         from pillar_library import build_initial_briefings_dataset

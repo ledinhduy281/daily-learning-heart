@@ -48,6 +48,7 @@ const ClinicalQuiz = (() => {
     }
     let types=['correct','numeric','numeric','numeric'];
     let kind=candidates.length?'fact':'appraisal';
+    let choiceIds=['correct','numeric:0','numeric:1','numeric:2'];
     const cards=distractors.cards(primary,lang,alternatives),preferred=cards.filter(c=>c.kind===(slotIdx%4===0?'guideline':'trial'));
     const required=[...new Set(cards.length?cards.map(c=>c.kind==='guideline'?0:1):candidates.map(c=>c[2]))].sort();
     const available=sourceId?cards.filter(c=>c.source_id===sourceId):(preferred.length?preferred:cards);
@@ -57,6 +58,7 @@ const ClinicalQuiz = (() => {
       kind=card.kind;
       subskillIdx=kind==='guideline'?0:1;
       ({question,texts,reasons,types}=card);
+      choiceIds=card.choice_ids;
     }
     if (sourceId && selectedId!==sourceId) return null;
     if (difficulty==='hard') {
@@ -65,6 +67,7 @@ const ClinicalQuiz = (() => {
         texts=variants.map(([t])=>t);
         reasons=[reasons[0],...variants.slice(1).map(([,r])=>en?`The reported parameter is ${variants[0][1]}, not ${r}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${r}.`)];
         types=['correct','numeric','numeric','numeric'];
+        choiceIds=['correct','numeric:0','numeric:1','numeric:2'];
       }
       question=(en?'Precision check — ':'Kiểm tra thông số chính xác — ')+question;
     }
@@ -82,11 +85,13 @@ const ClinicalQuiz = (() => {
       question+=en?` Hint: compare only options ${choices}.`:` Gợi ý: chỉ cần so sánh hai lựa chọn ${choices}.`;
     }
     const explanation=(en?'Correct answer: ':'Đáp án đúng: ')+correct_key+'. '+reasons[0]+' '+order.map((n,i)=>n?`${'ABCD'[i]}: ${reasons[n]}`:'').filter(Boolean).join(' ');
-    return {question,options,correct_key,explanation,generation:{slot_idx:slotIdx,variant_idx:variantIdx,source_id:selectedId,difficulty},question_kind:kind,difficulty,subskill_idx:subskillIdx,required_subskills:required,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
+    return {question,options,correct_key,explanation,option_ids:Object.fromEntries(order.map((n,i)=>['ABCD'[i],choiceIds[n]])),generation:{slot_idx:slotIdx,variant_idx:variantIdx,source_id:selectedId,difficulty},question_kind:kind,difficulty,subskill_idx:subskillIdx,required_subskills:required,option_kinds:Object.fromEntries(options.map(o=>[o.key,kind])),distractor_types:Object.fromEntries(order.map((n,i)=>['ABCD'[i],types[n]]).filter(([k])=>k!==correct_key))};
   }
   function translate(primary,current,lang) {
     const ref=current?.generation;
-    return ref?build(primary,ref.slot_idx,ref.variant_idx,lang,ref.difficulty,ref.source_id):null;
+    if (!ref||!current.option_ids) return null;
+    const translated=build(primary,ref.slot_idx,ref.variant_idx,lang,ref.difficulty,ref.source_id);
+    return translated && Object.keys(current.option_ids).every(k=>translated.option_ids[k]===current.option_ids[k])?translated:null;
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en',current=state.current_question;

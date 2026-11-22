@@ -94,6 +94,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
               f'Lựa chọn này đổi thông số được ghi nhận từ {variants[0][1]} thành {r}; bản tin không nêu giá trị này cho nhận định trên.') for _, r in variants[1:]]
     types = ['correct', 'numeric', 'numeric', 'numeric']
     kind = 'fact' if candidates else 'appraisal'
+    choice_ids = ['correct', 'numeric:0', 'numeric:1', 'numeric:2']
     cards = rich_cards(primary, lang, alternatives)
     required = sorted({0 if c['kind'] == 'guideline' else 1 for c in cards} if cards else {c[2] for c in candidates})
     preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
@@ -103,7 +104,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
         selected_id = card['source_id']
         kind = card['kind']
         subskill_idx = 0 if kind == 'guideline' else 1
-        question, texts, reasons, types = (card[k] for k in ('question', 'texts', 'reasons', 'types'))
+        question, texts, reasons, types, choice_ids = (card[k] for k in ('question', 'texts', 'reasons', 'types', 'choice_ids'))
     if source_id and selected_id != source_id:
         return None
     if difficulty == 'hard':
@@ -113,6 +114,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
             reasons = [reasons[0]] + [(f'The reported parameter is {variants[0][1]}, not {r}.' if en else
                                       f'Thông số được báo cáo là {variants[0][1]}, không phải {r}.') for _, r in variants[1:]]
             types = ['correct', 'numeric', 'numeric', 'numeric']
+            choice_ids = ['correct', 'numeric:0', 'numeric:1', 'numeric:2']
         question = ('Precision check — ' if en else 'Kiểm tra thông số chính xác — ') + question
     # Stable shuffle shared with the offline implementation, independent of Python's hash seed.
     briefing_seed = sum(ord(c) for c in str(primary.get('id', '')))
@@ -140,6 +142,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
     explanation = ('Correct answer: ' if en else 'Đáp án đúng: ') + correct_key + '. ' + reasons[0]
     explanation += ' ' + ' '.join(f'{"ABCD"[i]}: {reasons[n]}' for i, n in enumerate(order) if n != 0)
     return {'question': question, 'options': options, 'correct_key': correct_key, 'explanation': explanation,
+            'option_ids': {'ABCD'[i]: choice_ids[n] for i, n in enumerate(order)},
             'generation': {'slot_idx': int(slot_idx), 'variant_idx': int(variant_idx), 'source_id': selected_id, 'difficulty': difficulty},
             'question_kind': kind, 'difficulty': difficulty, 'subskill_idx': subskill_idx, 'required_subskills': required, 'option_kinds': {o['key']: kind for o in options},
             'distractor_types': {'ABCD'[i]: types[n] for i, n in enumerate(order) if n != 0}}
@@ -147,6 +150,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
 
 def translate_mcq(primary, current, lang):
     ref = current.get('generation') if current else None
-    if not ref:
+    if not ref or not current.get('option_ids'):
         return None
-    return build_mcq(primary, ref['slot_idx'], ref['variant_idx'], lang, ref['difficulty'], ref['source_id'])
+    translated = build_mcq(primary, ref['slot_idx'], ref['variant_idx'], lang, ref['difficulty'], ref['source_id'])
+    return translated if translated and translated['option_ids'] == current['option_ids'] else None

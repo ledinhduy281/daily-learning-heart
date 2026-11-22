@@ -143,6 +143,8 @@ for (const b of briefings) for (const lang of ['vi','en']) {
     const translated=quiz.translate(b,q,lang==='vi'?'en':'vi');
     assert.ok(translated,`${b.id} ${q.generation.source_id}`);
     assert.deepEqual(translated.generation,q.generation);
+    assert.deepEqual(translated.option_ids,q.option_ids);
+    assert.deepEqual(translated.distractor_types,q.distractor_types);
     assert.deepEqual(quiz.translate(b,translated,lang),q);
     assert.deepEqual(q,quiz.build(b,slot,variant,lang));
   }
@@ -228,6 +230,26 @@ for (const b of [...briefings,{}]) for (const slot of [0,1]) {
   assert.equal(JSON.stringify(session),before);
 }
 assert.equal(quiz.translate({},null,'en'),null);
+{
+  const b=briefings.find(b=>b.landmark_trials.some(t=>t.name==='EXPLORER-HCM'));
+  for (const lang of ['vi','en']) for (const key of 'ABCD') {
+    const original=quiz.build(b,1,0,lang);
+    if (key===original.correct_key) continue;
+    const out=quiz.turn(b,{current_question:original},lang,'answer','',key);
+    const session={...out.state,started:true,phase:'loop',options_lang:lang,messages:[{role:'assistant',text:original.question},{role:'user',text:key},{role:'assistant',text:out.reply}]};
+    tutorContext.App.selected=b;tutorContext.App.currentLang=lang==='vi'?'en':'vi';
+    tutor.getSession=()=>session;tutor.onLanguageChanged();
+    assert.equal(session.messages[1].text,key);
+    assert.equal(session.current_question.option_ids[key],original.option_ids[key]);
+    assert.equal(session.current_question.distractor_types[key],original.distractor_types[key]);
+    assert.ok(session.messages[2].text.includes(session.current_question.explanation));
+    assert.equal(session.messages.length,3);
+    assert.equal(session.question_revealed,true);
+    assert.equal(session.answered_count,1);
+  }
+  const legacy={...quiz.build(b,1,0,'vi')};delete legacy.option_ids;
+  assert.equal(quiz.translate(b,legacy,'en'),null);
+}
 assert.ok(html.includes('question_revealed: sess.question_revealed === true'));
 for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(m[1]);
 console.log(`JS MCQs, stored-question flows, Python parity (${generated.length} questions), SPA syntax: OK`);
