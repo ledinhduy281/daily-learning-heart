@@ -72,14 +72,16 @@ function syncSheetStore() {
   };
 }
 function doPost(event) {
-  var lock = LockService.getScriptLock(), result, request;
+  var lock, result, request;
   try {
-    if (!lock.tryLock(5000)) throw new Error('Busy');
-    var props = PropertiesService.getScriptProperties(), pepper = props.getProperty('PEPPER');
-    if (!pepper) throw new Error('Not configured');
     var body = event.postData.contents;
     if (Utilities.newBlob(body).getBytes().length > SYNC_LIMITS.bytes + 4096) throw new Error('Request too large');
     request = JSON.parse(body);
+    if (request && request.action === 'chat' && typeof chatHandle_ === 'function') return chatHandle_(request);
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(5000)) throw new Error('Busy');
+    var props = PropertiesService.getScriptProperties(), pepper = props.getProperty('PEPPER');
+    if (!pepper) throw new Error('Not configured');
     var store = syncSheetStore();
     function hex(bytes) { return bytes.map(function(b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join(''); }
     result = syncHandle(request, {
@@ -92,6 +94,6 @@ function doPost(event) {
       site: props.getProperty('SITE_URL') || 'https://ledinhduy281.github.io/daily-learning-heart/'
     });
   } catch (_) { result = request && ['backup','restore_request'].indexOf(request.action) >= 0 ? Object.assign({},SYNC_GENERIC) : {ok:false,error:'Sync unavailable. Try again later.'}; }
-  finally { if (lock.hasLock()) lock.releaseLock(); }
+  finally { if (lock && lock.hasLock()) lock.releaseLock(); }
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }

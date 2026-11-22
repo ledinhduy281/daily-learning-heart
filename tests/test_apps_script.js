@@ -39,4 +39,28 @@ now+=600000;
 assert.deepEqual(handle({action:'restore_request',email:'a@example.com'},env),unknown);assert.equal(mails.length,2);
 remaining=0;now+=600000;handle({action:'restore_request',email:'a@example.com'},env);assert.equal(mails.length,2);
 assert.deepEqual(handle({action:'restore_request',email:'bad\nemail'},env),unknown);
-console.log('Apps Script fingerprints, UUID/profile validation, revision conflicts, generic email responses, cooldowns and free quota caps: OK');
+{
+  let parses=0,locks=0,received;
+  const shim=vm.createContext({
+    JSON:{parse:value=>{parses++;return JSON.parse(value);},stringify:JSON.stringify},
+    Utilities:{newBlob:value=>({getBytes:()=>Buffer.from(value)})},
+    LockService:{getScriptLock:()=>{locks++;return {tryLock:()=>false,hasLock:()=>false};}},
+    ContentService:{MimeType:{JSON:'json'},createTextOutput:value=>({value,setMimeType(){return this;}})}
+  });
+  vm.runInContext(fs.readFileSync(require.resolve('../backend/apps_script/Code.gs'),'utf8'),shim);
+  const output={chat:true};
+  shim.chatHandle_=request=>{received=request;return output;};
+  const post=contents=>shim.doPost({postData:{contents}});
+  assert.equal(post('{"action":"chat","message":"hello"}'),output);
+  assert.deepEqual(received,{action:'chat',message:'hello'});
+  assert.equal(parses,1);assert.equal(locks,0);
+  delete shim.chatHandle_;
+  assert.equal(JSON.parse(post('{"action":"chat"}').value).ok,false);
+  assert.equal(parses,2);assert.equal(locks,1);
+  shim.chatHandle_=()=>assert.fail('Oversized or malformed chat must not dispatch');
+  assert.equal(JSON.parse(post(JSON.stringify({action:'chat',message:'x'.repeat(270000)})).value).ok,false);
+  assert.equal(parses,2);assert.equal(locks,1);
+  assert.equal(JSON.parse(post('{').value).ok,false);
+  assert.equal(parses,3);assert.equal(locks,1);
+}
+console.log('Apps Script fingerprints, UUID/profile validation, revision conflicts, generic email responses, cooldowns, free quota caps and optional chat dispatch: OK');
