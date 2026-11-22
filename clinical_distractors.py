@@ -38,7 +38,8 @@ def rich_cards(primary, lang, numeric_alternatives):
                      (r'\bNever withdraw\b', 'Withdraw'), (r'(^|;\s*)avoid\b', r'\1Use')]
                     if en else [(r'Không được dừng', 'Có thể dừng'), (r'Tuyệt đối không ngừng', 'Có thể ngừng'),
                                 (r'Tuyệt đối không khởi trị', 'Có thể khởi trị'), (r'Không kê đơn', 'Có thể kê đơn'),
-                                (r'Không khởi trị', 'Có thể khởi trị'), (r'tránh phối hợp', 'có thể phối hợp')])
+                                (r'Không khởi trị', 'Có thể khởi trị'), (r'tránh phối hợp', 'có thể phối hợp'),
+                                (r'tránh dùng', 'có thể dùng')])
         for clause in text.split(';'):
             for pattern, replacement in patterns:
                 changed, count = re.subn(pattern, replacement, clause.strip(), count=1, flags=re.I)
@@ -81,7 +82,7 @@ def rich_cards(primary, lang, numeric_alternatives):
                     ('renal', r'renal|kidney'), ('septal', r'septal'), ('bp', r'blood pressure|mmhg')]
         return {key for key, pattern in patterns if re.search(pattern, label, re.I)}
 
-    def finish(kind, question, correct, source, distractors):
+    def finish(kind, question, correct, source, distractors, source_id='guideline'):
         if not correct:
             return
         correct = clean(correct).rstrip('.!?') + '.'
@@ -113,7 +114,7 @@ def rich_cards(primary, lang, numeric_alternatives):
                     break
         if len(chosen) != 3:
             return
-        cards.append({'kind': kind, 'source_id': kind + (':' + source if kind == 'trial' else ''), 'question': question, 'texts': [correct] + [x[1] for x in chosen],
+        cards.append({'kind': kind, 'source_id': source_id, 'question': question, 'texts': [correct] + [x[1] for x in chosen],
                       'reasons': [correct if correct.startswith(f'{source}: ') else f'{source}: {correct}'] + [x[2] for x in chosen],
                       'types': ['correct'] + [x[0] for x in chosen]})
 
@@ -157,7 +158,8 @@ def rich_cards(primary, lang, numeric_alternatives):
         if re.search(r'\bHFpEF\b', fact) and 'HFrEF' not in fact:
             question = ('A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?' if en else
                         'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
-        finish('trial', question, correct, name, distractors)
+        trial_id = t.get('id') or t.get('doi') or t.get('pmid') or str((primary.get('landmark_trials') or []).index(t))
+        finish('trial', question, correct, name, distractors, 'trial:' + str(trial_id))
 
     if len(steps) >= 2:
         old, current = steps[0], steps[-1]

@@ -6,6 +6,12 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+{
+  const b=JSON.parse(JSON.stringify(briefings.find(b=>b.id==='ebm-2026-07-26-p1-hist3'))),q=quiz.build(b,1,1,'en');
+  assert.ok(q.options.find(o=>o.key===q.correct_key).text.includes('PATHWAY-2'));
+  b.landmark_trials[1].name='Tên hiển thị mới';
+  assert.deepEqual(quiz.translate(b,q,'vi').generation,q.generation);
+}
 for (const [id,terms,common] of [
   ['ebm-2026-08-30-p3-hist2',['3 nhánh có ý nghĩa chức năng','functionally significant three-vessel disease'],['LVEF >35%']],
   ['ebm-2026-08-25-p6-hist1',['≥2 yếu tố nguy cơ','≥2 risk factors'],['LVEF <50%','CMR-LGE','LMNA','PLN','FLNC','RBM20']],
@@ -134,6 +140,10 @@ const generated=[];
 for (const b of briefings) for (const lang of ['vi','en']) {
   for (let slot=0;slot<4;slot++) for (let variant=0;variant<3;variant++) {
     const q=quiz.build(b,slot,variant,lang);check(q);generated.push(q);
+    const translated=quiz.translate(b,q,lang==='vi'?'en':'vi');
+    assert.ok(translated,`${b.id} ${q.generation.source_id}`);
+    assert.deepEqual(translated.generation,q.generation);
+    assert.deepEqual(quiz.translate(b,translated,lang),q);
     assert.deepEqual(q,quiz.build(b,slot,variant,lang));
   }
   const first=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');

@@ -13,7 +13,7 @@ const ClinicalDistractors = (() => {
     const clean=s=>{const t=String(s||'').split(/\s+/).join(' ').trim();return t.includes('...')||t.includes('…')?'':t;};
     const normalized=s=>clean(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
     function safety(text) {
-      const patterns=en?[[/\bDo not initiate\b/i,'Initiate'],[/\bNever discontinue\b/i,'Discontinue'],[/\bNever withdraw\b/i,'Withdraw'],[/(^|;\s*)avoid\b/i,'$1Use']]:[[/Không được dừng/i,'Có thể dừng'],[/Tuyệt đối không ngừng/i,'Có thể ngừng'],[/Tuyệt đối không khởi trị/i,'Có thể khởi trị'],[/Không kê đơn/i,'Có thể kê đơn'],[/Không khởi trị/i,'Có thể khởi trị'],[/tránh phối hợp/i,'có thể phối hợp']];
+      const patterns=en?[[/\bDo not initiate\b/i,'Initiate'],[/\bNever discontinue\b/i,'Discontinue'],[/\bNever withdraw\b/i,'Withdraw'],[/(^|;\s*)avoid\b/i,'$1Use']]:[[/Không được dừng/i,'Có thể dừng'],[/Tuyệt đối không ngừng/i,'Có thể ngừng'],[/Tuyệt đối không khởi trị/i,'Có thể khởi trị'],[/Không kê đơn/i,'Có thể kê đơn'],[/Không khởi trị/i,'Có thể khởi trị'],[/tránh phối hợp/i,'có thể phối hợp'],[/tránh dùng/i,'có thể dùng']];
       for (const clause of text.split(';')) for (const [pattern,replacement] of patterns) if (pattern.test(clause.trim())) return clause.trim().replace(pattern,replacement);
       return '';
     }
@@ -35,7 +35,7 @@ const ClinicalDistractors = (() => {
       const patterns=[['death',/death|mortality|mace/i],['stroke',/stroke|mace/i],['mi',/infarction|\bmi\b|mace/i],['hf',/\bhf\b|heart failure/i],['bleeding',/bleed|barc/i],['function',/pvo2|functional|oxygen uptake/i],['quality',/kccq|quality/i],['rhythm',/af recurrence|procedural failure|ablation/i],['renal',/renal|kidney/i],['septal',/septal/i],['bp',/blood pressure|mmhg/i]];
       return patterns.filter(([,p])=>p.test(label)).map(([key])=>key).join(',');
     }
-    function finish(kind,question,correct,source,distractors) {
+    function finish(kind,question,correct,source,distractors,sourceId='guideline') {
       if (!correct) return;
       correct=clean(correct).replace(/[.!?]+$/,'')+'.';
       const chosen=[],seen=new Set([normalized(correct)]);
@@ -57,7 +57,7 @@ const ClinicalDistractors = (() => {
         if (chosen.length===3) break;
       }
       if (chosen.length!==3) return;
-      result.push({kind,source_id:kind+(kind==='trial'?':'+source:''),question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
+      result.push({kind,source_id:sourceId,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])]});
     }
     for (const t of trials) {
       const name=t.name||'',value=clean(t.value),fact=clean(t['changes_'+suffix]),endpoint=clean(t.endpoint_label);
@@ -89,7 +89,8 @@ const ClinicalDistractors = (() => {
       distractors.push(...traps);
       let question=en?'Which statement about trial evidence and its clinical application is correct?':'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
       if (/\bHFpEF\b/.test(fact) && !fact.includes('HFrEF')) question=en?'A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?':'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
-      finish('trial',question,correct,name,distractors);
+      const trialId=t.id||t.doi||t.pmid||String((primary.landmark_trials||[]).indexOf(t));
+      finish('trial',question,correct,name,distractors,'trial:'+trialId);
     }
     if (steps.length>=2) {
       const old=steps[0],current=steps[steps.length-1],oldEra=old['era_label_'+suffix]||'',currentEra=current['era_label_'+suffix]||'';

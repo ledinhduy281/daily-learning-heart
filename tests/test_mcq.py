@@ -7,6 +7,27 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_every_question_source_translates_both_directions(self):
+        from clinical_distractors import rich_cards
+        from clinical_mcq import alternatives, build_mcq, translate_mcq
+        for b in self.briefings + [{}]:
+            for lang in ('vi', 'en'):
+                cards = rich_cards(b, lang, alternatives)
+                for i, card in enumerate(cards or [None]):
+                    q = build_mcq(b, 0 if card and card['kind'] == 'guideline' else 1, i, lang,
+                                 source_id=card['source_id'] if card else None)
+                    translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
+                    self.assertIsNotNone(translated, (b.get('id'), q['generation']))
+                    self.assertEqual(q['generation'], translated['generation'])
+                    self.assertEqual(q, translate_mcq(b, translated, lang))
+        b = copy.deepcopy(next(b for b in self.briefings if b['id'] == 'ebm-2026-07-26-p1-hist3'))
+        q = build_mcq(b, 1, 1, 'en')
+        self.assertIn('PATHWAY-2', next(o['text'] for o in q['options'] if o['key'] == q['correct_key']))
+        b['landmark_trials'][1]['name'] = 'Tên hiển thị mới'
+        translated = translate_mcq(b, q, 'vi')
+        self.assertIsNotNone(translated)
+        self.assertEqual(q['generation'], translated['generation'])
+
     def test_articles_and_keys_agree_on_guideline_conditions(self):
         from pillar_library import build_initial_briefings_dataset
         source = {b['id']: b for b in build_initial_briefings_dataset()}
