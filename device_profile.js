@@ -217,9 +217,20 @@ const DeviceProfile = (() => {
       set(key, value) { if (!owned(key)) return; p.progress[key] = String(value); persist(); },
       remove(key) { delete p.progress[key]; persist(); },
       activity(readIds, savedIds) { p.read_ids = [...new Set(readIds)]; p.bookmarked_ids = [...new Set(savedIds)]; persist(); },
-      rename(name) { name = String(name).trim(); if (!name || name.length > 100) throw new Error('Invalid name'); p.display_name = name; persist(); },
+      rename(name) { name = String(name).trim(); if (!name || name.length > 100) throw new Error('Invalid name'); p.display_name = name; p.progress.ebm_display_name_chosen = '1'; persist(); },
       exportJSON() {
-        const {version, display_name, created_at, read_ids, bookmarked_ids, progress} = snapshot();
+        const {version, created_at, read_ids, bookmarked_ids, progress} = snapshot();
+        let {display_name} = snapshot();
+        if (progress.ebm_display_name_chosen !== '1') {
+          for (const raw of [read('ebm_cloud_users_db'), progress.ebm_legacy_users_progress]) {
+            try {
+              const users = JSON.parse(raw);
+              if (object(users) && Object.values(users).some(user => object(user) && [user.display_name, user.full_name].includes(display_name))) {
+                display_name = progress.ebm_ui_lang === 'en' ? 'Doctor' : 'Bác sĩ';
+              }
+            } catch (_) {}
+          }
+        }
         return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(progress)}, null, 2);
       },
       importJSON(text, mode = 'merge') {
