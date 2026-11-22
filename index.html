@@ -7682,12 +7682,15 @@
       },
 
       loadSessions() {
+        this.knownSessionIds ||= new Set();
+        this.deletedSessionIds ||= new Set();
         try {
           const raw = safeStorageGet(CHAT_SESSIONS_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              this.sessions = parsed.filter((s) => s && s.id && Array.isArray(s.messages));
+              this.sessions = parsed.filter((s) => s && s.id && Array.isArray(s.messages) && !this.deletedSessionIds.has(s.id));
+              this.sessions.forEach(s => this.knownSessionIds.add(s.id));
               if (this.sessions.length > 0) {
                 const latest = this.sessions.find(s => s.id === this.currentSessionId) || this.sessions[0];
                 this.currentSessionId = latest.id;
@@ -7704,14 +7707,18 @@
       },
 
       saveSessions() {
+        this.knownSessionIds ||= new Set(this.sessions.map(s => s.id));
+        this.deletedSessionIds ||= new Set();
         try {
           const saved = JSON.parse(safeStorageGet(CHAT_SESSIONS_KEY) || 'null');
           if (Array.isArray(saved)) {
-            const active = this.sessions.find(s => s.id === this.currentSessionId);
-            this.sessions = saved.filter(s => s && s.id && Array.isArray(s.messages));
-            if (active && !this.sessions.some(s => s.id === active.id)) this.sessions.unshift(active);
+            for (const session of saved) {
+              if (session && session.id && Array.isArray(session.messages) && !this.knownSessionIds.has(session.id) && !this.deletedSessionIds.has(session.id) && !this.sessions.some(s => s.id === session.id)) this.sessions.push(session);
+            }
           }
         } catch (_) {}
+        this.sessions = this.sessions.filter(s => !this.deletedSessionIds.has(s.id));
+        this.sessions.forEach(s => this.knownSessionIds.add(s.id));
         const curIdx = this.sessions.findIndex((s) => s.id === this.currentSessionId);
         const firstUser = (this.messages || []).find((m) => m && m.role === "user" && String(m.markdownText || "").trim());
         const rawTitle = firstUser ? String(firstUser.markdownText).trim().replace(/\s+/g, " ") : "";
@@ -7791,6 +7798,9 @@
 
       deleteSession(sessionId) {
         if (this.isBusy) return;
+        this.knownSessionIds ||= new Set(this.sessions.map(s => s.id));
+        this.deletedSessionIds ||= new Set();
+        this.deletedSessionIds.add(sessionId);
         this.sessions = (this.sessions || []).filter((s) => s.id !== sessionId);
         if (sessionId === this.currentSessionId) {
           if (this.sessions.length > 0) {

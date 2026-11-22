@@ -440,6 +440,29 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   assert.equal(saved.find(s=>s.id==='streaming').messages.at(-1).markdownText,'Finished answer');
   assert.equal(chat.currentSessionId,'streaming');
 }
+{
+  const key='soaica_chat_sessions_v1',local=create(new Storage(),crypto);
+  const only={id:'only',messages:[{role:'user',markdownText:'Delete me'}]};
+  local.set(key,JSON.stringify([only]));
+  const scope={App:{selected:{pillar_id:1}},Dom:{chatMessagesList:{}},CHAT_SESSIONS_KEY:key,
+    safeStorageGet:k=>local.get(k),safeStorageSet:(k,v)=>local.set(k,v)};
+  const method=name=>{
+    const source=html.match(new RegExp(`      ${name}\\(([^\\n]*)\\) \\{([\\s\\S]*?)\\n      \\},`));
+    return vm.runInNewContext(`(function(${source[1]}){${source[2]}})`,scope);
+  };
+  const chat={isBusy:false,sessions:[only],currentSessionId:'only',messages:only.messages,
+    saveSessions:method('saveSessions'),createNewSession:method('createNewSession'),
+    renderHistoryDrawer:()=>{},toggleHistoryDrawer:()=>{},
+    pushWelcomeMessage(){this.messages.push({role:'assistant',markdownText:'Welcome'});this.saveSessions();}};
+  method('deleteSession').call(chat,'only');
+  assert.notEqual(chat.currentSessionId,'only');
+  assert.ok(JSON.parse(local.get(key)).every(s=>s.id!=='only'));
+  const replacement=chat.currentSessionId;
+  local.set(key,JSON.stringify([only,...JSON.parse(local.get(key))]));
+  chat.saveSessions();
+  assert.ok(JSON.parse(local.get(key)).every(s=>s.id!=='only'));
+  assert.equal(chat.currentSessionId,replacement);
+}
 async function checkProfilePanel() {
   const markup = html.slice(html.indexOf('id="myAccountModal"'), html.indexOf('id="btnBackToTop"'));
   assert.match(markup, /<input[^>]+id="profileDeviceId"[^>]+readonly/);
