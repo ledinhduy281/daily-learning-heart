@@ -1,5 +1,5 @@
 /* No external services: this script uses the owner's free Sheets and Mail quotas. */
-var SYNC_LIMITS = {bytes: 256 * 1024, cooldown: 10 * 60 * 1000, daily: 70, records: 5000};
+var SYNC_LIMITS = {bytes: 256 * 1024, cooldown: 10 * 60 * 1000, daily: 70, records: 5000, pending: 200};
 var SYNC_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var SYNC_GENERIC = {ok: true, message: 'If a backup is available, a link will be emailed to that address.'};
 
@@ -25,9 +25,17 @@ function syncHandle(request, env) {
   if (a === 'confirm') {
     if (typeof request.token !== 'string' || !/^[a-f0-9]{64}$/.test(request.token)) return {ok:true,confirmed:false};
     var tokenHash = env.hash(request.token), pendingKey = 'pending:' + tokenHash, pending = env.get(pendingKey);
-    if (!pending || pending.expiresAt <= now || pending.tokenHash !== tokenHash || env.get('pending:e:' + pending.fingerprint) !== tokenHash) return {ok:true,confirmed:false};
+    if (!pending) return {ok:true,confirmed:false};
+    var pointerKey = 'pending:e:' + pending.fingerprint, pointer = env.get(pointerKey);
+    if (pending.expiresAt <= now) {
+      env.set(pendingKey,null);
+      if (pointer && pointer.tokenHash === tokenHash) env.set(pointerKey,null);
+      return {ok:true,confirmed:false};
+    }
+    if (pending.tokenHash !== tokenHash || !pointer || pointer.tokenHash !== tokenHash) return {ok:true,confirmed:false};
     env.set('e:' + pending.fingerprint, {userId:pending.userId,verified:true});
     env.set(pendingKey, null);
+    env.set(pointerKey, null);
     return {ok:true,confirmed:true};
   }
   if (['push','pull','backup','restore_request'].indexOf(a) < 0) throw new Error('Invalid action');
@@ -55,8 +63,10 @@ function syncHandle(request, env) {
   var parameter = 'restore=' + encodeURIComponent(id);
   if (a === 'backup') {
     var token = env.random(), hashed = env.hash(token);
+    var oldPending = env.get('pending:e:' + fingerprint);
+    if (oldPending && oldPending.tokenHash) env.set('pending:' + oldPending.tokenHash,null);
     env.set('pending:' + hashed, {fingerprint:fingerprint,userId:id,tokenHash:hashed,expiresAt:now + 24*60*60*1000});
-    env.set('pending:e:' + fingerprint, hashed);
+    env.set('pending:e:' + fingerprint, {tokenHash:hashed,expiresAt:now + 24*60*60*1000});
     parameter = 'email_confirm=' + token;
   }
   env.set(emailRate, now); env.set(idRate, now); env.set(dayKey, (env.get(dayKey) || 0) + 1);
@@ -67,7 +77,7 @@ function syncHandle(request, env) {
   return generic;
 }
 function syncSheetStore() {
-  var props = PropertiesService.getScriptProperties(), id = props.getProperty('SYNC_SHEET_ID'), sheet;
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('SYNC_SHEET_ID'), sheet, cleaned = false;
   if (!id) {
     var book = SpreadsheetApp.create('Daily Learning Heart private sync');
     props.setProperty('SYNC_SHEET_ID', book.getId()); sheet = book.getSheets()[0];
@@ -81,10 +91,21 @@ function syncSheetStore() {
   return {
     get: function(key) { var r = row(key); return r ? JSON.parse(Utilities.newBlob(Utilities.base64Decode(sheet.getRange(r,2,1,12).getValues()[0].join(''))).getDataAsString('UTF-8')) : null; },
     set: function(key,value) {
+      if (!cleaned && sheet.getLastRow() > 1) {
+        var count = sheet.getLastRow()-1, keys = sheet.getRange(2,1,count,1).getValues(), expiry = sheet.getRange(2,14,count,1).getValues();
+        for (var j=count-1;j>=0;j--) if (String(keys[j][0]).indexOf('pending:') === 0 && (!Number(expiry[j][0]) || Number(expiry[j][0]) <= Date.now())) sheet.deleteRow(j+2);
+      }
+      cleaned = true;
+      var existing = row(key);
+      if (value === null) { if (existing) sheet.deleteRow(existing); return; }
+      if (!existing && key.indexOf('pending:') === 0 && sheet.getLastRow() > 1) {
+        var pendingCount = sheet.getRange(2,1,sheet.getLastRow()-1,1).getValues().filter(function(r) { return String(r[0]).indexOf('pending:') === 0; }).length;
+        if (pendingCount >= SYNC_LIMITS.pending) throw new Error('Too many pending confirmations');
+      }
       var r = row(key), text = Utilities.base64Encode(JSON.stringify(value), Utilities.Charset.UTF_8), chunks = [];
       if (!r && sheet.getLastRow() >= SYNC_LIMITS.records) throw new Error('Sync storage is full');
       for (var i=0;i<12;i++) chunks.push(text.slice(i*30000,(i+1)*30000));
-      sheet.getRange(r || sheet.getLastRow()+1,1,1,13).setValues([[key].concat(chunks)]);
+      sheet.getRange(r || sheet.getLastRow()+1,1,1,14).setValues([[key].concat(chunks,[key.indexOf('pending:') === 0 ? value.expiresAt : ''])]);
     }
   };
 }

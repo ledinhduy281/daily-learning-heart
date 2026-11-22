@@ -50,7 +50,9 @@ remaining Google quota), with 10-minute cooldowns per fingerprint and per ID.
 Backup and restore requests return the same generic success message, including
 unknown addresses and cooldowns. Revision checks under a ScriptLock prevent
 concurrent devices overwriting unseen updates; clients merge and retry conflicts.
-The Sheet is capped at 5,000 rows; the owner may remove old `day:` rows or unused
+The Sheet is capped at 5,000 rows. Pending confirmations are limited to 200 rows,
+replaced on repeat backup requests, deleted on confirmation, and swept after expiry
+on writes. The owner may remove old `day:` rows or unused
 profiles and their `e:`/`rate:` rows. At capacity new writes fail safely and local
 learning remains available. Free public endpoints cannot prevent all denial of
 service; monitor the Sheet and Apps Script executions, disable the deployment if
