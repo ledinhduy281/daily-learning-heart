@@ -132,6 +132,33 @@ assert.equal(migrated.get('ebm_streak'), '5');
 assert.deepEqual(JSON.parse(migrated.get('ebm_ui_prefs')), {theme: 'dark'});
 assert.ok(!/private-password|private-session|@|Legacy Doctor|Other Doctor|other-read|other-saved|token|quiz-secret/.test(migrated.exportJSON()));
 assert.ok(legacy.getItem('ebm_cloud_users_db').includes('private-password'));
+{
+  const legacyHistory = {
+    soaica_chat_sessions_v1: JSON.stringify([{id: 'old-chat', title: 'Old chat', pillarId: 1, updatedAt: '2026-11-19T00:00:00Z',
+      messages: [{id: 'old-message', role: 'user', markdownText: 'My saved question', sources: [], engineLabel: ''}]}]),
+    soaica_chat_verbosity_v1: 'detailed',
+    ebm_offline_feedback: JSON.stringify({lesson: {likes: 1, dislikes: 0, reports: 1, user_reaction: 'like', user_reported: true}})
+  };
+  const oldStorage = new Storage({...legacyHistory, ebm_cloud_current_user: 'doctor',
+    ebm_cloud_users_db: JSON.stringify({doctor: {password: 'not-portable', progress: {soaica_chat_verbosity_v1: 'short'}}})});
+  const upgraded = create(oldStorage, crypto);
+  const exported = upgraded.exportJSON();
+  assert.deepEqual(JSON.parse(exported).progress, legacyHistory);
+  const reloaded = create(oldStorage, crypto), restored = create(new Storage(), crypto);
+  restored.importJSON(exported);
+  for (const [key, value] of Object.entries(legacyHistory)) {
+    assert.equal(reloaded.get(key), value);
+    assert.equal(restored.get(key), value);
+    assert.equal(oldStorage.getItem(key), value);
+  }
+  const malformed = create(new Storage({...legacyHistory, soaica_chat_sessions_v1: '[{"id":"bad","messages":[null]}]',
+    soaica_chat_verbosity_v1: 'extra', ebm_offline_feedback: '{"lesson":{"likes":[],"user_reaction":"bad"}}', ebm_ui_lang: 'en'}), crypto);
+  assert.deepEqual(JSON.parse(malformed.exportJSON()).progress, {ebm_ui_lang: 'en'});
+  for (const mode of ['merge', 'replace']) {
+    upgraded.importJSON(create(new Storage(), crypto).exportJSON(), mode);
+    assert.equal(create(oldStorage, crypto).get('soaica_chat_verbosity_v1'), mode === 'replace' ? null : 'detailed');
+  }
+}
 const oldCopy = create(new Storage({[KEY]: JSON.stringify({...device.profile, display_name: 'Legacy Doctor', progress: {
   ebm_legacy_users_progress: legacy.getItem('ebm_cloud_users_db'),
   ebm_progress_by_user: legacy.getItem('ebm_progress_by_user'),
@@ -286,6 +313,43 @@ const headers = vm.runInNewContext(`(function(extra={}) {${headersCode}})`, {dev
 assert.equal(headers()['X-Device-Id'], id);
 assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'application/json');
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
+{
+  const local = create(new Storage({soaica_chat_sessions_v1: JSON.stringify([{id: 'legacy-chat', messages: [{role: 'user', markdownText: 'Saved'}]}])}), crypto);
+  const noop = () => {};
+  const chat = {
+    currentSessionId: '', messages: [], renderQuotaBadge: noop, renderVerbosityLabels: noop,
+    renderHistoryDrawer: noop, updateContext: noop, renderCurrentMessages: noop,
+    pushWelcomeMessage() { local.set('soaica_chat_sessions_v1', '[]'); }, createNewSession() { assert.fail('Lost saved chat'); }
+  };
+  for (const method of ['onLanguageChanged', 'loadSessions']) {
+    const [, source] = html.match(new RegExp(`      ${method}\\(\\) \\{([\\s\\S]*?)\\n      \\},`));
+    vm.runInNewContext(`(function() {${source}})`, {
+      App: {currentLang: 'vi'}, Dom: {}, document: {getElementById: () => null},
+      CHAT_SESSIONS_KEY: 'soaica_chat_sessions_v1', safeStorageGet: key => local.get(key)
+    }).call(chat);
+  }
+  assert.equal(chat.currentSessionId, 'legacy-chat');
+  assert.equal(chat.messages[0].markdownText, 'Saved');
+}
+{
+  const app = {mode: 'today', user: {}}, lesson = {id: 'today'};
+  const reads = [];
+  const noop = () => {};
+  const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\(\) \{[\s\S]*?\n    \}/)[0]})`, {
+    App: app, applyLocalizationChrome: noop, renderUserWorkspace: noop, renderDailyRotationBanner: noop,
+    renderPillarsTiles: noop, renderModeSpecificPanels: noop, getTodaySingleBriefing: () => lesson,
+    selectBriefing: (...args) => select(...args)
+  });
+  const select = vm.runInNewContext(`(${html.match(/function selectBriefing\(briefing, [^\n]+\n[\s\S]*?\n    \}/)[0]})`, {
+    App: app, renderBriefingsList: noop, renderPillarsTiles: noop, displayCurrentBriefing: noop,
+    recordBriefingRead: id => reads.push(id), fetchFeedbackForBriefing: noop, window: {}
+  });
+  init();
+  assert.equal(app.selected, lesson);
+  assert.deepEqual(reads, []);
+  select(lesson);
+  assert.deepEqual(reads, ['today']);
+}
 async function checkStreams() {
   {
     const store = new Storage(), profile = create(store, crypto);
@@ -318,6 +382,43 @@ async function checkStreams() {
     assert.equal(requests, 4);
     assert.ok(html.includes('tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ'));
     assert.ok(html.includes('your display name, reading history and bookmarks are also sent to the server'));
+  }
+  {
+    const body = html.match(/async function syncDeviceActivity\(\) \{([\s\S]*?)\n    \}/)[1];
+    const local = new Storage(), receiver = create(local, crypto), replacingTab = create(local, crypto);
+    const emptyBackup = create(new Storage(), crypto).exportJSON();
+    let serverCopy, fail = false, requests = 0;
+    const runSync = deviceStore => vm.runInNewContext(`(async function() {${body}})`, {
+      App: {serverAvailable: true, user: {}}, deviceStore, getAuthHeaders: value => value,
+      tt: key => key, showToast() {},
+      fetch: async (_path, {body}) => {
+        requests++;
+        if (fail) return {ok: false};
+        serverCopy = JSON.parse(body);
+        return {ok: true};
+      }
+    })();
+    receiver.activity(['read'], ['saved']);
+    await runSync(receiver);
+    assert.deepEqual(serverCopy.read_ids, ['read']);
+    assert.deepEqual(serverCopy.bookmarked_ids, ['saved']);
+    assert.equal(JSON.parse(receiver.exportJSON()).progress.ebm_device_server_synced, undefined);
+    replacingTab.importJSON(emptyBackup, 'replace');
+    assert.equal(JSON.parse(replacingTab.exportJSON()).progress.ebm_legacy_server_migrated, undefined);
+    fail = true;
+    await runSync(replacingTab);
+    assert.equal(requests, 2);
+    assert.deepEqual(serverCopy.bookmarked_ids, ['saved']);
+    fail = false;
+    await runSync(create(local, crypto));
+    assert.deepEqual(serverCopy, {action: 'sync', read_ids: [], bookmarked_ids: [], display_name: 'Bác sĩ'});
+    const fresh = create(new Storage(), crypto);
+    const foreignBackup = {...JSON.parse(emptyBackup), progress: {ebm_device_server_synced: '1'}};
+    for (const mode of ['merge', 'replace']) {
+      fresh.importJSON(JSON.stringify(foreignBackup), mode);
+      await runSync(fresh);
+      assert.equal(requests, 3);
+    }
   }
   {
     const shared = new Storage(), first = create(shared, crypto), stale = create(shared, crypto);

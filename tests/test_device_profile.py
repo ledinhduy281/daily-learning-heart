@@ -152,7 +152,7 @@ class DeviceProfileTests(unittest.TestCase):
         stored = json.loads(self.feedback.read_text())
         self.assertIn('device:' + one, stored['votes']['feedback-lesson'])
 
-    def test_feedback_authors_are_not_credentials_and_moderators_are_provisioned(self):
+    def test_feedback_reports_are_private_even_with_a_configured_legacy_username(self):
         device = str(uuid.uuid4())
         self.request('/api/feedback', device, {'briefing_id': 'private-report', 'type': 'report', 'comment': 'Check source'})
         own = self.request('/api/feedback', device)[1]['recent_reports']
@@ -171,8 +171,17 @@ class DeviceProfileTests(unittest.TestCase):
             data['reports'].append({'id': 'legacy', 'username': 'device:' + device, 'token': 'hidden', 'email': 'hidden@example.com', 'comment': 'Old report'})
             app._save_feedback_data_unlocked(data)
         with patch.dict(app.os.environ, {'EBM_FEEDBACK_MODERATORS': 'admin'}):
-            reports = self.request('/api/feedback', headers=headers)[1]['recent_reports']
+            self.request('/api/feedback', body={'briefing_id': 'private-report', 'type': 'report', 'comment': 'Guest report'})
+            self.assertEqual(self.request('/api/feedback')[1]['recent_reports'], [])
+            _, guest = self.request('/api/auth/register', body={'username': 'guest', 'password': 'test-password'})
+            self.assertEqual(self.request('/api/feedback', headers={'Authorization': 'Bearer ' + guest['token']})[1]['recent_reports'], [])
+            self.request('/api/feedback', body={'briefing_id': 'private-report', 'type': 'report', 'comment': 'Own report'}, headers=headers)
+            payload = self.request('/api/feedback', headers=headers)[1]
+            self.assertEqual(payload['summary']['private-report']['report'], 3)
+            self.assertEqual([r['comment'] for r in payload['recent_reports']], ['Own report'])
+            reports = self.request('/api/feedback', device)[1]['recent_reports']
             self.assertTrue(any(r['id'] == stored['id'] for r in reports))
+            self.assertTrue(any(r['id'] == 'legacy' for r in reports))
             self.assertNotRegex(json.dumps(reports), device + '|hidden|username|token|email')
         self.assertEqual(self.request('/api/feedback', str(uuid.uuid4()))[1]['recent_reports'], [])
 

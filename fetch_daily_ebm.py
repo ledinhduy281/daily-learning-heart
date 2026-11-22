@@ -1371,11 +1371,11 @@ def get_feedback_payload(user: dict | None) -> dict:
         data = _load_feedback_data_unlocked()
         summary = _compute_feedback_summary(data, user_key)
         reports = data.get("reports", [])
-        moderators = {_normalize_identifier(name) for name in os.environ.get('EBM_FEEDBACK_MODERATORS', '').split(',') if name.strip()}
-        if user and not user_key.startswith('device:') and _normalize_identifier(user_key) in moderators:
-            recent_reports = list(reversed(reports))[:20]
-        else:
-            recent_reports = [r for r in reversed(reports) if r.get('author_id') == _feedback_author_id(user_key) or r.get('username') == user_key][:20]
+        author_id = _feedback_author_id(user_key)
+        recent_reports = []
+        if user_key != 'guest':
+            recent_reports = [r for r in reversed(reports)
+                              if r.get('author_id') == author_id or r.get('username') == user_key][:20]
         safe_reports = []
         for report in recent_reports:
             safe = {key: report[key] for key in ('id', 'briefing_id', 'pillar_id', 'display_name', 'reason', 'comment', 'created_at') if key in report}

@@ -5324,14 +5324,14 @@
       if (App.mode === "today") {
         const b = getTodaySingleBriefing();
         if (b) {
-          selectBriefing(b);
+          selectBriefing(b, {markRead: false});
         } else {
           renderBriefingsList();
         }
       } else {
         const list = getHistoryScopeBriefings();
         if (list.length > 0) {
-          selectBriefing(list[0]);
+          selectBriefing(list[0], {markRead: false});
         } else {
           renderBriefingsList();
         }
@@ -5904,7 +5904,7 @@
       }
     };
 
-    function selectBriefing(briefing) {
+    function selectBriefing(briefing, {markRead = true} = {}) {
       if (!briefing) return;
       App.selected = briefing;
       if (App.mode === "history") {
@@ -5916,7 +5916,7 @@
       renderPillarsTiles();
       displayCurrentBriefing();
 
-      if (App.user) {
+      if (markRead && App.user) {
         recordBriefingRead(briefing.id);
       }
       fetchFeedbackForBriefing(briefing.id);
@@ -7537,7 +7537,7 @@
         this.renderVerbosityLabels();
         this.renderHistoryDrawer();
         this.updateContext();
-        if (!this.isBusy && Array.isArray(this.messages) && !this.messages.some((m) => m && m.role === "user")) {
+        if (this.currentSessionId && !this.isBusy && Array.isArray(this.messages) && !this.messages.some((m) => m && m.role === "user")) {
           this.messages = [];
           if (Dom.chatMessagesList) Dom.chatMessagesList.innerHTML = "";
           this.pushWelcomeMessage();

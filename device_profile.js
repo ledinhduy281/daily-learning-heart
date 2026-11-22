@@ -7,6 +7,8 @@ const DeviceProfile = (() => {
   const legacyKeys = /legacy_users|progress_by_user/i;
   const privateField = /email|username|full.?name|display.?name|password|token|secret|api.?key|^name$|@/i;
   const learningKeys = new Set(['ebm_offline_user_activity', 'ebm_socratic_state_v1', 'ebm_ui_lang', 'ebm_font_scale', 'ebm_theme', 'ebm_streak', 'ebm_quiz_progress', 'ebm_ui_prefs']);
+  const localHistoryKeys = ['soaica_chat_sessions_v1', 'soaica_chat_verbosity_v1', 'ebm_offline_feedback'];
+  const syncKeys = ['ebm_device_server_synced', 'ebm_legacy_server_migrated'];
   function learningData(value) {
     if (Array.isArray(value)) return value.map(learningData);
     if (object(value)) return Object.fromEntries(Object.entries(value).filter(([key]) => !privateField.test(key)).map(([key, child]) => [key, learningData(child)]));
@@ -15,7 +17,7 @@ const DeviceProfile = (() => {
   function portableProgress(progress) {
     const result = {};
     for (const [key, raw] of Object.entries(progress)) {
-      if (legacyKeys.test(key) || privateField.test(key)) continue;
+      if (legacyKeys.test(key) || privateField.test(key) || syncKeys.includes(key)) continue;
       try { result[key] = JSON.stringify(learningData(JSON.parse(raw))); }
       catch (_) { result[key] = raw; }
     }
@@ -85,8 +87,13 @@ const DeviceProfile = (() => {
       }
     };
     for (const [key, raw] of Object.entries(progress)) {
+      if (key === 'soaica_chat_verbosity_v1') {
+        require(['short', 'medium', 'detailed'].includes(raw.trim().toLowerCase()));
+        continue;
+      }
       if (!['ebm_socratic_state_v1', 'soaica_chat_sessions_v1', 'soaica_daily_quota_v1', 'ebm_offline_user_activity', 'ebm_offline_feedback', 'ebm_ui_prefs', 'ebm_quiz_progress'].includes(key)) continue;
       const value = JSON.parse(raw);
+      validateTree(value);
       if (key === 'soaica_chat_sessions_v1') {
         require(Array.isArray(value));
         for (const session of value) {
@@ -113,8 +120,9 @@ const DeviceProfile = (() => {
         if (key === 'ebm_offline_user_activity') for (const field of ['read_ids', 'bookmarked_ids']) if (field in value) require(Array.isArray(value[field]) && value[field].every(id => typeof id === 'string'));
         if (key === 'soaica_daily_quota_v1') fields(value, {date: 'string', used: 'number', limit: 'number', exhausted: 'boolean', stop_reason: 'string'});
         if (key === 'ebm_offline_feedback') for (const entry of Object.values(value)) {
-          fields(entry, {like: 'number', dislike: 'number', report: 'number'});
+          fields(entry, {like: 'number', dislike: 'number', report: 'number', likes: 'number', dislikes: 'number', reports: 'number', user_reported: 'boolean'});
           if ('user_vote' in entry) require([null, 'like', 'dislike'].includes(entry.user_vote));
+          if ('user_reaction' in entry) require([null, 'like', 'dislike'].includes(entry.user_reaction));
         }
       }
     }
@@ -160,7 +168,12 @@ const DeviceProfile = (() => {
         let latest;
         try { latest = validate(JSON.parse(read(KEY))); } catch (_) {}
         const next = !replace && baseline && latest?.device_id === p.device_id ? reconcile(baseline, p, latest) : p;
-        if (importing) next.progress.ebm_legacy_server_migrated = '1';
+        if (importing) {
+          next.progress.ebm_legacy_server_migrated = '1';
+          if (latest?.device_id === p.device_id && latest.progress.ebm_device_server_synced === '1') {
+            next.progress.ebm_device_server_synced = '1';
+          }
+        }
         storage.setItem(KEY, JSON.stringify(next));
         p = next; baseline = JSON.parse(JSON.stringify(p));
         return true;
@@ -180,6 +193,14 @@ const DeviceProfile = (() => {
           if (learningKeys.has(key)) p.progress[key] = read(key);
         }
       } catch (_) {}
+      for (const key of localHistoryKeys) {
+        const raw = read(key);
+        if (raw === null) continue;
+        try {
+          validateProgress({[key]: raw});
+          p.progress[key] = raw;
+        } catch (_) {}
+      }
       const collect = value => {
         if (!object(value)) return;
         for (const key of ['read_ids', 'bookmarked_ids']) if (Array.isArray(value[key])) p[key] = [...new Set([...p[key], ...value[key].filter(x => typeof x === 'string')])];
@@ -249,6 +270,7 @@ const DeviceProfile = (() => {
         const parsed = JSON.parse(text);
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
         const incoming = validate({...parsed, device_id: p.device_id});
+        for (const key of syncKeys) delete incoming.progress[key];
         validateProgress(incoming.progress);
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key], key);
