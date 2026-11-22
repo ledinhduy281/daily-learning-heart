@@ -42,11 +42,11 @@
       const payload = await response.json();
       if (!valid(payload)) throw new Error("Invalid briefing");
       try { storage?.setItem(key, JSON.stringify(payload)); } catch (_) {}
-      return payload;
+      return { payload, fromCache: false };
     } catch (_) {
       try {
         const cached = JSON.parse(storage?.getItem(key) || "null");
-        if (valid(cached)) return cached;
+        if (valid(cached)) return { payload: cached, fromCache: true };
       } catch (_) {}
       return null;
     }

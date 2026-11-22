@@ -4319,7 +4319,7 @@
         <summary id="dailyEvidenceTitle">Dữ liệu tim mạch hằng ngày</summary>
         <p id="dailyEvidenceStatus"></p>
         <ul id="dailyEvidenceList"></ul>
-        <a id="dailyEvidenceDownload" href="data/pipeline/evidence.parquet" download>Tải Parquet</a>
+        <a id="dailyEvidenceDownload" href="data/pipeline/evidence.parquet" download hidden>Tải Parquet</a>
       </details>
 
       <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
@@ -5148,6 +5148,8 @@
       bootstrapSessionAndStatus();
       scheduleDailyRefresh();
       loadDailyEvidence();
+      window.addEventListener("offline", renderDailyEvidence);
+      window.addEventListener("online", loadDailyEvidence);
       if ("serviceWorker" in navigator && !isFileOrigin()) {
         navigator.serviceWorker.register("offline.js").catch(() => {});
       }
@@ -5161,8 +5163,8 @@
     }
 
     function renderDailyEvidence() {
-      const feed = App.evidenceFeed;
-      if (!feed) return;
+      if (!App.evidenceFeed) return;
+      const { payload: feed, fromCache } = App.evidenceFeed;
       const vi = App.currentLang === "vi";
       const names = { pubmed: "PubMed", clinicaltrials: "ClinicalTrials.gov", openfda: "openFDA" };
       document.getElementById("dailyEvidenceTitle").textContent =
@@ -5173,7 +5175,9 @@
       document.getElementById("dailyEvidenceStatus").textContent = missing.length
         ? `${note} ${vi ? "Nguồn không khả dụng" : "Sources unavailable"}: ${unavailable}.`
         : note;
-      document.getElementById("dailyEvidenceDownload").textContent = vi ? "Tải Parquet" : "Download Parquet";
+      const download = document.getElementById("dailyEvidenceDownload");
+      download.textContent = vi ? "Tải Parquet" : "Download Parquet";
+      download.hidden = fromCache || !navigator.onLine;
       const items = feed.items.map(item => {
         const row = document.createElement("li");
         const link = document.createElement("a");
