@@ -21,7 +21,10 @@ backup service. Local progress and JSON export/import always work without it.
    This URL is public, not a secret. Leave it empty to disable cloud sync.
 6. Visit the site, read a lesson, and try restore on another browser. Test an email
    backup and restore email. Apps Script creates a **private** spreadsheet on the
-   first request and stores its ID in `SYNC_SHEET_ID`. Do not publish/share the Sheet.
+   first request. Follow the backup email's confirmation link before requesting
+   a restore email; unconfirmed email links never become active. Confirmation
+   tokens are stored hashed, expire after 24 hours, and can only be used once.
+   Its ID is stored in `SYNC_SHEET_ID`. Do not publish/share the Sheet.
 7. For code updates, deploy a **new version** using Manage deployments. Keep PEPPER,
    the spreadsheet, and its property stable or email lookups will be lost.
 

@@ -67,6 +67,17 @@ const CloudSync = (() => {
       restore(value) {const target=validId(value);return enqueue(()=>exchange(target,true));},
       async start({url,confirm,replaceUrl}) {
         const parsed=new URL(url),restore=parsed.searchParams.get('restore');
+        if(parsed.searchParams.has('email_confirm')) {
+          try {
+            const token=parsed.searchParams.get('email_confirm');
+            if(!/^[a-f0-9]{64}$/.test(token))throw new Error('INVALID_CONFIRMATION');
+            const result=await request('confirm',{token});
+            status(result.confirmed===true?'EMAIL_CONFIRMED':'EMAIL_CONFIRM_INVALID');
+          } finally {
+            parsed.searchParams.delete('email_confirm');parsed.searchParams.delete('restore');replaceUrl(parsed.href);
+          }
+          return;
+        }
         if(restore!==null) {
           try {validId(restore);if(await confirm(restore))await this.restore(restore);}
           finally {parsed.searchParams.delete('restore');replaceUrl(parsed.href);}

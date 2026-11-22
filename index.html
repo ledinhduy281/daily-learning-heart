@@ -5308,7 +5308,9 @@
         NOT_CONFIGURED: ["Cloud sync is not configured. Restore a local JSON backup instead.", "Chưa cấu hình đồng bộ đám mây. Hãy khôi phục từ bản sao JSON cục bộ."],
         SYNC_FAILED: ["Could not sync. Your local progress is safe; try again later.", "Chưa thể đồng bộ. Tiến độ trên thiết bị vẫn an toàn, hãy thử lại sau."],
         SYNCED: ["Progress synced.", "Đã đồng bộ tiến độ."],
-        EMAIL_SENT: ["If a backup is available, a link will be emailed to that address. Please wait up to 10 minutes before requesting again.", "Nếu có bản sao lưu, liên kết sẽ được gửi tới địa chỉ đó. Vui lòng đợi ít nhất 10 phút trước khi yêu cầu lại."],
+        EMAIL_SENT: ["If available, a confirmation or restore link will be emailed to that address. Confirm a new backup before restoring by email. Wait at least 10 minutes before requesting again.", "Nếu có thể, liên kết xác nhận hoặc khôi phục sẽ được gửi tới địa chỉ đó. Hãy xác nhận bản sao lưu mới trước khi khôi phục bằng email. Vui lòng đợi ít nhất 10 phút trước khi yêu cầu lại."],
+        EMAIL_CONFIRMED: ["Email backup confirmed.", "Đã xác nhận sao lưu bằng email."],
+        EMAIL_CONFIRM_INVALID: ["This confirmation link has expired or was already used. Request a new backup email.", "Liên kết xác nhận đã hết hạn hoặc đã được sử dụng. Hãy yêu cầu email sao lưu mới."],
         INVALID_ID: ["Enter a valid user ID.", "Vui lòng nhập mã người dùng hợp lệ."]
       };
       const message = messages[cloudStatus];
@@ -5358,7 +5360,7 @@
           catch (_) {status("SYNC_FAILED");}finally{button.disabled=false;}
         });
         window.addEventListener("storage",event=>{if(event.key===DeviceProfile.KEY)cloudSync.schedule();});
-        cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "Restore this ID and merge its progress with this device? Only accept links you trust." : "Khôi phục mã này và hợp nhất tiến độ với thiết bị? Chỉ chấp nhận liên kết bạn tin cậy."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(error.message==="INVALID_ID"?"INVALID_ID":error.message==="NOT_CONFIGURED"?"NOT_CONFIGURED":"SYNC_FAILED"));
+        cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress will be merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ trên thiết bị này sẽ được hợp nhất vào bản sao đám mây của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(error.message==="INVALID_ID"?"INVALID_ID":error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":error.message==="NOT_CONFIGURED"?"NOT_CONFIGURED":"SYNC_FAILED"));
       } catch (_) {status("SYNC_FAILED");}
     }
 

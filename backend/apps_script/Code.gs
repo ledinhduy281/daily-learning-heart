@@ -22,6 +22,14 @@ function syncValidateProfile(p, byteLength) {
 }
 function syncHandle(request, env) {
   var a = request.action, now = env.now(), generic = Object.assign({}, SYNC_GENERIC);
+  if (a === 'confirm') {
+    if (typeof request.token !== 'string' || !/^[a-f0-9]{64}$/.test(request.token)) return {ok:true,confirmed:false};
+    var tokenHash = env.hash(request.token), pendingKey = 'pending:' + tokenHash, pending = env.get(pendingKey);
+    if (!pending || pending.expiresAt <= now || pending.tokenHash !== tokenHash || env.get('pending:e:' + pending.fingerprint) !== tokenHash) return {ok:true,confirmed:false};
+    env.set('e:' + pending.fingerprint, {userId:pending.userId,verified:true});
+    env.set(pendingKey, null);
+    return {ok:true,confirmed:true};
+  }
   if (['push','pull','backup','restore_request'].indexOf(a) < 0) throw new Error('Invalid action');
   var id = String(request.userId || '').toLowerCase();
   if (a !== 'restore_request' && !SYNC_UUID.test(id)) throw new Error('Invalid user ID');
@@ -37,15 +45,24 @@ function syncHandle(request, env) {
   var email = String(request.email || '').trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return generic;
   var fingerprint = syncFingerprint(email, env.pepper, env.hmac), emailKey = 'e:' + fingerprint;
-  if (a === 'restore_request') id = env.get(emailKey);
+  if (a === 'restore_request') {
+    var active = env.get(emailKey);
+    id = active && active.verified === true ? active.userId : null;
+  }
   if (!id || !SYNC_UUID.test(id) || !env.get('p:' + env.hash(id))) return generic;
   var dayKey = 'day:' + new Date(now).toISOString().slice(0,10), emailRate = 'rate:e:' + fingerprint, idRate = 'rate:i:' + env.hash(id);
   if (!syncCanMail(now, env.get(emailRate), env.get(idRate), env.get(dayKey) || 0, env.remaining())) return generic;
-  if (a === 'backup') env.set(emailKey, id);
+  var parameter = 'restore=' + encodeURIComponent(id);
+  if (a === 'backup') {
+    var token = env.random(), hashed = env.hash(token);
+    env.set('pending:' + hashed, {fingerprint:fingerprint,userId:id,tokenHash:hashed,expiresAt:now + 24*60*60*1000});
+    env.set('pending:e:' + fingerprint, hashed);
+    parameter = 'email_confirm=' + token;
+  }
   env.set(emailRate, now); env.set(idRate, now); env.set(dayKey, (env.get(dayKey) || 0) + 1);
-  var link = env.site.replace(/\/$/, '/') + (env.site.indexOf('?') < 0 ? '?' : '&') + 'restore=' + encodeURIComponent(id);
+  var link = env.site + (env.site.indexOf('?') < 0 ? '?' : '&') + parameter;
   env.mail(email, request.lang === 'vi' ? 'Khôi phục tiến độ Xem Tim Mỗi Ngày' : 'Restore your Daily Learning Heart progress',
-    'Khôi phục và hợp nhất tiến độ trên thiết bị này:\n' + link + '\n\nRestore and merge your progress on this device:\n' + link +
+    (a === 'backup' ? 'Chỉ xác nhận nếu chính bạn yêu cầu liên kết email với mã này (hết hạn sau 24 giờ):\nOnly confirm if you requested linking your email to this ID (expires in 24 hours):\n' + id + '\n' : 'Khôi phục và hợp nhất tiến độ trên thiết bị này:\nRestore and merge your progress on this device:\n') + link +
     '\n\nAi có liên kết này đều có thể đọc và đồng bộ tiến độ của bạn. Chỉ mở trên thiết bị tin cậy. Nếu không yêu cầu, hãy bỏ qua email này.\nAnyone with this link can read and sync your progress. Open it only on a trusted device. If you did not request this, ignore this email.');
   return generic;
 }
@@ -89,6 +106,7 @@ function doPost(event) {
       hash: function(value) { return hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)); },
       hmac: function(value,key) { return hex(Utilities.computeHmacSha256Signature(value,key,Utilities.Charset.UTF_8)); },
       bytes: function(value) { return Utilities.newBlob(value).getBytes().length; },
+      random: function() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g,'').toLowerCase(); },
       remaining: function() { return MailApp.getRemainingDailyQuota(); },
       mail: function(to,subject,body) { MailApp.sendEmail({to:to,subject:subject,body:body}); },
       site: props.getProperty('SITE_URL') || 'https://ledinhduy281.github.io/daily-learning-heart/'

@@ -11,7 +11,7 @@ const profile={version:1,display_name:'Doctor',created_at:'2026-11-22T00:00:00Z'
 const records=new Map(),mails=[];let now=Date.now(),remaining=100;
 const env={get:k=>records.get(k),set:(k,v)=>records.set(k,v),pepper:'test-pepper',now:()=>now,
  hash:s=>crypto.createHash('sha256').update(s).digest('hex'),hmac,bytes:s=>Buffer.byteLength(s),remaining:()=>remaining,
- mail:(...args)=>mails.push(args),site:'https://example.test/app/'};
+ random:()=>crypto.randomBytes(32).toString('hex'),mail:(...args)=>mails.push(args),site:'https://example.test/app/'};
 assert.equal(fingerprint('  A@Example.com ','test-pepper',hmac),hmac('a@example.com','test-pepper'));
 assert.notEqual(fingerprint('a@example.com','other',hmac),fingerprint('a@example.com','test-pepper',hmac));
 assert.throws(()=>fingerprint('a@example.com','',hmac));
@@ -31,13 +31,32 @@ assert.throws(()=>handle({action:'push',userId:id,profile:{...profile,read_ids:'
 const unknown=handle({action:'restore_request',email:'missing@example.com'},env);
 assert.deepEqual(handle({action:'backup',userId:id,email:'A@Example.com',lang:'en'},env),unknown);
 assert.equal(mails.length,1);assert.equal(mails[0][0],'a@example.com');
-assert.ok(mails[0][2].includes('?restore='+id));assert.ok(mails[0][2].includes('Khôi phục'));assert.ok(mails[0][2].includes('Restore'));
+const token=mails[0][2].match(/email_confirm=([a-f0-9]{64})/)[1];
+assert.equal(records.has('e:'+fingerprint('a@example.com',env.pepper,hmac)),false);
+assert.deepEqual(handle({action:'restore_request',email:'a@example.com'},env),unknown);
+assert.equal(mails.length,1);
+assert.equal(JSON.stringify([...records]).includes(token),false);
+assert.equal(handle({action:'confirm',token:'bad'},env).confirmed,false);
+assert.equal(handle({action:'confirm',token},env).confirmed,true);
+assert.equal(handle({action:'confirm',token},env).confirmed,false);
 assert.equal(JSON.stringify([...records]).includes('@'),false);
 assert.equal(JSON.stringify([...records]).includes('p:'+id),false);
 assert.deepEqual(handle({action:'restore_request',email:'a@example.com'},env),unknown);assert.equal(mails.length,1);
 now+=600000;
 assert.deepEqual(handle({action:'restore_request',email:'a@example.com'},env),unknown);assert.equal(mails.length,2);
-remaining=0;now+=600000;handle({action:'restore_request',email:'a@example.com'},env);assert.equal(mails.length,2);
+assert.ok(mails[1][2].includes('?restore='+id));
+now+=600000;
+const attacker='22345678-1234-4123-8123-123456789abc';
+handle({action:'push',userId:attacker,profile,revision:0},env);
+handle({action:'backup',userId:attacker,email:'a@example.com'},env);
+assert.equal(records.get('e:'+fingerprint('a@example.com',env.pepper,hmac)).userId,id);
+const expired=mails.at(-1)[2].match(/email_confirm=([a-f0-9]{64})/)[1];
+const activeBefore=JSON.stringify(records.get('e:'+fingerprint('a@example.com',env.pepper,hmac)));
+now+=24*60*60*1000;
+assert.equal(handle({action:'confirm',token:expired},env).confirmed,false);
+assert.equal(JSON.stringify(records.get('e:'+fingerprint('a@example.com',env.pepper,hmac))),activeBefore);
+const count=mails.length;
+remaining=0;now+=600000;handle({action:'restore_request',email:'a@example.com'},env);assert.equal(mails.length,count);
 assert.deepEqual(handle({action:'restore_request',email:'bad\nemail'},env),unknown);
 {
   let parses=0,locks=0,received;

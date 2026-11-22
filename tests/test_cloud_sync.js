@@ -14,6 +14,7 @@ async function main() {
     const q=JSON.parse(options.body);calls.push(q);let result={ok:true};
     const row=records.get(q.userId)||{profile:null,revision:0};
     if(q.action==='pull')result={...result,...row,profile:poison||row.profile};
+    if(q.action==='confirm')result.confirmed=q.token==='a'.repeat(64);
     if(q.action==='push') {
       if(conflict){conflict=false;row.revision++;row.profile.read_ids.push('concurrent');records.set(q.userId,row);}
       if(q.revision!==row.revision)result={...result,...row,conflict:true};
@@ -38,7 +39,7 @@ async function main() {
   assert.ok(!('device_id' in records.get(c.userId).profile));
   const otherStorage=new Storage(),otherProfile=DeviceProfile.create(otherStorage,webcrypto);
   otherProfile.activity(['other'],[]);
-  const other=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch});
+  const other=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch,onStatus:s=>statuses.push(s)});
   await other.restore(c.userId);
   assert.equal(other.userId,c.userId);assert.notEqual(otherProfile.profile.device_id,c.userId);
   assert.deepEqual(new Set(otherProfile.profile.read_ids),new Set(['local','other']));
@@ -54,6 +55,13 @@ async function main() {
   assert.throws(()=>other.restore('bad'),/INVALID_ID/);
   await assert.rejects(other.start({url:'https://example.test/?restore=bad',confirm:()=>{throw Error('must not confirm');},replaceUrl:u=>replaced=u}),/INVALID_ID/);
   assert.ok(!replaced.includes('restore='));
+  const confirmCalls=calls.length;
+  await other.start({url:'https://example.test/?email_confirm='+'a'.repeat(64)+'&restore='+c.userId,confirm:()=>assert.fail('Email confirmation must not adopt an ID'),replaceUrl:u=>replaced=u});
+  assert.equal(statuses.at(-1),'EMAIL_CONFIRMED');
+  assert.equal(calls.length,confirmCalls+1);assert.equal(calls.at(-1).action,'confirm');
+  assert.equal(other.userId,previous);assert.equal(replaced,'https://example.test/');
+  await other.start({url:'https://example.test/?email_confirm='+'b'.repeat(64),replaceUrl:u=>replaced=u});
+  assert.equal(statuses.at(-1),'EMAIL_CONFIRM_INVALID');assert.equal(replaced,'https://example.test/');
   assert.deepEqual(await other.email('restore_request','unknown@example.com'),{ok:true});
   assert.deepEqual(await other.email('restore_request','known@example.com'),{ok:true});
   await other.email('backup','known@example.com','en');assert.equal(calls.at(-1).action,'backup');
