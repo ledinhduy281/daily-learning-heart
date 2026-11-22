@@ -6,6 +6,14 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+for (let variant=0;variant<3;variant++) for (const difficulty of ['easy','normal','hard']) {
+  const b=briefings.find(b=>b.id==='ebm-2026-07-26-p1-hist3'),vi=quiz.build(b,1,variant,'vi',difficulty);
+  const text=vi.options.map(o=>o.text).join(' ')+vi.explanation;
+  assert.doesNotMatch(text,/Home SBP|Office SBP|Ambulatory|Reduction|Placebo|Sham/);
+  assert.ok(text.toLowerCase().includes('huyết áp tâm thu'));
+  const en=quiz.translate(b,vi,'en');assert.deepEqual(en.option_ids,vi.option_ids);
+  assert.deepEqual(quiz.translate(b,en,'vi'),vi);
+}
 {
   const b=JSON.parse(JSON.stringify(briefings.find(b=>b.id==='ebm-2026-07-26-p1-hist3'))),q=quiz.build(b,1,1,'en');
   assert.ok(q.options.find(o=>o.key===q.correct_key).text.includes('PATHWAY-2'));
@@ -61,6 +69,7 @@ for (const grade of ['1','2','3a','3b','3c','4','5']) for (const lang of ['vi','
       const q=quiz.build(b,1,variant,lang,'hard');
       if (!q.options.find(o=>o.key===q.correct_key).text.startsWith('TWILIGHT:')) continue;
       const baseline=q.options.find(o=>o.key===q.correct_key).text.replace(/HR [0-9.,]+/g,'HR #');
+      if (lang==='vi') assert.ok(baseline.includes('Chảy máu BARC loại 2, 3 hoặc 5 (tháng 3–15)'));
       for (const o of q.options) {
         assert.equal(o.text.replace(/HR [0-9.,]+/g,'HR #'),baseline);
         for (const m of o.text.matchAll(/BARC\s+(?:Type\s+)?([0-9abc ,/]+(?:or\s+\d+)?)/g)) {

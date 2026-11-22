@@ -4,6 +4,10 @@ import unicodedata
 
 
 ENDPOINT_VI = {
+    '6-Month Office SBP Change vs. Sham Procedure': 'Thay đổi huyết áp tâm thu tại phòng khám sau 6 tháng so với thủ thuật giả',
+    'Home SBP Reduction: Spironolactone vs. Placebo': 'Mức giảm huyết áp tâm thu tại nhà: spironolactone so với giả dược',
+    '2-Month Daytime Ambulatory SBP vs. Sham': 'Huyết áp tâm thu lưu động ban ngày sau 2 tháng so với thủ thuật giả',
+    'BARC Type 2, 3, or 5 Bleeding (Months 3–15)': 'Chảy máu BARC loại 2, 3 hoặc 5 (tháng 3–15)',
     'CV Death or First HF Hospitalization': 'Tử vong tim mạch hoặc nhập viện suy tim lần đầu',
     'Worsening HF or Cardiovascular Death': 'Suy tim nặng lên hoặc tử vong tim mạch',
     'Total Worsening HF Events & Cardiovascular Death': 'Tổng số biến cố suy tim nặng lên và tử vong tim mạch',
@@ -142,7 +146,7 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
                 wrong = (f'{name}: The primary endpoint was “{other_label}” ({value}).' if en else
                          f'{name}: Tiêu chí chính là “{other_label}” ({value}).')
                 reason = (f'“{other_endpoint}” belongs to {other.get("name")}; {name} reports “{endpoint}”.' if en else
-                          f'“{other_endpoint}” là tiêu chí của {other.get("name")}; {name} báo cáo “{endpoint}”.')
+                          f'“{other_label}” là tiêu chí của {other.get("name")}; {name} báo cáo “{label}”.')
                 distractors.append(('endpoint', wrong, reason, 'endpoint:' + trial_id(other)))
             if other is not t and endpoint and clean(other.get('value')) and other.get('value') != value:
                 wrong = f'{other.get("name")}: {claim}'

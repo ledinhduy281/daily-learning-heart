@@ -1,6 +1,10 @@
 /* Source-bound mirror of clinical_distractors.py. */
 const ClinicalDistractors = (() => {
   const endpointVi={
+    '6-Month Office SBP Change vs. Sham Procedure':'Thay đổi huyết áp tâm thu tại phòng khám sau 6 tháng so với thủ thuật giả',
+    'Home SBP Reduction: Spironolactone vs. Placebo':'Mức giảm huyết áp tâm thu tại nhà: spironolactone so với giả dược',
+    '2-Month Daytime Ambulatory SBP vs. Sham':'Huyết áp tâm thu lưu động ban ngày sau 2 tháng so với thủ thuật giả',
+    'BARC Type 2, 3, or 5 Bleeding (Months 3–15)':'Chảy máu BARC loại 2, 3 hoặc 5 (tháng 3–15)',
     'CV Death or First HF Hospitalization':'Tử vong tim mạch hoặc nhập viện suy tim lần đầu',
     'Worsening HF or Cardiovascular Death':'Suy tim nặng lên hoặc tử vong tim mạch',
     'Total Worsening HF Events & Cardiovascular Death':'Tổng số biến cố suy tim nặng lên và tử vong tim mạch',
@@ -75,7 +79,7 @@ const ClinicalDistractors = (() => {
         if (other!==t && endpointSignature(endpoint) && endpointSignature(otherEndpoint) && endpointSignature(otherEndpoint)!==endpointSignature(endpoint)) {
           const otherLabel=en?otherEndpoint:(endpointVi[otherEndpoint]||otherEndpoint);
           const wrong=en?`${name}: The primary endpoint was “${otherLabel}” (${value}).`:`${name}: Tiêu chí chính là “${otherLabel}” (${value}).`;
-          const reason=en?`“${otherEndpoint}” belongs to ${other.name}; ${name} reports “${endpoint}”.`:`“${otherEndpoint}” là tiêu chí của ${other.name}; ${name} báo cáo “${endpoint}”.`;
+          const reason=en?`“${otherEndpoint}” belongs to ${other.name}; ${name} reports “${endpoint}”.`:`“${otherLabel}” là tiêu chí của ${other.name}; ${name} báo cáo “${label}”.`;
           distractors.push(['endpoint',wrong,reason,'endpoint:'+trialId(other)]);
         }
         if (other!==t && endpoint && clean(other.value) && other.value!==value) {

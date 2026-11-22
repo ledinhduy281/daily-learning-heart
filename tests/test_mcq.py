@@ -7,6 +7,26 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_hypertension_and_twilight_endpoints_are_localized_in_choices_and_reasons(self):
+        from clinical_mcq import build_mcq, translate_mcq
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-07-26-p1-hist3')
+        for variant in range(3):
+            for difficulty in ('easy', 'normal', 'hard'):
+                vi = build_mcq(b, 1, variant, 'vi', difficulty)
+                text = ' '.join(o['text'] for o in vi['options']) + vi['explanation']
+                self.assertNotRegex(text, r'Home SBP|Office SBP|Ambulatory|Reduction|Placebo|Sham')
+                self.assertIn('huyết áp tâm thu', text.lower())
+                en = translate_mcq(b, vi, 'en')
+                self.assertEqual(en['option_ids'], vi['option_ids'])
+                self.assertEqual(translate_mcq(b, en, 'vi'), vi)
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-11-19-p4-main')
+        for variant in range(3):
+            vi = build_mcq(b, 1, variant, 'vi', 'hard')
+            correct = next(o['text'] for o in vi['options'] if o['key'] == vi['correct_key'])
+            if correct.startswith('TWILIGHT:'):
+                self.assertIn('Chảy máu BARC loại 2, 3 hoặc 5 (tháng 3–15)', correct)
+                self.assertNotIn('Bleeding', vi['explanation'])
+
     def test_every_question_source_translates_both_directions(self):
         from clinical_distractors import rich_cards
         from clinical_mcq import alternatives, build_mcq, translate_mcq
