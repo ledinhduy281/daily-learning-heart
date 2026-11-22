@@ -47,6 +47,11 @@ contain user-entered chat text: do not put sensitive information in them.
 
 Profiles are capped at 256 KiB UTF-8. Mail is limited to 70/day (also checking the
 remaining Google quota), with 10-minute cooldowns per fingerprint and per ID.
+Chat's daily counter is stored in Script Properties by Vietnam calendar date,
+incremented under a lock before each provider call; older date counters are deleted.
+After updating `Chat.gs`, deploy a new web-app version to apply this counter.
+Browsers ask before syncing progress and saved chats. Users can pause or resume
+cloud sync in Profile; restoring an ID or requesting an email backup also opts in.
 Backup and restore requests return the same generic success message, including
 unknown addresses and cooldowns. Revision checks under a ScriptLock prevent
 concurrent devices overwriting unseen updates; clients merge and retry conflicts.
