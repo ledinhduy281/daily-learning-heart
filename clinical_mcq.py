@@ -2,7 +2,7 @@
 import re
 import unicodedata
 
-from clinical_distractors import is_trial, rich_cards
+from clinical_distractors import is_trial, rich_cards, numeric_targets
 
 
 def normalized(text):
@@ -10,22 +10,15 @@ def normalized(text):
     return re.sub(r'\W+', ' ', ''.join(c for c in text if unicodedata.category(c) != 'Mn')).strip()
 
 
-def alternatives(text, numeric_only=False):
+def alternatives(text, numeric_only=False, target=None):
     """Return one documented fact and three single-variable, plausible near misses."""
-    match = (re.search(r'\b(?:HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*([0-9]+(?:[.,][0-9]+)?)', text) or
-             re.search(r'\b(?:LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi)\s*[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)', text, re.I) or
-             re.search(r'([0-9]+(?:[.,][0-9]+)?)\s*%', text) or
-             re.search(r'([+-]?[0-9]+(?:[.,][0-9]+)?)\s*(?:mmHg|WU|mL/min|mmol/L|mg/dL)\b', text, re.I))
-    if not match:
-        match = None if numeric_only else re.search(r'\bClass\s+(IIa|IIb|III|II|I)\b', text, re.I)
-        if not match:
-            return None
-        start, end = match.span(1)
-        original = match.group(1)
+    target = target or next((t for t in numeric_targets(text) if t['numeric'] or not numeric_only), None)
+    if not target:
+        return None
+    start, end, original = target['start'], target['end'], target['value']
+    if not target['numeric']:
         replacements = [x for x in ['I', 'IIa', 'IIb', 'III'] if x.lower() != original.lower()][:3]
     else:
-        start, end = match.span(1)
-        original = match.group(1)
         number = float(original.replace(',', '.'))
         decimals = len(re.split('[.,]', original)[1]) if re.search('[.,]', original) else 0
         delta = 0.1 if number < 2 and decimals else (0.5 if decimals and number < 10 else (5 if number >= 20 else 1))
@@ -55,6 +48,14 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
     for pearl in primary.get('pearls') or []:
         pools[2].append((primary.get('title_' + suffix, ''), pearl.get('text_' + suffix, '')))
 
+    peer_suffix = 'vi' if en else 'en'
+    peer_facts = [
+        [s.get('desc_' + peer_suffix, '') for s in ge.get('steps') or []],
+        [(f'Kết quả được báo cáo là {t.get("value") or ""}.' if en else f'The reported result is {t.get("value") or ""}.') for t in trials if t.get('value')],
+        [p.get('text_' + peer_suffix, '') for p in primary.get('pearls') or []],
+        [t.get('caution_' + peer_suffix, '') for t in trials],
+    ]
+
     slot = int(slot_idx) % 4
     candidates = []
     for source, fact, pool_idx, entry_idx in [(s, f, i, j) for i in (slot, 1, 0, 2, 3) for j, (s, f) in enumerate(pools[i])]:
@@ -63,9 +64,14 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
             continue
         if any(phrase in normalized(fact) for phrase in ('khong duoc dung', 'khong ngung', 'khong dung cac thuoc', 'never withdraw', 'never discontinue', 'do not stop')):
             continue
-        variants = alternatives(fact)
+        peer = ' '.join(str(peer_facts[pool_idx][entry_idx] or '').split())
+        local_targets = {t['id']: t for t in numeric_targets(fact)}
+        remote_targets = {t['id']: t for t in numeric_targets(peer)}
+        canonical = local_targets if en else remote_targets
+        shared = [local_targets[i] for i in canonical if i in local_targets and i in remote_targets]
+        variants = alternatives(fact, target=shared[0]) if shared else None
         if variants and len({normalized(t) for t, _ in variants}) == 4:
-            candidates.append((source, variants, pool_idx, f'fact:{pool_idx}:{entry_idx}'))
+            candidates.append((source, variants, pool_idx, f'fact:{pool_idx}:{entry_idx}', shared))
     subskill_idx = None
     selected_id = 'appraisal'
     if not candidates:
@@ -83,7 +89,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
                    [texts[0], 'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.', 'Kết luận tóm tắt không đủ để xác định liều.', 'Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'])
     else:
         available = [c for c in candidates if c[3] == source_id] if source_id else candidates
-        source, variants, subskill_idx, selected_id = (available or candidates)[int(variant_idx) % len(available or candidates)]
+        source, variants, subskill_idx, selected_id, shared = (available or candidates)[int(variant_idx) % len(available or candidates)]
         question = (f'According to {source}, which statement is correct?' if en else
                     f'Theo {source}, nhận định nào đúng?')
         texts = [t for t, _ in variants]
@@ -98,8 +104,10 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
     required = sorted({0 if c['kind'] == 'guideline' else 1 for c in cards} if cards else {c[2] for c in candidates})
     preferred = [c for c in cards if c['kind'] == ('guideline' if slot == 0 else 'trial')]
     available = [c for c in cards if c['source_id'] == source_id] if source_id else (preferred or cards)
+    hard_choices = None
     if available:
         card = available[int(variant_idx) % len(available)]
+        hard_choices = card['hard_choices']
         selected_id = card['source_id']
         kind = card['kind']
         subskill_idx = 0 if kind == 'guideline' else 1
@@ -107,7 +115,13 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
     if source_id and selected_id != source_id:
         return None
     if difficulty == 'hard':
-        variants = alternatives(texts[0], numeric_only=True)
+        target = next((t for t in shared if t['numeric']), None) if candidates else None
+        variants = alternatives(texts[0], target=target) if hard_choices is None and target else None
+        if hard_choices:
+            texts = [texts[0]] + [c[1] for c in hard_choices]
+            reasons = [reasons[0]] + [c[2] for c in hard_choices]
+            types = ['correct'] + [c[0] for c in hard_choices]
+            choice_ids = ['correct'] + [c[3] for c in hard_choices]
         if variants and len({normalized(t) for t, _ in variants}) == 4:
             texts = [t for t, _ in variants]
             reasons = [reasons[0]] + [(f'The reported parameter is {variants[0][1]}, not {r}.' if en else

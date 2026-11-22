@@ -12,6 +12,28 @@ const ClinicalDistractors = (() => {
     '12-Month Freedom from Procedural Failure, AT/AF Recurrence, AAD, or Repeat Ablation':'Không thất bại thủ thuật, tái phát nhịp nhanh nhĩ/rung nhĩ, dùng thuốc chống loạn nhịp hoặc triệt đốt lại trong 12 tháng'
   };
   const isTrial=t=>!/guideline|consensus|\bClass\s+[IV]/i.test(['name','value','p'].map(k=>t[k]||'').join(' ')) && /(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)/i.test(t.value||'');
+  function numericTargets(text,sharedValue=null,includeDuplicates=false) {
+    const number='([+-]?[0-9]+(?:[.,][0-9]+)?)';
+    const patterns=[
+      [new RegExp('\\b(HR|RR|OR|Win Ratio)\\s*(?:=|:)?\\s*'+number,'g'),2,null],
+      [new RegExp('\\b(LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\\s*II)\\s*[<>≤≥]=?\\s*'+number,'gi'),2,null],
+      [new RegExp('[<>≤≥]=?\\s*'+number+'\\s*(?:years?|tuổi)\\b','gi'),1,'age'],
+      [new RegExp(number+'\\s*(mmHg|WU|mL/min|mmol/L|mg/dL)\\b','gi'),1,null],
+      [new RegExp(number+'\\s*%','g'),1,'percent'],
+      [/\bClass\s+(IIa|IIb|III|II|I)\b/gi,1,'class']
+    ];
+    const result=[],spans=new Set();
+    for(const [pattern,group,field] of patterns)for(const m of text.matchAll(pattern)) {
+      const start=m.index+m[0].lastIndexOf(m[group]),end=start+m[group].length,span=`${start}:${end}`;
+      if(spans.has(span))continue;
+      let label=field||m[group===2?1:2].toLowerCase().replace(/ /g,'');
+      label=({ef:'lvef',aged:'age','tuổi':'age'})[label]||label;
+      if(label==='percent'&&sharedValue!==null) {const offset=text.lastIndexOf(sharedValue);if(offset<0||!(offset<=start&&start<offset+sharedValue.length))continue;}
+      const original=m[group],value=label==='class'?original.toLowerCase():Number(original.replace(',','.')).toFixed(12).replace(/0+$/,'').replace(/\.$/,'');
+      result.push({id:`${label}:${value}`,start,end,value:original,numeric:label!=='class'});spans.add(span);
+    }
+    return includeDuplicates?result:result.filter((t,i)=>result.findIndex(other=>other.id===t.id)===i);
+  }
   function cards(primary,lang,numericAlternatives,paired=true) {
     const en=lang==='en',suffix=en?'en':'vi',trials=(primary.landmark_trials||[]).filter(isTrial),steps=primary.guideline_evolution?.steps||[],result=[];
     const trialId=t=>String(t.id||t.doi||t.pmid||(primary.landmark_trials||[]).indexOf(t));
@@ -40,14 +62,21 @@ const ClinicalDistractors = (() => {
       const patterns=[['death',/death|mortality|mace/i],['stroke',/stroke|mace/i],['mi',/infarction|\bmi\b|mace/i],['hf',/\bhf\b|heart failure/i],['bleeding',/bleed|barc/i],['function',/pvo2|functional|oxygen uptake/i],['quality',/kccq|quality/i],['rhythm',/af recurrence|procedural failure|ablation/i],['renal',/renal|kidney/i],['septal',/septal/i],['bp',/blood pressure|mmhg/i]];
       return patterns.filter(([,p])=>p.test(label)).map(([key])=>key).join(',');
     }
-    function finish(kind,question,correct,source,distractors,sourceId='guideline') {
+    function finish(kind,question,correct,source,distractors,sourceId='guideline',sharedValue='') {
       if (!correct) return;
       correct=clean(correct).replace(/[.!?]+$/,'')+'.';
       const candidates=distractors.filter(([,text])=>clean(text)).map(([typ,text,reason,identity])=>[typ,clean(text).replace(/[.!?]+$/,'')+'.',reason,identity]);
-      const variants=numericAlternatives(correct);
-      if (variants) for (const [idx,[text,parameter]] of variants.slice(1).entries()) {
-        const reason=en?`The reported parameter is ${variants[0][1]}, not ${parameter}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${parameter}.`;
-        candidates.push(['numeric',text,reason,`numeric:${idx}`]);
+      const groups={};
+      for(const target of numericTargets(correct,sharedValue)) {
+        const variants=numericAlternatives(correct,false,target);if(!variants)continue;
+        const identities=[];
+        for (const [idx,[text,parameter]] of variants.slice(1).entries()) {
+          const reason=en?`The reported parameter is ${variants[0][1]}, not ${parameter}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${parameter}.`;
+          const changed=target.numeric?Number(parameter.replace(',','.')).toFixed(12).replace(/0+$/,'').replace(/\.$/,''):parameter.toLowerCase();
+          const identity=`numeric:${target.id}:to:${changed}`;
+          candidates.push(['numeric',text,reason,identity]);identities.push(identity);
+        }
+        if(target.numeric)groups[target.id]=identities;
       }
       const chosen=[],seen=new Set([normalized(correct)]);
       for (const distinct of [true,false]) {
@@ -59,7 +88,7 @@ const ClinicalDistractors = (() => {
         if (chosen.length===3) break;
       }
       if (chosen.length!==3) return;
-      result.push({kind,source_id:sourceId,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])],choice_ids:['correct',...chosen.map(x=>x[3])],candidates});
+      result.push({kind,source_id:sourceId,question,texts:[correct,...chosen.map(x=>x[1])],reasons:[correct.startsWith(`${source}: `)?correct:`${source}: ${correct}`,...chosen.map(x=>x[2])],types:['correct',...chosen.map(x=>x[0])],choice_ids:['correct',...chosen.map(x=>x[3])],candidates,numeric_groups:groups});
     }
     for (const t of trials) {
       const name=t.name||'',value=clean(t.value),fact=clean(t['changes_'+suffix]),endpoint=clean(t.endpoint_label);
@@ -91,7 +120,7 @@ const ClinicalDistractors = (() => {
       distractors.push(...traps);
       let question=en?'Which statement about trial evidence and its clinical application is correct?':'Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
       if (/\bHFpEF\b/.test(fact) && !fact.includes('HFrEF')) question=en?'A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?':'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?';
-      finish('trial',question,correct,name,distractors,'trial:'+trialId(t));
+      finish('trial',question,correct,name,distractors,'trial:'+trialId(t),value);
     }
     if (steps.length>=2) {
       const old=steps[0],current=steps[steps.length-1],oldEra=old['era_label_'+suffix]||'',currentEra=current['era_label_'+suffix]||'';
@@ -111,9 +140,11 @@ const ClinicalDistractors = (() => {
     const matched=[];
     for (const card of result) {
       const peer=peers.get(card.source_id);
-      if (!peer) {delete card.candidates;matched.push(card);continue;}
+      if (!peer) {const ids=Object.values(card.numeric_groups)[0]||[],byId=new Map(card.candidates.map(c=>[c[3],c]));card.hard_choices=ids.map(i=>byId.get(i));delete card.candidates;matched.push(card);continue;}
       const local=new Map(card.candidates.map(c=>[c[3],c])),remote=new Map(peer.candidates.map(c=>[c[3],c]));
       const canonical=en?card:peer,selected=[],seenLocal=new Set([normalized(card.texts[0])]),seenRemote=new Set([normalized(peer.texts[0])]);
+      card.hard_choices=[];
+      for(const identities of Object.values(canonical.numeric_groups))if(identities.every(i=>local.has(i)&&remote.has(i))){card.hard_choices=identities.map(i=>local.get(i));break;}
       for (const distinct of [true,false]) {
         for (const [typ,,,identity] of canonical.candidates) {
           if (!local.has(identity)||!remote.has(identity)||selected.includes(identity)) continue;
@@ -131,6 +162,6 @@ const ClinicalDistractors = (() => {
     }
     return matched;
   }
-  return {cards,isTrial};
+  return {cards,isTrial,numericTargets};
 })();
 if (typeof module!=='undefined') module.exports=ClinicalDistractors;

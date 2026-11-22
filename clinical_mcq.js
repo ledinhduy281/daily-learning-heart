@@ -2,21 +2,20 @@
 const ClinicalQuiz = (() => {
   const distractors = typeof module !== 'undefined' ? require('./clinical_distractors.js') : ClinicalDistractors;
   const normalized = s => String(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
-  function alternatives(text,numericOnly=false) {
-    let m=text.match(/\b(?:HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*([0-9]+(?:[.,][0-9]+)?)/) || text.match(/\b(?:LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi)\s*[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)/i) || text.match(/([0-9]+(?:[.,][0-9]+)?)\s*%/) || text.match(/([+-]?[0-9]+(?:[.,][0-9]+)?)\s*(?:mmHg|WU|mL\/min|mmol\/L|mg\/dL)\b/i), replacements;
-    if (!m) {
-      m=numericOnly?null:text.match(/\bClass\s+(IIa|IIb|III|II|I)\b/i);
-      if (!m) return null;
-      replacements=['I','IIa','IIb','III'].filter(x=>x.toLowerCase()!==m[1].toLowerCase()).slice(0,3);
+  function alternatives(text,numericOnly=false,target=null) {
+    target=target||distractors.numericTargets(text).find(t=>t.numeric||!numericOnly);
+    if(!target)return null;
+    const {start,end,value:original}=target;let replacements;
+    if (!target.numeric) {
+      replacements=['I','IIa','IIb','III'].filter(x=>x.toLowerCase()!==original.toLowerCase()).slice(0,3);
     }
     else {
-      const number=Number(m[1].replace(',','.')), decimals=(m[1].split(/[.,]/)[1]||'').length;
+      const number=Number(original.replace(',','.')), decimals=(original.split(/[.,]/)[1]||'').length;
       const delta=number<2 && decimals ? 0.1 : (decimals && number<10 ? 0.5 : (number>=20 ? 5 : 1));
       const offsets=number>=85?[-1,-2,-3]:(number>delta?[-1,1,2]:[1,2,3]);
-      replacements=offsets.map(i=>(number+delta*i).toFixed(decimals).replace('.',m[1].includes(',') ? ',' : '.'));
+      replacements=offsets.map(i=>(number+delta*i).toFixed(decimals).replace('.',original.includes(',') ? ',' : '.'));
     }
-    const start=m.index+m[0].lastIndexOf(m[1]), end=start+m[1].length;
-    return [[text,m[1]],...replacements.map(r=>[text.slice(0,start)+r+text.slice(end),r])];
+    return [[text,original],...replacements.map(r=>[text.slice(0,start)+r+text.slice(end),r])];
   }
   function build(primary,slotIdx,variantIdx,lang,difficulty='normal',sourceId=null) {
     const en=lang==='en', suffix=en?'en':'vi', pools=[[],[],[],[]];
@@ -26,22 +25,28 @@ const ClinicalQuiz = (() => {
       pools[3].push([t.name||'',t['caution_'+suffix]||'']);
     }
     for (const p of primary.pearls || []) pools[2].push([primary['title_'+suffix]||'',p['text_'+suffix]||'']);
+    const peerSuffix=en?'vi':'en',trials=(primary.landmark_trials||[]).filter(distractors.isTrial);
+    const peerFacts=[(primary.guideline_evolution?.steps||[]).map(s=>s['desc_'+peerSuffix]||''),trials.filter(t=>t.value).map(t=>en?`Kết quả được báo cáo là ${t.value}.`:`The reported result is ${t.value}.`),(primary.pearls||[]).map(p=>p['text_'+peerSuffix]||''),trials.map(t=>t['caution_'+peerSuffix]||'')];
     const candidates=[];
     for (const [source,raw,poolIdx,entryIdx] of [slotIdx%4,1,0,2,3].flatMap(i=>pools[i].map(([s,f],j)=>[s,f,i,j]))) {
       const fact=String(raw||'').split(/\s+/).join(' ').trim();
       if (!fact || fact.includes('...') || fact.includes('…')) continue;
       if (['khong duoc dung','khong ngung','khong dung cac thuoc','never withdraw','never discontinue','do not stop'].some(p=>normalized(fact).includes(p))) continue;
-      const variants=alternatives(fact);
-      if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) candidates.push([source,variants,poolIdx,`fact:${poolIdx}:${entryIdx}`]);
+      const peer=String(peerFacts[poolIdx][entryIdx]||'').split(/\s+/).join(' ').trim();
+      const local=new Map(distractors.numericTargets(fact).map(t=>[t.id,t])),remote=new Map(distractors.numericTargets(peer).map(t=>[t.id,t]));
+      const shared=[...(en?local:remote).keys()].filter(id=>local.has(id)&&remote.has(id)).map(id=>local.get(id));
+      const variants=shared.length?alternatives(fact,false,shared[0]):null;
+      if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) candidates.push([source,variants,poolIdx,`fact:${poolIdx}:${entryIdx}`,shared]);
     }
-    let question,texts,reasons,subskillIdx=null,selectedId='appraisal';
+    let question,texts,reasons,subskillIdx=null,selectedId='appraisal',shared=[];
     if (!candidates.length) {
       question=en?'A briefing lacks the trial population and safety criteria. What is the best next step before applying its result?':'Bản tin chưa nêu quần thể nghiên cứu và tiêu chí an toàn. Cần làm gì trước khi áp dụng kết quả?';
       texts=en?['Check the full report for eligibility criteria and safety exclusions.','Use the effect estimate from another trial in the same drug class.','Use the abstract conclusion to set the starting dose.','Infer eligibility from the trial title.']:['Đối chiếu báo cáo đầy đủ về tiêu chuẩn chọn bệnh và tiêu chí loại trừ vì an toàn.','Dùng ước lượng hiệu quả từ thử nghiệm khác của cùng nhóm thuốc.','Dựa vào kết luận tóm tắt để chọn liều khởi đầu.','Suy ra tiêu chuẩn chọn bệnh từ tên thử nghiệm.'];
       reasons=en?[texts[0],'An effect estimate does not establish eligibility.','A conclusion alone does not establish dosing.','A title does not define eligibility.']:[texts[0],'Ước lượng hiệu quả không xác định tiêu chuẩn chọn bệnh.','Kết luận tóm tắt không đủ để xác định liều.','Tên thử nghiệm không xác định tiêu chuẩn chọn bệnh.'];
     } else {
       const filtered=sourceId?candidates.filter(c=>c[3]===sourceId):candidates,available=filtered.length?filtered:candidates;
-      const [source,variants,idx,id]=available[variantIdx%available.length];
+      const [source,variants,idx,id,targets]=available[variantIdx%available.length];
+      shared=targets;
       selectedId=id;
       subskillIdx=idx;
       question=en?`According to ${source}, which statement is correct?`:`Theo ${source}, nhận định nào đúng?`;
@@ -54,8 +59,10 @@ const ClinicalQuiz = (() => {
     const cards=distractors.cards(primary,lang,alternatives),preferred=cards.filter(c=>c.kind===(slotIdx%4===0?'guideline':'trial'));
     const required=[...new Set(cards.length?cards.map(c=>c.kind==='guideline'?0:1):candidates.map(c=>c[2]))].sort();
     const available=sourceId?cards.filter(c=>c.source_id===sourceId):(preferred.length?preferred:cards);
+    let hardChoices=null;
     if (available.length) {
       const card=available[variantIdx%available.length];
+      hardChoices=card.hard_choices;
       selectedId=card.source_id;
       kind=card.kind;
       subskillIdx=kind==='guideline'?0:1;
@@ -64,7 +71,11 @@ const ClinicalQuiz = (() => {
     }
     if (sourceId && selectedId!==sourceId) return null;
     if (difficulty==='hard') {
-      const variants=alternatives(texts[0],true);
+      const target=shared.find(t=>t.numeric),variants=hardChoices===null&&target?alternatives(texts[0],false,target):null;
+      if(hardChoices?.length) {
+        texts=[texts[0],...hardChoices.map(c=>c[1])];reasons=[reasons[0],...hardChoices.map(c=>c[2])];
+        types=['correct',...hardChoices.map(c=>c[0])];choiceIds=['correct',...hardChoices.map(c=>c[3])];
+      }
       if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) {
         texts=variants.map(([t])=>t);
         reasons=[reasons[0],...variants.slice(1).map(([,r])=>en?`The reported parameter is ${variants[0][1]}, not ${r}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${r}.`)];

@@ -22,6 +22,35 @@ def is_trial(entry):
             and bool(re.search(r'(?:HR|RR|OR|Win Ratio)\s+\d|\d\s*(?:%|mmHg|mL|points|pts)', str(entry.get('value') or ''), re.I)))
 
 
+def numeric_targets(text, shared_value=None, include_duplicates=False):
+    number = r'([+-]?[0-9]+(?:[.,][0-9]+)?)'
+    patterns = [
+        (r'\b(HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*' + number, 2, None, 0),
+        (r'\b(LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi|STS(?:-PROM)?|EuroSCORE\s*II)\s*[<>≤≥]=?\s*' + number, 2, None, re.I),
+        (r'[<>≤≥]=?\s*' + number + r'\s*(?:years?|tuổi)\b', 1, 'age', re.I),
+        (number + r'\s*(mmHg|WU|mL/min|mmol/L|mg/dL)\b', 1, None, re.I),
+        (number + r'\s*%', 1, 'percent', 0),
+        (r'\bClass\s+(IIa|IIb|III|II|I)\b', 1, 'class', re.I),
+    ]
+    result, spans = [], set()
+    for pattern, group, field, flags in patterns:
+        for match in re.finditer(pattern, text, flags):
+            start, end = match.span(group)
+            if (start, end) in spans:
+                continue
+            label = field or match.group(1 if group == 2 else 2).lower().replace(' ', '')
+            label = {'ef': 'lvef', 'aged': 'age', 'tuổi': 'age'}.get(label, label)
+            if label == 'percent' and shared_value is not None:
+                offset = text.rfind(shared_value)
+                if offset < 0 or not offset <= start < offset + len(shared_value):
+                    continue
+            original = match.group(group)
+            value = original.lower() if label == 'class' else f"{float(original.replace(',', '.')):.12f}".rstrip('0').rstrip('.')
+            result.append({'id': f'{label}:{value}', 'start': start, 'end': end, 'value': original, 'numeric': label != 'class'})
+            spans.add((start, end))
+    return result if include_duplicates else [t for i, t in enumerate(result) if not any(p['id'] == t['id'] for p in result[:i])]
+
+
 def rich_cards(primary, lang, numeric_alternatives, paired=True):
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
@@ -89,18 +118,27 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
                     ('renal', r'renal|kidney'), ('septal', r'septal'), ('bp', r'blood pressure|mmhg')]
         return {key for key, pattern in patterns if re.search(pattern, label, re.I)}
 
-    def finish(kind, question, correct, source, distractors, source_id='guideline'):
+    def finish(kind, question, correct, source, distractors, source_id='guideline', shared_value=''):
         if not correct:
             return
         correct = clean(correct).rstrip('.!?') + '.'
         candidates = [(typ, clean(text).rstrip('.!?') + '.', reason, identity)
                       for typ, text, reason, identity in distractors if clean(text)]
-        variants = numeric_alternatives(correct)
-        if variants:
+        groups = {}
+        for target in numeric_targets(correct, shared_value):
+            variants = numeric_alternatives(correct, target=target)
+            if not variants:
+                continue
+            identities = []
             for idx, (text, parameter) in enumerate(variants[1:]):
                 reason = (f'The reported parameter is {variants[0][1]}, not {parameter}.' if en else
                           f'Thông số được báo cáo là {variants[0][1]}, không phải {parameter}.')
-                candidates.append(('numeric', text, reason, f'numeric:{idx}'))
+                changed = f"{float(parameter.replace(',', '.')):.12f}".rstrip('0').rstrip('.') if target['numeric'] else parameter.lower()
+                identity = f"numeric:{target['id']}:to:{changed}"
+                candidates.append(('numeric', text, reason, identity))
+                identities.append(identity)
+            if target['numeric']:
+                groups[target['id']] = identities
         chosen = []
         seen = {normalized(correct)}
         for distinct in (True, False):
@@ -117,7 +155,7 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
             return
         cards.append({'kind': kind, 'source_id': source_id, 'question': question, 'texts': [correct] + [x[1] for x in chosen],
                       'reasons': [correct if correct.startswith(f'{source}: ') else f'{source}: {correct}'] + [x[2] for x in chosen],
-                      'types': ['correct'] + [x[0] for x in chosen], 'choice_ids': ['correct'] + [x[3] for x in chosen], 'candidates': candidates})
+                      'types': ['correct'] + [x[0] for x in chosen], 'choice_ids': ['correct'] + [x[3] for x in chosen], 'candidates': candidates, 'numeric_groups': groups})
 
     for t in trials:
         name, value = t.get('name', ''), clean(t.get('value'))
@@ -159,7 +197,7 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
         if re.search(r'\bHFpEF\b', fact) and 'HFrEF' not in fact:
             question = ('A patient has HFpEF (LVEF 55%). Which statement about trial evidence and its clinical application is correct?' if en else
                         'Bệnh nhân suy tim EF 55%. Nhận định nào đúng về chứng cứ thử nghiệm và ứng dụng lâm sàng?')
-        finish('trial', question, correct, name, distractors, 'trial:' + trial_id(t))
+        finish('trial', question, correct, name, distractors, 'trial:' + trial_id(t), value)
 
     if len(steps) >= 2:
         old, current = steps[0], steps[-1]
@@ -184,12 +222,20 @@ def rich_cards(primary, lang, numeric_alternatives, paired=True):
     for card in cards:
         peer = peers.get(card['source_id'])
         if not peer:
+            numeric_ids = next(iter(card['numeric_groups'].values()), [])
+            by_id = {c[3]: c for c in card['candidates']}
+            card['hard_choices'] = [by_id[i] for i in numeric_ids]
             card.pop('candidates')
             result.append(card)
             continue
         local = {c[3]: c for c in card['candidates']}
         remote = {c[3]: c for c in peer['candidates']}
         canonical = card if en else peer
+        card['hard_choices'] = []
+        for identities in canonical['numeric_groups'].values():
+            if all(i in local and i in remote for i in identities):
+                card['hard_choices'] = [local[i] for i in identities]
+                break
         selected, seen_local, seen_remote = [], {normalized(card['texts'][0])}, {normalized(peer['texts'][0])}
         for distinct in (True, False):
             for typ, _, _, identity in canonical['candidates']:

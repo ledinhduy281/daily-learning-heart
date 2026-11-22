@@ -28,20 +28,29 @@ class ClinicalMcqTests(unittest.TestCase):
                 self.assertNotIn('Bleeding', vi['explanation'])
 
     def test_every_question_source_translates_both_directions(self):
-        from clinical_distractors import rich_cards
+        from clinical_distractors import rich_cards, numeric_targets
         from clinical_mcq import alternatives, build_mcq, translate_mcq
         for b in self.briefings + [{}]:
             for lang in ('vi', 'en'):
                 cards = rich_cards(b, lang, alternatives)
                 for i, card in enumerate(cards or [None]):
-                    q = build_mcq(b, 0 if card and card['kind'] == 'guideline' else 1, i, lang,
-                                 source_id=card['source_id'] if card else None)
-                    translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
-                    self.assertIsNotNone(translated, (b.get('id'), q['generation']))
-                    self.assertEqual(q['generation'], translated['generation'])
-                    self.assertEqual(q['option_ids'], translated['option_ids'])
-                    self.assertEqual(q['distractor_types'], translated['distractor_types'])
-                    self.assertEqual(q, translate_mcq(b, translated, lang))
+                    for difficulty in ('easy', 'normal', 'hard'):
+                        q = build_mcq(b, 0 if card and card['kind'] == 'guideline' else 1, i, lang, difficulty,
+                                     source_id=card['source_id'] if card else None)
+                        translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
+                        self.assertIsNotNone(translated, (b.get('id'), q['generation']))
+                        self.assertEqual(q['generation'], translated['generation'])
+                        self.assertEqual(q['option_ids'], translated['option_ids'])
+                        self.assertEqual(q['distractor_types'], translated['distractor_types'])
+                        def changes(question, key):
+                            from collections import Counter
+                            correct = next(o['text'] for o in question['options'] if o['key'] == question['correct_key'])
+                            option = next(o['text'] for o in question['options'] if o['key'] == key)
+                            return Counter(t['id'] for t in numeric_targets(option, include_duplicates=True)) - Counter(t['id'] for t in numeric_targets(correct, include_duplicates=True))
+                        for key, identity in q['option_ids'].items():
+                            if identity.startswith('numeric:'):
+                                self.assertEqual(changes(q, key), changes(translated, key), (b.get('id'), identity))
+                        self.assertEqual(q, translate_mcq(b, translated, lang))
         b = copy.deepcopy(next(b for b in self.briefings if b['id'] == 'ebm-2026-07-26-p1-hist3'))
         q = build_mcq(b, 1, 1, 'en')
         self.assertIn('PATHWAY-2', next(o['text'] for o in q['options'] if o['key'] == q['correct_key']))
@@ -49,6 +58,17 @@ class ClinicalMcqTests(unittest.TestCase):
         translated = translate_mcq(b, q, 'vi')
         self.assertIsNotNone(translated)
         self.assertEqual(q['generation'], translated['generation'])
+
+    def test_tavr_and_pathway_hard_translate_the_same_numeric_field(self):
+        from clinical_mcq import build_mcq, translate_mcq
+        for bid, slot, variant, field in [('ebm-2026-09-15-p7-hist1', 0, 0, 'age:75'), ('ebm-2026-07-26-p1-hist3', 1, 1, 'mmhg:-8.7')]:
+            b = next(b for b in self.briefings if b['id'] == bid)
+            for lang in ('vi', 'en'):
+                q = build_mcq(b, slot, variant, lang, 'hard')
+                translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
+                self.assertIsNotNone(translated)
+                self.assertEqual(q['option_ids'], translated['option_ids'])
+                self.assertTrue(all(field in identity for key, identity in q['option_ids'].items() if key != q['correct_key']))
 
     def test_wrong_answer_letter_still_identifies_the_same_choice_after_translation(self):
         from clinical_mcq import build_mcq, translate_mcq

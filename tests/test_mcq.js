@@ -6,6 +6,13 @@ const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
+const {numericTargets}=require('../clinical_distractors.js');
+const parameterChanges=(q,key)=>{
+  const correct=q.options.find(o=>o.key===q.correct_key).text,option=q.options.find(o=>o.key===key).text;
+  const counts=text=>numericTargets(text,null,true).reduce((r,t)=>(r[t.id]=(r[t.id]||0)+1,r),{});
+  const baseline=counts(correct);
+  return Object.fromEntries(Object.entries(counts(option)).map(([id,n])=>[id,n-(baseline[id]||0)]).filter(([,n])=>n>0));
+};
 for (let variant=0;variant<3;variant++) for (const difficulty of ['easy','normal','hard']) {
   const b=briefings.find(b=>b.id==='ebm-2026-07-26-p1-hist3'),vi=quiz.build(b,1,variant,'vi',difficulty);
   const text=vi.options.map(o=>o.text).join(' ')+vi.explanation;
@@ -228,6 +235,19 @@ print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefi
 assert.equal(py.status,0,py.stderr);
 assert.deepEqual(generated,JSON.parse(py.stdout));
 const difficult=Array.from(briefings).concat({}).flatMap(b=>['vi','en'].flatMap(l=>['easy','hard'].map(d=>quiz.build(b,1,0,l,d))));
+for (const b of [...briefings,{}])for(const lang of ['vi','en'])for(const difficulty of ['easy','normal','hard'])for(let slot=0;slot<4;slot++)for(let variant=0;variant<4;variant++) {
+  const q=quiz.build(b,slot,variant,lang,difficulty),translated=quiz.translate(b,q,lang==='vi'?'en':'vi');
+  assert.ok(translated,`${b.id} ${JSON.stringify(q.generation)}`);
+  assert.deepEqual(translated.option_ids,q.option_ids);
+  for(const [key,id]of Object.entries(q.option_ids))if(id.startsWith('numeric:'))assert.deepEqual(parameterChanges(q,key),parameterChanges(translated,key),`${b.id} ${id}`);
+}
+for(const [id,slot,variant,field]of [['ebm-2026-09-15-p7-hist1',0,0,'age:75'],['ebm-2026-07-26-p1-hist3',1,1,'mmhg:-8.7']]) {
+  const b=briefings.find(b=>b.id===id);
+  for(const lang of ['vi','en']) {
+    const q=quiz.build(b,slot,variant,lang,'hard');assert.ok(quiz.translate(b,q,lang==='vi'?'en':'vi'));
+    assert.ok(Object.entries(q.option_ids).every(([key,value])=>key===q.correct_key||value.includes(field)));
+  }
+}
 const pyDifficult=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
 print(json.dumps([a._build_socratic_mcq(b,1,0,l,d) for b in a.load_existing_briefings()+[{}] for l in ('vi','en') for d in ('easy','hard')],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
 assert.equal(pyDifficult.status,0,pyDifficult.stderr);
