@@ -249,6 +249,19 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
     assert.deepEqual(JSON.parse(JSON.stringify(session[key])),second[key]);
   }
   assert.equal(generated,0);
+  for (const explanation of [undefined, '', '   ']) {
+    const legacy={...second,explanation,current_question:undefined};
+    tutor.store={1:legacy};
+    assert.equal(tutor.getSession().started,false);
+    assert.equal(generated,0);
+  }
+  const recoverable={...second,last_question:fresh.question,current_options:fresh.options,correct_key:fresh.correct_key,explanation:'',current_question:{...fresh,explanation:''}};
+  tutor.store={1:recoverable};
+  const restored=tutor.getSession();
+  assert.equal(restored.started,true);
+  assert.equal(restored.current_question.explanation,fresh.explanation);
+  assert.equal(restored.explanation,fresh.explanation);
+  assert.equal(require('../clinical_mcq.js').turn(app.selected,restored,'vi','answer','',fresh.correct_key).eval,'correct');
   for (const broken of [
     {...second,current_options:[...first.current_options,...second.current_options]},
     {...second,current_options:[]},

@@ -8372,6 +8372,22 @@
           } else if (hasPendingQuestion && hasValidChoices && !s.current_question) {
             s.current_question = { question: s.last_question, options: s.current_options, correct_key: s.correct_key, explanation: s.explanation };
           }
+          if (s.started && s.phase !== "mastered" && hasPendingQuestion && hasValidChoices) {
+            const matchesPending = q => q && q.question === s.last_question && q.correct_key === s.correct_key &&
+              JSON.stringify(this.normalizeMcqOptions(q.options)) === JSON.stringify(this.normalizeMcqOptions(s.current_options));
+            const hasExplanation = q => typeof q?.explanation === "string" && q.explanation.trim();
+            if (matchesPending(s.current_question) && !hasExplanation(s.current_question) && typeof s.explanation === "string" && s.explanation.trim()) {
+              s.current_question.explanation = s.explanation;
+            }
+            if (!matchesPending(s.current_question) || !hasExplanation(s.current_question)) {
+              const ref = s.current_question?.generation;
+              const restored = ref && briefing ? ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id) : null;
+              if (matchesPending(restored) && hasExplanation(restored)) s.current_question = restored;
+              else s.started = false;
+              this.saveStore();
+            }
+            if (s.started) s.explanation = s.current_question.explanation;
+          }
         }
         return this.store[key];
       },
