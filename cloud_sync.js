@@ -41,22 +41,27 @@ const CloudSync = (() => {
       if(profile.exportJSON()!==before)onMerged();
     }
     const meaningful=p=>p.read_ids.length||p.bookmarked_ids.length||Object.keys(p.progress).length;
+    function remember(target,data) {
+      baseline=data;
+      try {storage.setItem(BASE_KEY,JSON.stringify({userId:target,profile:data}));}catch(_){}
+    }
     async function exchange(target,adopt=false,force=false) {
       let remote=await request('pull',{userId:target});
-      const base=target===id?baseline:null;
+      let base=target===id?baseline:null;
       merge(remote.profile,base);
       if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';}
+      base=remote.profile;remember(target,base);
       for(let attempt=0;attempt<4;attempt++) {
         const text=profile.exportJSON(),data=JSON.parse(text);
         if(bytes(text)>MAX_BYTES)throw new Error('TOO_LARGE');
         if(!meaningful(data)&&!adopt&&!force)return;
         const result=await request('push',{userId:target,profile:data,revision:remote.revision});
         if(!result.conflict) {
-          lastSynced=text;baseline=data;
-          try {storage.setItem(BASE_KEY,JSON.stringify({userId:target,profile:data}));}catch(_){}
+          lastSynced=text;remember(target,data);
           status('SYNCED');return;
         }
         merge(result.profile,base);remote=result;
+        base=remote.profile;remember(target,base);
       }
       throw new Error('SYNC_CONFLICT');
     }

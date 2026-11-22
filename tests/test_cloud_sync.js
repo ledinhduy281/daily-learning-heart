@@ -8,7 +8,7 @@ class Storage {
 }
 async function main() {
   const records=new Map(),calls=[],statuses=[];
-  let poison=null,conflict=false;
+  let poison=null,conflict=false,conflicts=[];
   const fetch=async(url,options)=>{
     assert.equal(options.method,'POST');assert.equal(options.headers['Content-Type'],'text/plain');
     const q=JSON.parse(options.body);calls.push(q);let result={ok:true};
@@ -16,6 +16,7 @@ async function main() {
     if(q.action==='pull')result={...result,...row,profile:poison||row.profile};
     if(q.action==='confirm')result.confirmed=q.token==='a'.repeat(64);
     if(q.action==='push') {
+      if(conflicts.length) {conflicts.shift()(row.profile);row.revision++;records.set(q.userId,row);}
       if(conflict){conflict=false;row.revision++;row.profile.read_ids.push('concurrent');records.set(q.userId,row);}
       if(q.revision!==row.revision)result={...result,...row,conflict:true};
       else {records.set(q.userId,{profile:q.profile,revision:row.revision+1});result.revision=row.revision+1;}
@@ -101,6 +102,19 @@ async function main() {
     assert.ok(local.profile.read_ids.includes('another device'));
     assert.deepEqual(JSON.parse(local.get('ebm_socratic_state_v1')),{1:{correct_count:9},2:{correct_count:8}});
     assert.equal(merged,1);await sync.sync();assert.equal(merged,1);
+    local.set('ebm_theme','initial');await sync.sync();
+    const latest=records.get(sync.userId);
+    latest.revision++;latest.profile.progress.ebm_theme='first remote';latest.profile.bookmarked_ids.push('temporary remote bookmark');
+    local.rename('Keep this local rename');
+    conflicts=[
+      remote=>{remote.progress.ebm_theme='second remote';remote.bookmarked_ids=remote.bookmarked_ids.filter(id=>id!=='temporary remote bookmark');},
+      remote=>{remote.progress.ebm_theme='third remote';remote.read_ids.push('third remote read');}
+    ];
+    await sync.sync();
+    assert.equal(local.get('ebm_theme'),'third remote');
+    assert.equal(local.profile.display_name,'Keep this local rename');
+    assert.ok(!local.profile.bookmarked_ids.includes('temporary remote bookmark'));
+    assert.ok(local.profile.read_ids.includes('third remote read'));
     sync.stop();
     local.rename('After reload');local.activity(local.profile.read_ids,[]);
     sync=Cloud.create({profile:local,storage:localStorage,endpoint:'https://sync.test/exec',fetch});
