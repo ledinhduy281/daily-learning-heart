@@ -31,6 +31,15 @@ const storage = new Storage();
   assert.deepEqual(JSON.parse(a.exportJSON()).bookmarked_ids, ['b']);
 }
 calls = 0;
+{
+  const shared = new Storage(), first = create(shared, crypto), stale = create(shared, crypto);
+  first.activity(['shared'], ['shared']);
+  assert.deepEqual(JSON.parse(stale.exportJSON()).bookmarked_ids, ['shared']);
+  stale.activity(['new'], []);
+  assert.deepEqual(create(shared, crypto).profile.bookmarked_ids, ['shared']);
+  assert.deepEqual(create(shared, crypto).profile.read_ids, ['shared', 'new']);
+}
+calls = 0;
 let device = create(storage, crypto);
 assert.equal(calls, 1);
 assert.equal(device.profile.device_id, id);

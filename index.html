@@ -5204,7 +5204,7 @@
 
     async function syncDeviceActivity() {
       if (!App.serverAvailable) return;
-      const profile = deviceStore.profile;
+      const profile = deviceStore.snapshot();
       App.user.read_ids = profile.read_ids;
       App.user.bookmarked_ids = profile.bookmarked_ids;
       const hasProgress = profile.read_ids.length || profile.bookmarked_ids.length || !['Doctor', 'Bác sĩ'].includes(profile.display_name);
