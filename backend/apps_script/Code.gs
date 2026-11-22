@@ -129,7 +129,7 @@ function doPost(event) {
       bytes: function(value) { return Utilities.newBlob(value).getBytes().length; },
       random: function() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g,'').toLowerCase(); },
       remaining: function() { return MailApp.getRemainingDailyQuota(); },
-      mail: function(to,subject,body) { MailApp.sendEmail({to:to,subject:subject,body:body}); },
+      mail: function(to,subject,body) { MailApp.sendEmail({to:to,subject:subject,body:body,name:'Xem Tim Mỗi Ngày (Daily Learning Heart)'}); },
       site: props.getProperty('SITE_URL') || 'https://ledinhduy281.github.io/daily-learning-heart/'
     });
   } catch (_) { result = request && ['backup','restore_request'].indexOf(request.action) >= 0 ? Object.assign({},SYNC_GENERIC) : {ok:false,error:'Sync unavailable. Try again later.'}; }
