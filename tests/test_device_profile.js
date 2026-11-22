@@ -390,7 +390,7 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   const app = {mode: 'today', user: {}}, lesson = {id: 'today'};
   const reads = [];
   const noop = () => {};
-  const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\(\) \{[\s\S]*?\n    \}/)[0]})`, {
+  const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\([^)]*\) \{[\s\S]*?\n    \}/)[0]})`, {
     App: app, applyLocalizationChrome: noop, renderUserWorkspace: noop, renderDailyRotationBanner: noop,
     renderPillarsTiles: noop, renderModeSpecificPanels: noop, getTodaySingleBriefing: () => lesson,
     selectBriefing: (...args) => select(...args)
@@ -402,14 +402,76 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   init();
   assert.equal(app.selected, lesson);
   assert.deepEqual(reads, []);
+  const current={id:'older lesson'};
+  app.briefings=[lesson,current];app.selected=current;
+  init(true);
+  assert.equal(app.selected,current);assert.deepEqual(reads,[]);
   select(lesson);
   assert.deepEqual(reads, ['today']);
+}
+{
+  const noop=()=>{};
+  const chat={currentSessionId:'active',renderCurrentMessages:noop,renderHistoryDrawer:noop};
+  const source=html.match(/      loadSessions\(\) \{([\s\S]*?)\n      \},/)[1];
+  const load=vm.runInNewContext(`(function(){${source}})`,{
+    CHAT_SESSIONS_KEY:'chats',safeStorageGet:()=>JSON.stringify([{id:'first',messages:[]},{id:'active',messages:[{role:'user',markdownText:'Stay here'}]}])
+  });
+  load.call(chat);
+  assert.equal(chat.currentSessionId,'active');assert.equal(chat.messages[0].markdownText,'Stay here');
+  let preserved=false,loaded=0;
+  const refresh=vm.runInNewContext(`(${html.match(/function refreshCloudProfile\(\) \{[\s\S]*?\n    \}/)[0]})`,{
+    setAuthenticatedUser:noop,SocraticTutor:{loadStore:noop},EbmChat:{loadSessions:()=>loaded++,loadQuota:noop,loadVerbosity:noop},
+    loadOfflineFeedbackStore:noop,deviceStore:{get:()=>null},UI_LANG_KEY:'lang',
+    renderAllViewsAfterAuth:value=>preserved=value,renderProfileHistory:noop
+  });
+  refresh();assert.equal(preserved,true);assert.equal(loaded,1);
+}
+{
+  const key='soaica_chat_sessions_v1', local=create(new Storage(),crypto);
+  const active={id:'streaming',messages:[{role:'user',markdownText:'Question'}]};
+  const inactive={id:'inactive',updatedAt:'2026-11-20T00:00:00Z',messages:[{role:'user',markdownText:'Old inactive conversation'}]};
+  local.set(key,JSON.stringify([active,inactive]));
+  const chat={isBusy:true,currentSessionId:active.id,sessions:[active,inactive],messages:[...active.messages,{role:'assistant',markdownText:'Finished answer'}],renderHistoryDrawer:()=>{}};
+  local.importJSON(JSON.stringify({...JSON.parse(local.exportJSON()),progress:{[key]:JSON.stringify([active,{...inactive,updatedAt:'2026-11-22T00:00:00Z',messages:[{role:'user',markdownText:'Updated inactive conversation'}]},{id:'remote',messages:[{role:'user',markdownText:'Remote conversation'}]}])}}));
+  const source=html.match(/      saveSessions\(\) \{([\s\S]*?)\n      \},/)[1];
+  const save=vm.runInNewContext(`(function(){${source}})`,{App:{selected:{pillar_id:1}},CHAT_SESSIONS_KEY:key,safeStorageGet:k=>local.get(k),safeStorageSet:(k,v)=>local.set(k,v)});
+  save.call(chat);
+  const saved=JSON.parse(local.get(key));
+  assert.equal(saved.find(s=>s.id==='remote').messages[0].markdownText,'Remote conversation');
+  assert.equal(saved.find(s=>s.id==='inactive').messages[0].markdownText,'Updated inactive conversation');
+  assert.equal(chat.sessions.find(s=>s.id==='inactive').messages[0].markdownText,'Updated inactive conversation');
+  assert.equal(saved.find(s=>s.id==='streaming').messages.at(-1).markdownText,'Finished answer');
+  assert.equal(chat.currentSessionId,'streaming');
+}
+{
+  const key='soaica_chat_sessions_v1',local=create(new Storage(),crypto);
+  const only={id:'only',messages:[{role:'user',markdownText:'Delete me'}]};
+  local.set(key,JSON.stringify([only]));
+  const scope={App:{selected:{pillar_id:1}},Dom:{chatMessagesList:{}},CHAT_SESSIONS_KEY:key,
+    safeStorageGet:k=>local.get(k),safeStorageSet:(k,v)=>local.set(k,v)};
+  const method=name=>{
+    const source=html.match(new RegExp(`      ${name}\\(([^\\n]*)\\) \\{([\\s\\S]*?)\\n      \\},`));
+    return vm.runInNewContext(`(function(${source[1]}){${source[2]}})`,scope);
+  };
+  const chat={isBusy:false,sessions:[only],currentSessionId:'only',messages:only.messages,
+    saveSessions:method('saveSessions'),createNewSession:method('createNewSession'),
+    renderHistoryDrawer:()=>{},toggleHistoryDrawer:()=>{},
+    pushWelcomeMessage(){this.messages.push({role:'assistant',markdownText:'Welcome'});this.saveSessions();}};
+  method('deleteSession').call(chat,'only');
+  assert.notEqual(chat.currentSessionId,'only');
+  assert.ok(JSON.parse(local.get(key)).every(s=>s.id!=='only'));
+  const replacement=chat.currentSessionId;
+  local.set(key,JSON.stringify([only,...JSON.parse(local.get(key))]));
+  chat.saveSessions();
+  assert.ok(JSON.parse(local.get(key)).every(s=>s.id!=='only'));
+  assert.equal(chat.currentSessionId,replacement);
 }
 async function checkProfilePanel() {
   const markup = html.slice(html.indexOf('id="myAccountModal"'), html.indexOf('id="btnBackToTop"'));
   assert.match(markup, /<input[^>]+id="profileDeviceId"[^>]+readonly/);
   assert.match(markup, /<input type="file" id="progressImportFile"/);
-  assert.doesNotMatch(markup, /<input[^>]+type="email"/);
+  assert.match(markup, /id="cloudEmailSection" hidden/);
+  assert.match(markup, /<input[^>]+type="email"/);
 
   const profile = create(new Storage(), crypto);
   profile.activity(['old', 'saved', 'new', 'missing'], ['saved']);
