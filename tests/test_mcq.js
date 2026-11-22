@@ -7,6 +7,21 @@ const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
 const briefings=context.window.EBM_BRIEFINGS_DATA.briefings;
 const {numericTargets}=require('../clinical_distractors.js');
+{
+  const b=briefings.find(b=>b.id==='ebm-2026-08-23-p3-hist1');
+  for(const lang of ['vi','en']) {
+    const q=quiz.build(b,0,0,lang,'hard'),correct=q.options.find(o=>o.key===q.correct_key).text;
+    assert.equal(q.generation.source_id,'guideline');
+    assert.deepEqual(new Set(Object.values(q.distractor_types)),new Set(['numeric']));
+    assert.ok(correct.includes('≤5%'));
+    for(const option of q.options)assert.equal(option.text.replace(/≤\d+%/g,'≤#%'),correct.replace(/≤\d+%/g,'≤#%'));
+    assert.deepEqual(new Set(q.options.map(o=>o.text.match(/≤(\d+)%/)[1])),new Set(['4','5','6','7']));
+    assert.deepEqual(quiz.translate(b,q,lang==='vi'?'en':'vi').option_ids,q.option_ids);
+  }
+  for(const value of [null,''])assert.ok(numericTargets('Risk ≤5%.',value).some(t=>t.id==='percent:5'));
+  assert.deepEqual(numericTargets('Risk ≤5%, result 10%.','10%').map(t=>t.id),['percent:10']);
+  assert.deepEqual(numericTargets('Risk ≤5%.','10%'),[]);
+}
 for(const b of briefings)for(const lang of ['vi','en']) {
   const q=quiz.build(b,0,0,lang);
   assert.equal(q.question_kind,'guideline',`${b.id} ${lang}`);

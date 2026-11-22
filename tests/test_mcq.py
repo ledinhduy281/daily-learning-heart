@@ -1,4 +1,5 @@
 import copy
+import re
 import unittest
 from unittest.mock import patch
 
@@ -7,6 +8,25 @@ from clinical_mcq import normalized
 
 
 class ClinicalMcqTests(unittest.TestCase):
+    def test_hard_rf_cl_varies_documented_percentage_threshold(self):
+        from clinical_distractors import numeric_targets
+        from clinical_mcq import build_mcq, translate_mcq
+        b = next(b for b in self.briefings if b['id'] == 'ebm-2026-08-23-p3-hist1')
+        for lang in ('vi', 'en'):
+            q = build_mcq(b, 0, 0, lang, 'hard')
+            self.assertEqual(q['generation']['source_id'], 'guideline')
+            self.assertEqual(set(q['distractor_types'].values()), {'numeric'})
+            correct = next(o['text'] for o in q['options'] if o['key'] == q['correct_key'])
+            self.assertIn('≤5%', correct)
+            for option in q['options']:
+                self.assertEqual(re.sub(r'≤\d+%', '≤#%', option['text']), re.sub(r'≤\d+%', '≤#%', correct))
+            self.assertEqual({re.search(r'≤(\d+)%', o['text']).group(1) for o in q['options']}, {'4', '5', '6', '7'})
+            self.assertEqual(q['option_ids'], translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')['option_ids'])
+        for value in (None, ''):
+            self.assertIn('percent:5', [t['id'] for t in numeric_targets('Risk ≤5%.', value)])
+        self.assertEqual([t['id'] for t in numeric_targets('Risk ≤5%, result 10%.', '10%')], ['percent:10'])
+        self.assertEqual(numeric_targets('Risk ≤5%.', '10%'), [])
+
     def test_bmi_thresholds_and_every_briefing_guideline_card_survive(self):
         from clinical_mcq import alternatives, build_mcq
         from clinical_distractors import rich_cards

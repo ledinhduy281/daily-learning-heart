@@ -40,7 +40,7 @@ def numeric_targets(text, shared_value=None, include_duplicates=False):
                 continue
             label = field or match.group(1 if group == 2 else 2).lower().replace(' ', '')
             label = {'ef': 'lvef', 'aged': 'age', 'tuổi': 'age'}.get(label, label)
-            if label == 'percent' and shared_value is not None:
+            if label == 'percent' and shared_value:
                 offset = text.rfind(shared_value)
                 if offset < 0 or not offset <= start < offset + len(shared_value):
                     continue

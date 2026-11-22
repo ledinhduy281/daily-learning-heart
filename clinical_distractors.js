@@ -28,7 +28,7 @@ const ClinicalDistractors = (() => {
       if(spans.has(span))continue;
       let label=field||m[group===2?1:2].toLowerCase().replace(/ /g,'');
       label=({ef:'lvef',aged:'age','tuổi':'age'})[label]||label;
-      if(label==='percent'&&sharedValue!==null) {const offset=text.lastIndexOf(sharedValue);if(offset<0||!(offset<=start&&start<offset+sharedValue.length))continue;}
+      if(label==='percent'&&sharedValue) {const offset=text.lastIndexOf(sharedValue);if(offset<0||!(offset<=start&&start<offset+sharedValue.length))continue;}
       const original=m[group],value=label==='class'?original.toLowerCase():Number(original.replace(',','.')).toFixed(12).replace(/0+$/,'').replace(/\.$/,'');
       result.push({id:`${label}:${value}`,start,end,value:original,numeric:label!=='class'});spans.add(span);
     }
