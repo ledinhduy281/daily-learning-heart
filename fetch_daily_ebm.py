@@ -1045,7 +1045,7 @@ def _resolve_user_from_token_unlocked(data: dict, token: str, create_device: boo
         return None
     sig_user = _verify_session_token_signature(token, data.get("token_secret", ""))
     username = sess.get("username")
-    if (not username or _normalize_identifier(username) == _LEGACY_DEMO_USERNAME
+    if (not username or username == _LEGACY_DEMO_USERNAME
             or (sig_user is not None and sig_user != username)):
         return None
     user = data.get("users", {}).get(username)
@@ -1112,7 +1112,7 @@ def login_user(req_data: dict) -> tuple[int, dict]:
         user = _find_user_by_identifier(data["users"], identifier)
         pw_ok = bool(
             user
-            and _normalize_identifier(user["username"]) != _LEGACY_DEMO_USERNAME
+            and user["username"] != _LEGACY_DEMO_USERNAME
             and (
                 _verify_password(password, user.get("salt", ""), user.get("password_hash", ""))
                 or (trimmed_pw and _verify_password(trimmed_pw, user.get("salt", ""), user.get("password_hash", "")))
@@ -1146,7 +1146,7 @@ def register_user(req_data: dict) -> tuple[int, dict]:
     with _users_lock:
         data = _load_users_data_unlocked()
         if (
-            _normalize_identifier(username) == _LEGACY_DEMO_USERNAME
+            username == _LEGACY_DEMO_USERNAME
             or _find_user_by_identifier(data["users"], username)
             or (email and _find_user_by_identifier(data["users"], email))
         ):

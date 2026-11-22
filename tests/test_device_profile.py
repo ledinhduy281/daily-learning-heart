@@ -338,6 +338,26 @@ class DeviceProfileTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload['user']['username'], username)
 
+    def test_demo_retirement_preserves_legacy_account_with_similar_username(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'):
+            username, email = 'bs. timmach', 'legacy-owner@example.com'
+            password = 'legacy-owner-password'
+            with app._users_lock:
+                data = app._load_users_data_unlocked()
+                salt, password_hash = app._hash_password(password)
+                user = {'username': username, 'email': email, 'salt': salt, 'password_hash': password_hash}
+                data['users'][username] = user
+                existing_token = app._create_session_for_user(data, user)
+                app._save_users_data_unlocked(data)
+
+            status, payload = self.request('/api/auth/login', body={'email': email, 'password': password})
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['user']['username'], username)
+            for token in (existing_token, payload['token']):
+                status, session = self.request('/api/auth/me', headers={'Authorization': 'Bearer ' + token})
+                self.assertEqual(status, 200)
+                self.assertEqual(session['user']['username'], username)
+
 
 if __name__ == '__main__':
     unittest.main()
