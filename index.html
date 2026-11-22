@@ -3418,13 +3418,13 @@
       border: 1px solid var(--color-hairline-cool);
       border-bottom-left-radius: 3px;
     }
-    .chat-bubble h3, .chat-bubble h4 {
+    .chat-bubble h1, .chat-bubble h2, .chat-bubble h3, .chat-bubble h4 {
       font-size: 13.5px;
       font-weight: 700;
       margin: 6px 0 4px;
       color: var(--color-ink);
     }
-    .chat-bubble h3:first-child, .chat-bubble h4:first-child {
+    .chat-bubble h1:first-child, .chat-bubble h2:first-child, .chat-bubble h3:first-child, .chat-bubble h4:first-child {
       margin-top: 0;
     }
     .chat-bubble ul, .chat-bubble ol {
@@ -5221,6 +5221,66 @@
     function formatInlineRich(str) {
       if (!str) return "";
       return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    function renderChatMarkdown(value) {
+      const lines = escapeHtml(value).replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n");
+      function inline(text) {
+        return text.split(/(`[^`\n]+`)/g).map((part, i) => {
+          if (i % 2) return `<code>${part.slice(1, -1)}</code>`;
+          return part.replace(/\*\*(.+?)\*\*(\*)?/g, (_, text, star) => `<strong>${text}${star || ""}</strong>`)
+            .replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+        }).join("");
+      }
+      const marker = (line) => /^( *)([-*]|\d+\.)\s+(.+)$/.exec(line);
+      const heading = (line) => /^ {0,3}(#{1,3})\s+(.+)$/.exec(line);
+      let pos = 0;
+      function list(indent) {
+        const tag = /\d/.test(marker(lines[pos])[2]) ? "ol" : "ul";
+        let result = `<${tag}>`;
+        while (pos < lines.length) {
+          const item = marker(lines[pos]);
+          if (!item || item[1].length !== indent || (/\d/.test(item[2]) ? "ol" : "ul") !== tag) break;
+          result += `<li>${inline(item[3])}`;
+          pos++;
+          while (pos < lines.length) {
+            if (!lines[pos].trim()) {
+              let next = pos + 1;
+              while (next < lines.length && !lines[next].trim()) next++;
+              if (next < lines.length && /^ */.exec(lines[next])[0].length > indent) { pos = next; continue; }
+              break;
+            }
+            const child = marker(lines[pos]);
+            if (child) {
+              if (child[1].length <= indent) break;
+              result += list(child[1].length);
+            } else if (/^ */.exec(lines[pos])[0].length > indent) {
+              result += `<br>${inline(lines[pos].trim())}`;
+              pos++;
+            } else break;
+          }
+          result += "</li>";
+          while (pos < lines.length && !lines[pos].trim()) pos++;
+        }
+        return result + `</${tag}>`;
+      }
+      let result = "";
+      while (pos < lines.length) {
+        if (!lines[pos].trim()) { pos++; continue; }
+        const item = marker(lines[pos]);
+        const title = heading(lines[pos]);
+        if (item) result += list(item[1].length);
+        else if (title) {
+          result += `<h${title[1].length}>${inline(title[2])}</h${title[1].length}>`;
+          pos++;
+        } else {
+          const paragraph = [];
+          do { paragraph.push(inline(lines[pos++])); }
+          while (pos < lines.length && lines[pos].trim() && !marker(lines[pos]) && !heading(lines[pos]));
+          result += `<p>${paragraph.join("<br>")}</p>`;
+        }
+      }
+      return result;
     }
 
     function cleanHeadline(raw) {
@@ -8217,7 +8277,7 @@
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble";
-        bubble.textContent = markdownText || "";
+        bubble.innerHTML = renderChatMarkdown(markdownText || "");
         wrap.appendChild(bubble);
 
         if (Array.isArray(sources) && sources.length > 0) {
