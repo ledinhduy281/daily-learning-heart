@@ -163,9 +163,13 @@ assert.equal(migrated.exportJSON(), before);
     ['ebm_socratic_state_v1', {1: {started: 'yes'}}],
     ['ebm_socratic_state_v1', []],
     ['soaica_chat_sessions_v1', [{id: 'broken', messages: {}}]],
+    ['soaica_chat_sessions_v1', [{id: 'broken', messages: [{sources: [null]}]}]],
+    ['soaica_chat_sessions_v1', [{id: 'broken', messages: [{sources: {}}]}]],
+    ['soaica_chat_sessions_v1', [{id: 'broken', messages: [{engineLabel: []}]}]],
     ['soaica_daily_quota_v1', {used: []}],
     ['ebm_offline_user_activity', {read_ids: [null]}],
-    ['ebm_ui_prefs', []], ['ebm_offline_feedback', []]
+    ['ebm_ui_prefs', []], ['ebm_offline_feedback', []],
+    ['ebm_offline_feedback', {lesson: {like: []}}]
   ]) {
     for (const mode of ['merge', 'replace']) {
       assert.throws(() => target.importJSON(JSON.stringify({...JSON.parse(backup), progress: {[key]: JSON.stringify(value)}}), mode));

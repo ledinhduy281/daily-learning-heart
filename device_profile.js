@@ -74,7 +74,14 @@ const DeviceProfile = (() => {
       require(Array.isArray(value));
       for (const message of value) {
         if (typeof message === 'string') continue;
-        fields(message, {role: 'string', text: 'string', markdownText: 'string'});
+        fields(message, {id: 'string', role: 'string', text: 'string', markdownText: 'string', engineLabel: 'string'});
+        if ('sources' in message) {
+          require(Array.isArray(message.sources));
+          for (const source of message.sources) {
+            fields(source, {url: 'string', doi: 'string', title: 'string', pubdate: 'string'});
+            if ('pmid' in source) require(typeof source.pmid === 'string' || typeof source.pmid === 'number');
+          }
+        }
       }
     };
     for (const [key, raw] of Object.entries(progress)) {
@@ -105,6 +112,10 @@ const DeviceProfile = (() => {
         require(object(value));
         if (key === 'ebm_offline_user_activity') for (const field of ['read_ids', 'bookmarked_ids']) if (field in value) require(Array.isArray(value[field]) && value[field].every(id => typeof id === 'string'));
         if (key === 'soaica_daily_quota_v1') fields(value, {date: 'string', used: 'number', limit: 'number', exhausted: 'boolean', stop_reason: 'string'});
+        if (key === 'ebm_offline_feedback') for (const entry of Object.values(value)) {
+          fields(entry, {like: 'number', dislike: 'number', report: 'number'});
+          if ('user_vote' in entry) require([null, 'like', 'dislike'].includes(entry.user_vote));
+        }
       }
     }
   }
