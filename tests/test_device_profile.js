@@ -250,10 +250,28 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   }
   assert.equal(generated,0);
   for (const explanation of [undefined, '', '   ']) {
-    const legacy={...second,explanation,current_question:undefined};
+    const progress={answered_count:12,correct_count:9,streak:3,diag_step:4,focus_idx:1,attempts_on_current:2,
+      subskills:[0,1,2,3].map(i=>({level:i+1,checks:4,answered:3,correct:2}))};
+    const legacy={...second,...progress,messages:second.messages.map(m=>({...m})),explanation,current_question:undefined,question_revealed:true};
     tutor.store={1:legacy};
-    assert.equal(tutor.getSession().started,false);
-    assert.equal(generated,0);
+    const before=generated;
+    const repaired=tutor.getSession();
+    assert.equal(repaired.started,true);
+    assert.equal(repaired.phase,'loop');
+    assert.equal(repaired.question_revealed,false);
+    assert.equal(generated,before+1);
+    for(const key of Object.keys(progress).filter(k=>k!=='subskills'))assert.equal(repaired[key],progress[key]);
+    assert.deepEqual(Array.from(repaired.subskills,s=>({level:s.level,checks:s.checks,answered:s.answered,correct:s.correct})),progress.subskills);
+    assert.deepEqual(JSON.parse(JSON.stringify(repaired.messages.slice(0,-1))),second.messages);
+    assert.equal(repaired.messages.at(-1).text,fresh.question);
+    assert.equal(repaired.current_question,fresh);
+    assert.equal(require('../clinical_mcq.js').turn(app.selected,repaired,'vi','answer','',fresh.correct_key).eval,'correct');
+    tutor.loadStore();
+    const saved=tutor.getSession();
+    assert.equal(saved.answered_count,12);
+    assert.equal(saved.current_question.explanation,fresh.explanation);
+    assert.equal(saved.messages.length,second.messages.length+1);
+    assert.equal(generated,before+1);
   }
   const recoverable={...second,last_question:fresh.question,current_options:fresh.options,correct_key:fresh.correct_key,explanation:'',current_question:{...fresh,explanation:''}};
   tutor.store={1:recoverable};

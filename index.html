@@ -8383,7 +8383,12 @@
               const ref = s.current_question?.generation;
               const restored = ref && briefing ? ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id) : null;
               if (matchesPending(restored) && hasExplanation(restored)) s.current_question = restored;
-              else s.started = false;
+              else {
+                const lang = App.currentLang || "vi";
+                const mcq = this.buildDeterministicMcq(briefing || {}, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), lang, s.difficulty || "normal");
+                this.replacePendingQuestion(s, mcq, lang);
+                s.question_revealed = false;
+              }
               this.saveStore();
             }
             if (s.started) s.explanation = s.current_question.explanation;
