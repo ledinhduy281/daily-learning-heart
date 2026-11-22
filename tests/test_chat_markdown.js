@@ -29,12 +29,36 @@ assert.ok(sampleHtml.endsWith('<p>Những cập nhật này giúp ...</p>'));
 const flat = sample.replace(/\s*\n\s*/g, ' ');
 assert.ok(!render(flat).includes('<ul>'));
 assert.match(render('Risk - benefit: 5 - 2'), /Risk - benefit: 5 - 2/);
+const table = render('| Name | Result |\n| --- | --- |\n| Trial | **Benefit** |');
+assert.equal(table, '<div class="chat-table-scroll"><table><thead><tr><th style="text-align:left">Name</th><th style="text-align:left">Result</th></tr></thead><tbody><tr><td style="text-align:left">Trial</td><td style="text-align:left"><strong>Benefit</strong></td></tr></tbody></table></div>');
+assert.equal(render('Name | Result\n--- | ---\nTrial | **Benefit**'), table);
+const aligned = render('A | B | C | D\n:-- | --: | :-: | ---\na | b | c | d');
+assert.equal((aligned.match(/text-align:left/g) || []).length, 4);
+assert.equal((aligned.match(/text-align:right/g) || []).length, 2);
+assert.equal((aligned.match(/text-align:center/g) || []).length, 2);
+assert.match(render('| A\\|B | C |\n| --- | --- |\n| `x\\|y` | *yes* |'), /<th style="text-align:left">A\|B<\/th>/);
+assert.match(render('| A | B |\n| --- | --- |\n| `x\\|y` | *yes* |'), /<code>x\|y<\/code><\/td><td style="text-align:left"><em>yes<\/em>/);
+const ragged = render('A | B\n--- | ---\none |\na | b | extra');
+assert.match(ragged, /<td style="text-align:left">one<\/td><td style="text-align:left"><\/td>/);
+assert.ok(!ragged.includes('extra'));
+assert.equal(render('Before\nName | Result\n--- | ---\nTrial | **Benefit**\n\nAfter'), '<p>Before</p>' + table + '<p>After</p>');
+assert.equal(render('- List\nName | Result\n--- | ---\nTrial | **Benefit**'), '<ul><li>List</li></ul>' + table);
+assert.match(render('| Only |\n---'), /<thead><tr><th style="text-align:left">Only<\/th><\/tr><\/thead><tbody><\/tbody>/);
+for (const text of ['a | b', 'a | b\n-- | ---', 'a | b\n--- | invalid', 'a | b\n---', 'a\\|b\n---']) {
+  assert.ok(!render(text).includes('<table>'), text);
+}
+const clinical = render('| Thuốc | Bằng chứng | Khuyến cáo |\n| :-- | :-: | --: |\n| **Sotatercept** | STELLAR | *PAH* |\n| Điều trị nền | `HR 0.84` | Theo dõi |');
+assert.match(clinical, /<strong>Sotatercept<\/strong>/);
+assert.match(clinical, /<em>PAH<\/em>/);
+assert.match(clinical, /<code>HR 0.84<\/code>/);
+assert.match(clinical, /Theo dõi<\/td>/);
 for (const payload of ['<script>alert(1)</script>', '<img src=x onerror="alert(1)">', '[click](javascript:alert(1))', '![image](javascript:alert(1))', '&lt;script&gt;', '<a href="javascript:alert(1)">x</a>']) {
-  for (const input of [payload, `**${payload}**`, `- ${payload}\n  - *${payload}*`, `# ${payload}`, '`' + payload + '`']) {
+  for (const input of [payload, `**${payload}**`, `- ${payload}\n  - *${payload}*`, `# ${payload}`, '`' + payload + '`', `| ${payload} | Safe |\n| --- | --: |\n| ${payload} | **safe** |`]) {
     const output = render(input);
     assert.ok(!/<(?:script|img|a)\b/i.test(output), output);
     const tags = output.match(/<[^>]*>/g) || [];
-    assert.ok(tags.every(tag => /^<\/?(?:p|br|ul|ol|li|strong|em|code|h[123])>$/.test(tag)), output);
+    assert.ok(tags.every(tag => /^<\/?(?:p|br|ul|ol|li|strong|em|code|h[123]|table|thead|tbody|tr|th|td|div)>$/.test(tag) ||
+      /^<(?:th|td) style="text-align:(?:left|right|center)">$/.test(tag) || tag === '<div class="chat-table-scroll">'), output);
     assert.ok(output.includes(scope.escapeHtml(payload)), output);
   }
 }
@@ -55,4 +79,4 @@ container.children = [];
 chat.loadSessions();
 assert.equal(chat.currentSessionId, 'saved');
 assert.equal(container.children[0].children[0].innerHTML, sampleHtml);
-console.log('Chat Markdown checks passed (paragraphs, breaks, headings, nested lists, emphasis, code, escaped XSS, live and restored history).');
+console.log('Chat Markdown checks passed (paragraphs, lists, formatting, pipe tables, alignment, escaped pipes, ragged rows, Vietnamese, XSS, live and restored history).');
