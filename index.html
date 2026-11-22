@@ -5385,7 +5385,7 @@
           try {await cloudSync.email(cloudEmailAction,document.getElementById("cloudEmail").value,App.currentLang);document.getElementById("cloudEmail").value="";}
           catch (_) {status("SYNC_FAILED");}finally{button.disabled=false;}
         });
-        window.addEventListener("storage",event=>{if(event.key===DeviceProfile.KEY)cloudSync.schedule();});
+        window.addEventListener("storage",refreshDeviceActivity);
         cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress and saved chats will be sent to the project's Google Apps Script backup and merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ và các cuộc trò chuyện đã lưu trên thiết bị này sẽ được gửi tới bản sao lưu Google Apps Script của dự án và hợp nhất vào bản sao của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(["INVALID_ID","NOT_CONFIGURED","BACKUP_NOT_FOUND","CONSENT_REQUIRED"].includes(error.message)?error.message:error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":"SYNC_FAILED"));
       } catch (_) {status("SYNC_FAILED");}
     }
@@ -5399,6 +5399,17 @@
       const lang=deviceStore.get(UI_LANG_KEY);
       if (lang==="vi"||lang==="en")setLanguage(lang,{rerender:false,persist:false});
       renderAllViewsAfterAuth(true);renderProfileHistory();
+    }
+
+    function refreshDeviceActivity(event) {
+      if (event.key !== DeviceProfile.KEY && event.key !== null) return;
+      const saved = deviceStore.snapshot();
+      if (App.user) {
+        Object.assign(App.user, {full_name:saved.display_name, display_name:saved.display_name,
+          read_ids:saved.read_ids, bookmarked_ids:saved.bookmarked_ids});
+        updateBookmarkButtonUI();renderUserWorkspace();renderBriefingsList();renderProfileHistory();
+      }
+      cloudSync.schedule();
     }
 
     function safeStorageGet(key, fresh = false) { return fresh ? deviceStore.snapshot().progress[key] ?? null : deviceStore.get(key); }
@@ -5660,7 +5671,7 @@
     async function toggleBriefingBookmark() {
       if (!App.user || !App.selected) return;
       const id = App.selected.id;
-      const {enabled} = saveOfflineActivityStore('bookmarked_ids', id);
+      const {enabled} = saveOfflineActivityStore('bookmarked_ids', id, !Dom.btnToggleBookmark.classList.contains('is-active'));
       updateBookmarkButtonUI();
       renderUserWorkspace();
       renderBriefingsList();
@@ -8654,17 +8665,25 @@
       },
 
       loadStore() {
-        this.store = {};
+        let latest = {};
         try {
           const raw = safeStorageGet(SOCRATIC_STATE_KEY, true);
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) this.store = parsed;
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) latest = parsed;
           }
         } catch (_) {
-          this.store = {};
+          latest = {};
         }
-        this.storeBaseline = JSON.stringify(this.store);
+        this.adoptStore(latest);
+      },
+
+      adoptStore(latest) {
+        for (const id of Object.keys(latest)) {
+          if (JSON.stringify(latest[id]) === JSON.stringify(this.store[id])) latest[id] = this.store[id];
+        }
+        this.store = latest;
+        this.storeBaseline = JSON.stringify(latest);
       },
 
       saveStore() {
@@ -8680,9 +8699,10 @@
           else delete latest[id];
         }
         safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(latest));
-        this.store = latest;
-        this.storeBaseline = JSON.stringify(latest);
+        this.adoptStore(latest);
       },
+
+      newQuizId() { return `${Date.now()}-${Math.random()}`; },
 
       clipText(txt, limit = 160) {
         const clean = String(txt || "").replace(/\s+/g, " ").trim();
@@ -8769,6 +8789,7 @@
 
       replacePendingQuestion(sess, mcq, lang) {
         Object.assign(sess, {
+          question_id: this.newQuizId(),
           last_question: mcq.question,
           current_options: mcq.options,
           correct_key: mcq.correct_key,
@@ -8860,7 +8881,10 @@
             if (s.started) s.explanation = s.current_question.explanation;
           }
         }
-        return this.store[key];
+        const session = this.store[key];
+        if (!session.session_id) session.session_id = this.newQuizId();
+        if (!session.question_id) session.question_id = this.newQuizId();
+        return session;
       },
 
       syncCurrentBriefing() {
@@ -9236,6 +9260,8 @@
 
       async startDiagnostic() {
         const sess = this.getSession();
+        sess.session_id = this.newQuizId();
+        sess.question_id = this.newQuizId();
         sess.started = true;
         sess.phase = "diagnostic";
         sess.diag_step = 0;
@@ -9315,6 +9341,8 @@
         const pid = Number((b && b.pillar_id) || this.curPillarId || 1);
         const lang = App.currentLang || "vi";
         const sess = this.getSession(pid, b);
+        const sessionId = sess.session_id, questionId = sess.question_id;
+        const isCurrent = () => this.store[String(pid)] === sess && sess.session_id === sessionId && sess.question_id === questionId;
 
         this.isBusy = true;
         const btnStart = document.getElementById("btnStartSocratic");
@@ -9373,6 +9401,7 @@
               const ct = res.headers.get("content-type") || "";
               if (res.ok && ct.includes("application/json")) {
                 const d = await res.json();
+                if (!isCurrent()) {typing.remove();return;}
                 if (d.ok && d.reply_markdown) {
                   if (d.quota && window.EbmChat) {
                     EbmChat.quota = d.quota;
@@ -9384,6 +9413,7 @@
                   sess.options_lang = lang;
                   sess.started = true;
                   sess.messages.push({ role: "assistant", text: d.reply_markdown });
+                  sess.question_id = this.newQuizId();
                   this.saveStore();
                   typing.remove();
                   return;
@@ -9393,16 +9423,19 @@
           }
 
           // Local fact-grounded quiz for GitHub Pages / standalone.
+          if (!isCurrent()) {typing.remove();return;}
           const out = await this.runClientSocratic(b, sess, action, userAnswer, lang, selectedChoice);
+          if (!isCurrent()) {typing.remove();return;}
           Object.assign(sess, out.state);
           sess.options_lang = lang;
           sess.started = true;
           sess.messages.push({ role: "assistant", text: out.reply });
+          sess.question_id = this.newQuizId();
           this.saveStore();
           typing.remove();
         } catch (err) {
           typing.remove();
-          sess.messages.push({ role: "assistant", text: `Error: ${err.message}` });
+          if (isCurrent()) sess.messages.push({ role: "assistant", text: `Error: ${err.message}` });
         } finally {
           this.isBusy = false;
           if (btnStart) btnStart.disabled = false;

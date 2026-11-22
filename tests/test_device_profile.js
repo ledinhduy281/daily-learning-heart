@@ -583,6 +583,51 @@ async function checkProfilePanel() {
 
 async function checkStreams() {
   {
+    for (const change of ['none','reset','replace','question']) {
+      const tutorCode=html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+      const quiz=require('../clinical_mcq.js'),primary={id:'first',pillar_id:1},other={id:'second',pillar_id:2};
+      const question=quiz.build(primary,0,0,'vi');
+      let stored,release,entered;
+      const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
+      const app={currentLang:'vi',selected:primary,serverAvailable:true};
+      const tutor=vm.runInNewContext(`${tutorCode};SocraticTutor`,{
+        App:app,SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',getPillarDisplayName:()=> 'Pillar',
+        ClinicalQuiz:{...quiz,translate:(b,q)=>({...q,question:'Translated second question',explanation:'Translated rationale'})},
+        safeStorageGet:()=>stored,safeStorageSet:(key,value)=>{stored=value;},isFileOrigin:()=>false,getAuthHeaders:x=>x,
+        document:{getElementById:()=>null,querySelectorAll:()=>[],createElement:()=>({remove(){}})},
+        fetch:async()=>{entered();await gate;return {ok:true,headers:{get:()=> 'application/json'},json:async()=>({
+          ok:true,reply_markdown:'Graded first question',state:{answered_count:1,correct_count:1}
+        })};}
+      });
+      tutor.renderUI=()=>{};
+      const record=()=>({started:true,phase:'diagnostic',question_index:0,answered_count:0,correct_count:0,
+        last_question:question.question,current_question:question,current_options:question.options,correct_key:question.correct_key,
+        explanation:question.explanation,options_lang:'vi',messages:[{role:'assistant',text:question.question}]});
+      tutor.store={1:record(),2:record()};tutor.getSession(1,primary);tutor.getSession(2,other);tutor.saveStore();
+      const original=tutor.store[1],sessionId=original.session_id;
+      const pending=tutor.callSocraticApi('answer',question.correct_key,question.correct_key);await started;
+      app.selected=other;tutor.curPillarId=2;app.currentLang='en';tutor.onLanguageChanged();
+      assert.equal(tutor.store[1],original);tutor.loadStore();assert.equal(tutor.store[1],original);
+      assert.equal(tutor.store[2].last_question,'Translated second question');
+      if(change==='reset') {
+        app.selected=primary;tutor.curPillarId=1;tutor.callSocraticApi=async()=>{};
+        await tutor.startDiagnostic();assert.notEqual(tutor.store[1].session_id,sessionId);
+      } else if(change==='replace') {
+        tutor.store[1]={...original,messages:[],correct_count:7};tutor.saveStore();
+      } else if(change==='question') {
+        original.question_id=tutor.newQuizId();original.messages=[];tutor.saveStore();
+      }
+      const before=JSON.stringify(tutor.store[1]);
+      release();await pending;
+      if(change==='none') {
+        assert.equal(tutor.store[1],original);assert.equal(JSON.parse(stored)[1].correct_count,1);
+        assert.ok(JSON.parse(stored)[1].messages.some(m=>m.text==='Graded first question'));
+      } else assert.equal(JSON.stringify(tutor.store[1]),before);
+      assert.equal(JSON.parse(stored)[2].last_question,'Translated second question');
+      assert.ok(!JSON.parse(stored)[2].messages.some(m=>m.text==='Graded first question'));
+    }
+  }
+  {
     const store = new Storage(), profile = create(store, crypto);
     const app = {serverAvailable: true, user: {read_ids: [], bookmarked_ids: []}};
     let requests = 0, failure = false, notice = '';

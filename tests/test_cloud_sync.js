@@ -434,13 +434,17 @@ async function main() {
   }
   {
     const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');
-    const source=['saveOfflineActivityStore','recordBriefingRead','toggleBriefingBookmark'].map(name=>
+    const source=['saveOfflineActivityStore','recordBriefingRead','toggleBriefingBookmark','updateBookmarkButtonUI','refreshDeviceActivity'].map(name=>
       html.match(new RegExp(`(?:async )?function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n    \\}`))[0]).join('\n');
     const storage=new Storage(),a=DeviceProfile.create(storage,webcrypto),b=DeviceProfile.create(storage,webcrypto);
-    const tab=profile=>require('node:vm').runInNewContext(`${source};({App,recordBriefingRead,toggleBriefingBookmark,saveOfflineActivityStore})`,{
-      deviceStore:profile,App:{user:{read_ids:[],bookmarked_ids:[]},selected:null},
-      renderUserWorkspace(){},updateBookmarkButtonUI(){},renderBriefingsList(){},showToast(){},tt:key=>key,syncDeviceActivity:async()=>{}
-    });
+    const tab=profile=>{
+      const classes=new Set();
+      return require('node:vm').runInNewContext(`${source};({App,Dom,recordBriefingRead,toggleBriefingBookmark,saveOfflineActivityStore,updateBookmarkButtonUI,refreshDeviceActivity})`,{
+        deviceStore:profile,DeviceProfile,App:{user:{read_ids:[],bookmarked_ids:[]},selected:null},
+        Dom:{btnToggleBookmark:{classList:{contains:key=>classes.has(key),toggle:(key,on)=>on?classes.add(key):classes.delete(key)}}},
+        cloudSync:{schedule(){}},renderUserWorkspace(){},renderBriefingsList(){},renderProfileHistory(){},showToast(){},tt:key=>key,syncDeviceActivity:async()=>{}
+      });
+    };
     const first=tab(a),second=tab(b);
     const syncA=consented({profile:a,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
     const syncB=Cloud.create({profile:b,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
@@ -456,14 +460,27 @@ async function main() {
     await first.toggleBriefingBookmark();first.saveOfflineActivityStore('read_ids','A',false);await syncA.sync();
     assert.deepEqual(a.profile.bookmarked_ids,['B']);assert.deepEqual(a.profile.read_ids,['B']);
     assert.deepEqual(Array.from(first.App.user.bookmarked_ids),['B']);
-    assert.deepEqual(records.get(syncA.userId).profile.bookmarked_ids,['B']);syncA.stop();syncB.stop();
+    assert.deepEqual(records.get(syncA.userId).profile.bookmarked_ids,['B']);
+    first.App.selected={id:'X'};second.App.selected={id:'X'};
+    first.updateBookmarkButtonUI();second.updateBookmarkButtonUI();
+    await first.toggleBriefingBookmark();await second.toggleBriefingBookmark();
+    assert.deepEqual(a.snapshot().bookmarked_ids,['B','X']);
+    await first.toggleBriefingBookmark();await second.toggleBriefingBookmark();
+    assert.deepEqual(b.snapshot().bookmarked_ids,['B']);
+    await first.toggleBriefingBookmark();second.refreshDeviceActivity({key:DeviceProfile.KEY});
+    assert.equal(second.Dom.btnToggleBookmark.classList.contains('is-active'),true);
+    assert.ok(second.App.user.bookmarked_ids.includes('X'));
+    await first.toggleBriefingBookmark();second.refreshDeviceActivity({key:DeviceProfile.KEY});
+    assert.equal(second.Dom.btnToggleBookmark.classList.contains('is-active'),false);
+    assert.deepEqual(Array.from(second.App.user.bookmarked_ids),['B']);
+    syncA.stop();syncB.stop();
   }
   {
-    for(const retry of [false,true]) {
+    for(const retry of [false,true]) for(const readd of [false,true]) {
       const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
       profile.activity(['local'],['re-added']);storage.setItem(Cloud.CONSENT_KEY,'denied');
       const other=DeviceProfile.create(storage,webcrypto),remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
-      remote.activity(['remote'],['re-added']);records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+      remote.activity(['remote'],[]);records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
       let releasePull,releasePush,pulled,pushed,pausePull=true,pausePush=true;
       const pullGate=new Promise(resolve=>releasePull=resolve),pushGate=new Promise(resolve=>releasePush=resolve);
       const pullStarted=new Promise(resolve=>pulled=resolve),pushStarted=new Promise(resolve=>pushed=resolve);
@@ -473,13 +490,13 @@ async function main() {
         if(pausePush&&action==='push'){pausePush=false;pushed();await pushGate;}
         return response;
       }});
-      if(retry)conflicts=[data=>data.read_ids.push('conflict')];
+      if(retry)conflicts=[data=>{data.read_ids.push('conflict');data.bookmarked_ids.push('re-added');}];
       const pending=sync.restore(target);await pullStarted;
       other.activity(other.snapshot().read_ids,[]);releasePull();await pushStarted;
-      other.activity(other.snapshot().read_ids,['re-added']);releasePush();await pending;
-      assert.ok(profile.snapshot().bookmarked_ids.includes('re-added'));
+      if(readd)other.activity(other.snapshot().read_ids,['re-added']);releasePush();await pending;
+      assert.equal(profile.snapshot().bookmarked_ids.includes('re-added'),readd);
       await new Promise(r=>setTimeout(r,50));
-      assert.ok(records.get(target).profile.bookmarked_ids.includes('re-added'));sync.stop();
+      assert.equal(records.get(target).profile.bookmarked_ids.includes('re-added'),readd);sync.stop();
     }
   }
   {

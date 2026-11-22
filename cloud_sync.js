@@ -122,6 +122,7 @@ const CloudSync = (() => {
       const initialConsentVersion=consentVersion;
       profile.snapshot();
       let localBase=JSON.parse(profile.exportJSON());
+      const localEdits=[];
       let draft=adopt?profile.fork():profile;
       let remote=await request('pull',{userId:target},initialId,adopt);
       if(adopt&&remote.profile==null)throw new Error('BACKUP_NOT_FOUND');
@@ -133,8 +134,13 @@ const CloudSync = (() => {
         if(adopt) {
           const latest=profile.fork();
           const attemptLocal=JSON.parse(latest.exportJSON());
-          latest.importJSON(draft.exportJSON(),'merge',localBase);
-          draft=latest;
+          if(JSON.stringify(attemptLocal)!==JSON.stringify(localBase))localEdits.push({base:localBase,local:attemptLocal});
+          for(const edit of localEdits) {
+            const rebased=latest.fork();
+            rebased.importJSON(JSON.stringify(edit.local),'replace');
+            rebased.importJSON(draft.exportJSON(),'merge',edit.base);
+            draft=rebased;
+          }
           localBase=attemptLocal;
         }
         const text=draft.exportJSON(),data=JSON.parse(text);
