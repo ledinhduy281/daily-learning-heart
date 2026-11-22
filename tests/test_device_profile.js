@@ -137,6 +137,31 @@ for (const bad of ['{}', 'null', 'not-json', JSON.stringify({...device.profile, 
   JSON.stringify({...device.profile, progress: {ebm_auth_token: 'bad'}}),
   backup.replace('"version": 1', '"__proto__": {}, "version": 1')]) assert.throws(() => migrated.importJSON(bad));
 assert.equal(migrated.exportJSON(), before);
+{
+  const targetStorage = new Storage(), target = create(targetStorage, crypto);
+  const snapshot = targetStorage.getItem(KEY);
+  for (const [key, value] of [
+    ['ebm_socratic_state_v1', {1: {messages: {bad: true}}}],
+    ['ebm_socratic_state_v1', {1: {messages: [null]}}],
+    ['ebm_socratic_state_v1', {1: {subskills: {}}}],
+    ['ebm_socratic_state_v1', {1: {current_options: null}}],
+    ['ebm_socratic_state_v1', {1: {started: 'yes'}}],
+    ['ebm_socratic_state_v1', []],
+    ['soaica_chat_sessions_v1', [{id: 'broken', messages: {}}]],
+    ['soaica_daily_quota_v1', {used: []}],
+    ['ebm_offline_user_activity', {read_ids: [null]}],
+    ['ebm_ui_prefs', []], ['ebm_offline_feedback', []]
+  ]) {
+    for (const mode of ['merge', 'replace']) {
+      assert.throws(() => target.importJSON(JSON.stringify({...JSON.parse(backup), progress: {[key]: JSON.stringify(value)}}), mode));
+      assert.equal(targetStorage.getItem(KEY), snapshot);
+      assert.deepEqual(target.profile.read_ids, []);
+    }
+  }
+  assert.throws(() => target.importJSON(JSON.stringify({...JSON.parse(backup), progress: {ebm_socratic_state_v1: 'not json'}})));
+  target.importJSON(JSON.stringify({...JSON.parse(backup), progress: {ebm_socratic_state_v1: '{}', soaica_chat_sessions_v1: '[]'}}));
+  assert.equal(target.get('ebm_socratic_state_v1'), '{}');
+}
 assert.throws(() => migrated.rename(''));
 assert.throws(() => migrated.rename('x'.repeat(101)));
 const unavailable = {getItem() {throw Error('denied');}, setItem() {throw Error('full');}, get length() {throw Error('denied');}};

@@ -64,6 +64,50 @@ const DeviceProfile = (() => {
     }
     return p;
   }
+  function validateProgress(progress) {
+    const require = condition => { if (!condition) throw new Error('Invalid progress data'); };
+    const fields = (record, schema) => {
+      require(object(record));
+      for (const [key, type] of Object.entries(schema)) if (key in record) require(typeof record[key] === type);
+    };
+    const messages = value => {
+      require(Array.isArray(value));
+      for (const message of value) {
+        if (typeof message === 'string') continue;
+        fields(message, {role: 'string', text: 'string', markdownText: 'string'});
+      }
+    };
+    for (const [key, raw] of Object.entries(progress)) {
+      if (!['ebm_socratic_state_v1', 'soaica_chat_sessions_v1', 'soaica_daily_quota_v1', 'ebm_offline_user_activity', 'ebm_offline_feedback', 'ebm_ui_prefs', 'ebm_quiz_progress'].includes(key)) continue;
+      const value = JSON.parse(raw);
+      if (key === 'soaica_chat_sessions_v1') {
+        require(Array.isArray(value));
+        for (const session of value) {
+          fields(session, {id: 'string', title: 'string', updatedAt: 'string'});
+          require(typeof session.id === 'string');
+          messages(session.messages);
+        }
+      } else if (key === 'ebm_socratic_state_v1') {
+        require(object(value));
+        for (const record of Object.values(value)) {
+          fields(record, {started: 'boolean', phase: 'string', last_question: 'string', correct_key: 'string', explanation: 'string', answered_count: 'number', correct_count: 'number', streak: 'number'});
+          if ('messages' in record) messages(record.messages);
+          if ('subskills' in record) {
+            require(Array.isArray(record.subskills));
+            for (const skill of record.subskills) fields(skill, {id: 'string', label: 'string', level: 'number', checks: 'number', answered: 'number', correct: 'number'});
+          }
+          if ('current_options' in record) {
+            require(Array.isArray(record.current_options));
+            for (const option of record.current_options) if (typeof option !== 'string') fields(option, {key: 'string', text: 'string'});
+          }
+        }
+      } else {
+        require(object(value));
+        if (key === 'ebm_offline_user_activity') for (const field of ['read_ids', 'bookmarked_ids']) if (field in value) require(Array.isArray(value[field]) && value[field].every(id => typeof id === 'string'));
+        if (key === 'soaica_daily_quota_v1') fields(value, {date: 'string', used: 'number', limit: 'number', exhausted: 'boolean', stop_reason: 'string'});
+      }
+    }
+  }
   function mergeProgress(a, b, key, base) {
     try {
       const left = JSON.parse(a), right = JSON.parse(b);
@@ -168,6 +212,7 @@ const DeviceProfile = (() => {
         const parsed = JSON.parse(text);
         if (parsed?.device_id !== undefined && !uuid.test(parsed.device_id)) throw new Error('Invalid legacy device ID');
         const incoming = validate({...parsed, device_id: p.device_id});
+        validateProgress(incoming.progress);
         const next = mode === 'merge' ? merge(p, incoming) : incoming;
         if (mode === 'merge') for (const key of Object.keys(incoming.progress)) next.progress[key] = mergeProgress(p.progress[key], incoming.progress[key], key);
         const previous = p;
