@@ -8357,6 +8357,7 @@
           s.answered_count = Math.max(0, Number(s.answered_count || 0));
           s.correct_count = Math.max(0, Number(s.correct_count || 0));
           s.streak = Math.max(0, Number(s.streak || 0));
+          if (s.phase === "diagnostic" && s.question_index == null) s.question_index = Number(s.diag_step || 0);
           if (typeof s.last_updated_idx !== "number") s.last_updated_idx = -1;
           s.last_delta = Number(s.last_delta || 0);
           s.last_eval = String(s.last_eval || "");

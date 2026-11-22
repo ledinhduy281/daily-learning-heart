@@ -273,6 +273,28 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
     assert.equal(saved.messages.length,second.messages.length+1);
     assert.equal(generated,before+1);
   }
+  {
+    const build=tutor.buildDeterministicMcq;
+    const question={...fresh,required_subskills:[0,1]};
+    tutor.buildDeterministicMcq=()=>question;
+    tutor.store={1:{...pending('resumed'),phase:'diagnostic',diag_step:3,answered_count:3,correct_count:3,
+      explanation:'',subskills:[0,1,2,3].map(()=>({level:1,answered:1,correct:1,checks:1}))}};
+    const resumed=tutor.getSession();
+    assert.equal(resumed.question_index,3);
+    assert.equal(resumed.diag_step,3);
+    assert.equal(resumed.phase,'diagnostic');
+    assert.equal(resumed.answered_count,3);
+    tutor.loadStore();
+    const saved=tutor.getSession();
+    assert.equal(saved.question_index,3);
+    const result=require('../clinical_mcq.js').turn(app.selected,saved,'vi','answer','',question.correct_key);
+    assert.equal(result.state.question_index,4);
+    assert.equal(result.state.answered_count,4);
+    assert.equal(result.state.phase,'loop');
+    tutor.store={1:{...pending('indexed'),phase:'diagnostic',diag_step:3,question_index:7}};
+    assert.equal(tutor.getSession().question_index,7);
+    tutor.buildDeterministicMcq=build;
+  }
   const recoverable={...second,last_question:fresh.question,current_options:fresh.options,correct_key:fresh.correct_key,explanation:'',current_question:{...fresh,explanation:''}};
   tutor.store={1:recoverable};
   const restored=tutor.getSession();
