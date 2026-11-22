@@ -1362,8 +1362,9 @@ def _get_feedback_summary(user_key: str | None = None) -> dict:
         return _compute_feedback_summary(data, user_key)
 
 
-def _feedback_author_id(user_key: str) -> str:
-    return 'author:' + hashlib.sha256(('ebm-feedback:' + user_key).encode()).hexdigest()
+def _feedback_author_id(user_key: str, *, authenticated: bool = False) -> str:
+    namespace = 'ebm-feedback-account:' if authenticated and user_key == 'guest' else 'ebm-feedback:'
+    return 'author:' + hashlib.sha256((namespace + user_key).encode()).hexdigest()
 
 
 def get_feedback_payload(user: dict | None) -> dict:
@@ -1372,11 +1373,12 @@ def get_feedback_payload(user: dict | None) -> dict:
         data = _load_feedback_data_unlocked()
         summary = _compute_feedback_summary(data, user_key)
         reports = data.get("reports", [])
-        author_id = _feedback_author_id(user_key)
         recent_reports = []
-        if user_key != 'guest':
+        if user:
+            author_id = _feedback_author_id(user_key, authenticated=True)
             recent_reports = [r for r in reversed(reports)
-                              if r.get('author_id') == author_id or r.get('username') == user_key][:20]
+                              if r.get('author_id') == author_id or
+                              (user_key != 'guest' and r.get('username') == user_key)][:20]
         safe_reports = []
         for report in recent_reports:
             safe = {key: report[key] for key in ('id', 'briefing_id', 'pillar_id', 'display_name', 'reason', 'comment', 'created_at') if key in report}
@@ -1426,7 +1428,7 @@ def submit_feedback(user: dict | None, req_data: dict) -> tuple[int, dict]:
                 "id": f"rep-{int(time.time() * 1000)}-{secrets.token_hex(3)}",
                 "briefing_id": briefing_id,
                 "pillar_id": pid_val,
-                "author_id": _feedback_author_id(user_key),
+                "author_id": _feedback_author_id(user_key, authenticated=bool(user)),
                 "display_name": display_name,
                 "reason": reason or "Góp ý nội dung",
                 "comment": comment,

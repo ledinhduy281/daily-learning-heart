@@ -212,6 +212,31 @@ class DeviceProfileTests(unittest.TestCase):
             self.assertNotRegex(json.dumps(reports), device + '|hidden|username|token|email')
         self.assertEqual(self.request('/api/feedback', str(uuid.uuid4()))[1]['recent_reports'], [])
 
+    def test_authenticated_guest_can_read_only_its_unambiguous_reports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            users = Path(directory) / 'users.json'
+            feedback = Path(directory) / 'feedback.json'
+            with patch.object(app, 'USERS_PATH', users), patch.object(app, 'FEEDBACK_PATH', feedback):
+                briefing_id = 'guest-report'
+                legacy = {'briefing_id': briefing_id, 'comment': 'Historical ambiguous report'}
+                feedback.write_text(json.dumps({'votes': {}, 'reports': [
+                    {**legacy, 'username': 'guest'},
+                    {**legacy, 'author_id': app._feedback_author_id('guest')},
+                ]}))
+                status, guest = self.request('/api/auth/register', body={'username': 'guest', 'password': 'test-password'})
+                self.assertEqual(status, 200)
+                headers = {'Authorization': 'Bearer ' + guest['token']}
+                report = {'briefing_id': briefing_id, 'type': 'report'}
+                self.assertEqual(self.request('/api/feedback', body={**report, 'comment': 'Anonymous'})[0], 200)
+                self.assertEqual(self.request('/api/feedback', body={**report, 'comment': 'Signed in'}, headers=headers)[0], 200)
+
+                _, payload = self.request('/api/feedback', headers=headers)
+                self.assertEqual([r['comment'] for r in payload['recent_reports']], ['Signed in'])
+                self.assertNotEqual(payload['recent_reports'][0]['author_id'], app._feedback_author_id('guest'))
+                self.assertEqual(payload['summary'][briefing_id]['report'], 4)
+                self.assertEqual(self.request('/api/feedback')[1]['recent_reports'], [])
+                self.assertEqual(self.request('/api/feedback', str(uuid.uuid4()))[1]['recent_reports'], [])
+
     def test_sync_and_quiz_persistence(self):
         device = str(uuid.uuid4())
         body = {'action': 'sync', 'read_ids': ['one', 'one'], 'bookmarked_ids': ['two'], 'display_name': 'Doctor A'}
