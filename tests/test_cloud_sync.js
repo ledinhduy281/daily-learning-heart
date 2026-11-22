@@ -279,7 +279,9 @@ async function main() {
       rejectMerge=false;
       for(const action of ['pull','push']) {
         networkError=action;
+        const untouched=JSON.stringify([...storage.values]);
         await assert.rejects(sync.restore(c.userId),/restore network failure/);
+        assert.equal(JSON.stringify([...storage.values]),untouched);
         assert.equal(sync.consent,initial);assert.equal(observer.consent,initial);
         assert.equal(sync.userId,priorId);assert.equal(observer.userId,priorId);
         assert.equal(storage.getItem(Cloud.CONSENT_KEY),initial);
@@ -318,6 +320,117 @@ async function main() {
     sync.setConsent(false);
     await sync.start({url:'https://example.test/?restore='+c.userId,confirm:()=>true,replaceUrl:()=>{}});
     assert.equal(sync.consent,'allowed');sync.stop();
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    profile.rename('Original');profile.activity(['original'],['remove','keep']);
+    const first=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    await first.sync();
+    const staleProfile=DeviceProfile.create(storage,webcrypto);
+    const stale=Cloud.create({profile:staleProfile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+    first.setConsent(false);
+    const remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
+    remote.rename('Restored name');remote.activity(['restored'],['remove','keep']);
+    records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+    await first.restore(target);
+    const row=records.get(target);row.revision++;row.profile.display_name='Newest remote rename';row.profile.bookmarked_ids=['keep'];
+    await stale.sync();
+    assert.equal(staleProfile.profile.display_name,'Newest remote rename');
+    assert.deepEqual(staleProfile.profile.bookmarked_ids,['keep']);
+    assert.equal(records.get(target).profile.display_name,'Newest remote rename');
+    assert.deepEqual(records.get(target).profile.bookmarked_ids,['keep']);
+    first.stop();stale.stop();
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    profile.rename('Unchanged local');profile.activity(['local'],['local bookmark']);
+    storage.setItem(Cloud.CONSENT_KEY,'denied');
+    const remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
+    remote.rename('Remote');remote.activity(['remote'],['remote bookmark']);
+    records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+    let pushes=0,fail=true;
+    const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:60000,fetch:async(url,options)=>{
+      if(JSON.parse(options.body).action==='push'&&++pushes===2&&fail)throw Error('failed staged restore');
+      return fetch(url,options);
+    }});
+    const original=JSON.stringify([...storage.values]),portable=profile.exportJSON();
+    conflicts=[data=>{data.display_name='Remote conflict update';data.read_ids.push('conflict read');}];
+    await assert.rejects(sync.restore(target),/failed staged restore/);
+    assert.equal(JSON.stringify([...storage.values]),original);assert.equal(profile.exportJSON(),portable);
+    assert.equal(sync.consent,'denied');assert.notEqual(sync.userId,target);
+    fail=false;await sync.restore(target);
+    assert.ok(profile.profile.read_ids.includes('remote'));assert.ok(profile.profile.read_ids.includes('local'));
+    assert.equal(sync.userId,target);sync.stop();
+  }
+  {
+    for(const phase of ['pull','push']) for(const initial of [null,'denied','allowed']) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      profile.activity(['pending restore'],[]);
+      if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
+      const remote=DeviceProfile.create(new Storage(),webcrypto),target=remote.profile.device_id;
+      remote.activity(['remote read'],[]);records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+      let release,entered,pause=true;
+      const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
+      const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        const response=await fetch(url,options);
+        if(pause&&JSON.parse(options.body).action===phase) {pause=false;entered();await gate;}
+        return response;
+      }});
+      const other=Cloud.create({profile:DeviceProfile.create(storage,webcrypto),storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+      const pending=sync.restore(target);await started;
+      if(initial==='denied')other.setConsent(true);
+      other.setConsent(false);const afterPause=calls.length;
+      release();
+      if(phase==='pull')await assert.rejects(pending,/CONSENT_REQUIRED/);else await pending;
+      assert.equal(sync.consent,'denied');assert.equal(other.consent,'denied');
+      assert.equal(storage.getItem(Cloud.CONSENT_KEY),'denied');
+      assert.equal(sync.userId===target,phase==='push');
+      await new Promise(r=>setTimeout(r,30));assert.equal(calls.length,afterPause);
+      sync.stop();other.stop();
+    }
+  }
+  {
+    const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+    profile.rename('Before');profile.activity(['read'],['remove','keep']);
+    const first=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});await first.sync();
+    let release,entered,pause=true,merged=0;
+    const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
+    const secondProfile=DeviceProfile.create(storage,webcrypto);
+    const second=Cloud.create({profile:secondProfile,storage,endpoint:'https://sync.test/exec',delay:5,onMerged:()=>merged++,fetch:async(url,options)=>{
+      const response=await fetch(url,options);
+      if(pause&&JSON.parse(options.body).action==='pull') {pause=false;entered();await gate;}
+      return response;
+    }});
+    const pending=second.sync();await started;
+    profile.rename('Other tab latest');profile.activity(['read'],['keep']);await first.sync();
+    release();await pending;await new Promise(r=>setTimeout(r,50));
+    assert.equal(merged,0);
+    assert.equal(secondProfile.profile.display_name,'Other tab latest');assert.deepEqual(secondProfile.profile.bookmarked_ids,['keep']);
+    assert.equal(records.get(first.userId).profile.display_name,'Other tab latest');
+    assert.deepEqual(records.get(first.userId).profile.bookmarked_ids,['keep']);first.stop();second.stop();
+  }
+  {
+    for(const restoring of [false,true]) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      profile.rename('Before push');profile.activity(['read'],['remove','keep']);
+      const otherProfile=DeviceProfile.create(storage,webcrypto);
+      let release,entered,pause=true;
+      const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
+      const sync=consented({profile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        const response=await fetch(url,options);
+        if(pause&&JSON.parse(options.body).action==='push') {pause=false;entered();await gate;}
+        return response;
+      }});
+      const remote=DeviceProfile.create(new Storage(),webcrypto),target=restoring?remote.profile.device_id:sync.userId;
+      if(restoring)records.set(target,{profile:JSON.parse(remote.exportJSON()),revision:1});
+      const pending=restoring?sync.restore(target):sync.sync();await started;
+      otherProfile.rename('Edited during push');otherProfile.activity(['read','during push'],['keep']);
+      release();await pending;await new Promise(r=>setTimeout(r,50));
+      assert.equal(profile.snapshot().display_name,'Edited during push');assert.deepEqual(profile.profile.bookmarked_ids,['keep']);
+      assert.equal(records.get(target).profile.display_name,'Edited during push');
+      assert.deepEqual(records.get(target).profile.bookmarked_ids,['keep']);
+      assert.ok(records.get(target).profile.read_ids.includes('during push'));sync.stop();
+    }
   }
   const failed=Cloud.create({profile:otherProfile,storage:otherStorage,endpoint:'https://sync.test/exec',fetch:async()=>{throw Error('offline');},onStatus:s=>statuses.push(s)});
   await assert.rejects(failed.sync(),/offline/);assert.equal(statuses.at(-1),'SYNC_FAILED');failed.stop();

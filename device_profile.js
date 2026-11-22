@@ -270,6 +270,14 @@ const DeviceProfile = (() => {
       subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
       get profile() { return JSON.parse(JSON.stringify(p)); },
       snapshot() { return snapshot(true); },
+      fork() {
+        const values = new Map([[KEY, JSON.stringify({...JSON.parse(this.exportJSON()), device_id:p.device_id})]]);
+        return create({
+          getItem:key => values.get(key) ?? null,
+          setItem:(key,value) => values.set(key,String(value)),
+          removeItem:key => values.delete(key)
+        }, cryptoSource, lang);
+      },
       get(key) { return p.progress[key] ?? null; },
       set(key, value) { if (!owned(key)) return; p.progress[key] = String(value); persist(); },
       remove(key) { delete p.progress[key]; persist(); },
@@ -291,6 +299,7 @@ const DeviceProfile = (() => {
         return JSON.stringify({version, display_name, created_at, read_ids, bookmarked_ids, progress: portableProgress(progress)}, null, 2);
       },
       importJSON(text, mode = 'merge', syncBase = null) {
+        snapshot(true);
         const before = this.exportJSON();
         if (typeof text !== 'string' || text.length > 5 * 1024 * 1024 || !['merge','replace'].includes(mode)) throw new Error('Invalid import');
         const parsed = JSON.parse(text);

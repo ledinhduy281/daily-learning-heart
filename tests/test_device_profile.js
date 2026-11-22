@@ -15,6 +15,19 @@ const id = 'a9876543-1234-4123-8123-123456789abc';
 const crypto = {randomUUID() { calls++; return id; }};
 const storage = new Storage();
 {
+  const storage=new Storage(),profile=create(storage,crypto);
+  const original=JSON.stringify([...storage.values]);
+  const draft=profile.fork();
+  assert.deepEqual(draft.profile.read_ids,[]);
+  draft.rename('Draft name');draft.activity(['draft read'],['draft bookmark']);
+  assert.equal(JSON.stringify([...storage.values]),original);
+  assert.notEqual(profile.profile.display_name,'Draft name');
+  assert.deepEqual(profile.profile.read_ids,[]);
+  assert.equal(draft.profile.display_name,'Draft name');
+  assert.throws(()=>draft.importJSON('{bad JSON'));
+  assert.equal(JSON.stringify([...storage.values]),original);
+}
+{
   const shared = new Storage(), a = create(shared, crypto), b = create(shared, crypto);
   a.activity(['a'], ['a']); a.set('ebm_ui_lang', 'en'); a.rename('New name');
   b.activity(['b'], ['b']); b.set('ebm_font_scale', '1.2');
