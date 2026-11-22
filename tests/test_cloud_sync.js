@@ -197,6 +197,45 @@ async function main() {
     first.stop();second.stop();
   }
   {
+    for(const phase of ['idle','pull','push']) {
+      const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
+      profile.activity(['original read'],[]);
+      const first=consented({profile,storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
+      await first.sync();
+      const oldId=first.userId;
+      let pause=null,release,entered;
+      const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
+      const secondProfile=DeviceProfile.create(storage,webcrypto);
+      const second=Cloud.create({profile:secondProfile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        const response=await fetch(url,options);
+        if(JSON.parse(options.body).action===pause) {pause=null;entered();await gate;}
+        return response;
+      }});
+      await second.sync();
+      const remote=DeviceProfile.create(new Storage(),webcrypto),newId=remote.profile.device_id;
+      remote.activity(['restored read'],[]);
+      records.set(newId,{profile:JSON.parse(remote.exportJSON()),revision:1});
+      let pending;
+      if(phase!=='idle') {
+        if(phase==='pull') {const row=records.get(oldId);row.profile.read_ids.push('stale old response');row.revision++;}
+        pause=phase;pending=second.sync();await started;
+      }
+      first.setConsent(false);
+      const beforeRestore=calls.length;
+      await first.restore(newId);
+      release();if(pending)await pending;
+      assert.equal(JSON.parse(storage.getItem('dlh_sync_baseline_v1')).userId,newId);
+      assert.ok(!secondProfile.profile.read_ids.includes('stale old response'));
+      second.schedule();await new Promise(r=>setTimeout(r,50));
+      assert.equal(first.userId,newId);assert.equal(second.userId,newId);
+      assert.ok(calls.slice(beforeRestore).filter(q=>q.action==='push').every(q=>q.userId===newId));
+      assert.ok(calls.slice(beforeRestore).some(q=>q.action==='push'&&q.userId===newId));
+      assert.equal(JSON.parse(storage.getItem('dlh_sync_baseline_v1')).userId,newId);
+      assert.ok(records.get(newId).profile.read_ids.includes('restored read'));
+      first.stop();second.stop();
+    }
+  }
+  {
     for(const initial of [null,'denied','allowed']) {
       const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
       if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
@@ -217,25 +256,42 @@ async function main() {
       const storage=new Storage(),profile=DeviceProfile.create(storage,webcrypto);
       if(initial)storage.setItem(Cloud.CONSENT_KEY,initial);
       profile.activity(['restore local read'],[]);
-      let rejectMerge=false;
+      let rejectMerge=false,networkError=null;
       const sync=Cloud.create({profile,storage,endpoint:'https://sync.test/exec',delay:5,fetch:async(url,options)=>{
+        if(JSON.parse(options.body).action===networkError)throw Error('restore network failure');
         if(rejectMerge)return {ok:true,text:async()=>JSON.stringify({ok:true,profile:{version:1},revision:1})};
         return fetch(url,options);
       }});
+      const observer=Cloud.create({profile:DeviceProfile.create(storage,webcrypto),storage,endpoint:'https://sync.test/exec',fetch,delay:60000});
       const priorId=sync.userId;
+      const storedId=storage.getItem(Cloud.ID_KEY);
       const start=calls.filter(q=>q.action==='push').length;
       for(const viaLink of [false,true]) {
         const missing='00000000-0000-4000-8000-000000000000';
         await assert.rejects(viaLink?sync.start({url:'https://example.test/?restore='+missing,confirm:()=>true,replaceUrl:()=>{}}):sync.restore(missing),/BACKUP_NOT_FOUND/);
         assert.equal(sync.consent,initial);assert.equal(storage.getItem(Cloud.CONSENT_KEY),initial);
         assert.equal(sync.userId,priorId);assert.equal(storage.getItem('dlh_sync_baseline_v1'),null);
+        assert.equal(observer.userId,priorId);assert.equal(observer.consent,initial);
+        assert.equal(storage.getItem(Cloud.ID_KEY),storedId);
       }
       assert.equal(calls.filter(q=>q.action==='push').length,start);
       rejectMerge=true;await assert.rejects(sync.restore(c.userId));assert.equal(sync.consent,initial);
       rejectMerge=false;
+      for(const action of ['pull','push']) {
+        networkError=action;
+        await assert.rejects(sync.restore(c.userId),/restore network failure/);
+        assert.equal(sync.consent,initial);assert.equal(observer.consent,initial);
+        assert.equal(sync.userId,priorId);assert.equal(observer.userId,priorId);
+        assert.equal(storage.getItem(Cloud.CONSENT_KEY),initial);
+        assert.equal(storage.getItem(Cloud.ID_KEY),storedId);
+        assert.equal(storage.getItem('dlh_sync_baseline_v1'),null);
+      }
+      networkError=null;
       await sync.start({url:'https://example.test/?restore='+c.userId,confirm:()=>true,replaceUrl:()=>{}});
       assert.equal(sync.consent,'allowed');assert.equal(storage.getItem(Cloud.CONSENT_KEY),'allowed');
-      assert.ok(profile.profile.read_ids.includes('local'));sync.stop();
+      assert.ok(profile.profile.read_ids.includes('local'));
+      assert.equal(observer.userId,c.userId);assert.equal(observer.consent,'allowed');
+      sync.stop();observer.stop();
     }
   }
   {

@@ -31,23 +31,49 @@ const CloudSync = (() => {
       try {storage.setItem(CONSENT_KEY,consent);storedConsent=consent;sessionConsent=false;}catch(_){}
       clearTimeout(timer);
     }
-    try {
-      const cached=JSON.parse(storage.getItem(BASE_KEY));
-      if(cached?.userId===id && cached.profile && bytes(JSON.stringify(cached.profile))<=MAX_BYTES)baseline=cached.profile;
-    } catch(_) {}
+    function loadBaseline() {
+      baseline=null;
+      try {
+        const cached=JSON.parse(storage.getItem(BASE_KEY));
+        if(cached?.userId===id && cached.profile && bytes(JSON.stringify(cached.profile))<=MAX_BYTES)baseline=cached.profile;
+      } catch(_) {}
+    }
+    loadBaseline();
+    function readState() {
+      readConsent();
+      try {
+        const saved=storage.getItem(ID_KEY);
+        const next=uuid.test(saved||'')?validId(saved):validId(profile.profile.device_id);
+        if(next!==id) {
+          id=next;lastSynced='';blockedSnapshot=null;
+          loadBaseline();
+        }
+      } catch(_) {}
+    }
+    function requireActive(expectedId) {
+      readState();
+      if(id!==expectedId)throw new Error('SYNC_SUPERSEDED');
+    }
     const status=code=>onStatus(code);
-    async function request(action,fields={}) {
+    async function request(action,fields={},expectedId=null,restoring=false) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
-      if(action==='push'&&readConsent()!=='allowed')throw new Error('CONSENT_REQUIRED');
+      if(expectedId!==null)requireActive(expectedId);
+      if(action==='push'&&!restoring&&readConsent()!=='allowed')throw new Error('CONSENT_REQUIRED');
       const body=JSON.stringify({action,...fields});
       if(bytes(body)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
       try {
         const res=await fetcher(endpoint,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow',signal:controller.signal});
+        if(expectedId!==null)requireActive(expectedId);
         if(!res.ok)throw new Error('SYNC_FAILED');
-        const text=await res.text();if(bytes(text)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
+        const text=await res.text();
+        if(expectedId!==null)requireActive(expectedId);
+        if(bytes(text)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
         const result=JSON.parse(text);if(!result||result.ok!==true)throw new Error('SYNC_FAILED');
         return result;
+      } catch(error) {
+        if(expectedId!==null)requireActive(expectedId);
+        throw error;
       } finally {clearTimeout(timeout);}
     }
     function merge(remote,base) {
@@ -66,24 +92,28 @@ const CloudSync = (() => {
     }
     async function exchange(target,adopt=false,force=false) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
+      readState();
       if(!adopt&&readConsent()!=='allowed')return;
-      let remote=await request('pull',{userId:target});
+      if(!adopt)target=id;
+      const initialId=id;
+      let remote=await request('pull',{userId:target},initialId);
       if(adopt&&remote.profile==null)throw new Error('BACKUP_NOT_FOUND');
       let base=target===id?baseline:null;
       merge(remote.profile,base);
-      if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';rememberConsent(true);}
-      base=remote.profile;remember(target,base);
+      requireActive(initialId);
+      base=remote.profile;if(!adopt)remember(target,base);
       for(let attempt=0;attempt<4;attempt++) {
         const text=profile.exportJSON(),data=JSON.parse(text);
         if(bytes(text)>MAX_BYTES)throw new Error('TOO_LARGE');
         if(!meaningful(data)&&!adopt&&!force)return;
-        const result=await request('push',{userId:target,profile:data,revision:remote.revision});
+        const result=await request('push',{userId:target,profile:data,revision:remote.revision},adopt?initialId:target,adopt);
         if(!result.conflict) {
+          if(adopt) {storage.setItem(ID_KEY,target);id=target;lastSynced='';blockedSnapshot=null;rememberConsent(true);}
           lastSynced=text;remember(target,data);
           status('SYNCED');return;
         }
         merge(result.profile,base);remote=result;
-        base=remote.profile;remember(target,base);
+        base=remote.profile;if(!adopt)remember(target,base);
       }
       throw new Error('SYNC_CONFLICT');
     }
@@ -91,22 +121,25 @@ const CloudSync = (() => {
       const result=queue.then(work);
       queue=result.catch(()=>{});
       return result.catch(error=>{
+        if(error.message==='SYNC_SUPERSEDED')return;
         if(error.message==='TOO_LARGE')blockedSnapshot=profile.exportJSON();
         status(['NOT_CONFIGURED','BACKUP_NOT_FOUND','CONSENT_REQUIRED'].includes(error.message)?error.message:'SYNC_FAILED');throw error;
       });
     }
     function sync() {return enqueue(()=>exchange(id));}
     function schedule() {
+      readState();
       if(!enabled||readConsent()!=='allowed'||merging)return;
       clearTimeout(timer);
       timer=setTimeout(()=>{
+        readState();
         const text=profile.exportJSON();
         if(text!==lastSynced&&text!==blockedSnapshot)sync().catch(()=>{});
       },delay);
     }
     const unsubscribe=profile.subscribe?profile.subscribe(schedule):()=>{};
     return {
-      enabled,get userId(){return id;},get consent(){return readConsent();},sync,schedule,
+      enabled,get userId(){readState();return id;},get consent(){readState();return consent;},sync,schedule,
       setConsent(allow) {rememberConsent(allow);status(allow?'SYNC_ALLOWED':'CONSENT_REQUIRED');if(allow){lastSynced='';schedule();}},
       restore(value) {
         const target=validId(value);
