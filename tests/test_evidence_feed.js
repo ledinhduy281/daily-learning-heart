@@ -54,7 +54,7 @@ async function main() {
   };
   assert.equal(downloadHidden(), false, "online network snapshot offers the download");
   navigator.onLine = false;
-  assert.equal(downloadHidden(), true, "going offline hides the download even with a live snapshot");
+  assert.equal(downloadHidden(), false, "live loopback data offers the download even when offline");
   navigator.onLine = true;
   App.evidenceFeed.fromCache = true;
   assert.equal(downloadHidden(), true, "cached fallback hides the download even when online");
