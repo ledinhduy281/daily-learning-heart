@@ -3615,6 +3615,16 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
 
+    def send_head(self):
+        public_assets = {'index.html', 'device_profile.js', 'search_ranking.js',
+                         'manifest.json', 'icon.svg', 'data/briefings.js'}
+        target = Path(self.translate_path(self.path)).resolve()
+        allowed = {(BASE_DIR / name).resolve() for name in public_assets}
+        if target not in allowed or target in (USERS_PATH.resolve(), FEEDBACK_PATH.resolve()):
+            self._send_json(403, {'ok': False, 'error': 'Private data'})
+            return None
+        return super().send_head()
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         super().end_headers()

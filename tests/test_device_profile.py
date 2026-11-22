@@ -17,6 +17,27 @@ class QuietHandler(app.EBMRequestHandler):
 
 
 class DeviceProfileTests(unittest.TestCase):
+    def test_static_assets_exclude_private_stores_and_atomic_temps(self):
+        original_replace = app.os.replace
+        checked = []
+        with tempfile.TemporaryDirectory(dir=app.DATA_DIR) as directory:
+            def check_temp(source, destination):
+                relative = Path(source).relative_to(app.BASE_DIR).as_posix()
+                self.assertTrue(Path(source).exists())
+                self.assertEqual(self.request('/' + relative)[0], 403)
+                checked.append(relative)
+                original_replace(source, destination)
+            for name in ('users.json', 'feedback.json'):
+                path = Path(directory) / name
+                with patch.object(app.os, 'replace', side_effect=check_temp):
+                    app._atomic_write_text(path, '{"private":true}')
+                self.assertEqual(self.request('/' + path.relative_to(app.BASE_DIR).as_posix())[0], 403)
+        self.assertEqual(len(checked), 2)
+        for path in ('/.env', '/fetch_daily_ebm.py', '/data/', '/data/users.json.1.2.tmp', '/data/feedback.json', '/data/%75sers.json'):
+            self.assertEqual(self.request(path)[0], 403)
+        with urllib.request.urlopen(self.base + '/device_profile.js') as response:
+            self.assertEqual(response.status, 200)
+
     def test_anonymous_storage_is_write_only_and_bounded(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'), patch.object(app, 'FEEDBACK_PATH', Path(directory) / 'feedback.json'), patch.object(app, 'MAX_ANONYMOUS_DEVICES', 1):
             one, two = str(uuid.uuid4()), str(uuid.uuid4())
