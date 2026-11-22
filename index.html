@@ -8415,10 +8415,46 @@
             this.fetchOpenFdaDrugNote(searchQuery)
           ]);
           const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium");
-          const engineLabel = fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`;
+          let answerMarkdown = det.markdown;
+          let engineLabel = fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`;
+          const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
+          if (endpoint) {
+            let timer;
+            try {
+              const suffix = lang === "en" ? "en" : "vi";
+              const context = [
+                `PILLAR #${primary.pillar_id}: ${primary.pillar_vi || primary.pillar_name || ""}`,
+                `GUIDELINE: ${JSON.stringify(primary.guideline_evolution?.current_guideline || {})}`,
+                `STEPS: ${JSON.stringify((primary.guideline_evolution?.steps || []).slice(-3).map(s => ({title: s[`title_${suffix}`], desc: (s[`desc_${suffix}`] || "").slice(0, 150)})))}`,
+                `TRIALS: ${JSON.stringify((primary.landmark_trials || []).slice(0, 2).map(t => ({name: t.name, value: t.value, p: t.p, changes: (t[`changes_${suffix}`] || "").slice(0, 150), caution: (t[`caution_${suffix}`] || "").slice(0, 150)})))}`,
+                `PEARLS: ${JSON.stringify((primary.pearls || []).slice(0, 3).map(p => (p[`text_${suffix}`] || "").slice(0, 150)))}`,
+                `OPENFDA: ${JSON.stringify(fdaNote)}`,
+                `PUBMED: ${JSON.stringify(pubmedHits.slice(0, 2).map(p => ({pmid: p.pmid, title: p.title, pubdate: p.pubdate, snippet: (p.snippet || "").slice(0, 150)})))}`,
+                `EXCERPT:\n${(primary[lang === "en" ? "part2_en_markdown" : "part1_vi_markdown"] || "").slice(0, 900)}`
+              ].join("\n").slice(0, 6000);
+              const controller = new AbortController();
+              timer = setTimeout(() => controller.abort(), 20000);
+              const response = await fetch(endpoint, {
+                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
+                body: JSON.stringify({action: "chat", question: query,
+                  history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
+                  context, lang, verbosity: this.verbosity || "medium"})
+              });
+              if (response.ok) {
+                const ai = await response.json();
+                if (ai.ok === true && typeof ai.answer_markdown === "string" && ai.answer_markdown.trim()) {
+                  answerMarkdown = ai.answer_markdown;
+                  engineLabel = `${botName} • AI (Groq) + EBM`;
+                }
+              }
+            } catch (_) {
+            } finally {
+              clearTimeout(timer);
+            }
+          }
 
           typingEl.remove();
-          this.appendMessage("assistant", det.markdown, det.sources, engineLabel);
+          this.appendMessage("assistant", answerMarkdown, det.sources, engineLabel);
         } catch (err) {
           typingEl.remove();
           this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
