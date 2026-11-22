@@ -10,21 +10,20 @@ def normalized(text):
     return re.sub(r'\W+', ' ', ''.join(c for c in text if unicodedata.category(c) != 'Mn')).strip()
 
 
-def alternatives(text):
+def alternatives(text, numeric_only=False):
     """Return one documented fact and three single-variable, plausible near misses."""
-    match = re.search(r'\bClass\s+(IIa|IIb|III|II|I)\b', text, re.I)
-    if match:
+    match = (re.search(r'\b(?:HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*([0-9]+(?:[.,][0-9]+)?)', text) or
+             re.search(r'\b(?:LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi)\s*[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)', text, re.I) or
+             re.search(r'([0-9]+(?:[.,][0-9]+)?)\s*%', text) or
+             re.search(r'([+-]?[0-9]+(?:[.,][0-9]+)?)\s*(?:mmHg|WU|mL/min|mmol/L|mg/dL)\b', text, re.I))
+    if not match:
+        match = None if numeric_only else re.search(r'\bClass\s+(IIa|IIb|III|II|I)\b', text, re.I)
+        if not match:
+            return None
         start, end = match.span(1)
         original = match.group(1)
         replacements = [x for x in ['I', 'IIa', 'IIb', 'III'] if x.lower() != original.lower()][:3]
     else:
-        match = re.search(r'[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)', text)
-        if not match:
-            match = re.search(r'([0-9]+(?:[.,][0-9]+)?)\s*%', text)
-        if not match:
-            match = re.search(r'(?:HR|RR|OR|Win Ratio)\s+([0-9]+(?:[.,][0-9]+)?)', text, re.I)
-        if not match:
-            return None
         start, end = match.span(1)
         original = match.group(1)
         number = float(original.replace(',', '.'))
@@ -108,7 +107,7 @@ def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_
     if source_id and selected_id != source_id:
         return None
     if difficulty == 'hard':
-        variants = alternatives(texts[0])
+        variants = alternatives(texts[0], numeric_only=True)
         if variants and len({normalized(t) for t, _ in variants}) == 4:
             texts = [t for t, _ in variants]
             reasons = [reasons[0]] + [(f'The reported parameter is {variants[0][1]}, not {r}.' if en else

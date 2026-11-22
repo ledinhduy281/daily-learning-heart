@@ -2,12 +2,14 @@
 const ClinicalQuiz = (() => {
   const distractors = typeof module !== 'undefined' ? require('./clinical_distractors.js') : ClinicalDistractors;
   const normalized = s => String(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
-  function alternatives(text) {
-    let m=text.match(/\bClass\s+(IIa|IIb|III|II|I)\b/i), replacements;
-    if (m) replacements=['I','IIa','IIb','III'].filter(x=>x.toLowerCase()!==m[1].toLowerCase()).slice(0,3);
-    else {
-      m=text.match(/[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)/) || text.match(/([0-9]+(?:[.,][0-9]+)?)\s*%/) || text.match(/(?:HR|RR|OR|Win Ratio)\s+([0-9]+(?:[.,][0-9]+)?)/i);
+  function alternatives(text,numericOnly=false) {
+    let m=text.match(/\b(?:HR|RR|OR|Win Ratio)\s*(?:=|:)?\s*([0-9]+(?:[.,][0-9]+)?)/) || text.match(/\b(?:LVEF|EF|eGFR|PVR|PAWP|mPAP|SBP|DBP|LDL-C|HbA1c|age|aged|tuổi)\s*[<>≤≥]=?\s*([0-9]+(?:[.,][0-9]+)?)/i) || text.match(/([0-9]+(?:[.,][0-9]+)?)\s*%/) || text.match(/([+-]?[0-9]+(?:[.,][0-9]+)?)\s*(?:mmHg|WU|mL\/min|mmol\/L|mg\/dL)\b/i), replacements;
+    if (!m) {
+      m=numericOnly?null:text.match(/\bClass\s+(IIa|IIb|III|II|I)\b/i);
       if (!m) return null;
+      replacements=['I','IIa','IIb','III'].filter(x=>x.toLowerCase()!==m[1].toLowerCase()).slice(0,3);
+    }
+    else {
       const number=Number(m[1].replace(',','.')), decimals=(m[1].split(/[.,]/)[1]||'').length;
       const delta=number<2 && decimals ? 0.1 : (decimals && number<10 ? 0.5 : (number>=20 ? 5 : 1));
       const offsets=number>=85?[-1,-2,-3]:(number>delta?[-1,1,2]:[1,2,3]);
@@ -62,7 +64,7 @@ const ClinicalQuiz = (() => {
     }
     if (sourceId && selectedId!==sourceId) return null;
     if (difficulty==='hard') {
-      const variants=alternatives(texts[0]);
+      const variants=alternatives(texts[0],true);
       if (variants && new Set(variants.map(([t])=>normalized(t))).size===4) {
         texts=variants.map(([t])=>t);
         reasons=[reasons[0],...variants.slice(1).map(([,r])=>en?`The reported parameter is ${variants[0][1]}, not ${r}.`:`Thông số được báo cáo là ${variants[0][1]}, không phải ${r}.`)];

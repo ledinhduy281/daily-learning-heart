@@ -114,6 +114,40 @@ class ClinicalMcqTests(unittest.TestCase):
         for d in ('easy', 'hard'):
             self.assertEqual(len(app._build_socratic_mcq({}, 0, 0, 'en', d)['options']), 4)
 
+    def test_hard_numeric_distractors_preserve_clinical_categories(self):
+        import re
+        from clinical_mcq import alternatives, build_mcq, translate_mcq
+        from clinical_distractors import rich_cards
+        for text in ('', 'BARC ≥2; NYHA 3; Killip 2; CCS 4.', 'Class III'):
+            self.assertIsNone(alternatives(text, numeric_only=True))
+        for grade in ('1', '2', '3a', '3b', '3c', '4', '5'):
+            value = f'BARC {grade}; NYHA 3; Killip 2; CCS 4; Class III; HR 0.56'
+            variants = alternatives(value, numeric_only=True)
+            self.assertEqual(len(variants), 4)
+            for text, _ in variants:
+                self.assertEqual(re.sub(r'HR [0-9.]+', 'HR #', text), value.replace('HR 0.56', 'HR #'))
+        for text in ('BARC ≥2; LVEF <50%; NYHA 3', 'Killip 2; −8.7 mmHg'):
+            variants = alternatives(text, numeric_only=True)
+            self.assertIsNotNone(variants)
+            self.assertTrue(all(t.startswith(text.split(';')[0]) for t, _ in variants))
+        checked = 0
+        for b in self.briefings:
+            for lang in ('vi', 'en'):
+                for card in rich_cards(b, lang, alternatives):
+                    if card['kind'] != 'trial' or not card['texts'][0].startswith('TWILIGHT:'):
+                        continue
+                    q = build_mcq(b, 1, 0, lang, 'hard', card['source_id'])
+                    baseline = re.sub(r'HR [0-9.,]+', 'HR #', card['texts'][0])
+                    for option in q['options']:
+                        self.assertEqual(re.sub(r'HR [0-9.,]+', 'HR #', option['text']), baseline)
+                        for grades in re.findall(r'BARC\s+(?:Type\s+)?([0-9abc ,/]+(?:or\s+\d+)?)', option['text']):
+                            self.assertLessEqual(set(re.findall(r'\d+[abc]?', grades)), {'1', '2', '3', '3a', '3b', '3c', '4', '5'})
+                    translated = translate_mcq(b, q, 'en' if lang == 'vi' else 'vi')
+                    self.assertIsNotNone(translated)
+                    self.assertEqual(translated['option_ids'], q['option_ids'])
+                    checked += 1
+        self.assertGreater(checked, 0)
+
     def test_perfect_answers_finish_all_briefings_in_bounded_turns(self):
         from socratic_quiz import turn
         for b in self.briefings + [{}]:

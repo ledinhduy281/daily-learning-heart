@@ -47,6 +47,32 @@ for (const lang of ['vi','en']) {
   assert.deepEqual(new Set(Object.values(hard.distractor_types)),new Set(['numeric']));
   for (const q of [easy,hard]) assert.equal(q.options.find(o=>o.key===q.correct_key).text,normal.options.find(o=>o.key===normal.correct_key).text);
 }
+for (const grade of ['1','2','3a','3b','3c','4','5']) for (const lang of ['vi','en']) {
+  const b={landmark_trials:[{name:'Synthetic trial',value:`BARC ${grade}; NYHA 3; Killip 2; CCS 4; HR 0.56`,endpoint_label:'Bleeding',changes_en:'Adults with coronary disease.',changes_vi:'Người lớn mắc bệnh mạch vành.'}]};
+  const q=quiz.build(b,1,0,lang,'hard');
+  const baseline=q.options.find(o=>o.key===q.correct_key).text.replace(/HR [0-9.,]+/g,'HR #');
+  for (const o of q.options) assert.equal(o.text.replace(/HR [0-9.,]+/g,'HR #'),baseline);
+  assert.equal(new Set(q.options.map(o=>o.text)).size,4);
+}
+{
+  let checked=0;
+  for (const b of briefings) for (const lang of ['vi','en']) {
+    for (let variant=0;variant<8;variant++) {
+      const q=quiz.build(b,1,variant,lang,'hard');
+      if (!q.options.find(o=>o.key===q.correct_key).text.startsWith('TWILIGHT:')) continue;
+      const baseline=q.options.find(o=>o.key===q.correct_key).text.replace(/HR [0-9.,]+/g,'HR #');
+      for (const o of q.options) {
+        assert.equal(o.text.replace(/HR [0-9.,]+/g,'HR #'),baseline);
+        for (const m of o.text.matchAll(/BARC\s+(?:Type\s+)?([0-9abc ,/]+(?:or\s+\d+)?)/g)) {
+          for (const grade of m[1].match(/\d+[abc]?/g)) assert.ok(['1','2','3','3a','3b','3c','4','5'].includes(grade));
+        }
+      }
+      assert.deepEqual(quiz.translate(b,q,lang==='vi'?'en':'vi').option_ids,q.option_ids);
+      checked++;
+    }
+  }
+  assert.ok(checked>0);
+}
 for (const b of [...briefings,{}]) for (const lang of ['vi','en']) {
   let {state}=quiz.turn(b,{subskills:Array.from({length:4},()=>({level:0}))},lang,'start_diagnostic');
   for (let i=0;i<24 && state.phase!=='mastered';i++) ({state}=quiz.turn(b,state,lang,'answer','',state.correct_key));
