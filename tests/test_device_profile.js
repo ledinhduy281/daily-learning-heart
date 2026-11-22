@@ -272,6 +272,38 @@ assert.equal(headers({'Content-Type': 'application/json'})['Content-Type'], 'app
 const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\) \{([\s\S]*?)\n    \}/)[1];
 async function checkStreams() {
   {
+    const store = new Storage(), profile = create(store, crypto);
+    const app = {serverAvailable: true, user: {read_ids: [], bookmarked_ids: []}};
+    let requests = 0, failure = false, notice = '';
+    const body = html.match(/async function syncDeviceActivity\(\) \{([\s\S]*?)\n    \}/)[1];
+    const sync = vm.runInNewContext(`(async function() {${body}})`, {
+      App: app, deviceStore: profile, getAuthHeaders: value => value,
+      tt: key => key, showToast: text => {notice = text;},
+      fetch: async () => {requests++; if (failure === 'network') throw Error('offline'); return {ok: !failure};}
+    });
+    await sync();
+    assert.equal(requests, 0);
+    profile.activity(['lesson'], []);
+    failure = true;
+    await sync();
+    assert.equal(requests, 1);
+    assert.equal(notice, 'toastDeviceSyncError');
+    assert.equal(app.serverAvailable, true);
+    assert.deepEqual(create(store, crypto).profile.read_ids, ['lesson']);
+    failure = 'network'; notice = '';
+    await sync();
+    assert.equal(notice, '');
+    failure = false;
+    await sync();
+    assert.equal(app.deviceSyncFailed, false);
+    assert.equal(profile.get('ebm_device_server_synced'), '1');
+    profile.activity([], []);
+    await sync();
+    assert.equal(requests, 4);
+    assert.ok(html.includes('tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ'));
+    assert.ok(html.includes('your display name, reading history and bookmarks are also sent to the server'));
+  }
+  {
     const shared = new Storage(), first = create(shared, crypto), stale = create(shared, crypto);
     first.activity(['one'], ['one']);
     const app = {serverAvailable: true, user: {read_ids: [], bookmarked_ids: []}};

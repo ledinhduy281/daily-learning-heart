@@ -17,6 +17,29 @@ class QuietHandler(app.EBMRequestHandler):
 
 
 class DeviceProfileTests(unittest.TestCase):
+    def test_empty_sync_and_expired_device_capacity(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'USERS_PATH', Path(directory) / 'users.json'), patch.object(app, 'MAX_ANONYMOUS_DEVICES', 1):
+            one, two = str(uuid.uuid4()), str(uuid.uuid4())
+            empty = {'action': 'sync', 'read_ids': [], 'bookmarked_ids': [], 'display_name': 'Doctor'}
+            self.assertEqual(self.request('/api/user/activity', one, empty)[0], 200)
+            self.assertFalse(json.loads(app.USERS_PATH.read_text()).get('devices'))
+            self.assertEqual(self.request('/api/user/activity', one, {**empty, 'display_name': 'Chosen name'})[0], 200)
+            data = json.loads(app.USERS_PATH.read_text())
+            self.assertIn('updated_at', data['devices'][one])
+            data['devices'][one]['created_at'] = '2000-01-01T00:00:00+00:00'
+            app._save_users_data_unlocked(data)
+            self.assertEqual(self.request('/api/user/activity', two, {'action': 'read', 'briefing_id': 'new'})[0], 429)
+            data['devices'][one]['updated_at'] = '2000-01-01T00:00:00+00:00'
+            app._save_users_data_unlocked(data)
+            self.request('/api/status', one)
+            self.assertEqual(json.loads(app.USERS_PATH.read_text())['devices'][one]['updated_at'], '2000-01-01T00:00:00+00:00')
+            self.assertEqual(self.request('/api/user/activity', two, {'action': 'read', 'briefing_id': 'new'})[0], 200)
+            devices = json.loads(app.USERS_PATH.read_text())['devices']
+            self.assertEqual(list(devices), [two])
+            self.assertEqual(devices[two]['read_ids'], ['new'])
+            self.assertEqual(self.request('/api/user/activity', two, empty)[0], 200)
+            self.assertEqual(json.loads(app.USERS_PATH.read_text())['devices'][two]['read_ids'], [])
+
     def test_static_assets_exclude_private_stores_and_atomic_temps(self):
         original_replace = app.os.replace
         checked = []

@@ -1031,16 +1031,28 @@ def _resolve_user_from_token_unlocked(data: dict, token: str, create_device: boo
         if not device_id:
             return None
         devices = data.get('devices', {})
+        now = datetime.datetime.now(datetime.timezone.utc)
         if device_id not in devices:
             record = {'username': f'device:{device_id}', 'display_name': 'Doctor',
                                   'device_id': device_id, 'read_ids': [], 'bookmarked_ids': [],
-                                  'created_at': datetime.datetime.now().isoformat()}
+                                  'created_at': now.isoformat(), 'updated_at': now.isoformat()}
             if not create_device:
                 return record
             if len(devices) >= MAX_ANONYMOUS_DEVICES:
-                raise DeviceStorageError(429, 'Anonymous device limit reached')
+                def last_write(item):
+                    try:
+                        stamp = datetime.datetime.fromisoformat(item[1].get('updated_at') or item[1]['created_at'])
+                        return stamp.replace(tzinfo=datetime.timezone.utc) if stamp.tzinfo is None else stamp
+                    except (KeyError, ValueError, TypeError):
+                        return now
+                oldest = min(devices.items(), key=last_write)
+                if now - last_write(oldest) <= datetime.timedelta(days=DEVICE_IDLE_DAYS):
+                    raise DeviceStorageError(429, 'Anonymous device limit reached')
+                del devices[oldest[0]]
             data.setdefault('devices', {})[device_id] = record
             devices = data['devices']
+        if create_device:
+            devices[device_id]['updated_at'] = now.isoformat()
         return devices[device_id]
     sessions = data.get("sessions", {})
     sess = sessions.get(token)
@@ -1054,6 +1066,7 @@ def _resolve_user_from_token_unlocked(data: dict, token: str, create_device: boo
 
 
 MAX_ANONYMOUS_DEVICES = 1000
+DEVICE_IDLE_DAYS = 90
 MAX_DEVICE_BYTES = 256 * 1024
 
 
@@ -1197,6 +1210,10 @@ def record_user_activity(token: str, req_data: dict) -> tuple[int, dict]:
 
     with _users_lock:
         data = _load_users_data_unlocked()
+        empty_sync = action == 'sync' and not req_data['read_ids'] and not req_data['bookmarked_ids'] and req_data.get('display_name', '') in ('', 'Doctor', 'Bác sĩ')
+        if empty_sync and token.startswith('device:') and token[7:] not in data.get('devices', {}):
+            user = _resolve_user_from_token_unlocked(data, token)
+            return (200, {'ok': True, 'user': _safe_user(user)}) if user else (401, {'ok': False, 'error': 'Unauthorized'})
         user = _resolve_user_from_token_unlocked(data, token, create_device=True)
         if not user:
             return 401, {"ok": False, "error": "Unauthorized"}

@@ -4393,7 +4393,7 @@
         <button type="button" class="btn-close-supa" id="btnCloseAccountModal" aria-label="Đóng">×</button>
       </div>
       <div class="modal-body">
-        <p id="deviceProfileNote">Tiến độ được tự động lưu trên thiết bị này. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt.</p>
+        <p id="deviceProfileNote">Tiến độ được tự động lưu trên thiết bị này. Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt.</p>
         <label class="form-field-label" for="accFullName" id="labelDeviceName">Tên hiển thị</label>
         <input type="text" id="accFullName" class="supa-text-input" maxlength="100" autocomplete="nickname">
         <button type="button" class="btn btn-primary-green" id="btnSaveProfile">Lưu tên</button>
@@ -4608,6 +4608,7 @@
         toastProfileUpdated: "Đã cập nhật thông tin tài khoản!",
         toastProfileSaved: "Đã lưu thông tin Tài khoản Bác sĩ!",
         toastProfileSaveError: "Lỗi lưu hồ sơ: {err}",
+        toastDeviceSyncError: "Tiến độ vẫn được lưu trên thiết bị, nhưng chưa thể đồng bộ với máy chủ. Ứng dụng sẽ thử lại khi bạn tiếp tục học.",
         toastPasswordTooShort: "Mật khẩu mới cần tối thiểu 4 ký tự.",
         toastPasswordMismatch: "Xác nhận mật khẩu mới chưa khớp.",
         toastPasswordDefault: "Đã reset mật khẩu về mặc định (123456)!",
@@ -4695,6 +4696,7 @@
         toastProfileUpdated: "Account info updated!",
         toastProfileSaved: "Doctor account info saved!",
         toastProfileSaveError: "Error saving profile: {err}",
+        toastDeviceSyncError: "Progress is saved on this device, but could not sync to the server. The app will retry as you continue learning.",
         toastPasswordTooShort: "New password needs at least 4 characters.",
         toastPasswordMismatch: "New password confirmation does not match.",
         toastPasswordDefault: "Password reset to default (123456)!",
@@ -5205,15 +5207,20 @@
       const profile = deviceStore.profile;
       App.user.read_ids = profile.read_ids;
       App.user.bookmarked_ids = profile.bookmarked_ids;
+      const hasProgress = profile.read_ids.length || profile.bookmarked_ids.length || !['Doctor', 'Bác sĩ'].includes(profile.display_name);
+      if (!hasProgress && profile.progress.ebm_device_server_synced !== '1') return;
       try {
-        await fetch("/api/user/activity", {
+        const res = await fetch("/api/user/activity", {
           method: "POST", headers: getAuthHeaders({"Content-Type": "application/json"}),
           body: JSON.stringify({action: "sync", read_ids: profile.read_ids,
             bookmarked_ids: profile.bookmarked_ids, display_name: profile.display_name})
         });
+        if (!res.ok) throw new Error('Device sync failed');
+        deviceStore.set('ebm_device_server_synced', '1');
+        App.deviceSyncFailed = false;
       } catch (_) {
-        App.serverAvailable = false;
-        App.offlineDemo = true;
+        if (!App.deviceSyncFailed) showToast(tt('toastDeviceSyncError'));
+        App.deviceSyncFailed = true;
       }
     }
 
@@ -5477,7 +5484,7 @@
       }
 
       setTxt("#myAccountModalTitle", isVi ? "Hồ sơ trên thiết bị" : "Device profile");
-      setTxt("#deviceProfileNote", isVi ? "Tiến độ được tự động lưu trên thiết bị này. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt." : "Progress is saved automatically on this device. Export a backup before clearing browser data.");
+      setTxt("#deviceProfileNote", isVi ? "Tiến độ được tự động lưu trên thiết bị này. Khi dùng chế độ máy chủ, tên hiển thị, lịch sử đọc và dấu trang cũng được gửi tới máy chủ. Hãy xuất bản sao trước khi xóa dữ liệu trình duyệt." : "Progress is saved automatically on this device. In server mode, your display name, reading history and bookmarks are also sent to the server. Export a backup before clearing browser data.");
       setTxt("#labelDeviceName", isVi ? "Tên hiển thị" : "Display name");
       setTxt("#btnSaveProfile", isVi ? "Lưu tên" : "Save name");
       setTxt("#btnExportProgress", isVi ? "Xuất tiến độ (JSON)" : "Export progress (JSON)");
