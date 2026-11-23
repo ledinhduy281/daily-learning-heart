@@ -11,18 +11,48 @@ on:
     branches: [main]
     types: [completed]
 
-concurrency:
-  group: deploy-pages
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
 jobs:
-  site:
+  check-publication:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      actions: read
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Check whether an evidence run reached publication
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_RUN: ${{ github.event.workflow_run.id }}
+          UPSTREAM_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          publish=true
+          if [[ "$UPSTREAM_NAME" == "Daily Cardiology Evidence Pipeline" ]]; then
+            publish=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$UPSTREAM_RUN/jobs" \
+              --jq 'any(.jobs[]; .name == "publish" and .conclusion == "success")')
+          fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: check-publication
+    if: needs.check-publication.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,18 +71,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
-
-  deploy:
-    needs: site
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

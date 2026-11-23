@@ -2,7 +2,14 @@ name: Daily Cardiology Evidence Pipeline
 
 on:
   schedule:
-    - cron: '28 21 * * *'
+    - cron: '13 0 * * *'
+    - cron: '47 0 * * *'
+    - cron: '26 1 * * *'
+    - cron: '8 2 * * *'
+  workflow_run:
+    workflows: [Daily 06:00 AM Cardiology Pillar Refresh]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
   pull_request:
     paths:
@@ -23,18 +30,44 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' || github.event_name == 'push') && 'evidence-automatic' || format('evidence-run-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      run: ${{ steps.snapshot.outputs.run }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref == 'refs/heads/main' && 'main' || '' }}
+          persist-credentials: false
+      - name: Check for today's UTC snapshot
+        id: snapshot
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          today=$(date -u +%F)
+          echo "date=$today" >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT" != workflow_dispatch && "$EVENT" != pull_request &&
+                -s data/pipeline/briefing.json && -s data/pipeline/evidence.parquet ]] &&
+             jq -e --arg date "$today" '.date == $date' data/pipeline/briefing.json >/dev/null; then
+            echo "Today's UTC snapshot ($today) is already on main."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v5
+        if: steps.snapshot.outputs.run == 'true'
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: pipeline/requirements.txt
       - name: Install pinned pipeline dependencies
+        if: steps.snapshot.outputs.run == 'true'
         run: python -m pip install -r pipeline/requirements.txt
       - name: Run repository tests
         if: github.event_name == 'pull_request'
@@ -42,8 +75,12 @@ jobs:
           python -m unittest discover tests
           for test in tests/*.js; do node "$test"; done
       - name: Ingest sources, run dbt build, and validate the briefing contract
-        run: python -m pipeline.run --work-dir "$RUNNER_TEMP/heart-evidence"
+        if: steps.snapshot.outputs.run == 'true'
+        env:
+          SNAPSHOT_DATE: ${{ steps.snapshot.outputs.date }}
+        run: python -m pipeline.run --date "$SNAPSHOT_DATE" --work-dir "$RUNNER_TEMP/heart-evidence"
       - uses: actions/upload-artifact@v4
+        if: steps.snapshot.outputs.run == 'true'
         with:
           name: evidence-snapshot
           retention-days: 14
@@ -52,6 +89,7 @@ jobs:
             ${{ runner.temp }}/heart-evidence/bronze/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
+        if: steps.snapshot.outputs.run == 'true'
         with:
           name: evidence-public
           retention-days: 7
@@ -60,7 +98,7 @@ jobs:
 
   publish:
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: needs.build.outputs.run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -79,14 +117,19 @@ jobs:
       - name: Commit validated JSON and Parquet
         env:
           SNAPSHOT: ${{ runner.temp }}/evidence-public
+          EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
           mkdir -p data/pipeline
           if [[ -f data/pipeline/briefing.json ]]; then
-            current=$(jq -er '.date' data/pipeline/briefing.json)
+            current=$(jq -r '.date | strings | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' data/pipeline/briefing.json) || current=
             candidate=$(jq -er '.date' "$SNAPSHOT/briefing.json")
             if [[ "$candidate" < "$current" ]]; then
               echo "A newer snapshot is already published."
+              exit 0
+            fi
+            if [[ "$EVENT" != workflow_dispatch && "$candidate" == "$current" && -s data/pipeline/evidence.parquet ]]; then
+              echo "This UTC snapshot date is already published."
               exit 0
             fi
           fi
