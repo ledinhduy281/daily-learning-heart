@@ -8911,7 +8911,7 @@
               timer = setTimeout(() => controller.abort(), 20000);
               const response = await fetch(endpoint, {
                 method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
-                body: JSON.stringify({action: "chat", question: query,
+                body: JSON.stringify({action: "chat", device_id: deviceStore.profile.device_id, question: query,
                   history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
                   context, lang, verbosity: this.verbosity || "medium"})
               });

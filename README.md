@@ -22,6 +22,12 @@ No account is required: progress is stored in a device profile in both modes. Th
 - Use PubMed verification to find indexed publications and identifiers. The in-app educational Q&A can combine bundled evidence with live PubMed and, for relevant drug queries, openFDA. Live lookups require internet access and may be incomplete or unavailable.
 - Use the review quiz to practice reasoning about the selected topic. Check questionable answers against the original sources. See the [AI guide](AGENTS.md#what-uses-ai-today) for optional model use in Q&A and quizzes.
 
+## Apps Script deployment
+
+Optional AI chat uses `backend/apps_script/Chat.gs`; keep `GROQ_API_KEY` in Script Properties only. Chat permits 30 requests per device per Vietnam calendar day, with a global hard ceiling of 300 (the optional `CHAT_DAILY_CAP` property can lower it). It reuses the browser's persisted device profile ID and stores only SHA-256 device hashes, salted with the existing `PEPPER` property when available. No new script property is required. Refused or failed proxy requests keep the deterministic browser fallback. Device IDs are client-controlled: this limits ordinary device use, not a determined caller rotating IDs.
+
+After merge, the owner must paste the new `Chat.gs` into the Apps Script editor (and `Code.gs` if changed). Then choose **Deploy > Manage deployments > pencil on the existing deployment > Version: New version > Deploy**. Keep **Execute as: Me** and **Who has access: Anyone**. Do not create a new deployment: that changes the `/exec` URL used by the browser.
+
 ## Daily refresh
 
 The scheduled [GitHub Actions workflow](.github/workflows/daily_refresh.yml) refreshes around 06:00 Vietnam time, with catch-up runs. It builds one briefing for the scheduled pillar from the curated library and PubMed lookups, then commits the updated briefing bundle and rotation state if they changed. Running the same command locally can update these tracked files:

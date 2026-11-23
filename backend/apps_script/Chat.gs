@@ -2,11 +2,16 @@
  * Optional: CHAT_DAILY_CAP (300), GROQ_MODEL. Deploy a new version.
  * Run testChat() once in the editor to check configuration without logging the key.
  */
+var CHAT_DEVICE_DAILY_CAP = 30;
+
 function chatHandle_(req) {
   function output(obj) {
     return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
   }
   req = req || {};
+  if (typeof req.device_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.device_id)) {
+    return output({ok: false, error: 'invalid_device_id'});
+  }
   var question = String(req.question || '').trim();
   var context = String(req.context || '');
   var history = Array.isArray(req.history) ? req.history : [];
@@ -22,18 +27,26 @@ function chatHandle_(req) {
     var key = props.getProperty('GROQ_API_KEY');
     if (!key) return output({ok: false, error: 'not_configured'});
     var capValue = Number(props.getProperty('CHAT_DAILY_CAP') || 300);
-    var cap = isFinite(capValue) && capValue >= 0 ? Math.floor(capValue) : 300;
+    var cap = isFinite(capValue) && capValue >= 0 ? Math.min(300, Math.floor(capValue)) : 300;
+    var deviceHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+      (props.getProperty('PEPPER') || '') + ':' + req.device_id.toLowerCase(), Utilities.Charset.UTF_8)
+      .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
     var lock = LockService.getScriptLock();
     if (!lock.tryLock(10000)) return output({ok: false, error: 'busy'});
     try {
       var day = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
       var countKey = 'chat_daily_' + day;
+      var deviceKey = 'chat_device_' + day + '_' + deviceHash;
       Object.keys(props.getProperties()).forEach(function (name) {
         if (/^chat_daily_\d{4}-\d{2}-\d{2}$/.test(name) && name < countKey) props.deleteProperty(name);
+        if (/^chat_device_\d{4}-\d{2}-\d{2}_[0-9a-f]{64}$/.test(name) && name.slice(12, 22) < day) props.deleteProperty(name);
       });
       var used = Number(props.getProperty(countKey) || 0);
       if (!isFinite(used) || used < 0 || used >= cap) return output({ok: false, error: 'daily_cap'});
+      var deviceUsed = Number(props.getProperty(deviceKey) || 0);
+      if (!isFinite(deviceUsed) || deviceUsed < 0 || deviceUsed >= CHAT_DEVICE_DAILY_CAP) return output({ok: false, error: 'device_daily_cap'});
       props.setProperty(countKey, String(used + 1));
+      props.setProperty(deviceKey, String(deviceUsed + 1));
     } finally {
       lock.releaseLock();
     }
@@ -86,7 +99,7 @@ function chatHandle_(req) {
 }
 
 function testChat() {
-  var result = JSON.parse(chatHandle_({action: 'chat', question: 'What is the role of SGLT2 inhibitors in heart failure?', history: [], context: '', lang: 'en', verbosity: 'short'}).getContent());
+  var result = JSON.parse(chatHandle_({action: 'chat', device_id: '00000000-0000-4000-8000-000000000000', question: 'What is the role of SGLT2 inhibitors in heart failure?', history: [], context: '', lang: 'en', verbosity: 'short'}).getContent());
   if (result.ok) {
     Logger.log('OK: ' + result.answer_markdown.slice(0, 200));
   } else {

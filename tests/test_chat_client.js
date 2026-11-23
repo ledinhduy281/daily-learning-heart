@@ -11,6 +11,7 @@ async function check(mode) {
   const priorHistory = Array(6).fill({role: 'user', content: 'x'.repeat(600)});
   const sandbox = {
     window: {EBM_SYNC_ENDPOINT: mode === 'unset' ? '' : 'http://mock.local/chat'},
+    deviceStore: {profile: {device_id: '12345678-1234-4123-8123-123456789abc'}},
     App: {currentLang: 'en', serverAvailable: false, briefings: [primary], selected: primary},
     Dom: {btnSendChat: {}, chatInputField: {focus() {}}, chatMessagesList: {appendChild() {}, scrollHeight: 10}},
     document: {createElement: () => ({remove() { removed = true; }})},
@@ -24,7 +25,7 @@ async function check(mode) {
       return {ok: mode !== 'http', json: async () => {
         if (mode === 'json') throw new SyntaxError('invalid');
         return mode === 'ok' ? {ok: true, answer_markdown: '**AI answer**'} :
-          mode === 'empty' ? {ok: true, answer_markdown: ' '} : {ok: false, error: 'daily_cap'};
+          mode === 'empty' ? {ok: true, answer_markdown: ' '} : {ok: false, error: mode === 'device_cap' ? 'device_daily_cap' : mode === 'invalid_device' ? 'invalid_device_id' : 'daily_cap'};
       }};
     }
   };
@@ -50,12 +51,13 @@ async function check(mode) {
     const {options} = calls[0], request = JSON.parse(options.body);
     assert.equal(options.headers['Content-Type'], 'text/plain'); assert.equal(options.redirect, 'follow');
     assert.equal(request.action, 'chat'); assert.equal(request.history.length, 4);
+    assert.equal(request.device_id, sandbox.deviceStore.profile.device_id);
     assert.ok(request.history.every(m => m.content.length === 500));
     assert.ok(request.context.length <= 6000); assert.match(request.context, /GUIDELINE:.*Test guideline/);
     assert.match(request.context, /PUBMED:.*123/);
   }
 }
 (async () => {
-  for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'abort']) await check(mode);
+  for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'device_cap', 'invalid_device', 'abort']) await check(mode);
   console.log('Browser chat proxy checks passed (success, unset, HTTP/network/JSON/empty/rejected/timeout fallback).');
 })().catch(error => { console.error(error); process.exitCode = 1; });
