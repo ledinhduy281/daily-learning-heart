@@ -2,7 +2,7 @@
 """
 Curated Official Clinical Guidelines Evolution & Landmark RCT Library (Pillars 1–10).
 ===================================================================================
-Provides structured multi-generation guideline evolution narratives, PubMed Step-0 verified
+Provides structured multi-generation guideline evolution narratives, PubMed/DOI citation-found
 guideline/trial anchors, landmark RCT statistical summaries, clinical pearls, and 4-period
 chronological series per pillar for Daily Cardiology EBM Briefing.
 
@@ -536,7 +536,7 @@ _PILLAR_1_SERIES = [
   - Không bao giờ chẩn đoán Elevated BP hay THA chỉ dựa vào 1 lần đo vội tại phòng khám; phải đo 3 lần cách nhau 1–2 phút sau khi nghỉ 5 phút và lấy trung bình 2 lần cuối.
   - Ở bệnh nhân có Elevated BP (120–139 mmHg) nhưng điểm SCORE2 < 5% và không có bệnh đồng mắc, không kê đơn thuốc hạ áp vội vàng — tập trung giảm muối (<2 g natri/ngày), kiểm soát cân nặng và vận động hiếu khí (**Class I, LOE B**).
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Guidelines for the management of elevated blood pressure and hypertension (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`) & 2018 ESC/ESH Guidelines (DOI: `10.1093/eurheartj/ehy339`; PMID: `30165516`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Guidelines for the management of elevated blood pressure and hypertension (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`) & 2018 ESC/ESH Guidelines (DOI: `10.1093/eurheartj/ehy339`; PMID: `30165516`).
 
 ---
 
@@ -732,7 +732,7 @@ Arterial hydrostatic stress induces endothelial dysfunction, aortic stiffening, 
 - **Tại sao phối hợp 2 thuốc liều thấp tốt hơn tăng tối đa 1 thuốc?** Tăng huyết áp nguyên phát là bệnh lý đa cơ chế (cường hệ RAA, co mạch phụ thuộc canxi, ứ natri dịch ngoại bào). Tăng gấp đôi liều một thuốc đơn lẻ chỉ tạo thêm ~20% hiệu quả hạ áp nhưng làm tăng vọt tác dụng phụ theo liều (phù mắt cá chân do CCB liều cao, ho khan/tăng kali do RASi). Ngược lại, phối hợp 2 thuốc liều thấp ức chế đồng thời hai cơ chế phản điều hòa: RASi làm giãn cả tiểu động mạch đi và đến, làm giảm phản xạ tăng nhịp tim và giảm phù chi dưới do CCB gây ra!
 - **Pitfalls cần tránh:** Không bao giờ dùng đồng thời ACEi + ARB (**Class III**). Hạn chế chọn chẹn beta làm thuốc khởi trị đầu tay trừ khi bệnh nhân có đau thắt ngực, suy tim HFrEF, sau nhồi máu cơ tim hoặc cần kiểm soát tần số rung nhĩ.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Guidelines (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Guidelines (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
 
 ---
 
@@ -942,7 +942,7 @@ Essential hypertension arises from intersecting pressor pathways (RAS hyperactiv
 - **Sinh lý bệnh:** THA kháng trị thường do hai trụ cột bệnh sinh phối hợp: (1) quá tải natri tiềm ẩn và cường aldosterone tương đối (lý giải hiệu quả vượt trội của Spironolactone), và (2) tăng trương lực thần kinh giao cảm thận hướng tâm (efferent: tăng phóng thích renin, tái hấp thu Na+, co mạch thận) và ly tâm (afferent: khuếch đại giao cảm trung ương).
 - **Pitfalls thực chiến:** Khoảng 50% ca nghi ngờ "kháng trị" thực chất là **giả kháng trị (pseudo-resistance)** do không tuân thủ thuốc, hiệu ứng áo choàng trắng (phải đo ABPM 24h), đo sai kích cỡ băng quấn, hoặc dùng kèm NSAID/cam thảo/thuốc thông mũi. Phải tầm soát **cường aldosterone nguyên phát** (tỷ số Aldosterone/Renin), hẹp động mạch thận và **ngưng thở khi ngủ (OSA)** trước khi chuyển RDN.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Guidelines (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Guidelines (*Eur Heart J* 2024; 45:3912–4018; DOI: `10.1093/eurheartj/ehae178`; PMID: `39210715`).
 
 ---
 
@@ -1278,7 +1278,7 @@ _PILLAR_2_SERIES = [
 - **Sinh lý bệnh:** Xơ vữa động mạch phụ thuộc trực tiếp vào tổng số hạt lipoprotein chứa ApoB (LDL, VLDL, IDL, Lp(a)) lưu hành xâm nhập lớp dưới nội mạc. Ở mức LDL-C sinh lý của trẻ sơ sinh (~25–40 mg/dL), mảng xơ vữa hầu như không hình thành hoặc thoái triển dần nhờ đại thực bào chuyển hóa lipid ra ngoài qua HDL. Mỗi 1 mmol/L (~38,7 mg/dL) LDL-C giảm được kéo theo ~21–22% giảm biến cố mạch máu lớn mỗi năm bất kể dùng statin, ezetimibe hay PCSK9i.
 - **Pitfalls lâm sàng:** Không giảm liều statin khi LDL-C đạt mức thấp (ví dụ 30–40 mg/dL) nếu bệnh nhân dung nạp tốt; theo dõi lipid máu sau 4–6 tuần mỗi lần chỉnh phác đồ thay vì chờ 6–12 tháng.
 
-*Nguồn trích dẫn định danh xác thực*: 2019 ESC/EAS Dyslipidaemias Guidelines (*Eur Heart J* 2020; 41:111–188; DOI: `10.1093/eurheartj/ehz455`; PMID: `31504418`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2019 ESC/EAS Dyslipidaemias Guidelines (*Eur Heart J* 2020; 41:111–188; DOI: `10.1093/eurheartj/ehz455`; PMID: `31504418`).
 
 ---
 
@@ -1482,7 +1482,7 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
 - **Sinh lý bệnh:** Thụ thể LDL (LDLR) trên bề mặt tế bào gan thu dọn hạt LDL từ máu vào tiêu thể rồi tái tuần hoàn trở lại màng tế bào. Protein **PCSK9** gắn vào phức hợp LDLR-LDL khiến LDLR bị phá hủy trong lysosome thay vì tái sử dụng. Kháng thể đơn dòng (Evolocumab/Alirocumab) bắt giữ PCSK9 lưu hành ngoài tế bào, còn Inclisiran dùng cơ chế can thiệp RNA (RNAi) phân hủy mRNA PCSK9 ngay trong tế bào gan, giúp mật độ LDLR tăng vọt và thanh thải LDL-C xuống mức 25–40 mg/dL.
 - **Pitfalls tại giường bệnh:** Phải giữ nguyên statin + ezetimibe nền khi phối hợp PCSK9i; kiểm tra kỹ kỹ thuật tiêm dưới da (bụng/đùi) và bảo quản lạnh đối với kháng thể đơn dòng.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
 
 ---
 
@@ -1663,7 +1663,7 @@ Atherogenesis scales directly with cumulative retention of ApoB-containing lipop
 - **Tại sao không gây đau cơ?** Bempedoic acid là tiền dược cần enzym **ACSVL1** (very-long-chain acyl-CoA synthetase-1) để chuyển thành dạng hoạt tính. Enzym này có mật độ cao trong tế bào gan nhưng không hiện diện trong cơ vân, nên thuốc không ức chế sinh tổng hợp mevalonate ở sợi cơ.
 - **Pitfalls lâm sàng:** Không kê Bempedoic acid liều >180 mg/ngày; lưu ý kiểm tra axit uric máu (nguy cơ tăng gout: 3,1% vs 2,1%) và không phối hợp với Simvastatin >20 mg hoặc Pravastatin >40 mg do làm tăng nồng độ các statin này.
 
-*Nguồn trích dẫn định danh xác thực*: CLEAR Outcomes (*NEJM* 2023; 388:1353–1364; DOI: `10.1056/NEJMoa2215024`; PMID: `36876740`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: CLEAR Outcomes (*NEJM* 2023; 388:1353–1364; DOI: `10.1056/NEJMoa2215024`; PMID: `36876740`).
 
 ---
 
@@ -1873,7 +1873,7 @@ Xơ vữa động mạch bị thúc đẩy đồng thời bởi sự tích tụ 
 - **Cảnh giác tương tác Colchicine:** Chỉ dùng 0,5 mg/ngày; chống chỉ định khi **eGFR < 30 mL/phút/1,73 m²** hoặc dùng chung clarithromycin, erythromycin, ketoconazole.
 - **Bempedoic Acid (180 mg/ngày):** Theo dõi acid uric máu (nguy cơ gout) và sỏi mật.
 
-*Nguồn trích dẫn định danh xác thực*: 2026 ACC/AHA Dyslipidemia Guideline (*Circulation* / *JACC* 2026; DOI: `10.1016/j.jacc.2025.11.016`; PMID: `41824590`, `41824552`) & 2025 ESC/EAS Focused Update (*Eur Heart J* 2025; 46:4359–4378; DOI: `10.1093/eurheartj/ehaf190`; PMID: `40878289`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2026 ACC/AHA Dyslipidemia Guideline (*Circulation* / *JACC* 2026; DOI: `10.1016/j.jacc.2025.11.016`; PMID: `41824590`, `41824552`) & 2025 ESC/EAS Focused Update (*Eur Heart J* 2025; 46:4359–4378; DOI: `10.1093/eurheartj/ehaf190`; PMID: `40878289`).
 
 ---
 
@@ -2089,7 +2089,7 @@ _PILLAR_3_SERIES = [
 - **Tại sao CCTA lại giảm NMCT hơn test gắng sức?** Phần lớn biến cố nhồi máu cơ tim cấp khởi phát từ **vỡ mảng xơ vữa mềm chưa gây hẹp khít lòng mạch (<50–70%)** nên không gây rối loạn tưới máu trên test gắng sức. CCTA phát hiện trực tiếp gánh nặng mảng xơ vữa không tắc nghẽn, kích hoạt điều trị nội khoa phòng ngừa sớm.
 - **Pitfalls tại giường bệnh:** Tránh dùng CCTA khi nhịp tim không kiểm soát được bằng chẹn beta, rung nhĩ đáp ứng thất nhanh, vôi hóa mạch vành quá nặng (điểm Agatston rất cao gây nhiễu blooming) hoặc eGFR <30 mL/phút.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
 
 ---
 
@@ -2292,7 +2292,7 @@ Legacy Diamond–Forrester probability tables systematically overestimated obstr
 - **Tại sao đặt stent ổ hẹp ổn định không ngăn được NMCT cấp?** Mảng xơ vữa gây hẹp cố định (vỏ xơ dày, vôi hóa) gây đau thắt ngực gắng sức nhưng ít khi vỡ đột ngột; trái lại, nhồi máu cơ tim cấp thường xuất phát từ sự nứt vỡ của các mảng xơ vữa giàu lipid rải rác dọc thân mạch vành (thường hẹp <50%). Do đó, **Statin cường độ cao, chống kết tập tiểu cầu, kiểm soát huyết áp, SGLT2i/GLP-1RA và Colchicine** mới là vũ khí ổn định toàn bộ cây mạch vành, trong khi stent chỉ xử trí cơ học một đoạn hẹp khu trú.
 - **Pitfalls lâm sàng:** Không chuyển bệnh nhân đi chụp mạch vành cấp tập chỉ vì test gắng sức dương tính nếu triệu chứng đáp ứng tốt với thuốc và CCTA đã loại trừ hẹp thân chung.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
 
 ---
 
@@ -2473,7 +2473,7 @@ Historical cardiology relied heavily on mechanical stenosis relief ("oculostenot
 - **Co thắt mạch vành (VSA):** Do tăng nhạy cảm co cơ trơn qua đường dẫn truyền Rho-kinase; **tuyệt đối tránh chẹn beta không chọn lọc** (Propranolol) vì gây cường thụ thể alpha mạch vành làm co thắt nặng hơn; ưu tiên CCB ± Nitrate tác dụng kéo dài.
 - **Chống chỉ định kết hợp nguy hiểm:** Không phối hợp Nitrate với thuốc ức chế PDE-5 (Sildenafil/Tadalafil) trong vòng 24–48 giờ vì nguy cơ tụt huyết áp trụy mạch; tránh dùng Ivabradine cùng Verapamil/Diltiazem (**Class III**).
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC CCS Guidelines (*Eur Heart J* 2024; 45:3415–3537; DOI: `10.1093/eurheartj/ehae177`; PMID: `39210710`).
 
 ---
 
@@ -2660,7 +2660,7 @@ Hệ tuần hoàn vành gồm động mạch thượng tâm mạc dẫn máu (đ
   - *Co thắt mạch vành (Vasospastic Angina — test Acetylcholine dương tính):* **Tuyệt đối tránh chẹn beta không chọn lọc** (làm nặng co thắt do cường thụ thể alpha không đối kháng); thuốc đầu tay là **Chẹn kênh Canxi (DHP hoặc Non-DHP)** phối hợp **Nitrate tác dụng kéo dài**.
 - **Không trì hoãn OMT:** Dù có tái thông hay không, mọi bệnh nhân CCS đều phải được tối ưu hóa 4 nhóm bảo vệ: Chống kết tập tiểu cầu, Statin cường độ cao (± Ezetimibe), ACEi/ARB (khi có THA, ĐTĐ, suy tim), và SGLT2i/GLP-1RA nếu có chỉ định chuyển hóa.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Guidelines for the management of chronic coronary syndromes. *Eur Heart J* 2024; 45:3415–3537. DOI: `10.1093/eurheartj/ehae177`. PMID: `39210710`.
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Guidelines for the management of chronic coronary syndromes. *Eur Heart J* 2024; 45:3415–3537. DOI: `10.1093/eurheartj/ehae177`. PMID: `39210710`.
 
 ---
 
@@ -2883,7 +2883,7 @@ _PILLAR_4_SERIES = [
   - **Tuyệt đối tránh giảm liều DOAC sai chỉ định:** Rất nhiều bác sĩ tự ý giảm liều Apixaban xuống 2,5 mg x 2 lần dù bệnh nhân mới chỉ lớn tuổi nhẹ hoặc CrCl 55 mL/phút. Chỉ giảm liều Apixaban khi đạt **≥ 2/3 tiêu chí** (Tuổi ≥80, Cân nặng ≤60 kg, Creatinine ≥1,5 mg/dL).
   - Bắt buộc uống **Rivaroxaban 15–20 mg cùng bữa ăn** để bảo đảm hấp thu >80%.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Atrial Fibrillation Guidelines (*Eur Heart J* 2024; 45:3314–3414; DOI: `10.1093/eurheartj/ehae176`; PMID: `39210723`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Atrial Fibrillation Guidelines (*Eur Heart J* 2024; 45:3314–3414; DOI: `10.1093/eurheartj/ehae176`; PMID: `39210723`).
 
 ---
 
@@ -3091,7 +3091,7 @@ Historically, VKAs (INR 2.0–3.0) were the sole oral anticoagulants despite nar
 - **Tại sao Clopidogrel được chọn thay vì Ticagrelor/Prasugrel?** Kết hợp thuốc kháng đông đường uống với thuốc ức chế P2Y12 mạnh (Prasugrel/Ticagrelor) làm tăng đột biến xuất huyết tiêu hóa và xuất huyết nội sọ; Clopidogrel cung cấp mức ức chế tiểu cầu đủ an toàn khi phối hợp cùng DOAC và PPI bảo vệ dạ dày.
 - **Pitfalls lâm sàng:** Tuyệt đối **không dùng thêm Aspirin kéo dài qua tháng thứ 1–12** ở bệnh nhân rung nhĩ mạch vành ổn định vì làm tăng gấp đôi chảy máu nặng mà không thêm lợi ích bảo vệ mạch vành.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC ACS Guidelines (*Eur Heart J* 2023; 44:3720–3826; DOI: `10.1093/eurheartj/ehad191`; PMID: `37622654`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC ACS Guidelines (*Eur Heart J* 2023; 44:3720–3826; DOI: `10.1093/eurheartj/ehad191`; PMID: `37622654`).
 
 ---
 
@@ -3274,7 +3274,7 @@ Historically, patients with AF undergoing PCI endured 1–6 months of VKA-based 
 - **Tại sao phong tỏa kép tiểu cầu + yếu tố Xa lại hiệu quả?** Huyết khối động mạch hình thành do hai cánh tay hiệp đồng: kết tập tiểu cầu qua COX-1/P2Y12 và khuếch đại tạo thrombin (Yếu tố IIa) kích hoạt thụ thể PAR-1 trên bề mặt tiểu cầu. Rivaroxaban liều rất thấp (2,5 mg x 2/ngày) ức chế vừa đủ đỉnh sinh thrombin qua Xa mà không làm tê liệt quá trình cầm máu, hiệp đồng mạnh với Aspirin.
 - **Pitfalls sống còn:** Tuyệt đối **không dùng Rivaroxaban 2,5 mg x 2/ngày cho bệnh nhân có rung nhĩ** cần kháng đông phòng đột quỵ (dưới liều chống rung nhĩ!). Không phối hợp nếu bệnh nhân có tiền sử đột quỵ xuất huyết, mới đột quỵ thiếu máu <1 tháng, hoặc eGFR < 15 mL/phút.
 
-*Nguồn trích dẫn định danh xác thực*: COMPASS (*NEJM* 2017; 377:1319–1330; DOI: `10.1056/NEJMoa1709118`; PMID: `28844192`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: COMPASS (*NEJM* 2017; 377:1319–1330; DOI: `10.1056/NEJMoa1709118`; PMID: `28844192`).
 
 ---
 
@@ -3483,7 +3483,7 @@ Chuyên đề thuộc **Trụ cột 4: Liệu pháp Chống huyết khối**. B�
 - **Cơ sở sinh lý:** Sau đặt stent, giai đoạn nguy cơ huyết khối cấp/bán cấp cao nhất nằm trong **30 ngày đầu tiên** (khi thanh giằng stent chưa nội mô hóa hoàn toàn). Ngược lại, nguy cơ xuất huyết tiêu hóa do ức chế COX-1 niêm mạc dạ dày của Aspirin lại tích lũy tuyến tính theo thời gian. Khi đã có thuốc ức chế P2Y12 mạnh (Ticagrelor/Prasugrel), việc duy trì thêm Aspirin sau tháng thứ 3 làm tăng gần gấp đôi xuất huyết mà hầu như không tăng thêm lợi ích bảo vệ thiếu máu cục bộ.
 - **Lưu ý thực chiến:** Luôn đánh giá thang điểm **PRECISE-DAPT (≥ 25)** hoặc tiêu chuẩn **ARC-HBR** ngay trước khi xuất viện; phối hợp thuốc ức chế bơm proton (**PPI**: Pantoprazole/Rabeprazole — tránh Omeprazole/Esomeprazole nếu dùng Clopidogrel) cho bệnh nhân DAPT có nguy cơ xuất huyết tiêu hóa (**Class I, LOE A**).
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Guidelines for the management of acute coronary syndromes (*Eur Heart J* 2023; 44:3720–3826; DOI: `10.1093/eurheartj/ehad191`; PMID: `37622654`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for the management of acute coronary syndromes (*Eur Heart J* 2023; 44:3720–3826; DOI: `10.1093/eurheartj/ehad191`; PMID: `37622654`).
 
 ---
 
@@ -3677,7 +3677,7 @@ _PILLAR_5_SERIES = [
   - **Quy tắc washout 36 giờ:** Khi chuyển bệnh nhân từ ACEi sang Sacubitril/Valsartan, **bắt buộc ngừng ACEi tối thiểu 36 giờ** trước khi uống viên ARNI đầu tiên để phòng phù mạch đường thở. Nếu đang dùng ARB, chuyển sang ngay liều kế tiếp không cần washout.
   - Không dùng ARNI cho bệnh nhân có tiền sử phù mạch bất kể nguyên nhân, hoặc phụ nữ mang thai. Chú ý tụt huyết áp (có thể khởi liều thấp 24/26 mg x 2/ngày nếu SBP 95–110 mmHg).
 
-*Nguồn trích dẫn định danh xác thực*: PARADIGM-HF (*NEJM* 2014; 371:993–1004; DOI: `10.1056/NEJMoa1409077`; PMID: `25176015`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: PARADIGM-HF (*NEJM* 2014; 371:993–1004; DOI: `10.1056/NEJMoa1409077`; PMID: `25176015`).
 
 ---
 
@@ -3874,7 +3874,7 @@ From 2012 through 2016, ACE inhibitors served as the immutable foundation of HFr
 - **Tại sao khởi 4 thuốc liều thấp tốt hơn tăng tối đa 1 thuốc trước?** Bốn trụ cột tác động lên 4 con đường bệnh sinh độc lập và hiệp đồng (ức chế giao cảm β1, khóa RAA + tăng peptide bài niệu, khóa aldosterone ngăn xơ hóa cơ tim, và giảm tải thể tích/chuyển hóa tế bào qua SGLT2i). Phối hợp sớm 4 cơ chế ở liều khởi đầu giúp giảm tỷ lệ đột tử và tái nhập viện ngay từ tháng đầu tiên, đồng thời SGLT2i giúp bảo tồn thận và giảm nguy cơ tăng kali máu do MRA/ARNI.
 - **Pitfalls tại giường bệnh:** Không trì hoãn khởi SGLT2i (10 mg liều cố định không cần chỉnh liều) hoặc MRA trong thời gian chờ tăng liều Chẹn beta; không tăng liều Chẹn beta khi bệnh nhân còn ứ huyết phổi/ngoại biên nặng chưa rút hết dịch.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 Focused Update of the 2021 ESC Guidelines for Heart Failure (*Eur Heart J* 2023; 44:3627–3639; DOI: `10.1093/eurheartj/ehad195`; PMID: `37622666`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 Focused Update of the 2021 ESC Guidelines for Heart Failure (*Eur Heart J* 2023; 44:3627–3639; DOI: `10.1093/eurheartj/ehad195`; PMID: `37622666`).
 
 ---
 
@@ -4057,7 +4057,7 @@ The 2016 ESC framework required maximizing each drug sequentially over 6–12 mo
 - **Tại sao Impella vượt trội IABP về sinh lý bệnh?** Bơm dòng vi trục hút máu trực tiếp từ buồng thất trái bơm lên động mạch chủ lên (~3,0–3,5 L/phút), giúp **giảm tải trực tiếp thể tích và áp lực cuối tâm trương thất trái (LV unloading)**, giảm tiêu thụ oxy cơ tim — trái ngược với VA-ECMO làm tăng hậu gánh thất trái nếu không xả tải.
 - **Pitfalls sống còn:** Nguy cơ **chảy máu vị trí chọc động mạch đùi lớn (14F), thiếu máu chi dưới, tán huyết cơ học và tổn thương thận cấp cần lọc máu** tăng gấp 3–4 lần; tuyệt đối không đặt Impella khi có huyết khối di động buồng thất trái, hở van ĐMC vừa–nặng hoặc bệnh mạch máu ngoại biên nặng.
 
-*Nguồn trích dẫn định danh xác thực*: DanGer Shock (*NEJM* 2024; 390:1382–1393; DOI: `10.1056/NEJMoa2312572`; PMID: `38587239`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: DanGer Shock (*NEJM* 2024; 390:1382–1393; DOI: `10.1056/NEJMoa2312572`; PMID: `38587239`).
 
 ---
 
@@ -4273,7 +4273,7 @@ Khác với HFrEF (chết tế bào cơ tim và tái cấu trúc lệch tâm), H
 - **Hiện tượng "eGFR Dip":** eGFR có thể giảm thoáng qua 3–5 mL/phút/1,73 m² trong 2–4 tuần đầu do co tiểu động mạch đến bảo vệ cầu thận; không ngừng thuốc nếu eGFR giảm < 30% và không có dấu hiệu thiếu dịch.
 - **Chỉnh liều lợi tiểu & theo dõi điện giải:** Giảm 25–50% liều lợi tiểu quai nếu bệnh nhân đã hết ứ huyết để tránh tụt huyết áp thể tích; kiểm tra K+ và creatinine định kỳ khi dùng MRA; hướng dẫn tạm ngừng SGLT2i khi nhịn đói phẫu thuật hoặc nhiễm trùng nặng để phòng toan ceton đường huyết bình thường (Euglycemic DKA).
 
-*Nguồn trích dẫn định danh xác thực*: 2023 Focused Update of the 2021 ESC Guidelines for Heart Failure. *European Heart Journal* (2023) 44:3627–3639. DOI: `10.1093/eurheartj/ehad195`. PMID: `37622666`.
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 Focused Update of the 2021 ESC Guidelines for Heart Failure. *European Heart Journal* (2023) 44:3627–3639. DOI: `10.1093/eurheartj/ehad195`. PMID: `37622666`.
 
 ---
 
@@ -4487,7 +4487,7 @@ _PILLAR_6_SERIES = [
 - **Tại sao LVEF ≤ 35% không còn đủ nhạy và đặc hiệu?** Loạn nhịp thất ác tính trong DCM chủ yếu bắt nguồn từ **vòng vào lại quanh sẹo xơ hóa mô kẽ giữa thành cơ tim (mid-wall fibrosis)** mà siêu âm tim đo EF không nhìn thấy được, trong khi **cộng hưởng từ tim có thuốc tương phản gadolinium muộn (CMR-LGE)** định vị chính xác cơ chất loạn nhịp này.
 - **Pitfalls tại giường bệnh:** Tuyệt đối **chờ đủ tối thiểu 3 tháng tối ưu hóa 4 trụ cột GDMT** (ARNI + BB + MRA + SGLT2i) trước khi chỉ định đặt ICD dự phòng nguyên phát ở bệnh nhân DCM mới chẩn đoán vì tỷ lệ hồi phục LVEF > 35% rất cao.
 
-*Nguồn trích dẫn định danh xác thực*: 2022 ESC Guidelines for ventricular arrhythmias and prevention of SCD (*Eur Heart J* 2022; 43:3997–4126; DOI: `10.1093/eurheartj/ehac262`; PMID: `36017572`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2022 ESC Guidelines for ventricular arrhythmias and prevention of SCD (*Eur Heart J* 2022; 43:3997–4126; DOI: `10.1093/eurheartj/ehac262`; PMID: `36017572`).
 
 ---
 
@@ -4660,7 +4660,7 @@ Historically, primary-prevention ICD candidacy relied almost exclusively on LVEF
 - **Sinh lý bệnh:** Ngất phản xạ (vasovagal) gồm hai thành phần xảy ra đồng thời hoặc nối tiếp: phản xạ **ức chế tim (cardioinhibitory)** gây nhịp chậm/vô tâm thu và phản xạ **giãn mạch hạ áp (vasodepressor)**. Nếu bệnh nhân bị giãn mạch hạ áp ưu thế (tilt test dương tính kèm tụt huyết áp trước khi ngừng tim), máy tạo nhịp 2 buồng đơn thuần thường thất bại trong việc ngăn ngất vì không nâng được huyết áp khi giãn mạch hệ thống!
 - **Pitfalls lâm sàng:** Không bao giờ chỉ định CT sọ não, MRI não hay siêu âm động mạch cảnh cho bệnh nhân ngất điển hình không có dấu thần kinh khu trú (**Class III** — hẹp động mạch cảnh một bên hầu như không gây ngất thoáng qua mà gây cơn thiếu máu não cục bộ khu trú TIA).
 
-*Nguồn trích dẫn định danh xác thực*: 2018 ESC Guidelines for the diagnosis and management of syncope (*Eur Heart J* 2018; 39:1883–1948; DOI: `10.1093/eurheartj/ehy037`; PMID: `29562304`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2018 ESC Guidelines for the diagnosis and management of syncope (*Eur Heart J* 2018; 39:1883–1948; DOI: `10.1093/eurheartj/ehy037`; PMID: `29562304`).
 
 ---
 
@@ -4839,7 +4839,7 @@ The 2018 ESC Syncope Guidelines replaced unselective admissions and low-yield ne
 - **Sinh lý bệnh:** Trong rung nhĩ kèm HFrEF, mất đồng bộ nhĩ–thất ("atrial kick" đóng góp 20–30% cung lượng tim) cùng nhịp thất không đều kéo dài làm giảm đổ đầy thất trái, tăng áp lực nhĩ trái, hở van hai lá cơ năng nặng lên và kích hoạt bệnh cơ tim do nhịp nhanh. Triệt đốt cô lập tĩnh mạch phổi giúp phục hồi co bóp nhĩ và tái cấu trúc ngược thất trái (tăng LVEF trung bình 8–10%).
 - **Pitfalls lâm sàng:** Không dùng thuốc chống loạn nhịp nhóm **Ic (Flecainide, Propafenone)** hoặc **Dronedarone** trong HFrEF vì làm tăng đột tử (**Class III**). Sau triệt đốt thành công và LVEF hồi phục, vẫn tiếp tục duy trì thuốc kháng đông nếu **CHA2DS2-VA ≥ 2** và tiếp tục các trụ cột GDMT suy tim.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC AF Guidelines (*Eur Heart J* 2024; 45:3314–3414; DOI: `10.1093/eurheartj/ehae176`; PMID: `39210723`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC AF Guidelines (*Eur Heart J* 2024; 45:3314–3414; DOI: `10.1093/eurheartj/ehae176`; PMID: `39210723`).
 
 ---
 
@@ -5037,7 +5037,7 @@ Chuyên đề thuộc **Trụ cột 6: Rối loạn nhịp, Điện sinh lý & N
 - **An toàn sinh học của PFA:** Khác với năng lượng nhiệt (Radiofrequency đốt nóng hoặc Cryoballoon làm lạnh sâu có nguy cơ dò nhĩ–thực quản chết người hoặc liệt dây thần kinh hoành), PFA sử dụng xung điện cao thế cực ngắn tạo lỗ màng không hồi phục (electroporation) có ngưỡng chọn lọc thấp hơn hẳn đối với tế bào cơ tim so với mô thực quản và mạch máu.
 - **Lưu ý tại giường bệnh:** Tuyệt đối **không ngừng thuốc chống đông** sau triệt đốt thành công nếu điểm **CHA2DS2-VA ≥ 2** (**Class I, LOE C**). Kiểm soát chặt chẽ huyết áp, cân nặng (giảm ≥ 10% cân nặng ở BN béo phì), ngưng thở khi ngủ (OSA) và rượu bia vì đây là yếu tố quyết định tỷ lệ tái phát rung nhĩ.
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC Guidelines for the management of atrial fibrillation. *Eur Heart J* 2024; 45:3314–3414. DOI: `10.1093/eurheartj/ehae176`. PMID: `39210723`.
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC Guidelines for the management of atrial fibrillation. *Eur Heart J* 2024; 45:3314–3414. DOI: `10.1093/eurheartj/ehae176`. PMID: `39210723`.
 
 ---
 
@@ -5243,7 +5243,7 @@ _PILLAR_7_SERIES = [
 - **Tại sao tuổi 75 lại là ranh giới quan trọng ở Châu Âu?** Khác với ACC/AHA 2020 (đặt ngưỡng TAVR rộng từ 65 tuổi), ESC 2021 thận trọng chọn mốc 75 tuổi vì tính đến **độ bền cấu trúc van (structural valve deterioration)** và **khả năng thông tim can thiệp mạch vành trong tương lai** cho người sống thêm >15–20 năm. Ngoài ra, van ĐMC hai mảnh (bicuspid) hoặc vôi hóa đường ra thất trái nặng thường gây hở cạnh van hoặc vỡ vòng van khi TAVR, đòi hỏi chụp CT ECG-gated toàn bộ động mạch chủ trước thủ thuật.
 - **Pitfalls lâm sàng:** Không quên tầm soát đồng thời hẹp động mạch vành trước TAVR và lưu ý tỷ lệ cấy máy tạo nhịp vĩnh viễn cao hơn (đặc biệt với van tự bung) ở người có blốc nhánh phải nền.
 
-*Nguồn trích dẫn định danh xác thực*: 2021 ESC/EACTS Guidelines for the management of valvular heart disease (*Eur Heart J* 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2021 ESC/EACTS Guidelines for the management of valvular heart disease (*Eur Heart J* 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
 
 ---
 
@@ -5442,7 +5442,7 @@ Historically restricted to prohibitive/high-risk (2012) and intermediate-risk (2
 - **Sinh lý bệnh:** Trong hở van hai lá thứ phát, dòng máu phụt ngược về nhĩ trái làm giảm cung lượng tim tống vào động mạch chủ và gây tăng gánh thể tích ngược lại vào thất trái, tạo vòng xoắn bệnh lý dãn thất tiến triển. Tuy nhiên, nếu bản chất là bệnh cơ tim dãn quá nặng đã mất khả năng co bóp dự trữ, kẹp khít van hai lá sẽ làm tăng hậu gánh đột ngột cho thất trái và không cứu được tiên lượng.
 - **Pitfalls lâm sàng:** Tuyệt đối không đưa bệnh nhân đi làm M-TEER khi mới xuất viện đợt cấp chưa tối ưu hóa liều ARNI, Chẹn beta, MRA và SGLT2i; luôn kiểm tra kích thước vòng van và chiều dài lá van sau qua siêu âm tim qua thực quản (TEE 3D).
 
-*Nguồn trích dẫn định danh xác thực*: 2021 ESC/EACTS VHD Guidelines (*Eur Heart J* 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2021 ESC/EACTS VHD Guidelines (*Eur Heart J* 2022; 43:561–632; DOI: `10.1093/eurheartj/ehab395`; PMID: `34453165`).
 
 ---
 
@@ -5615,7 +5615,7 @@ In functional (secondary) mitral regurgitation, valve leaflets are structurally 
 - **Khi nào KHÔNG được chuyển kháng sinh uống?** Bệnh nhân còn sốt, CRP không giảm hoặc giảm chậm, có áp-xe/rò quanh van trên TEE ngay trước thời điểm chuyển, tác nhân đa kháng không có phác đồ uống nhạy cảm, hoặc suy giảm hấp thu tiêu hóa/kém tuân thủ điều trị.
 - **Thận trọng PET/CT sớm sau mổ van:** Trong **3 tháng đầu sau phẫu thuật thay van**, phản ứng viêm hậu phẫu lành thương bình thường có thể gây dương tính giả trên 18F-FDG PET/CT — tránh đọc nhầm thành viêm nội tâm mạc nếu vừa mổ < 3 tháng.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Guidelines for the management of endocarditis (*Eur Heart J* 2023; 44:3948–4042; DOI: `10.1093/eurheartj/ehad193`; PMID: `37622656`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for the management of endocarditis (*Eur Heart J* 2023; 44:3948–4042; DOI: `10.1093/eurheartj/ehad193`; PMID: `37622656`).
 
 ---
 
@@ -5813,7 +5813,7 @@ Chuyên đề thuộc **Trụ cột 7: Bệnh van tim & Viêm nội tâm mạc n
 - **Điều kiện bắt buộc để chuyển kháng sinh uống trong IE (Tiêu chuẩn POET):** Phải loại trừ áp-xe quanh vòng van/cơ tim bằng **siêu âm tim qua thực quản (TEE)** trước khi chuyển đổi; bệnh nhân hết sốt ≥ 2 ngày, CRP/bạch cầu giảm rõ, và tác nhân thuộc nhóm nhạy cảm (*Streptococcus*, *E. faecalis*, *S. aureus* MSSA, CoNS).
 - **Đánh giá hẹp van ĐMC không triệu chứng:** Luôn làm test gắng sức (nếu an toàn) để bóc tách "giả không triệu chứng" trước khi quyết định theo dõi bảo tồn.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Guidelines for endocarditis (*Eur Heart J* 2023; 44:3948–4042; DOI: `10.1093/eurheartj/ehad193`; PMID: `37622656`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for endocarditis (*Eur Heart J* 2023; 44:3948–4042; DOI: `10.1093/eurheartj/ehad193`; PMID: `37622656`).
 
 ---
 
@@ -6015,7 +6015,7 @@ _PILLAR_8_SERIES = [
   - **Sai lầm chết người #1:** Thấy xạ hình PYP/DPD dương tính độ 2–3 mà bỏ qua xét nghiệm chuỗi nhẹ đơn dòng — tới 20% bệnh nhân **Amyloidosis thể AL** (bệnh lý ác tính dòng tương bào cần hóa trị gấp) cũng bắt xạ hình xương nhẹ–vừa!
   - **Sai lầm #2:** Kê **Digoxin** hoặc **Chẹn kênh Canxi Non-DHP (Verapamil/Diltiazem)** (gắn chặt vào sợi amyloid gây tụt huyết áp trụy mạch/ngộ độc); thận trọng chẹn beta và ACEi liều cao.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Cardiomyopathies Guidelines (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Cardiomyopathies Guidelines (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
 
 ---
 
@@ -6199,7 +6199,7 @@ Once requiring endomyocardial biopsy and carrying no disease-modifying options, 
 - **Tại sao kiểu hình NDLVC lại quan trọng?** Nhiều đột biến gen desmosome (**DSP** — Desmoplakin) và **FLNC** (Filamin C) gây chết tế bào cơ tim từng đợt giống viêm cơ tim tái phát ("hot phases" kèm tăng troponin), tạo dải sẹo xơ dưới thượng tâm mạc dạng vòng quanh thất trái nhưng không làm dãn buồng thất trái. Nếu bác sĩ chỉ nhìn siêu âm thấy LVEF 50% mà bỏ qua CMR và gen, bệnh nhân dễ gặp đột tử khi gắng sức thể lực.
 - **Pitfalls lâm sàng:** Không bao giờ dùng một biến thể gen **VUS (Variant of Uncertain Significance)** để quyết định cấy ICD hoặc loại trừ chẩn đoán cho người thân; mọi xét nghiệm gen cần có sự tham vấn của chuyên gia di truyền tim mạch.
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Cardiomyopathies Guidelines (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Cardiomyopathies Guidelines (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
 
 ---
 
@@ -6388,7 +6388,7 @@ Prior to 2023, ESC lacked an overarching framework spanning all non-ischemic myo
 - **Sinh lý bệnh:** Viêm màng ngoài tim tái phát kiểu hình tự viêm (autoinflammatory phenotype — biểu hiện sốt, tràn dịch, **CRP tăng rõ rệt**) được thúc đẩy bởi vòng khuếch đại NLRP3–Interleukin-1α/β ngay tại tế bào trung biểu mô màng ngoài tim. Colchicine ức chế trùng hợp vi ống ngăn lắp ráp NLRP3, còn Rilonacept trung hòa trực tiếp cả IL-1α và IL-1β lưu hành.
 - **Pitfalls lâm sàng:** Không giảm liều NSAID/Colchicine hoặc corticoid quá nhanh khi CRP chưa về bình thường; ở vùng có tỷ lệ lao cao như Việt Nam, **luôn loại trừ lao màng ngoài tim** trước khi khởi corticoid hay thuốc ức chế IL-1.
 
-*Nguồn trích dẫn định danh xác thực*: RHAPSODY (*NEJM* 2021; 384:31–41; DOI: `10.1056/NEJMoa2027892`; PMID: `33200890`) & 2020 ESC ACHD Guidelines (PMID: `32860028`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: RHAPSODY (*NEJM* 2021; 384:31–41; DOI: `10.1056/NEJMoa2027892`; PMID: `33200890`) & 2020 ESC ACHD Guidelines (PMID: `32860028`).
 
 ---
 
@@ -6597,7 +6597,7 @@ Chuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh mà
   - **Nguy cơ suy giảm LVEF (< 50%):** Do cơ chế giảm co bóp trực tiếp, bắt buộc phải **siêu âm tim theo dõi LVEF định kỳ** (tuần 4, 8, 12 và mỗi 12 tuần). Phải tạm ngừng thuốc ngay nếu LVEF giảm xuống **< 50%**.
   - **Tương tác thuốc CYP2C19/CYP3A4 của Mavacamten:** Chống chỉ định phối hợp với chất ức chế mạnh CYP2C19 (Omeprazole, Fluconazole, Fluvoxamine) hoặc CYP3A4 vì làm tích tụ thuốc gây suy tim tâm thu cấp. (Aficamten thế hệ mới có thời gian bán thải ngắn hơn ~3,4 ngày và ít tương tác CYP hơn).
 
-*Nguồn trích dẫn định danh xác thực*: 2023 ESC Guidelines for the management of cardiomyopathies (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for the management of cardiomyopathies (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).
 
 ---
 
@@ -6804,7 +6804,7 @@ _PILLAR_9_SERIES = [
 - **Sinh lý bệnh:** Cái chết trong PE cấp xảy ra do **tăng đột ngột hậu gánh thất phải (RV afterload)** khi >30–50% giường mạch phổi bị tắc nghẽn cơ học kết hợp co mạch phổi do thiếu oxy và giải phóng thromboxane A2/serotonin. Thất phải thành mỏng nhanh chóng giãn cấp, đẩy vách liên thất sang trái làm xẹp thất trái ("interventricular dependence"), giảm tiền gánh thất trái và gây tụt huyết áp vòng xoắn chết người.
 - **Pitfalls lâm sàng:** Không truyền dịch ồ ạt (>500 mL) cho bệnh nhân PE cấp có giãn thất phải vì làm thất phải càng căng giãn, ép thất trái nặng hơn; dùng **D-dimer hiệu chỉnh theo tuổi** (`Tuổi × 10 µg/L` ở người >50 tuổi) để tránh chụp CTPA dư thừa.
 
-*Nguồn trích dẫn định danh xác thực*: 2019 ESC Guidelines for acute pulmonary embolism (*Eur Heart J* 2020; 41:543–603; DOI: `10.1093/eurheartj/ehz405`; PMID: `31504429`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2019 ESC Guidelines for acute pulmonary embolism (*Eur Heart J* 2020; 41:543–603; DOI: `10.1093/eurheartj/ehz405`; PMID: `31504429`).
 
 ---
 
@@ -6992,7 +6992,7 @@ The **2019 ESC PE Guidelines** elevated **DOACs** over VKA to **Class I, LOE A**
 - **Sinh lý bệnh:** Trước khi mPAP chạm mốc 25 mmHg, trên 50% hệ tiểu động mạch phổi đã bị tái cấu trúc bít tắc; phát hiện sớm tại cửa sổ mPAP 21–24 mmHg và PVR > 2 WU giúp can thiệp trước khi thất phải suy mất bù.
 - **Pitfalls lâm sàng sống còn:** Tuyệt đối **không kê thuốc đặc hiệu giãn mạch phổi (ERA/PDE5i/Riociguat) cho tăng áp phổi do bệnh tim trái (Nhóm 2)** vì làm tăng lưu lượng máu đổ về nhĩ trái đang tăng áp lực, gây **phù phổi cấp chết người** (**Class III**). Cũng tuyệt đối tránh phối hợp **PDE5i (Sildenafil/Tadalafil) cùng Riociguat** (**Class III** — tụt huyết áp nặng).
 
-*Nguồn trích dẫn định danh xác thực*: 2022 ESC/ERS Guidelines for pulmonary hypertension (*Eur Heart J* 2022; 43:3618–3731; DOI: `10.1093/eurheartj/ehac237`; PMID: `36017548`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2022 ESC/ERS Guidelines for pulmonary hypertension (*Eur Heart J* 2022; 43:3618–3731; DOI: `10.1093/eurheartj/ehac237`; PMID: `36017548`).
 
 ---
 
@@ -7179,7 +7179,7 @@ Recognizing that >50% of pulmonary arterioles are obliterated before mPAP reache
 ### 2. Cơ sở sinh lý bệnh & Pitfalls tại giường bệnh
 - **Pitfalls lâm sàng:** Không quên kê **tập đi bộ có giám sát (supervised exercise therapy — Class I, LOE A)** cho bệnh nhân đau cách hồi chi dưới trước khi nghĩ đến đặt stent; ở bệnh nhân hội chứng động mạch chủ cấp (bóc tách type B không biến chứng), kiểm soát huyết áp và nhịp tim tích cực (HATT 100–120 mmHg, nhịp tim ≤60 l/phút bằng chẹn beta tĩnh mạch trước khi dùng thuốc giãn mạch như Nicardipine để tránh phản xạ tăng dP/dt làm rách thêm nội mạc!).
 
-*Nguồn trích dẫn định danh xác thực*: 2024 ESC PAAD Guidelines (*Eur Heart J* 2024; 45:3538–3700; DOI: `10.1093/eurheartj/ehae179`; PMID: `39210722`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2024 ESC PAAD Guidelines (*Eur Heart J* 2024; 45:3538–3700; DOI: `10.1093/eurheartj/ehae179`; PMID: `39210722`).
 
 ---
 
@@ -7365,7 +7365,7 @@ Chuyên đề thuộc **Trụ cột 9: Bệnh mạch máu phổi, Thuyên tắc 
 - **Theo dõi khi dùng Sotatercept:** Tiêm dưới da mỗi 3 tuần (khởi đầu 0,3 mg/kg, đích 0,7 mg/kg). Bắt buộc **kiểm tra công thức máu trước mỗi liều** vì nguy cơ **tăng Hemoglobin/đa hồng cầu** và **giảm tiểu cầu** (chảy máu niêm mạc/chảy máu cam/giãn mao mạch telangiectasia).
 - **Sàng lọc phình ĐMC:** Đo đường kính động mạch chủ bằng siêu âm/CT chuẩn hóa theo chiều cao và diện tích bề mặt cơ thể (AHI/ASI) ở bệnh nhân bệnh mô liên kết hoặc người nhỏ con.
 
-*Nguồn trích dẫn định danh xác thực*: STELLAR (*NEJM* 2023; 388:1478–1490; DOI: `10.1056/NEJMoa2213558`; PMID: `36877098`) & 2024 ESC PAAD Guidelines (DOI: `10.1093/eurheartj/ehae179`; PMID: `39210722`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: STELLAR (*NEJM* 2023; 388:1478–1490; DOI: `10.1056/NEJMoa2213558`; PMID: `36877098`) & 2024 ESC PAAD Guidelines (DOI: `10.1093/eurheartj/ehae179`; PMID: `39210722`).
 
 ---
 
@@ -7559,7 +7559,7 @@ _PILLAR_10_SERIES = [
 - **Sinh lý bệnh:** Độc tính Anthracycline (Doxorubicin) là tổn thương trực tiếp không hồi phục phụ thuộc liều tích lũy qua ức chế **Topoisomerase IIβ** tại ty thể tế bào cơ tim (sinh gốc tự do ROS và chết tế bào cơ tim — Type I). Ngược lại, kháng thể kháng HER2 (Trastuzumab) hay ức chế VEGF gây rối loạn chức năng có thể hồi phục (Type II). Điểm kiểm soát miễn dịch (ICI) có thể gây **viêm cơ tim tối cấp** tỷ lệ tử vong 30–50% dù hiếm gặp — cần đo Troponin/ECG trước các chu kỳ đầu và dùng Methylprednisolone tĩnh mạch liều cao (1.000 mg/ngày) ngay nếu nghi ngờ!
 - **Pitfalls lâm sàng:** Không quên đo **khoảng QTc bằng công thức Fridericia (QTcF)** trước và trong khi dùng các thuốc ức chế tyrosine kinase (TKI), Ribociclib hay Arsenic trioxide (tạm ngừng khi QTcF > 500 ms).
 
-*Nguồn trích dẫn định danh xác thực*: 2022 ESC Guidelines on cardio-oncology (*Eur Heart J* 2022; 43:4229–4361; DOI: `10.1093/eurheartj/ehac244`; PMID: `36017568`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2022 ESC Guidelines on cardio-oncology (*Eur Heart J* 2022; 43:4229–4361; DOI: `10.1093/eurheartj/ehac244`; PMID: `36017568`).
 
 ---
 
@@ -7744,7 +7744,7 @@ Moving beyond reactive monitoring of overt LVEF loss in the 2016 Position Paper,
   - **Trong Thai kỳ:** Tuyệt đối ngừng **ACEi, ARB, ARNI, MRA và Statin** trước hoặc ngay khi phát hiện có thai; kiểm soát huyết áp thai kỳ bằng Labetalol, Nifedipine LA hoặc Methyldopa. Ở bệnh nhân van cơ học, **KHÔNG dùng DOAC** (**Class III**).
   - **Trong PFO:** Không dùng đóng PFO cho bệnh nhân >60 tuổi bị đột quỵ mà chưa loại trừ triệt để **rung nhĩ kịch phát ẩn** (bằng Holter dài ngày) và hẹp động mạch cảnh.
 
-*Nguồn trích dẫn định danh xác thực*: 2018 ESC Pregnancy Guidelines (*Eur Heart J* 2018; 39:3165–3241; DOI: `10.1093/eurheartj/ehy340`; PMID: `30165544`) & 2024 ESO PFO Guidelines (PMID: `38752755`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2018 ESC Pregnancy Guidelines (*Eur Heart J* 2018; 39:3165–3241; DOI: `10.1093/eurheartj/ehy340`; PMID: `30165544`) & 2024 ESO PFO Guidelines (PMID: `38752755`).
 
 ---
 
@@ -7926,7 +7926,7 @@ The **2018 ESC Pregnancy Guidelines** require multidisciplinary **Pregnancy Hear
 - **Tại sao béo phì trực tiếp gây ra HFpEF?** Béo phì nội tạng và lớp mỡ ngoại tâm mạc (epicardial adipose tissue) tạo hai tác động kép lên tim: (1) **hiệu ứng cơ học ép màng ngoài tim (pericardial restraint)** làm hạn chế giãn tâm trương hai thất và đẩy áp lực đổ đầy lên cao dù LVEF >50%, và (2) **tiết hàng loạt cytokine tiền viêm** (IL-6, TNF-α) xâm nhập trực tiếp cơ tim gây xơ hóa kẽ. Hơn nữa, mô mỡ tăng giữ natri qua thụ thể aldosterone và kích hoạt neprilysin, gây tăng giả tạo hoặc **giảm giả tạo nồng độ NT-proBNP** (làm bác sĩ dễ bỏ sót chẩn đoán HFpEF ở người béo phì!).
 - **Pitfalls lâm sàng:** Không ngừng SGLT2i khi dùng Semaglutide/Tirzepatide — hai thuốc cộng hưởng bổ trợ cơ chế; nhớ tăng liều chậm mỗi 4 tuần để giảm buồn nôn và tuyệt đối tránh ở tiền sử ung thư giáp thể tủy/MEN-2 hoặc HFrEF nặng có suy kiệt.
 
-*Nguồn trích dẫn định danh xác thực*: SUMMIT (*NEJM* 2025; 392:427–437; DOI: `10.1056/NEJMoa2410027`; PMID: `39555826`) & STEP-HFpEF Pooled (*Lancet* 2024; 403:1635–1648; PMID: `38599221`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: SUMMIT (*NEJM* 2025; 392:427–437; DOI: `10.1056/NEJMoa2410027`; PMID: `39555826`) & STEP-HFpEF Pooled (*Lancet* 2024; 403:1635–1648; PMID: `38599221`).
 
 ---
 
@@ -8117,7 +8117,7 @@ Chuyên đề thuộc **Trụ cột 10: Tim mạch Liên chuyên khoa & Chẩn �
 - **Cơ chế ngoài giảm cân:** Lợi ích tim mạch của Semaglutide trong SELECT xuất hiện rất sớm (tách đường cong ngay những tháng đầu tiên trước khi giảm cân tối đa), phản ánh tác động giảm viêm mạch máu (giảm hs-CRP), cải thiện chức năng nội mô, ổn định mảng xơ vữa, giảm mỡ ngoại tâm mạc và giảm áp lực lọc cầu thận kết hợp chống xơ hóa kẽ thận.
 - **Lưu ý tại giường bệnh:** Chuẩn liều chậm theo bậc mỗi 4 tuần (0,25 → 0,5 → 1,0 → 1,7 → 2,4 mg/tuần) để giảm buồn nôn/nôn đường tiêu hóa. Chống chỉ định ở bệnh nhân có tiền sử cá nhân/gia đình ung thư biểu mô tuyến giáp thể tủy (MTC) hoặc hội chứng MEN-2; lưu ý ngưng tạm thời trước phẫu thuật gây mê toàn thân theo hướng dẫn tránh hít sặc dạ dày rỗng chậm.
 
-*Nguồn trích dẫn định danh xác thực*: SELECT (*NEJM* 2023; 389:2221–2232; DOI: `10.1056/NEJMoa2307563`; PMID: `37952131`) & FLOW (*NEJM* 2024; 391:109–121; DOI: `10.1056/NEJMoa2403347`; PMID: `38785209`).
+*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: SELECT (*NEJM* 2023; 389:2221–2232; DOI: `10.1056/NEJMoa2307563`; PMID: `37952131`) & FLOW (*NEJM* 2024; 391:109–121; DOI: `10.1056/NEJMoa2403347`; PMID: `38785209`).
 
 ---
 
