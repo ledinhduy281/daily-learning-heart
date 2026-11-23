@@ -1,6 +1,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const {createHash} = require('node:crypto');
+const deviceId = 'abcdef0123456789'.repeat(4);
+const hash = (id, pepper = '') => createHash('sha256').update(pepper + ':' + id.toLowerCase()).digest('hex');
 
 const source = fs.readFileSync(require.resolve('../backend/apps_script/Chat.gs'), 'utf8');
 function setup(properties = {GROQ_API_KEY: 'test-only-placeholder'}) {
@@ -15,7 +18,9 @@ function setup(properties = {GROQ_API_KEY: 'test-only-placeholder'}) {
       deleteProperty: name => {assert.ok(state.locked);delete state.properties[name];}
     })},
     LockService: {getScriptLock: () => ({tryLock: () => {state.locked=state.canLock;return state.canLock;},releaseLock: () => {assert.ok(state.locked);state.locked=false;}})},
-    Utilities: {formatDate: (date, timezone, format) => {
+    Utilities: {DigestAlgorithm: {SHA_256: 'sha256'}, Charset: {UTF_8: 'utf8'},
+      computeDigest: (algorithm, value, charset) => Array.from(createHash(algorithm).update(value, charset).digest(), b => b > 127 ? b - 256 : b),
+      formatDate: (date, timezone, format) => {
       assert.equal(timezone, 'Asia/Ho_Chi_Minh'); assert.equal(format, 'yyyy-MM-dd'); return new Date(date.getTime()+7*3600000).toISOString().slice(0,10);
     }},
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: text => ({
@@ -31,7 +36,11 @@ function setup(properties = {GROQ_API_KEY: 'test-only-placeholder'}) {
     Logger: {log: text => state.logs.push(text)}
   };
   vm.createContext(sandbox); vm.runInContext(source, sandbox);
-  state.request = changes => JSON.parse(sandbox.chatHandle_({action: 'chat', question: 'Explain heart failure.', history: [], context: 'Guideline evidence', lang: 'en', ...changes}).getContent());
+  state.request = changes => {
+    const body = sandbox.chatHandle_({action: 'chat', device_id: deviceId, question: 'Explain heart failure.', history: [], context: 'Guideline evidence', lang: 'en', ...changes}).getContent();
+    for (const value of ['test-only-placeholder', deviceId, hash(deviceId, properties.PEPPER || ''), properties.PEPPER].filter(Boolean)) assert.ok(!body.includes(value));
+    return JSON.parse(body);
+  };
   state.testChat = () => sandbox.testChat();
   return state;
 }
@@ -114,4 +123,28 @@ smoke.testChat(); assert.equal(smoke.logs[1].length, 204);
 const missing = setup({}); missing.testChat(); assert.match(missing.logs[0], /not_configured.*Script Properties/);
 const failed = setup(); failed.status = 401; failed.testChat(); assert.match(failed.logs[0], /upstream.*key or GROQ_MODEL/);
 for (const state of [smoke, missing, failed]) assert.ok(!state.logs.join('').includes('test-only-placeholder'));
-console.log('Apps Script chat proxy checks passed (validation, cap, upstream, prompts, testChat).');
+for (const device_id of [undefined, null, '', 42, {}, 'x'.repeat(1000), '../invalid', deviceId + '\n', deviceId.toUpperCase(), 'a'.repeat(63), 'a'.repeat(65), '12345678-1234-4123-8123-123456789abc']) {
+  const invalid = setup();
+  assert.equal(invalid.request({device_id}).error, 'invalid_device_id');
+  assert.equal(invalid.calls.length, 0);
+  assert.equal(Object.keys(invalid.properties).length, 1);
+}
+const devices = setup({GROQ_API_KEY: 'test-only-placeholder', PEPPER: 'private-test-salt'});
+for (let i = 0; i < 30; i++) assert.equal(devices.request().ok, true);
+assert.equal(devices.request().error, 'device_daily_cap');
+assert.equal(devices.calls.length, 30);
+assert.equal(devices.request({device_id: 'b'.repeat(64)}).ok, true);
+assert.equal(devices.properties['chat_daily_2026-11-22'], '31');
+const oldDeviceKey = 'chat_device_2026-11-22_' + hash(deviceId, 'private-test-salt');
+assert.equal(devices.properties[oldDeviceKey], '30');
+assert.ok(!JSON.stringify(devices.properties).includes(deviceId));
+devices.now = Date.parse('2026-11-22T17:00:00Z');
+assert.equal(devices.request().ok, true);
+assert.equal(devices.properties[oldDeviceKey], undefined);
+assert.equal(devices.properties['chat_daily_2026-11-22'], undefined);
+assert.equal(devices.properties['chat_daily_2026-11-23'], '1');
+const global = setup({GROQ_API_KEY: 'test-only-placeholder', CHAT_DAILY_CAP: '999'});
+for (let i = 0; i < 300; i++) assert.equal(global.request({device_id: i.toString(16).padStart(64, '0')}).ok, true);
+assert.equal(global.request().error, 'daily_cap');
+assert.equal(global.calls.length, 300);
+console.log('Apps Script chat proxy checks passed (validation, device/global caps, daily reset, privacy, upstream, prompts, testChat).');
