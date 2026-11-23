@@ -466,7 +466,7 @@ def build_crawled_briefing(pillar: dict, articles: list) -> dict:
                 f"### {idx}. [{vi_type}] {art['title_vi']}\n"
                 f"- **Tạp chí & Ngày đăng**: *{art['source']}* (**{art['pubdate']}**)\n"
                 f"- **Tác giả**: {art['authors'] or 'Xem trên PubMed'}\n"
-                f"- **Định danh xác thực**: {doi_str}PMID: `{art['pmid']}`{stat_badge}\n\n"
+                f"- **Đã tìm thấy trích dẫn**: {doi_str}PMID: `{art['pmid']}`{stat_badge}\n\n"
                 + "\n".join(body_parts_vi)
             )
             b_en_list.append(

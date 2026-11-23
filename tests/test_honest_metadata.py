@@ -49,6 +49,17 @@ class HonestMetadataTests(unittest.TestCase):
         redated = [b for b in payload["briefings"] if b["curated_edition_date"] != b["date"]]
         self.assertTrue(redated, "re-dated curriculum editions must keep their original edition date")
 
+    def test_lesson_citation_labels_do_not_claim_verification(self):
+        for name in ("pillar_library.py", "crawl_cardiology_news.py", "data/briefings.js"):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            for phrase in ("định danh xác thực", "Định danh xác thực", "Step-0 verified"):
+                self.assertNotIn(phrase, text, f"{name} still says {phrase!r}")
+        import pillar_library
+
+        for briefing in pillar_library.build_initial_briefings_dataset():
+            if "Nguồn trích dẫn" in briefing.get("part1_vi_markdown", ""):
+                self.assertIn("*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*", briefing["part1_vi_markdown"])
+
     def test_generator_has_no_default_or_listed_paid_models(self):
         self.assertEqual(app.NO_MODEL, "none")
         self.assertFalse(hasattr(app, "DEFAULT_MODEL"))
