@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const {createHash} = require('node:crypto');
-const deviceId = '12345678-1234-4123-8123-123456789abc';
+const deviceId = 'abcdef0123456789'.repeat(4);
 const hash = (id, pepper = '') => createHash('sha256').update(pepper + ':' + id.toLowerCase()).digest('hex');
 
 const source = fs.readFileSync(require.resolve('../backend/apps_script/Chat.gs'), 'utf8');
@@ -123,7 +123,7 @@ smoke.testChat(); assert.equal(smoke.logs[1].length, 204);
 const missing = setup({}); missing.testChat(); assert.match(missing.logs[0], /not_configured.*Script Properties/);
 const failed = setup(); failed.status = 401; failed.testChat(); assert.match(failed.logs[0], /upstream.*key or GROQ_MODEL/);
 for (const state of [smoke, missing, failed]) assert.ok(!state.logs.join('').includes('test-only-placeholder'));
-for (const device_id of [undefined, null, '', 42, {}, 'x'.repeat(1000), '../invalid', deviceId + '\n']) {
+for (const device_id of [undefined, null, '', 42, {}, 'x'.repeat(1000), '../invalid', deviceId + '\n', deviceId.toUpperCase(), 'a'.repeat(63), 'a'.repeat(65), '12345678-1234-4123-8123-123456789abc']) {
   const invalid = setup();
   assert.equal(invalid.request({device_id}).error, 'invalid_device_id');
   assert.equal(invalid.calls.length, 0);
@@ -131,9 +131,9 @@ for (const device_id of [undefined, null, '', 42, {}, 'x'.repeat(1000), '../inva
 }
 const devices = setup({GROQ_API_KEY: 'test-only-placeholder', PEPPER: 'private-test-salt'});
 for (let i = 0; i < 30; i++) assert.equal(devices.request().ok, true);
-assert.equal(devices.request({device_id: deviceId.toUpperCase()}).error, 'device_daily_cap');
+assert.equal(devices.request().error, 'device_daily_cap');
 assert.equal(devices.calls.length, 30);
-assert.equal(devices.request({device_id: '22345678-1234-4123-8123-123456789abc'}).ok, true);
+assert.equal(devices.request({device_id: 'b'.repeat(64)}).ok, true);
 assert.equal(devices.properties['chat_daily_2026-11-22'], '31');
 const oldDeviceKey = 'chat_device_2026-11-22_' + hash(deviceId, 'private-test-salt');
 assert.equal(devices.properties[oldDeviceKey], '30');
@@ -144,7 +144,7 @@ assert.equal(devices.properties[oldDeviceKey], undefined);
 assert.equal(devices.properties['chat_daily_2026-11-22'], undefined);
 assert.equal(devices.properties['chat_daily_2026-11-23'], '1');
 const global = setup({GROQ_API_KEY: 'test-only-placeholder', CHAT_DAILY_CAP: '999'});
-for (let i = 0; i < 300; i++) assert.equal(global.request({device_id: i.toString(16).padStart(8, '0') + '-1234-4123-8123-123456789abc'}).ok, true);
+for (let i = 0; i < 300; i++) assert.equal(global.request({device_id: i.toString(16).padStart(64, '0')}).ok, true);
 assert.equal(global.request().error, 'daily_cap');
 assert.equal(global.calls.length, 300);
 console.log('Apps Script chat proxy checks passed (validation, device/global caps, daily reset, privacy, upstream, prompts, testChat).');

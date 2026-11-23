@@ -9,7 +9,7 @@ function chatHandle_(req) {
     return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
   }
   req = req || {};
-  if (typeof req.device_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.device_id)) {
+  if (typeof req.device_id !== 'string' || !/^[0-9a-f]{64}$/.test(req.device_id)) {
     return output({ok: false, error: 'invalid_device_id'});
   }
   var question = String(req.question || '').trim();
@@ -99,7 +99,7 @@ function chatHandle_(req) {
 }
 
 function testChat() {
-  var result = JSON.parse(chatHandle_({action: 'chat', device_id: '00000000-0000-4000-8000-000000000000', question: 'What is the role of SGLT2 inhibitors in heart failure?', history: [], context: '', lang: 'en', verbosity: 'short'}).getContent());
+  var result = JSON.parse(chatHandle_({action: 'chat', device_id: '0000000000000000000000000000000000000000000000000000000000000000', question: 'What is the role of SGLT2 inhibitors in heart failure?', history: [], context: '', lang: 'en', verbosity: 'short'}).getContent());
   if (result.ok) {
     Logger.log('OK: ' + result.answer_markdown.slice(0, 200));
   } else {

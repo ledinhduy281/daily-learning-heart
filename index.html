@@ -8896,6 +8896,9 @@
           if (endpoint) {
             let timer;
             try {
+              const chatDigest = await window.crypto.subtle.digest("SHA-256",
+                new TextEncoder().encode("dlh-chat-v1:" + deviceStore.profile.device_id.toLowerCase()));
+              const chatDeviceId = Array.from(new Uint8Array(chatDigest), b => b.toString(16).padStart(2, "0")).join("");
               const suffix = lang === "en" ? "en" : "vi";
               const context = [
                 `PILLAR #${primary.pillar_id}: ${primary.pillar_vi || primary.pillar_name || ""}`,
@@ -8911,7 +8914,7 @@
               timer = setTimeout(() => controller.abort(), 20000);
               const response = await fetch(endpoint, {
                 method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
-                body: JSON.stringify({action: "chat", device_id: deviceStore.profile.device_id, question: query,
+                body: JSON.stringify({action: "chat", device_id: chatDeviceId, question: query,
                   history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
                   context, lang, verbosity: this.verbosity || "medium"})
               });
