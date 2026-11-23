@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-11-22",
+  "date": "2026-11-23",
   "sources": {
     "pubmed": {
       "status": "ok",
@@ -27,6 +27,22 @@
       "journal": "J Diabetes Metab Disord",
       "study_type": "Journal Article",
       "topic": "heart_failure",
+      "evidence_type": "other_publication",
+      "journal_tier": "other_journal",
+      "evidence_score": 30,
+      "relevance_score": 100
+    },
+    {
+      "evidence_id": "pubmed:43068161",
+      "source": "pubmed",
+      "source_id": "43068161",
+      "pmid": "43068161",
+      "title": "Diagnostic yield of genetic testing in heart transplant recipients with non-ischemic cardiomyopathy: A single-center cohort study.",
+      "source_date": "2026-11-06",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/43068161/",
+      "journal": "JHLT Open",
+      "study_type": "Journal Article",
+      "topic": "cardiomyopathy_pericardial_congenital",
       "evidence_type": "other_publication",
       "journal_tier": "other_journal",
       "evidence_score": 30,
@@ -473,22 +489,6 @@
       "source_date": "2027-03-01",
       "source_url": "https://pubmed.ncbi.nlm.nih.gov/42785224/",
       "journal": "Biomaterials",
-      "study_type": "Journal Article",
-      "topic": "heart_failure",
-      "evidence_type": "other_publication",
-      "journal_tier": "other_journal",
-      "evidence_score": 30,
-      "relevance_score": 60
-    },
-    {
-      "evidence_id": "pubmed:43061999",
-      "source": "pubmed",
-      "source_id": "43061999",
-      "pmid": "43061999",
-      "title": "Abnormal blood gas patterns in heart failure.",
-      "source_date": "2027-03-01",
-      "source_url": "https://pubmed.ncbi.nlm.nih.gov/43061999/",
-      "journal": "Med Gas Res",
       "study_type": "Journal Article",
       "topic": "heart_failure",
       "evidence_type": "other_publication",
