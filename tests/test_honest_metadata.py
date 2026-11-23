@@ -59,7 +59,7 @@ class HonestMetadataTests(unittest.TestCase):
     def test_save_normalizes_legacy_labels_and_keeps_real_model_drafts(self):
         briefings = [
             {"id": "a", "date": "2026-11-22", "model_used": "ebm-guideline-evolution-verified",
-             "interaction_id": "ebm-verified-ebm-2026-11-12-p7-main"},
+             "interaction_id": "ebm-verified-ebm-2026-11-12-p7-main", "part2_model_used": "some-model-id"},
             {"id": "b", "date": "2026-11-21", "model_used": "pubmed-step0-digest"},
             {"id": "c", "date": "2026-11-20", "model_used": "pubmed-live-crawler"},
             {"id": "d", "date": "2026-11-19", "model_used": "some-model-id"},
@@ -73,10 +73,32 @@ class HonestMetadataTests(unittest.TestCase):
         a, b, c, d = payload["briefings"]
         self.assertEqual((a["model_used"], a["content_source"], a["curated_edition_date"]),
                          ("none", "curated_library_rotation", "2026-11-12"))
+        self.assertEqual(a["part2_model_used"], "some-model-id")
         self.assertEqual((b["model_used"], b["content_source"]), ("none", "pubmed_metadata_digest"))
         self.assertEqual((c["model_used"], c["content_source"]), ("none", "pubmed_live_crawler"))
         self.assertEqual((d["model_used"], d["content_source"]), ("some-model-id", "model_draft"))
         self.assertEqual(briefings[0]["model_used"], "ebm-guideline-evolution-verified")
+
+    def test_model_rewritten_english_records_its_model(self):
+        captured = {}
+
+        class FakeCompletions:
+            def create(self, **kwargs):
+                captured.update(kwargs)
+                message = type("Message", (), {"content": "Part 2 text"})
+                return type("Response", (), {"choices": [type("Choice", (), {"message": message})]})
+
+        fake_openai = type(sys)("openai")
+        fake_openai.OpenAI = lambda **kwargs: type("Client", (), {"chat": type("Chat", (), {"completions": FakeCompletions()})})
+        briefing = app.with_truthful_provenance(
+            {"id": "a", "date": "2026-11-22", "model_used": "ebm-guideline-evolution-verified", "part1_vi_markdown": "Nội dung"})
+        with patch.dict(sys.modules, {"openai": fake_openai}):
+            result = app.generate_part2_for_briefing(briefing, model_name="some-model-id", api_key="test-key")
+        self.assertEqual(captured["model"], "some-model-id")
+        self.assertEqual(result["model_used"], "none")
+        self.assertEqual(result["part2_model_used"], "some-model-id")
+        with self.assertRaises(ValueError):
+            app.generate_part2_for_briefing(briefing)
 
     def test_curated_refresh_records_no_model_and_original_edition(self):
         with TemporaryDirectory() as tmp:

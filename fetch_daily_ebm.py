@@ -642,6 +642,7 @@ def generate_part2_for_briefing(
     if title_en_match:
         briefing["title_en"] = title_en_match.group(1).strip()
     briefing["part2_en_markdown"] = part2_en
+    briefing["part2_model_used"] = target_model
     return briefing
 
 
