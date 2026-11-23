@@ -40,7 +40,7 @@ Do not use the bare `python3 fetch_daily_ebm.py` command for the free refresh pa
 
 ## Daily evidence pipeline
 
-The [daily evidence workflow](.github/workflows/evidence_pipeline.yml) runs at 21:28 UTC and can also run on demand. It uses public APIs and standard GitHub-hosted runners and Pages for this public repo: no cloud account, credit card, API key, or AI service is needed. It runs separately from the curated daily pillar refresh above.
+The [daily evidence workflow](.github/workflows/evidence_pipeline.yml) tries at 00:13, 00:47, 01:26 and 02:08 UTC. GitHub can delay or miss cron runs, so completion of the curated daily pillar refresh above also triggers an attempt. Once both files for the current UTC date are on `main`, automatic runs skip the build and publication; an on-demand run can rebuild that date. The pipeline uses public APIs, standard GitHub-hosted runners, and Pages for this public repo: no cloud account, credit card, API key, or AI service is needed.
 
 | Layer | What it does |
 | --- | --- |
@@ -62,7 +62,7 @@ mkdir -p data/pipeline
 cp ../heart-evidence/publish/briefing.json ../heart-evidence/publish/evidence.parquet data/pipeline/
 ```
 
-The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after main changes or a successful legacy refresh or evidence run. Use **Settings → Pages → Build and deployment → Source → GitHub Actions** for this workflow (a one-time change from branching off `main`). The site URL is unchanged. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger GitHub Pages branch builds. Raw/bronze snapshots and backend files are not part of the deployed site.
+The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after changes to `main`, a successful curated refresh, or a successful evidence publish job. Already-current evidence attempts that skip the publish job do not redeploy the site. Use **Settings → Pages → Build and deployment → Source → GitHub Actions**. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger push workflows. Raw/bronze snapshots and backend files are not part of the deployed site.
 
 ## Repository guide
 
