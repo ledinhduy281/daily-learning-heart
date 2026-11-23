@@ -32,7 +32,7 @@ The pillars cycle in order, anchored to November 16, 2026 (pillar 1). For a give
 
 ## Briefing bundle
 
-The bundle assigns a JSON payload to `window.EBM_BRIEFINGS_DATA`. It includes `briefings`, `pillars`, `rotation_state`, and generation metadata. [`data/rotation_state.json`](data/rotation_state.json) is the backend's refresh state, including the last updated date and nearby pillar IDs. Keep the bundle and state in sync when changing the refresh.
+The bundle assigns a JSON payload to `window.EBM_BRIEFINGS_DATA`. It includes `briefings`, `pillars`, `rotation_state`, and generation metadata (`default_model: "none"` and a `generator` description; the bundle lists no AI models). [`data/rotation_state.json`](data/rotation_state.json) is the backend's refresh state, including the last updated date and nearby pillar IDs. Keep the bundle and state in sync when changing the refresh.
 
 | Briefing fields | Meaning |
 | --- | --- |
@@ -42,6 +42,7 @@ The bundle assigns a JSON payload to `window.EBM_BRIEFINGS_DATA`. It includes `b
 | `landmark_trials` | Block B entries with endpoints, reported statistics when available, and bilingual implications and cautions |
 | `pearls`, `pubmed_anchors` | Teaching points and bibliographic references, such as PMIDs or DOIs |
 | `verified_step0`, `model_used`, `live_crawled_guidelines`, `last_guideline_crawl_at` | Process and provenance metadata, not a clinical approval stamp |
+| `model_used`, `content_source`, `curated_edition_date` | `model_used` is `"none"` unless an optional model drafted the record (`content_source: "model_draft"`). `curated_library_rotation` records are curated editions re-dated by the daily rotation; `curated_edition_date` is when the edition was written; `part2_model_used` names the model when an optional model re-wrote the English text |
 
 Structured fields can be absent from older or model-generated records. Do not assume every record has both languages, a live match, or all trial statistics. The regular guideline refresh publishes the structured briefing, not a general news feed of `crawled_articles`. Use the canonical `date` rather than a stored display label for date comparisons.
 

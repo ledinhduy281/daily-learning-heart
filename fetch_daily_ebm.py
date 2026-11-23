@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 """
-Daily Cardiology EBM Briefing — Automated Data Fetcher & Two-Step Publisher
-===========================================================================
-Supports flexible multi-model execution via CLI and interactive HTML UI:
-  1. Google GenAI Interactions API (`google-genai` SDK >= 2.25.0):
-     - `gemini-3.1-pro-preview` (Default — Deep clinical reasoning & EBM synthesis)
-     - `gemini-3.8-flash` (Fast multimodal & agentic grounding)
-     - `gemini-3.5-flash-lite` (High-throughput, cost-efficient)
-     - `deep-research-preview-04-2026` (Autonomous background deep research agent)
-  2. OpenAI / Custom API Portal (`openai` SDK / HTTP REST compatible):
-     - `gpt-4o`, `gpt-4o-mini`, or any custom model via `OPENAI_BASE_URL` / `OPENAI_API_KEY`
-       (compatible with `https://aiportalapi.stu-platform.live/jpe`).
+Daily Cardiology EBM Briefing — curated daily refresh, PubMed lookup and local server
+=====================================================================================
+The scheduled refresh (`--refresh-if-needed`) uses no AI model. It shows one of 10 pillars
+per day in a fixed rotation, reusing the latest curated edition from `pillar_library.py`
+under today's date, and looks up PMID/DOI citation identities on NCBI PubMed E-utilities.
+A citation lookup is not clinical verification.
 
-Includes mandatory STEP 0 source verification via NCBI PubMed E-utilities API
-(+ Google Search grounding for Gemini models) and a lightweight local HTTP server (`--serve`)
-so the HTML frontend can trigger live generation of Part 1 (Vietnamese) and Part 2 (English).
+Optional model-based drafting (bare CLI or `/api/generate`) runs only with an explicit
+model ID and API key: Gemini-family IDs via the optional `google-genai` SDK, other IDs via
+the optional `openai` SDK (`OPENAI_API_KEY` / `OPENAI_BASE_URL`). There is no default model.
 """
 
 import argparse
@@ -80,46 +75,60 @@ def _load_dotenv() -> None:
 
 _load_dotenv()
 
-DEFAULT_MODEL = "gemini-3.1-pro-preview"
+NO_MODEL = "none"
+CURATED_CONTENT_SOURCE = "curated_library_rotation"
+MODEL_DRAFT_CONTENT_SOURCE = "model_draft"
+BUNDLE_GENERATOR = {
+    "method": "deterministic",
+    "model": NO_MODEL,
+    "content_source": (
+        "Curated pillar library shown in a fixed 10-pillar daily rotation; "
+        "an edition is re-dated when its pillar comes round again."
+    ),
+    "citation_lookup": "NCBI PubMed E-utilities PMID/DOI identity lookup (not clinical verification)",
+}
+_LEGACY_CURATED_MODEL_LABELS = {"ebm-guideline-evolution-verified", "ebm-step0-curated+pubmed"}
+_NO_MODEL_SOURCE_LABELS = {
+    "pubmed-live-crawler": "pubmed_live_crawler",
+    "pubmed-step0-digest": "pubmed_metadata_digest",
+}
 
-AVAILABLE_MODELS = [
-    {
-        "id": "gemini-3.1-pro-preview",
-        "provider": "gemini",
-        "label": "Gemini 3.1 Pro Preview (Recommended — Deep EBM Reasoning + Google Search)",
-        "supports_search": True,
-    },
-    {
-        "id": "gemini-3.8-flash",
-        "provider": "gemini",
-        "label": "Gemini 3.8 Flash (Fast Clinical Synthesis + Google Search)",
-        "supports_search": True,
-    },
-    {
-        "id": "gemini-3.5-flash-lite",
-        "provider": "gemini",
-        "label": "Gemini 3.5 Flash-Lite (High-Speed Lightweight + Google Search)",
-        "supports_search": True,
-    },
-    {
-        "id": "deep-research-preview-04-2026",
-        "provider": "gemini-agent",
-        "label": "Gemini Deep Research Agent (Autonomous Literature Grounding)",
-        "supports_search": True,
-    },
-    {
-        "id": "gpt-4o",
-        "provider": "openai",
-        "label": "OpenAI / Custom Portal — gpt-4o (PubMed Step-0 Grounded)",
-        "supports_search": False,
-    },
-    {
-        "id": "gpt-4o-mini",
-        "provider": "openai",
-        "label": "OpenAI / Custom Portal — gpt-4o-mini (PubMed Step-0 Grounded)",
-        "supports_search": False,
-    },
-]
+
+def _edition_date_from_interaction_id(value) -> str:
+    match = re.search(r"\d{4}-\d{2}-\d{2}", str(value or ""))
+    return match.group(0) if match else ""
+
+
+def with_truthful_provenance(briefing: dict) -> dict:
+    """Returns a copy whose `model_used`/`content_source` say how the briefing was really made."""
+    result = dict(briefing)
+    model = str(result.get("model_used") or "").strip()
+    source = result.get("content_source")
+    if model in _LEGACY_CURATED_MODEL_LABELS or source == CURATED_CONTENT_SOURCE:
+        result["model_used"] = NO_MODEL
+        result["content_source"] = CURATED_CONTENT_SOURCE
+        result["curated_edition_date"] = (
+            result.get("curated_edition_date")
+            or _edition_date_from_interaction_id(result.get("interaction_id"))
+            or result.get("date", "")
+        )
+    elif model in _NO_MODEL_SOURCE_LABELS:
+        result["model_used"] = NO_MODEL
+        result["content_source"] = _NO_MODEL_SOURCE_LABELS[model]
+    elif model and model != NO_MODEL:
+        result["content_source"] = MODEL_DRAFT_CONTENT_SOURCE
+    return result
+
+
+def _require_model(model_name: str) -> str:
+    model = (model_name or "").strip()
+    if not model or model == NO_MODEL:
+        raise ValueError(
+            "Optional model-based drafting needs an explicit model ID and API key; "
+            "use --refresh-if-needed for the free curated refresh."
+        )
+    return model
+
 
 PILLARS = [
     {
@@ -552,7 +561,10 @@ def generate_part2_for_briefing(
     briefing that currently only has Part 1 (Vietnamese), or re-generates Part 2 in academic
     American English (NEJM/JACC style).
     """
-    target_model = model_name or briefing.get("model_used") or DEFAULT_MODEL
+    previous_model = str(briefing.get("model_used") or "")
+    if previous_model in _LEGACY_CURATED_MODEL_LABELS or previous_model in _NO_MODEL_SOURCE_LABELS:
+        previous_model = ""
+    target_model = _require_model(model_name or previous_model)
     if target_model.startswith("deep-research-"):
         target_model = "gemini-3.1-pro-preview"
 
@@ -630,12 +642,13 @@ def generate_part2_for_briefing(
     if title_en_match:
         briefing["title_en"] = title_en_match.group(1).strip()
     briefing["part2_en_markdown"] = part2_en
+    briefing["part2_model_used"] = target_model
     return briefing
 
 
 def generate_briefing(
     pillar: dict,
-    model_name: str = DEFAULT_MODEL,
+    model_name: str = "",
     custom_focus: str = "",
     include_part2: bool = True,
     api_key: str = "",
@@ -645,6 +658,7 @@ def generate_briefing(
     Unified dispatcher that runs Step 0 PubMed verification and routes to either
     Google GenAI Interactions API or OpenAI/Custom Portal API based on the chosen model.
     """
+    model_name = _require_model(model_name)
     pubmed_refs = fetch_pubmed_metadata(pillar["search_query"], max_results=6)
     step1_prompt = _build_step1_prompt(pillar, pubmed_refs, custom_focus)
 
@@ -680,6 +694,7 @@ def generate_briefing(
         "date": today_str,
         "time": "06:00 AM",
         "model_used": model_name,
+        "content_source": MODEL_DRAFT_CONTENT_SOURCE,
         "pillar_id": pillar["id"],
         "pillar_name": pillar["name"],
         "pillar_vi": pillar["vi_name"],
@@ -761,7 +776,8 @@ def _build_pubmed_digest_briefing(pillar: dict, pubmed_refs: list, abstracts_map
             "id": f"ebm-{today_str}-p{pid}-{int(time.time()) % 10000}",
             "date": today_str,
             "time": "06:00 AM",
-            "model_used": "ebm-step0-curated+pubmed",
+            "model_used": NO_MODEL,
+            "content_source": CURATED_CONTENT_SOURCE,
             "pillar_id": pid,
             "pillar_name": pillar["name"],
             "pillar_vi": pillar["vi_name"],
@@ -864,7 +880,8 @@ This briefing covers **Pillar #{pillar['id']}: {pillar['name']}**. Core clinical
         "id": f"ebm-{today_str}-p{pillar['id']}-{int(time.time()) % 10000}",
         "date": today_str,
         "time": "06:00 AM",
-        "model_used": "pubmed-step0-digest",
+        "model_used": NO_MODEL,
+        "content_source": "pubmed_metadata_digest",
         "pillar_id": pillar["id"],
         "pillar_name": pillar["name"],
         "pillar_vi": pillar["vi_name"],
@@ -1454,7 +1471,9 @@ def _load_curated_pillar_briefing(pillar: dict, today_str: str) -> dict | None:
                 "id": f"ebm-{today_str}-p{pid}-main",
                 "date": today_str,
                 "time": "06:00 AM",
-                "model_used": "ebm-guideline-evolution-verified",
+                "model_used": NO_MODEL,
+                "content_source": CURATED_CONTENT_SOURCE,
+                "curated_edition_date": tpl.get("date", today_str),
                 "pillar_id": pid,
                 "pillar_name": pillar["name"],
                 "pillar_vi": pillar["vi_name"],
@@ -1474,6 +1493,16 @@ def _load_curated_pillar_briefing(pillar: dict, today_str: str) -> dict | None:
         print(f"[Warning] pillar_library lookup error for Pillar #{pid}: {exc}", file=sys.stderr)
 
     return None
+
+
+def _curated_edition_date(pillar_id: int, briefing: dict) -> str:
+    try:
+        import pillar_library
+
+        template_date = pillar_library.RICH_PILLAR_TEMPLATES[pillar_id].get("date")
+    except Exception:
+        template_date = ""
+    return template_date or _edition_date_from_interaction_id(briefing.get("interaction_id")) or briefing.get("date", "")
 
 
 def refresh_today_briefing(
@@ -1588,6 +1617,9 @@ def refresh_today_briefing(
             new_briefing["pillar_id"] = pid
             new_briefing["pillar_name"] = target_pillar["name"]
             new_briefing.setdefault("pillar_vi", target_pillar["vi_name"])
+            new_briefing["model_used"] = NO_MODEL
+            new_briefing["content_source"] = CURATED_CONTENT_SOURCE
+            new_briefing["curated_edition_date"] = _curated_edition_date(pid, new_briefing)
             new_briefing["verified_step0"] = True
             new_briefing.pop("crawled_articles", None)
 
@@ -1673,14 +1705,15 @@ def load_existing_briefings() -> list:
 def save_briefings_js(briefings: list, rotation_state: dict) -> None:
     payload = {
         "generated_at": datetime.datetime.now().isoformat(),
-        "default_model": DEFAULT_MODEL,
-        "available_models": AVAILABLE_MODELS,
+        "default_model": NO_MODEL,
+        "generator": BUNDLE_GENERATOR,
         "rotation_state": rotation_state,
         "pillars": PILLARS,
-        "briefings": briefings,
+        "briefings": [with_truthful_provenance(b) for b in briefings],
     }
     js_content = (
-        "// Auto-generated by fetch_daily_ebm.py — Contains verified Step-0 EBM Cardiology Briefings.\n"
+        "// Auto-generated by fetch_daily_ebm.py — curated cardiology briefings with PubMed/DOI citation lookups; "
+        "model_used \"none\" means no AI model.\n"
         f"window.EBM_BRIEFINGS_DATA = {json.dumps(payload, indent=2, ensure_ascii=False)};\n"
     )
     _atomic_write_text(BRIEFINGS_JS_PATH, js_content)
@@ -3074,8 +3107,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
                 "rotation_state": state,
                 "user": current_user,
                 "feedback_summary": feedback_summary,
-                "default_model": DEFAULT_MODEL,
-                "available_models": AVAILABLE_MODELS,
+                "default_model": NO_MODEL,
                 "has_gemini_key": bool(os.environ.get("GEMINI_API_KEY")),
                 "has_openai_key": bool(os.environ.get("OPENAI_API_KEY")),
             }
@@ -3251,7 +3283,10 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/generate":
             try:
-                model_name = req_data.get("model", DEFAULT_MODEL).strip() or DEFAULT_MODEL
+                model_name = str(req_data.get("model") or "").strip()
+                if not model_name:
+                    self._send_json(400, {"ok": False, "error": "Pass an explicit model ID for optional model drafting."})
+                    return
                 api_key = req_data.get("api_key", "").strip()
                 base_url = req_data.get("base_url", "").strip()
 
@@ -3337,11 +3372,10 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default=DEFAULT_MODEL,
+        default="",
         help=(
-            f"Model ID to use (default: {DEFAULT_MODEL}). "
-            "Examples: gemini-3.1-pro-preview, gemini-3.8-flash, gemini-3.5-flash-lite, "
-            "deep-research-preview-04-2026, gpt-4o, gpt-4o-mini."
+            "Optional model ID for model-based drafting; there is no default model. "
+            "The scheduled refresh (--refresh-if-needed) uses no model."
         ),
     )
     parser.add_argument(
@@ -3513,7 +3547,12 @@ def main():
             httpd.server_close()
         return
 
-    # CLI Generation Mode
+    # Optional CLI model drafting mode
+    if not args.model.strip():
+        parser.error(
+            "no model given: use --refresh-if-needed for the free curated refresh, "
+            "or pass --model and --api-key for optional model-based drafting"
+        )
     state = load_rotation_state()
     pillar = get_pillar_by_id(args.pillar) if args.pillar else get_pillar_for_date(datetime.date.today())
 

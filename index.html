@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Xem Tim Mỗi Ngày</title>
-  <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 6:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và xác thực NCBI PubMed Step-0.">
+  <meta name="description" content="Xem Tim Mỗi Ngày — Bản tin Chứng cứ Tim mạch 6:00 AM (giờ Việt Nam) theo giáo trình xoay vòng 1 Trụ cột/ngày, đối chiếu tiến hóa Guideline ESC/ACC, Landmark RCTs và tra cứu trích dẫn NCBI PubMed.">
   <script>
     if (location.protocol !== "file:") {
       const manifest = document.createElement("link");
@@ -1486,6 +1486,17 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .article-rotation-notice {
+      margin: 10px 0 0;
+      padding: 8px 12px;
+      border-left: 3px solid #d97706;
+      background: #fffbeb;
+      color: #78350f;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      border-radius: 6px;
     }
 
     .badge-verified-tiny {
@@ -4192,7 +4203,7 @@
           <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
         </button>
 
-        <button type="button" class="btn btn-primary-green" id="btnRefreshToday" title="Cập nhật và xác thực PubMed Step-0 cho đúng 1 Trụ cột hôm nay">
+        <button type="button" class="btn btn-primary-green" id="btnRefreshToday" title="Cập nhật Trụ cột hôm nay và tra cứu trích dẫn trên NCBI PubMed">
           <i class="fa-solid fa-rotate" id="iconRefreshToday"></i>
           <span id="labelRefreshToday">Cập nhật Trụ cột hôm nay</span>
         </button>
@@ -4204,7 +4215,7 @@
   <div id="refreshProgressStrip" class="refresh-progress-strip" style="display: none;">
     <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px;">
       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-        <span id="refreshProgressMsg" style="color: var(--color-ink); font-weight: 500;">Đang chuẩn bị xác thực Guideline &amp; RCTs...</span>
+        <span id="refreshProgressMsg" style="color: var(--color-ink); font-weight: 500;">Đang chuẩn bị tra cứu trích dẫn Guideline &amp; RCTs...</span>
         <span id="refreshProgressPct" style="font-family: var(--font-mono); font-weight: 600; color: var(--color-ink);">0%</span>
       </div>
       <div style="width: 100%; height: 6px; background: var(--color-hairline-cool); border-radius: 4px; overflow: hidden;">
@@ -4405,10 +4416,11 @@
               <span id="articleDateDisplay">2026-11-16 06:00 AM</span>
             </div>
             <div class="meta-item-box">
-              <span class="badge-verified-tiny" id="articleVerifiedBadge"><i class="fa-solid fa-check"></i> Xác thực NCBI PubMed</span>
+              <span class="badge-verified-tiny" id="articleVerifiedBadge" title="Đã tìm thấy mã PMID/DOI trên NCBI PubMed. Đây chỉ là tra cứu định danh trích dẫn, không phải thẩm định lâm sàng."><i class="fa-solid fa-link"></i> Đã tìm thấy trích dẫn</span>
             </div>
           </div>
         </div>
+        <p class="article-rotation-notice" id="articleRotationNotice" hidden></p>
       </div>
 
       <!-- Segmented Bar (Language Mode & Typography Scale) -->
@@ -4547,7 +4559,7 @@
       <div class="sources-console-card">
         <div class="sources-title-row">
           <i class="fa-solid fa-link"></i>
-          <span id="sourcesSectionTitle">Nguồn Trích Dẫn Xác Thực (NCBI PubMed &amp; DOI)</span>
+          <span id="sourcesSectionTitle">Nguồn trích dẫn (tìm thấy trên NCBI PubMed &amp; DOI)</span>
         </div>
         <div class="sources-list-stack" id="sourcesListStack">
           <!-- Rendered by JS -->
@@ -4872,7 +4884,7 @@
     const I18N = {
       vi: {
         heroHeadline: "Xem Tim Mỗi Ngày",
-        heroLead: "Cập nhật lúc 06:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
+        heroLead: "Mỗi ngày lúc 06:00 AM (giờ Việt Nam) hiển thị 1 trong 10 Trụ cột theo giáo trình xoay vòng soạn sẵn; khi đến lượt, bài của Trụ cột đó được hiển thị lại với ngày mới. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
         modeToday: "Bản tin Hôm nay (1 Trụ cột)",
         modeHistory: "Lịch sử & Sơ đồ Trụ cột",
         modeMeta: "Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu",
@@ -4885,7 +4897,10 @@
         todayLabel: "Hôm nay",
         tomorrowLabel: "Ngày mai",
         pillarWord: "Trụ cột",
-        verifiedPubMed: "Xác thực NCBI PubMed",
+        citationFound: "Đã tìm thấy trích dẫn",
+        noCitationListed: "Chưa có mã PMID/DOI",
+        citationFoundHint: "Đã tìm thấy mã PMID/DOI trên NCBI PubMed. Đây chỉ là tra cứu định danh trích dẫn, không phải thẩm định lâm sàng.",
+        rotationNotice: "Giáo trình xoay vòng: bài này được soạn sẵn ngày {edition} và hiển thị lại với ngày hôm nay khi đến lượt Trụ cột này; đây không phải tin mới trong ngày.",
         guidelinePipelineTitle: "Diễn Tiến Khuyến Cáo Thực Hành Qua Các Thế Hệ",
         priorGuideline: "Khuyến cáo tiền nhiệm",
         currentGuideline: "Khuyến cáo hiện hành",
@@ -4895,7 +4910,7 @@
         pearlTrialTag: "THỬ NGHIỆM BẢN LỀ",
         whatChangesLabel: "Nên thay đổi trong thực hành:",
         whatNotChangeLabel: "Chưa nên vội thay đổi / Lưu ý:",
-        sourcesSectionTitle: "Nguồn Trích Dẫn Xác Thực (NCBI PubMed & DOI)",
+        sourcesSectionTitle: "Nguồn trích dẫn (tìm thấy trên NCBI PubMed & DOI)",
         viewSource: "Xem Nguồn",
         bottomFeedbackTitle: "Đánh giá & Góp ý Nhà làm sản phẩm",
         bottomFeedbackSub: "Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.",
@@ -4960,7 +4975,7 @@
       },
       en: {
         heroHeadline: "Daily Learning Heart",
-        heroLead: "Updated daily at 06:00 AM (Vietnam time) on a 1-pillar-per-day ascending rotation. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
+        heroLead: "Every day at 06:00 AM (Vietnam time) the app shows 1 of 10 pillars from a pre-written rotating curriculum; when a pillar comes round again, its edition is shown again under the new date. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
         modeToday: "Today's Briefing (1 Pillar)",
         modeHistory: "History & Pillar Roadmap",
         modeMeta: "Ascending Cycle 1 → 10 • Strictly 1 Pillar / Day",
@@ -4973,7 +4988,10 @@
         todayLabel: "Today",
         tomorrowLabel: "Tomorrow",
         pillarWord: "Pillar",
-        verifiedPubMed: "Verified NCBI PubMed",
+        citationFound: "Citation found",
+        noCitationListed: "No PMID/DOI listed",
+        citationFoundHint: "A PMID/DOI record was found on NCBI PubMed. This is a citation identity lookup, not clinical verification.",
+        rotationNotice: "Rotating curriculum: this edition was written on {edition} and is shown again under today's date when this pillar comes round; it is not news from today.",
         guidelinePipelineTitle: "Guideline Evolution Across Generations",
         priorGuideline: "Prior Guideline",
         currentGuideline: "Current Guideline",
@@ -4983,7 +5001,7 @@
         pearlTrialTag: "LANDMARK RCT",
         whatChangesLabel: "What Changes in Practice:",
         whatNotChangeLabel: "What Should NOT Change:",
-        sourcesSectionTitle: "Verified Traceable Sources (NCBI PubMed & DOI)",
+        sourcesSectionTitle: "Cited sources (found on NCBI PubMed & DOI)",
         viewSource: "View Source",
         bottomFeedbackTitle: "Rate Briefing Quality & Send Product Feedback",
         bottomFeedbackSub: "Your clinical feedback helps refine guideline precision and daily reading experience.",
@@ -5390,6 +5408,17 @@
       const parts = iso.split("-");
       if (parts.length < 3) return iso;
       return `${parts[2]}/${parts[1]}`;
+    }
+
+    function briefingHasCitation(b) {
+      return Array.isArray(b && b.pubmed_anchors) && b.pubmed_anchors.some((a) => a && (a.pmid || a.doi));
+    }
+
+    function rotationNoticeFor(b) {
+      if (!b || b.content_source !== "curated_library_rotation") return "";
+      const edition = b.curated_edition_date;
+      if (!edition || edition === b.date) return "";
+      return tt("rotationNotice", { edition: formatFullDdMmYyyy(edition) });
     }
 
     function formatFullDdMmYyyy(iso) {
@@ -6582,7 +6611,7 @@
             <div class="card-title-text">${escapeHtml(title)}</div>
             <div class="card-bottom-row">
               <div class="card-badges-left">
-                <span class="badge-verified-tiny"><i class="fa-solid fa-check"></i> PubMed</span>
+                ${briefingHasCitation(b) ? `<span class="badge-verified-tiny" title="${escapeHtml(t("citationFoundHint"))}"><i class="fa-solid fa-link"></i> PubMed</span>` : ""}
                 ${isRead ? `<span class="badge-read-tiny">&bull; ${t("filterRead")}</span>` : ""}
                 ${isBookmarked ? `<i class="fa-solid fa-bookmark" style="color: var(--color-primary-deep);"></i>` : ""}
               </div>
@@ -6648,7 +6677,13 @@
       Dom.articlePillarBadge.textContent = `${t("pillarWord")} #${b.pillar_id}: ${pName}`;
       Dom.articleWeekBadge.textContent = weekLabelFor(b) || formatFullDdMmYyyy(b.date);
       Dom.articleDateDisplay.textContent = `${formatFullDdMmYyyy(b.date)} • ${b.time || "06:00 AM"}`;
-      document.getElementById("articleVerifiedBadge").innerHTML = `<i class="fa-solid fa-check"></i> ${t("verifiedPubMed")}`;
+      const citationBadge = document.getElementById("articleVerifiedBadge");
+      const hasCitation = briefingHasCitation(b);
+      citationBadge.innerHTML = `<i class="fa-solid fa-link"></i> ${escapeHtml(t(hasCitation ? "citationFound" : "noCitationListed"))}`;
+      citationBadge.title = hasCitation ? t("citationFoundHint") : "";
+      const rotationNotice = document.getElementById("articleRotationNotice");
+      rotationNotice.textContent = rotationNoticeFor(b);
+      rotationNotice.hidden = !rotationNotice.textContent;
 
       updateBookmarkButtonUI();
       renderFeedbackBars(b.id);
@@ -6822,14 +6857,14 @@
         cards = anchors.map((a, idx) => ({
           name: a.title ? (a.title.length > 68 ? a.title.slice(0, 65) + "..." : a.title) : (isVi ? `Nghiên cứu #${idx + 1}` : `Study #${idx + 1}`),
           journal: `${a.source || "PubMed"} ${a.pubdate || ""}`.trim(),
-          endpoint: isVi ? "Dữ liệu xác thực Step-0" : "Step-0 Verified Anchor",
+          endpoint: isVi ? "Trích dẫn tìm thấy trên PubMed" : "Citation found on PubMed",
           value: `PMID ${a.pmid}`,
-          ci: a.doi ? `DOI: ${a.doi}` : (isVi ? "Hồ sơ NCBI PubMed" : "Verified NCBI Record"),
+          ci: a.doi ? `DOI: ${a.doi}` : (isVi ? "Hồ sơ NCBI PubMed" : "NCBI PubMed record"),
           p: b.date || "",
           nnt: `${t("pillarWord")} #${b.pillar_id}`,
           changes: isVi
             ? "Đối chiếu trực tiếp dữ liệu định lượng và kết luận chính trong phần nội dung chi tiết bên dưới."
-            : "Review verified quantitative outcomes and practice implications in Block B below.",
+            : "Compare the quantitative outcomes and conclusions in the detailed content below with the original article.",
           caution: isVi
             ? "Luôn kiểm tra tiêu chuẩn loại trừ, chức năng thận/điện giải trước khi áp dụng cho người bệnh cụ thể."
             : "Always verify exclusion criteria and renal/electrolyte parameters before applying to individual patients."
@@ -6903,8 +6938,8 @@
             {
               type: "trial",
               text: isVi
-                ? "Mọi khuyến cáo và thử nghiệm bản lề trong bản tin đều đã đối chiếu mã PMID/DOI qua NCBI PubMed Step-0."
-                : "All recommendations and landmark trials are verified via NCBI PubMed Step-0 PMID/DOI records."
+                ? "Mã PMID/DOI trong bản tin được tra cứu trên NCBI PubMed; đây chỉ là tra cứu định danh trích dẫn, không phải thẩm định lâm sàng. Hãy đọc bài gốc."
+                : "PMID/DOI identifiers in this briefing were looked up on NCBI PubMed; this is a citation identity lookup, not clinical verification. Read the original articles."
             }
           ];
         }
@@ -7437,7 +7472,7 @@
         return;
       }
 
-      setProgress(1, `Đang xác thực NCBI PubMed Step-0 cho Trụ cột #${App.todayPillarId} hôm nay...`);
+      setProgress(1, `Đang tra cứu trích dẫn NCBI PubMed cho Trụ cột #${App.todayPillarId} hôm nay...`);
 
       if (window.ReadableStream) {
         const onMessage = async (evt) => {
