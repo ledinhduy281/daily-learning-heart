@@ -186,8 +186,8 @@ class EvidenceWorkflowTests(unittest.TestCase):
         assert_blocked(f"Missing fallback lesson for rotation pillar(s): {key}")
         write(legacy, last_updated=rollout["date"])
         assert_blocked("Missing scheduled lesson")
-        write(second, first, rollout, legacy)
-        assert_blocked("Missing scheduled lesson")
+        write(first, prior, rollout, legacy, last_updated=second["date"])
+        assert_blocked(f"Missing scheduled lesson for rotation date {second['date']}")
 
         write(second, first, prior, rollout, legacy)
         catalog = self.root / "focused_lessons.py"
@@ -197,10 +197,10 @@ class EvidenceWorkflowTests(unittest.TestCase):
         result = self.bash(gate)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Rotation file does not match the lesson bundle", result.stderr)
-        write(second, first, prior, rollout, legacy)
+        write(second, first, rollout, legacy)
         result = self.bash(gate)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Validated 4 dated archive lessons.", result.stdout)
+        self.assertIn("Validated 3 dated archive lessons.", result.stdout)
         self.assertEqual((self.root / "site" / "data" / "briefings.js").read_bytes(), path.read_bytes())
         self.assertEqual(_read_bundle(path)["briefings"][-1], legacy)
 

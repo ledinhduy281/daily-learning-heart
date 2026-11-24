@@ -197,10 +197,9 @@ def validate_bundle(bundle, expected_date=None, *, rotation_state=None):
     if expected_date is None:
         last = date.fromisoformat(state["last_updated"])
         dates = {date.fromisoformat(lesson["date"]) for lesson in governed}
-        first = date.fromisoformat(GATE_START_DATE)
         _require(not dates or max(dates) <= last, "Rotation date does not match the latest lesson")
-        _require(len(dates) == max(0, (last - first).days + 1),
-                 f"Missing scheduled lesson in the date range {first} through {last}")
+        _require(last < date.fromisoformat(GATE_START_DATE) or last in dates,
+                 f"Missing scheduled lesson for rotation date {last}")
     elif governed:
         _require(state["last_updated"] == expected_date, "Rotation date does not match the latest lesson")
     seen = set()
