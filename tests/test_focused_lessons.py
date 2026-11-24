@@ -124,6 +124,31 @@ class FocusedLessonTests(unittest.TestCase):
         answer, _ = app._compose_deterministic_ebm_answer(query.replace("is true?", "is false?"), [briefing], [], "en")
         self.assertIn("couldn't match one answer", answer)
 
+    def test_copied_trial_comparator_does_not_outrank_endpoint(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("What was the primary endpoint of AMBITION?\nA. The main comparison pooled the active monotherapy arms.\n"
+                 "B. First event of clinical failure\nC. Peak oxygen uptake\nD. Cardiovascular death alone")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertTrue(answer.startswith("**B**"), answer)
+
+    def test_pasted_statement_does_not_match_reversed_inequality(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Which of the following is true?\nA. The hazard ratio for combination versus pooled "
+                 "monotherapy was 0.50 (95% CI 0.35–0.72; p > 0.001).\nB. The groups were not randomized.\n"
+                 "C. Only acute coronary syndrome was enrolled.\nD. All patients died in the first year.")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertIn("couldn't match one answer", answer)
+        answer, _ = app._compose_deterministic_ebm_answer(query.replace("p >", "p <"), [briefing], [], "en")
+        self.assertTrue(answer.startswith("**A**"), answer)
+
+    def test_an_eligibility_qualifier_is_not_a_negative_question(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("What initial PAH drug combination is recommended for low-risk patients, except those with important "
+                 "cardiopulmonary comorbidities?\nA. Ambrisentan and tadalafil\nB. Macitentan and riociguat\n"
+                 "C. Selexipag and sildenafil\nD. Vardenafil and epoprostenol")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertTrue(answer.startswith("**A**"), answer)
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in payload["focused_lessons"].values():

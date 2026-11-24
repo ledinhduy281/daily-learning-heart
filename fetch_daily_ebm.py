@@ -1926,15 +1926,26 @@ def _match_focused_mcq(query, options, primary, lang, level):
     def words_in(text):
         return tuple(re.findall(r"[a-z0-9]+", normalize(text)))
 
+    def comparisons(text):
+        text = text.replace("≤", "<=").replace("≥", ">=").replace("−", "-")
+        return frozenset(re.findall(r"([<>=]=?)\s*(-?\d+(?:[.,]\d+)?)", text))
+
     def has_cue(term, terms):
         return term in terms or (term.endswith("s") and term[:-1] in terms)
 
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
     stem = query[:marker.start()]
-    question = set(words_in(stem)) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
     normalized_stem = normalize(stem)
-    if re.search(r"\b(false|incorrect|except|not true|sai|khong dung voi nhan dinh|ngoai tru)\b", normalized_stem):
+    if re.search(
+        r"\b(false|incorrect|not true|sai|khong dung voi nhan dinh)\b|"
+        r"\b(except|ngoai tru)\s*[:?]?\s*$",
+        normalized_stem.strip(),
+    ):
         return "", ""
+    question = set(words_in(stem)) - option_stop - {
+        "how", "is", "was", "what", "which", "below", "following", "statement", "true", "correct",
+        "gi", "la", "nao", "sau", "day", "nhan", "dinh", "dung",
+    }
     asks_negative = bool(negative_claim.search(normalized_stem))
     # Match options and question cues in the same sentence, not anywhere in the lesson.
     for language in (lang, "en" if lang == "vi" else "vi"):
@@ -1955,19 +1966,22 @@ def _match_focused_mcq(query, options, primary, lang, level):
             words = set(option_words) - option_stop
             if not words:
                 continue
-            best = ((False, 0.0), "")
+            best = ((0.0, False), "")
             cues = sorted(term for term in question - words if counts[term])
+            requested = comparisons(option)
             for sentence, sentence_words, terms, paragraph, section, section_terms in rows:
+                if requested and not requested <= comparisons(sentence):
+                    continue
                 exact = len(option_words) >= 4 and option_words == sentence_words
                 coverage = len(words & terms) / len(words)
-                if not exact and (
+                if not (exact and not question) and (
                     coverage < 0.75
                     or not any(has_cue(term, section_terms) for term in cues)
                     or bool(negative_claim.search(normalize(sentence))) != asks_negative
                 ):
                     continue
                 relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
-                score = (exact, coverage * (1 + relevance))
+                score = (coverage * (1 + relevance), exact)
                 if score > best[0]:
                     excerpt = sentence if level == "short" else paragraph
                     if level == "detailed":
