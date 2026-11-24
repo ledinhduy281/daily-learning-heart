@@ -9381,7 +9381,7 @@
 
       renderUI() {
         const briefing = App.selected || getTodaySingleBriefing();
-        const available = briefing?.lesson_format !== "single_guideline";
+        const available = !(briefing?.lesson_format === "single_guideline" && briefing.id?.endsWith("-focused"));
         for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
           const element = document.getElementById(id);
           if (element) element.style.display = available ? "" : "none";

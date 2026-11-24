@@ -2756,7 +2756,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
         return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     if primary is None:
         primary = next((b for b in briefings if str(b.get("pillar_id")) == str(req_data.get("pillar_id", 1)) and "-main" in b.get("id", "")), briefings[0])
-    if primary.get("lesson_format") == "single_guideline":
+    if primary.get("lesson_format") == "single_guideline" and primary.get("id", "").endswith("-focused"):
         return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     state = copy.deepcopy(req_data.get("state")) if isinstance(req_data.get("state"), dict) else {}
     if not isinstance(state.get("subskills"), list) or len(state["subskills"]) != 4:
