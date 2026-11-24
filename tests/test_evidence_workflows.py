@@ -176,3 +176,22 @@ class EvidenceWorkflowTests(unittest.TestCase):
         result = self.bash('date() { printf "2026-11-27\\n"; }\n' + gate, RUNNER_TEMP=str(self.root))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(f"Validated daily lesson: {second['id']}", result.stdout)
+
+        rotation = data / "rotation_state.json"
+        repaired_bundle, repaired_rotation = bundle.read_bytes(), rotation.read_bytes()
+        rotation.unlink()
+        result = self.bash("git commit -qam 'Valid lesson without its rotation file'", **git_env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Skipping incomplete lesson revision", result.stdout)
+        self.assertEqual(bundle.read_bytes(), approved)
+
+        bundle.write_bytes(repaired_bundle)
+        rotation.write_bytes(repaired_rotation)
+        result = self.bash("git add data/rotation_state.json && git commit -qm 'Restore missing rotation file'", **git_env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(bundle.read_bytes(), repaired_bundle)
+        self.assertEqual(rotation.read_bytes(), repaired_rotation)
