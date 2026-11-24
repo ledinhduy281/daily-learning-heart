@@ -15,7 +15,7 @@ const context = vm.createContext({ window, App, Dom, renderGuidelineRefBox: (gui
   return guideline.name;
 } });
 vm.runInContext(html.slice(html.indexOf("    function getTodaySingleBriefing()"),
-    html.indexOf("    function getHistoryScopeBriefings()")), context);
+    html.indexOf("    function setLanguage(")), context);
 vm.runInContext(html.slice(html.indexOf("    function renderEvolutionPipeline("),
     html.indexOf("    function renderTrialsMatrix(")), context);
 context.escapeHtml = s => s;
@@ -45,4 +45,33 @@ assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.lim
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
 context.renderTrialsMatrix({ ...fallback, supporting_evidence: bundle.focused_lessons[8].supporting_evidence }, false);
 assert.equal(Dom.trialsGridDeck.textContent, "No matched study is available.");
+App.todayDate = "2026-11-27";
+App.mode = "history";
+App.savedGlobalMode = true;
+App.searchQuery = "";
+App.user = {bookmarked_ids: [fallback.id, "ebm-2026-11-30-p9-focused", "ebm-2026-11-31-p9-focused", "missing"]};
+assert.ok(!App.briefings.some(b => b.id === fallback.id));
+assert.equal(context.getHistoryScopeBriefings().length, 1);
+assert.equal(context.getHistoryScopeBriefings()[0].id, fallback.id);
+assert.equal(context.getHistoryScopeBriefings()[0].title_en, fallback.title_en);
+App.todayDate = "2026-12-01";
+assert.equal(context.findArchiveBriefing("ebm-2026-11-31-p9-focused"), null);
+let opened;
+context.selectBriefing = b => { opened = b; };
+vm.runInContext(html.slice(html.indexOf("    window.onSelectBriefingItem ="),
+    html.indexOf("    function selectBriefing(")), context);
+window.onSelectBriefingItem(fallback.id);
+assert.equal(opened.id, fallback.id);
+const published = {...fallback, title_en: "Published edition"};
+App.briefings = [published, ...App.briefings];
+assert.equal(context.findArchiveBriefing(fallback.id), published);
+const quizNodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection"].map(id => [id, {style: {}}]));
+const quizCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+App.selected = fallback;
+context.document = {getElementById: id => quizNodes[id]};
+const tutor = vm.runInContext(quizCode + ";SocraticTutor", context);
+tutor.getSession = () => { assert.fail("A focused lesson without excerpts should not start a generic quiz"); };
+tutor.renderUI();
+assert.equal(quizNodes.btnOpenSocraticHeader.style.display, "none");
+assert.equal(quizNodes.socraticTutorSection.style.display, "none");
 console.log("Focused guideline selection and browser rendering passed");

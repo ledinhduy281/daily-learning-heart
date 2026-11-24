@@ -5878,8 +5878,7 @@
       const isVi = App.currentLang === "vi";
       const saved = new Set(bookmarked_ids);
       const ids = new Set([...saved, ...read_ids.slice().reverse()]);
-      const briefings = new Map(App.briefings.map(briefing => [briefing.id, briefing]));
-      const recent = Array.from(ids, id => briefings.get(id)).filter(Boolean).slice(0, 6);
+      const recent = Array.from(ids, findArchiveBriefing).filter(Boolean).slice(0, 6);
       if (!recent.length) {
         const note = document.createElement("p");
         note.className = "profile-note";
@@ -6028,8 +6027,9 @@
       renderPillarsTiles();
       renderModeSpecificPanels();
 
-      if (preserveSelection && selected && App.briefings.some(b => b.id === selected.id)) {
-        selectBriefing(selected, {markRead: false});
+      const archivedSelection = preserveSelection && selected && findArchiveBriefing(selected.id);
+      if (archivedSelection) {
+        selectBriefing(archivedSelection, {markRead: false});
       } else if (App.mode === "today") {
         const b = getTodaySingleBriefing();
         if (b) {
@@ -6055,9 +6055,8 @@
           && (!template || b.lesson_version === template.lesson_version)
       );
       if (exactToday) return exactToday;
-      if (template && App.todayDate >= template.curated_edition_date) {
-        return { ...template, id: `ebm-${App.todayDate}-p${pid}-focused`, date: App.todayDate };
-      }
+      const fallback = getFocusedTemplateBriefing(App.todayDate, pid);
+      if (fallback) return fallback;
       const legacyToday = App.briefings.find(b => b.date === App.todayDate && Number(b.pillar_id) === pid);
       if (legacyToday) return legacyToday;
       const byPillar = App.briefings
@@ -6066,23 +6065,35 @@
       return byPillar[0] || App.briefings[0] || null;
     }
 
-    function getHistoryScopeBriefings() {
-      let list = [];
-      if (App.savedGlobalMode && App.user) {
-        const savedSet = new Set(App.user.bookmarked_ids || []);
-        list = App.briefings.filter(b => savedSet.has(b.id));
-      } else {
-        list = App.briefings.filter(b => Number(b.pillar_id) === Number(App.historyPillarId));
+    function getFocusedTemplateBriefing(date, pid) {
+      const template = window.EBM_BRIEFINGS_DATA?.focused_lessons?.[pid];
+      if (template && date >= template.curated_edition_date) {
+        return { ...template, id: `ebm-${date}-p${pid}-focused`, date };
       }
+      return null;
+    }
 
-      if (!App.savedGlobalMode && App.user) {
-        if (App.historyFilter === "saved") {
-          const savedSet = new Set(App.user.bookmarked_ids || []);
-          list = list.filter(b => savedSet.has(b.id));
-        } else if (App.historyFilter === "read") {
-          const readSet = new Set(App.user.read_ids || []);
-          list = list.filter(b => readSet.has(b.id));
-        }
+    function findArchiveBriefing(id) {
+      const published = App.briefings.find(b => b.id === id);
+      if (published) return published;
+      const match = /^ebm-(\d{4}-\d{2}-\d{2})-p([1-9]|10)-focused$/.exec(id);
+      if (!match || match[1] > App.todayDate) return null;
+      const date = new Date(match[1] + "T00:00:00Z");
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== match[1]) return null;
+      return getFocusedTemplateBriefing(match[1], Number(match[2]));
+    }
+
+    function getHistoryScopeBriefings() {
+      const globalSaved = App.savedGlobalMode && App.user;
+      let list = App.briefings;
+      if (App.user) {
+        const ids = globalSaved || App.historyFilter === "saved" ? App.user.bookmarked_ids || []
+          : App.historyFilter === "read" ? App.user.read_ids || []
+          : null;
+        if (ids) list = Array.from(new Set(ids), findArchiveBriefing).filter(Boolean);
+      }
+      if (!globalSaved) {
+        list = list.filter(b => Number(b.pillar_id) === Number(App.historyPillarId));
       }
 
       if (App.searchQuery.trim() !== "") {
@@ -6631,7 +6642,7 @@
     }
 
     window.onSelectBriefingItem = function(id) {
-      const match = App.briefings.find(b => b.id === id);
+      const match = findArchiveBriefing(id);
       if (match) {
         if (App.mode === "history" && App.savedGlobalMode) {
           App.historyPillarId = Number(match.pillar_id);
@@ -9369,6 +9380,13 @@
       },
 
       renderUI() {
+        const briefing = App.selected || getTodaySingleBriefing();
+        const available = briefing?.lesson_format !== "single_guideline";
+        for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
+          const element = document.getElementById(id);
+          if (element) element.style.display = available ? "" : "none";
+        }
+        if (!available) return;
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
 

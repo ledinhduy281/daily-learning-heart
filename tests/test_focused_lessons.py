@@ -79,3 +79,26 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertTrue(second["already_up_to_date"])
             self.assertEqual(first["briefing"], second["briefing"])
             self.assertEqual(app.load_existing_briefings(), [first["briefing"]])
+
+    def test_scheduled_refresh_preserves_same_day_model_drafts(self):
+        today = datetime.date(2026, 11, 24)
+        drafts = [
+            {"id": f"draft-{pid}", "date": today.isoformat(), "pillar_id": pid,
+             "model_used": "test-model", "content_source": app.MODEL_DRAFT_CONTENT_SOURCE}
+            for pid in (app.get_pillar_for_date(today)["id"], 1)
+        ]
+        with TemporaryDirectory() as directory, patch.object(app, "_today_vn", return_value=today), \
+                patch.object(app, "BRIEFINGS_JS_PATH", Path(directory) / "briefings.js"), \
+                patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"):
+            app.save_briefings_js(drafts, {})
+            result = app.refresh_today_briefing()
+            self.assertEqual(app.load_existing_briefings(), [result["briefing"], *drafts])
+            self.assertTrue(app.refresh_today_briefing()["already_up_to_date"])
+
+    def test_focused_lesson_without_source_questions_cannot_start_generic_quiz(self):
+        lesson = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        for briefings in ([lesson], [{"id": "legacy-main", "pillar_id": 9}]):
+            with patch.object(app, "load_existing_briefings", return_value=briefings):
+                response = app.handle_socratic_turn({"briefing_id": lesson["id"], "action": "start_diagnostic"})
+                self.assertFalse(response["ok"])
+                self.assertIn("No source-supported questions", response["error"])
