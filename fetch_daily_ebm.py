@@ -1845,13 +1845,15 @@ _DETAIL_REQ_RE = re.compile(
     re.IGNORECASE,
 )
 _DETAIL_FOLLOW_UP_RE = re.compile(
-    r"^(?:please\s+)?(?:explain|elaborate|break down|giải thích|phân tích)\b",
+    r"(?:please[,\s]+)?(?:explain (?:more|in detail|further)|in detail|elaborate|"
+    r"giải thích (?:thêm|kỹ|rõ|chi tiết)|phân tích kỹ|cụ thể hơn)"
+    r"(?:[,\s]+(?:please|nhé))?[.!?]*",
     re.IGNORECASE,
 )
 
 
 def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], bool]:
-    """Return a pasted question's stem, options and any standalone detail request."""
+    """Return the stem, intact options, and whether a standalone detail cue follows them."""
     q = (query or "").strip()
     labels = list(_MCQ_PASTE_LINE_LABEL.finditer(q))
     inline = list(_MCQ_PASTE_PAT_PUNCT.finditer(q))
@@ -1866,8 +1868,7 @@ def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], bool]:
                 opts.setdefault(key, clean)
         if len(opts) == 4:
             body, _, last_line = options[-1][2].rstrip().rpartition("\n")
-            follow_up = bool(body.strip() and _DETAIL_FOLLOW_UP_RE.match(last_line.lstrip())
-                             and _wants_detailed_explanation(last_line))
+            follow_up = bool(body.strip() and _DETAIL_FOLLOW_UP_RE.fullmatch(last_line.strip()))
             return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}, follow_up
     return q, {}, False
 

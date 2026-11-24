@@ -111,8 +111,11 @@ class FocusedLessonTests(unittest.TestCase):
         query = ("What was the primary endpoint of AMBITION?\n"
                  "A. Pulmonary vascular resistance\nB. Clinical failure\n"
                  "C. Hospitalization alone\nD. All-cause death")
-        for lang, follow_up in (("en", "Please explain in detail."), ("vi", "Giải thích chi tiết nhé.")):
-            with self.subTest(lang=lang):
+        for lang, follow_up in (
+            ("en", "Please explain in detail."), ("en", "In detail, please."),
+            ("vi", "Giải thích chi tiết nhé."), ("vi", "Cụ thể hơn nhé."),
+        ):
+            with self.subTest(follow_up=follow_up):
                 medium, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang)
                 detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="detailed")
                 answer, _ = app._compose_deterministic_ebm_answer(f"{query}\n{follow_up}", [briefing], [], lang)
@@ -120,11 +123,15 @@ class FocusedLessonTests(unittest.TestCase):
                 self.assertNotEqual(answer, medium)
 
     def test_wrapped_final_choice_is_not_a_detail_request(self):
-        query = ("Which treatment is supported?\nA. Alpha\nB. Beta\nC. Gamma\n"
-                 "D. Extended-release regimen, which is\nsimpler to tolerate with nitrate")
-        _, options, follow_up = app._parse_pasted_mcq(query)
-        self.assertEqual(options["D"], "Extended-release regimen, which is simpler to tolerate with nitrate")
-        self.assertFalse(follow_up)
+        query = "Which treatment is supported?\nA. Alpha\nB. Beta\nC. Gamma\nD. "
+        for first, wrapped in (
+            ("Extended-release regimen, which is", "simpler to tolerate with nitrate"),
+            ("Invite patients to", "explain their symptoms in simple words."),
+        ):
+            with self.subTest(wrapped=wrapped):
+                _, options, follow_up = app._parse_pasted_mcq(f"{query}{first}\n{wrapped}")
+                self.assertEqual(options["D"], f"{first} {wrapped}")
+                self.assertFalse(follow_up)
 
     def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
