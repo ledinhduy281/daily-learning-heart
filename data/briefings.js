@@ -112,6 +112,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
@@ -120,6 +121,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210715",
           "doi": "10.1093/eurheartj/ehae178"
         },
+        "recommendation_id": "sbp-target",
         "recommendation_vi": "ESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.",
         "recommendation_en": "ESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation."
       },
@@ -129,15 +131,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210715",
           "doi": "10.1093/eurheartj/ehae178",
           "url": "https://pubmed.ncbi.nlm.nih.gov/39210715/"
+        },
+        {
+          "title": "SPRINT",
+          "pmid": "26551272",
+          "doi": "10.1056/NEJMoa1511939",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26551272/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "39210715",
+        "recommendation_id": "sbp-target",
+        "pmid": "26551272",
+        "doi": "10.1056/NEJMoa1511939",
+        "name": "SPRINT",
+        "journal": "NEJM · 2015",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.75 (95% CI 0.64–0.89)",
+        "supports_vi": "Giảm biến cố tim mạch gộp khi điều trị tích cực, giúp giải thích vì sao ESC hướng đến huyết áp thấp hơn nếu dung nạp.",
+        "supports_en": "Fewer composite cardiovascular events with intensive treatment support aiming for lower blood pressure when tolerated.",
+        "population_vi": "Người có nguy cơ tim mạch cao, không mắc đái tháo đường; đích tâm thu <120 so với <140 mmHg.",
+        "population_en": "Adults at increased cardiovascular risk without diabetes; systolic targets <120 versus <140 mmHg.",
+        "limits_vi": "Hai đích thử nghiệm không trùng khoảng 120–129 mmHg của ESC. Hạ huyết áp và tổn thương thận cấp nghiêm trọng gặp nhiều hơn khi điều trị tích cực.",
+        "limits_en": "The assigned targets were not the ESC range of 120–129 mmHg. Serious hypotension and acute kidney injury were more frequent with intensive treatment."
+      },
       "title_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
       "topic_focus_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[SPRINT](https://doi.org/10.1056/NEJMoa1511939)** — NEJM · 2015\n\nNgười có nguy cơ tim mạch cao, không mắc đái tháo đường; đích tâm thu <120 so với <140 mmHg. Giảm biến cố tim mạch gộp khi điều trị tích cực, giúp giải thích vì sao ESC hướng đến huyết áp thấp hơn nếu dung nạp. (HR 0.75 (95% CI 0.64–0.89)). Hai đích thử nghiệm không trùng khoảng 120–129 mmHg của ESC. Hạ huyết áp và tổn thương thận cấp nghiêm trọng gặp nhiều hơn khi điều trị tích cực.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "On-treatment systolic blood pressure: target and tolerability",
       "topic_focus_en": "On-treatment systolic blood pressure: target and tolerability",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 65
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation.\n\n## Block B — Supporting evidence\n\n**[SPRINT](https://doi.org/10.1056/NEJMoa1511939)** — NEJM · 2015\n\nAdults at increased cardiovascular risk without diabetes; systolic targets <120 versus <140 mmHg. Fewer composite cardiovascular events with intensive treatment support aiming for lower blood pressure when tolerated. (HR 0.75 (95% CI 0.64–0.89)). The assigned targets were not the ESC range of 120–129 mmHg. Serious hypotension and acute kidney injury were more frequent with intensive treatment.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 158
     },
     "2": {
       "id": "ebm-2026-11-24-p2-focused",
@@ -151,6 +175,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
@@ -159,6 +184,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "40878289",
           "doi": "10.1093/eurheartj/ehaf190"
         },
+        "recommendation_id": "bempedoic-statin-intolerance",
         "recommendation_vi": "Bản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.",
         "recommendation_en": "The ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins."
       },
@@ -168,15 +194,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "40878289",
           "doi": "10.1093/eurheartj/ehaf190",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40878289/"
+        },
+        {
+          "title": "CLEAR Outcomes",
+          "pmid": "36876740",
+          "doi": "10.1056/NEJMoa2215024",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36876740/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "40878289",
+        "recommendation_id": "bempedoic-statin-intolerance",
+        "pmid": "36876740",
+        "doi": "10.1056/NEJMoa2215024",
+        "name": "CLEAR Outcomes",
+        "journal": "NEJM · 2023",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.87 (95% CI 0.79–0.96)",
+        "supports_vi": "Axit bempedoic làm giảm kết cục tim mạch gộp so với giả dược, ủng hộ lựa chọn thuốc cho người không dung nạp statin.",
+        "supports_en": "Bempedoic acid lowered the composite cardiovascular outcome versus placebo, supporting its use when statins cannot be tolerated.",
+        "population_vi": "Người không dung nạp statin đã mắc bệnh tim mạch hoặc có nguy cơ cao.",
+        "population_en": "Statin-intolerant adults with cardiovascular disease or at high cardiovascular risk.",
+        "limits_vi": "Không chứng minh giảm tử vong; gout và sỏi mật thường gặp hơn.",
+        "limits_en": "The trial did not establish lower mortality; gout and cholelithiasis were more frequent."
+      },
       "title_vi": "Axit bempedoic khi không thể dùng statin",
       "topic_focus_vi": "Axit bempedoic khi không thể dùng statin",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nBản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nBản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[CLEAR Outcomes](https://doi.org/10.1056/NEJMoa2215024)** — NEJM · 2023\n\nNgười không dung nạp statin đã mắc bệnh tim mạch hoặc có nguy cơ cao. Axit bempedoic làm giảm kết cục tim mạch gộp so với giả dược, ủng hộ lựa chọn thuốc cho người không dung nạp statin. (HR 0.87 (95% CI 0.79–0.96)). Không chứng minh giảm tử vong; gout và sỏi mật thường gặp hơn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Bempedoic acid when statins cannot be used",
       "topic_focus_en": "Bempedoic acid when statins cannot be used",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nThe ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 56
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nThe ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins.\n\n## Block B — Supporting evidence\n\n**[CLEAR Outcomes](https://doi.org/10.1056/NEJMoa2215024)** — NEJM · 2023\n\nStatin-intolerant adults with cardiovascular disease or at high cardiovascular risk. Bempedoic acid lowered the composite cardiovascular outcome versus placebo, supporting its use when statins cannot be tolerated. (HR 0.87 (95% CI 0.79–0.96)). The trial did not establish lower mortality; gout and cholelithiasis were more frequent.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 127
     },
     "3": {
       "id": "ebm-2026-11-24-p3-focused",
@@ -190,6 +238,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of chronic coronary syndromes",
@@ -198,6 +247,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210710",
           "doi": "10.1093/eurheartj/ehae177"
         },
+        "recommendation_id": "anoca-functional-testing",
         "recommendation_vi": "ESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.",
         "recommendation_en": "ESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes."
       },
@@ -207,15 +257,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210710",
           "doi": "10.1093/eurheartj/ehae177",
           "url": "https://pubmed.ncbi.nlm.nih.gov/39210710/"
+        },
+        {
+          "title": "CorMicA",
+          "pmid": "30266608",
+          "doi": "10.1016/j.jacc.2018.09.006",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30266608/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "39210710",
+        "recommendation_id": "anoca-functional-testing",
+        "pmid": "30266608",
+        "doi": "10.1016/j.jacc.2018.09.006",
+        "name": "CorMicA",
+        "journal": "JACC · 2018",
+        "source_kind": "landmark_rct",
+        "result": "+11.7 SAQ (95% CI 5.0–18.4)",
+        "supports_vi": "Điều trị dựa trên kết quả xét nghiệm chức năng mạch vành cải thiện điểm đau thắt ngực ở tháng thứ 6 so với chăm sóc chuẩn.",
+        "supports_en": "Treatment guided by coronary function testing improved the angina score at six months versus usual care.",
+        "population_vi": "Người đau thắt ngực không có bệnh mạch vành tắc nghẽn trên chụp mạch.",
+        "population_en": "Patients with angina and no obstructive coronary disease on angiography.",
+        "limits_vi": "Kết quả về triệu chứng không chứng minh giảm biến cố tim mạch.",
+        "limits_en": "Symptom improvement does not establish a reduction in cardiovascular events."
+      },
       "title_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
       "topic_focus_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[CorMicA](https://doi.org/10.1016/j.jacc.2018.09.006)** — JACC · 2018\n\nNgười đau thắt ngực không có bệnh mạch vành tắc nghẽn trên chụp mạch. Điều trị dựa trên kết quả xét nghiệm chức năng mạch vành cải thiện điểm đau thắt ngực ở tháng thứ 6 so với chăm sóc chuẩn. (+11.7 SAQ (95% CI 5.0–18.4)). Kết quả về triệu chứng không chứng minh giảm biến cố tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Angina without obstruction: coronary functional testing",
       "topic_focus_en": "Angina without obstruction: coronary functional testing",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 70
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes.\n\n## Block B — Supporting evidence\n\n**[CorMicA](https://doi.org/10.1016/j.jacc.2018.09.006)** — JACC · 2018\n\nPatients with angina and no obstructive coronary disease on angiography. Treatment guided by coronary function testing improved the angina score at six months versus usual care. (+11.7 SAQ (95% CI 5.0–18.4)). Symptom improvement does not establish a reduction in cardiovascular events.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 142
     },
     "4": {
       "id": "ebm-2026-11-24-p4-focused",
@@ -229,6 +301,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of acute coronary syndromes",
@@ -237,6 +310,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622654",
           "doi": "10.1093/eurheartj/ehad191"
         },
+        "recommendation_id": "post-acs-monotherapy",
         "recommendation_vi": "ESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.",
         "recommendation_en": "ESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk."
       },
@@ -246,15 +320,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622654",
           "doi": "10.1093/eurheartj/ehad191",
           "url": "https://pubmed.ncbi.nlm.nih.gov/37622654/"
+        },
+        {
+          "title": "TWILIGHT",
+          "pmid": "31556978",
+          "doi": "10.1056/NEJMoa1908419",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31556978/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622654",
+        "recommendation_id": "post-acs-monotherapy",
+        "pmid": "31556978",
+        "doi": "10.1056/NEJMoa1908419",
+        "name": "TWILIGHT",
+        "journal": "NEJM · 2019",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.56 (95% CI 0.45–0.68)",
+        "supports_vi": "Bỏ aspirin và tiếp tục ticagrelor làm giảm chảy máu BARC loại 2, 3 hoặc 5 so với tiếp tục cả hai thuốc.",
+        "supports_en": "Withdrawing aspirin and continuing ticagrelor reduced BARC type 2, 3 or 5 bleeding versus continuing both drugs.",
+        "population_vi": "Người nguy cơ cao sau PCI không có biến cố trong ba tháng điều trị kép đầu tiên.",
+        "population_en": "Selected high-risk PCI patients without an event during the initial three months of dual therapy.",
+        "limits_vi": "Không kiểm tra việc ngừng aspirin ngay sau PCI và không áp dụng cho mọi ca hội chứng vành cấp.",
+        "limits_en": "It did not test stopping aspirin immediately after PCI and does not apply to every ACS patient."
+      },
       "title_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
       "topic_focus_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[TWILIGHT](https://doi.org/10.1056/NEJMoa1908419)** — NEJM · 2019\n\nNgười nguy cơ cao sau PCI không có biến cố trong ba tháng điều trị kép đầu tiên. Bỏ aspirin và tiếp tục ticagrelor làm giảm chảy máu BARC loại 2, 3 hoặc 5 so với tiếp tục cả hai thuốc. (HR 0.56 (95% CI 0.45–0.68)). Không kiểm tra việc ngừng aspirin ngay sau PCI và không áp dụng cho mọi ca hội chứng vành cấp.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Single antiplatelet therapy after acute coronary syndromes",
       "topic_focus_en": "Single antiplatelet therapy after acute coronary syndromes",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 71
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk.\n\n## Block B — Supporting evidence\n\n**[TWILIGHT](https://doi.org/10.1056/NEJMoa1908419)** — NEJM · 2019\n\nSelected high-risk PCI patients without an event during the initial three months of dual therapy. Withdrawing aspirin and continuing ticagrelor reduced BARC type 2, 3 or 5 bleeding versus continuing both drugs. (HR 0.56 (95% CI 0.45–0.68)). It did not test stopping aspirin immediately after PCI and does not apply to every ACS patient.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 150
     },
     "5": {
       "id": "ebm-2026-11-24-p5-focused",
@@ -268,6 +364,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure",
@@ -276,6 +373,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622666",
           "doi": "10.1093/eurheartj/ehad195"
         },
+        "recommendation_id": "hf-lvef-above-40-sglt2",
         "recommendation_vi": "Bản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.",
         "recommendation_en": "The ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death."
       },
@@ -285,15 +383,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622666",
           "doi": "10.1093/eurheartj/ehad195",
           "url": "https://pubmed.ncbi.nlm.nih.gov/37622666/"
+        },
+        {
+          "title": "DELIVER",
+          "pmid": "36027570",
+          "doi": "10.1056/NEJMoa2206286",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36027570/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622666",
+        "recommendation_id": "hf-lvef-above-40-sglt2",
+        "pmid": "36027570",
+        "doi": "10.1056/NEJMoa2206286",
+        "name": "DELIVER",
+        "journal": "NEJM · 2022",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.82 (95% CI 0.73–0.92)",
+        "supports_vi": "Dapagliflozin giảm kết cục gộp suy tim nặng lên hoặc tử vong tim mạch so với giả dược.",
+        "supports_en": "Dapagliflozin reduced the composite of worsening heart failure or cardiovascular death versus placebo.",
+        "population_vi": "Người suy tim có phân suất tống máu thất trái trên 40%.",
+        "population_en": "Patients with heart failure and left ventricular ejection fraction above 40%.",
+        "limits_vi": "Khoảng tin cậy của tử vong tim mạch riêng lẻ bao gồm 1; thử nghiệm không so sánh với empagliflozin.",
+        "limits_en": "The confidence interval for cardiovascular death alone included 1; this was not a comparison with empagliflozin."
+      },
       "title_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
       "topic_focus_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nBản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nBản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[DELIVER](https://doi.org/10.1056/NEJMoa2206286)** — NEJM · 2022\n\nNgười suy tim có phân suất tống máu thất trái trên 40%. Dapagliflozin giảm kết cục gộp suy tim nặng lên hoặc tử vong tim mạch so với giả dược. (HR 0.82 (95% CI 0.73–0.92)). Khoảng tin cậy của tử vong tim mạch riêng lẻ bao gồm 1; thử nghiệm không so sánh với empagliflozin.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
       "topic_focus_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nThe ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 78
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nThe ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death.\n\n## Block B — Supporting evidence\n\n**[DELIVER](https://doi.org/10.1056/NEJMoa2206286)** — NEJM · 2022\n\nPatients with heart failure and left ventricular ejection fraction above 40%. Dapagliflozin reduced the composite of worsening heart failure or cardiovascular death versus placebo. (HR 0.82 (95% CI 0.73–0.92)). The confidence interval for cardiovascular death alone included 1; this was not a comparison with empagliflozin.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 146
     },
     "6": {
       "id": "ebm-2026-11-24-p6-focused",
@@ -307,6 +427,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)",
@@ -315,6 +436,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210723",
           "doi": "10.1093/eurheartj/ehae176"
         },
+        "recommendation_id": "early-af-rhythm-control",
         "recommendation_vi": "ESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.",
         "recommendation_en": "ESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events."
       },
@@ -324,15 +446,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "39210723",
           "doi": "10.1093/eurheartj/ehae176",
           "url": "https://pubmed.ncbi.nlm.nih.gov/39210723/"
+        },
+        {
+          "title": "EAST-AFNET 4",
+          "pmid": "32865375",
+          "doi": "10.1056/NEJMoa2019422",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32865375/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "39210723",
+        "recommendation_id": "early-af-rhythm-control",
+        "pmid": "32865375",
+        "doi": "10.1056/NEJMoa2019422",
+        "name": "EAST-AFNET 4",
+        "journal": "NEJM · 2020",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.79 (96% CI 0.66–0.94)",
+        "supports_vi": "Kiểm soát nhịp sớm giảm kết cục tim mạch gộp so với chăm sóc thông thường.",
+        "supports_en": "Early rhythm control reduced the composite cardiovascular outcome versus usual care.",
+        "population_vi": "Người mới được chẩn đoán rung nhĩ trong vòng một năm và có bệnh tim mạch kèm theo.",
+        "population_en": "Patients with AF diagnosed within one year and concomitant cardiovascular conditions.",
+        "limits_vi": "Chiến lược cho phép dùng thuốc hoặc triệt đốt; không phải thử nghiệm triệt đốt đơn thuần.",
+        "limits_en": "The strategy allowed medication or ablation; it was not a trial of ablation alone."
+      },
       "title_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
       "topic_focus_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EAST-AFNET 4](https://doi.org/10.1056/NEJMoa2019422)** — NEJM · 2020\n\nNgười mới được chẩn đoán rung nhĩ trong vòng một năm và có bệnh tim mạch kèm theo. Kiểm soát nhịp sớm giảm kết cục tim mạch gộp so với chăm sóc thông thường. (HR 0.79 (96% CI 0.66–0.94)). Chiến lược cho phép dùng thuốc hoặc triệt đốt; không phải thử nghiệm triệt đốt đơn thuần.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Early rhythm control after an atrial fibrillation diagnosis",
       "topic_focus_en": "Early rhythm control after an atrial fibrillation diagnosis",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 72
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events.\n\n## Block B — Supporting evidence\n\n**[EAST-AFNET 4](https://doi.org/10.1056/NEJMoa2019422)** — NEJM · 2020\n\nPatients with AF diagnosed within one year and concomitant cardiovascular conditions. Early rhythm control reduced the composite cardiovascular outcome versus usual care. (HR 0.79 (96% CI 0.66–0.94)). The strategy allowed medication or ablation; it was not a trial of ablation alone.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 142
     },
     "7": {
       "id": "ebm-2026-11-24-p7-focused",
@@ -346,6 +490,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of endocarditis",
@@ -354,6 +499,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622656",
           "doi": "10.1093/eurheartj/ehad193"
         },
+        "recommendation_id": "stable-endocarditis-oral-stepdown",
         "recommendation_vi": "ESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.",
         "recommendation_en": "ESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course."
       },
@@ -363,15 +509,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622656",
           "doi": "10.1093/eurheartj/ehad193",
           "url": "https://pubmed.ncbi.nlm.nih.gov/37622656/"
+        },
+        {
+          "title": "POET",
+          "pmid": "30152252",
+          "doi": "10.1056/NEJMoa1808312",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30152252/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622656",
+        "recommendation_id": "stable-endocarditis-oral-stepdown",
+        "pmid": "30152252",
+        "doi": "10.1056/NEJMoa1808312",
+        "name": "POET",
+        "journal": "NEJM · 2019",
+        "source_kind": "landmark_rct",
+        "result": "IV − oral: 3.1 pp (95% CI −3.4 to 9.6)",
+        "supports_vi": "Ở người đủ điều kiện, chuyển sang đường uống không kém hơn tiếp tục đường tĩnh mạch về kết cục chính gộp.",
+        "supports_en": "In eligible patients, switching to oral treatment was noninferior to continuing intravenous therapy on the composite primary outcome.",
+        "population_vi": "Người viêm nội tâm mạc bên trái ổn định đã dùng kháng sinh tĩnh mạch ít nhất 10 ngày.",
+        "population_en": "Stable adults with left-sided endocarditis who had received at least 10 days of intravenous antibiotics.",
+        "limits_vi": "Không ủng hộ bắt đầu bằng kháng sinh uống hoặc chuyển khi chưa ổn định.",
+        "limits_en": "This does not support starting with oral antibiotics or switching an unstable patient."
+      },
       "title_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
       "topic_focus_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[POET](https://doi.org/10.1056/NEJMoa1808312)** — NEJM · 2019\n\nNgười viêm nội tâm mạc bên trái ổn định đã dùng kháng sinh tĩnh mạch ít nhất 10 ngày. Ở người đủ điều kiện, chuyển sang đường uống không kém hơn tiếp tục đường tĩnh mạch về kết cục chính gộp. (IV − oral: 3.1 pp (95% CI −3.4 to 9.6)). Không ủng hộ bắt đầu bằng kháng sinh uống hoặc chuyển khi chưa ổn định.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Oral antibiotic step-down in stable endocarditis",
       "topic_focus_en": "Oral antibiotic step-down in stable endocarditis",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 69
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course.\n\n## Block B — Supporting evidence\n\n**[POET](https://doi.org/10.1056/NEJMoa1808312)** — NEJM · 2019\n\nStable adults with left-sided endocarditis who had received at least 10 days of intravenous antibiotics. In eligible patients, switching to oral treatment was noninferior to continuing intravenous therapy on the composite primary outcome. (IV − oral: 3.1 pp (95% CI −3.4 to 9.6)). This does not support starting with oral antibiotics or switching an unstable patient.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 148
     },
     "8": {
       "id": "ebm-2026-11-24-p8-focused",
@@ -385,6 +553,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -393,6 +562,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622657",
           "doi": "10.1093/eurheartj/ehad194"
         },
+        "recommendation_id": "mavacamten-obstructive-hcm",
         "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
         "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring."
       },
@@ -402,15 +572,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622657",
           "doi": "10.1093/eurheartj/ehad194",
           "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/"
+        },
+        {
+          "title": "EXPLORER-HCM",
+          "pmid": "32871100",
+          "doi": "10.1016/S0140-6736(20)31792-X",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622657",
+        "recommendation_id": "mavacamten-obstructive-hcm",
+        "pmid": "32871100",
+        "doi": "10.1016/S0140-6736(20)31792-X",
+        "name": "EXPLORER-HCM",
+        "journal": "The Lancet · 2020",
+        "source_kind": "landmark_rct",
+        "result": "37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)",
+        "supports_vi": "Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần.",
+        "supports_en": "More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks.",
+        "population_vi": "Người bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg.",
+        "population_en": "Patients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg.",
+        "limits_vi": "Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.",
+        "limits_en": "This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis."
+      },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 67
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 151
     },
     "9": {
       "id": "ebm-2026-11-24-p9-focused",
@@ -424,6 +616,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
@@ -432,6 +625,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "36017548",
           "doi": "10.1093/eurheartj/ehac237"
         },
+        "recommendation_id": "initial-pah-combination",
         "recommendation_vi": "ESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.",
         "recommendation_en": "ESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups."
       },
@@ -441,15 +635,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "36017548",
           "doi": "10.1093/eurheartj/ehac237",
           "url": "https://pubmed.ncbi.nlm.nih.gov/36017548/"
+        },
+        {
+          "title": "AMBITION",
+          "pmid": "26308684",
+          "doi": "10.1056/NEJMoa1413687",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26308684/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "36017548",
+        "recommendation_id": "initial-pah-combination",
+        "pmid": "26308684",
+        "doi": "10.1056/NEJMoa1413687",
+        "name": "AMBITION",
+        "journal": "NEJM · 2015",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.50 (95% CI 0.35–0.72)",
+        "supports_vi": "Phối hợp ambrisentan và tadalafil ngay từ đầu làm giảm biến cố thất bại lâm sàng so với gộp hai nhóm đơn trị.",
+        "supports_en": "Initial ambrisentan plus tadalafil reduced clinical failure versus pooled monotherapy.",
+        "population_vi": "Người chưa được điều trị tăng áp động mạch phổi, phân độ chức năng WHO II–III.",
+        "population_en": "Treatment-naïve pulmonary arterial hypertension patients in WHO functional class II–III.",
+        "limits_vi": "Không ngoại suy sang tăng áp phổi do bệnh tim trái; phù ngoại biên gặp nhiều hơn khi phối hợp.",
+        "limits_en": "Do not extrapolate to pulmonary hypertension due to left heart disease; peripheral edema was more frequent with combination therapy."
+      },
       "title_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
       "topic_focus_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[AMBITION](https://doi.org/10.1056/NEJMoa1413687)** — NEJM · 2015\n\nNgười chưa được điều trị tăng áp động mạch phổi, phân độ chức năng WHO II–III. Phối hợp ambrisentan và tadalafil ngay từ đầu làm giảm biến cố thất bại lâm sàng so với gộp hai nhóm đơn trị. (HR 0.50 (95% CI 0.35–0.72)). Không ngoại suy sang tăng áp phổi do bệnh tim trái; phù ngoại biên gặp nhiều hơn khi phối hợp.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Initial combination treatment in pulmonary arterial hypertension",
       "topic_focus_en": "Initial combination treatment in pulmonary arterial hypertension",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 84
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups.\n\n## Block B — Supporting evidence\n\n**[AMBITION](https://doi.org/10.1056/NEJMoa1413687)** — NEJM · 2015\n\nTreatment-naïve pulmonary arterial hypertension patients in WHO functional class II–III. Initial ambrisentan plus tadalafil reduced clinical failure versus pooled monotherapy. (HR 0.50 (95% CI 0.35–0.72)). Do not extrapolate to pulmonary hypertension due to left heart disease; peripheral edema was more frequent with combination therapy.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 161
     },
     "10": {
       "id": "ebm-2026-11-24-p10-focused",
@@ -463,6 +679,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes",
@@ -471,6 +688,7 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622663",
           "doi": "10.1093/eurheartj/ehad192"
         },
+        "recommendation_id": "t2d-ckd-sglt2",
         "recommendation_vi": "ESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.",
         "recommendation_en": "ESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk."
       },
@@ -480,310 +698,132 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "37622663",
           "doi": "10.1093/eurheartj/ehad192",
           "url": "https://pubmed.ncbi.nlm.nih.gov/37622663/"
+        },
+        {
+          "title": "DAPA-CKD",
+          "pmid": "32970396",
+          "doi": "10.1056/NEJMoa2024816",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32970396/"
         }
       ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622663",
+        "recommendation_id": "t2d-ckd-sglt2",
+        "pmid": "32970396",
+        "doi": "10.1056/NEJMoa2024816",
+        "name": "DAPA-CKD",
+        "journal": "NEJM · 2020",
+        "source_kind": "landmark_rct",
+        "result": "HR 0.61 (95% CI 0.51–0.72)",
+        "supports_vi": "Dapagliflozin làm giảm kết cục gộp suy giảm chức năng thận, bệnh thận giai đoạn cuối hoặc tử vong do thận hay tim mạch so với giả dược.",
+        "supports_en": "Dapagliflozin reduced the composite of sustained kidney function decline, end-stage kidney disease, or renal or cardiovascular death versus placebo.",
+        "population_vi": "Người bệnh thận mạn có albumin niệu, có hoặc không mắc đái tháo đường típ 2; eGFR 25–75 khi tuyển.",
+        "population_en": "Albuminuric CKD with or without type 2 diabetes; entry eGFR 25–75.",
+        "limits_vi": "Ngưỡng eGFR tuyển bệnh không phải bằng chứng trực tiếp cho khởi trị ở mức 20–24.",
+        "limits_en": "Its entry eGFR does not directly establish initiation at 20–24."
+      },
       "title_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
       "topic_focus_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[DAPA-CKD](https://doi.org/10.1056/NEJMoa2024816)** — NEJM · 2020\n\nNgười bệnh thận mạn có albumin niệu, có hoặc không mắc đái tháo đường típ 2; eGFR 25–75 khi tuyển. Dapagliflozin làm giảm kết cục gộp suy giảm chức năng thận, bệnh thận giai đoạn cuối hoặc tử vong do thận hay tim mạch so với giả dược. (HR 0.61 (95% CI 0.51–0.72)). Ngưỡng eGFR tuyển bệnh không phải bằng chứng trực tiếp cho khởi trị ở mức 20–24.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
       "topic_focus_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 71
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk.\n\n## Block B — Supporting evidence\n\n**[DAPA-CKD](https://doi.org/10.1056/NEJMoa2024816)** — NEJM · 2020\n\nAlbuminuric CKD with or without type 2 diabetes; entry eGFR 25–75. Dapagliflozin reduced the composite of sustained kidney function decline, end-stage kidney disease, or renal or cardiovascular death versus placebo. (HR 0.61 (95% CI 0.51–0.72)). Its entry eGFR does not directly establish initiation at 20–24.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 153
     }
   },
   "briefings": [
     {
       "id": "ebm-2026-11-23-p8-main",
       "date": "2026-11-23",
-      "short_date": "23/11",
-      "week_label": "23/11/2026 • Hôm nay",
       "time": "06:00 AM",
-      "model_used": "none",
       "pillar_id": 8,
       "pillar_name": "Specific Cardiomyopathies, Pericardial Disease & ACHD",
       "pillar_vi": "Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn",
-      "topic_focus_vi": "08–11/2026: ESC Myocarditis Ten Commandments (10/2026), Loạn nhịp Viêm (08/2026) & CMI",
-      "topic_focus_en": "Aug–Nov 2026: Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 Arrhythmia & CMI",
-      "title_vi": "Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR",
-      "title_en": "Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR",
-      "word_count_vi": 1430,
-      "verified_step0": true,
-      "interaction_id": "ebm-verified-ebm-2026-11-13-p8-main",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-13",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
-        "prior_guideline": {
-          "name": "2023 ESC Cardiomyopathies & 2025 ESC Myocarditis/Pericarditis Guidelines",
-          "year": "2023 / 2025",
-          "doi": "10.1093/eurheartj/ehaf192",
-          "pmid": "40878297"
-        },
         "current_guideline": {
-          "name": "Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 ESC Inflammatory Arrhythmia & Nov 2026 ESC-ACVC",
-          "year": "2026 (08–11/2026)",
-          "doi": "10.1093/eurheartj/ehag766",
-          "pmid": "42867067",
-          "refs": [
-            {
-              "label": "Oct 2026 ESC Myocarditis Ten Commandments",
-              "pmid": "42867067",
-              "doi": "10.1093/eurheartj/ehag766"
-            },
-            {
-              "label": "Aug 2026 ESC Inflammatory Arrhythmia",
-              "pmid": "42663246",
-              "doi": "10.1093/ejhf/xuag271"
-            },
-            {
-              "label": "Nov 2026 ESC-ACVC Follow-Up",
-              "pmid": "43008190",
-              "doi": "10.1093/ehjacc/zuag133"
-            }
-          ],
-          "crawled_live": true,
-          "crawled_at": "2026-11-23 10:16",
-          "latest_pubmed_hit": {
-            "pmid": "43008190",
-            "title": "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit - Practical aspects on ambulatory follow-up of acute care patients: acute coronary syndromes, heart failure, ventricular arrhythmias, atrial arrhythmias, conductance disorders, myocarditis, pericarditis, other acute cardiac settings A Clinical Consensus Statement of the Association for Acute CardioVascular Care of the ESC",
-            "source": "Eur Heart J Acute Cardiovasc Care",
-            "pubdate": "2026 Nov 10",
-            "doi": "10.1093/ehjacc/zuag133",
-            "year": "2026"
-          }
+          "name": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194"
         },
+        "recommendation_id": "mavacamten-obstructive-hcm",
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.",
         "steps": [
           {
-            "era_label_vi": "Chỉ dẫn A • ESC 2023 Cardiomyopathies → ESC 2025 Myocarditis/Pericarditis",
-            "era_label_en": "Directive A • 2023 ESC Cardiomyopathies → 2025 ESC Myocarditis/Pericarditis",
-            "title_vi": "Mavacamten (Class IIa) & Hợp nhất Hội chứng Viêm Cơ tim–Màng ngoài tim (IMPS)",
-            "title_en": "Mavacamten (Class IIa) & Initial Unified IMPS Framework",
-            "desc_vi": "ESC 2023 đưa Mavacamten (Class IIa) vào oHCM; ESC 2025 thiết lập thuật toán CMR không xâm lấn và khái niệm IMPS hợp nhất viêm cơ tim–màng ngoài tim.",
-            "desc_en": "2023 ESC added mavacamten (Class IIa) in oHCM, and 2025 ESC introduced non-invasive CMR criteria within the IMPS syndrome."
+            "era_label_vi": "Điều trị ban đầu",
+            "era_label_en": "Initial treatment",
+            "desc_vi": "Điều trị ban đầu tập trung vào kiểm soát triệu chứng bằng thuốc chẹn beta hoặc chẹn kênh canxi phù hợp.",
+            "desc_en": "Initial treatment focuses on symptom control with appropriate beta-blockade or calcium channel blockade."
           },
           {
-            "era_label_vi": "Bước ngoặt Chứng cứ • EXPLORER-HCM, VALOR-HCM, SEQUOIA-HCM",
-            "era_label_en": "Evidence Turning Point • EXPLORER-HCM, VALOR-HCM, SEQUOIA-HCM",
-            "title_vi": "Ức chế Cầu nối Actin–Myosin Tránh Phẫu thuật & Chuẩn CMR Tích hợp",
-            "title_en": "Sarcomere Inhibition Averts Surgery & Multimodal CMR Anchoring",
-            "desc_vi": "EXPLORER-HCM (37% vs 17%; p=0,0005), VALOR-HCM (chỉ 8,9% cần SRT ở tuần 56) và SEQUOIA-HCM (pVO2 +1,7 mL/kg/phút; p<0,001) xác nhận vai trò CMIs song hành với đồng thuận đa trung tâm CMR.",
-            "desc_en": "EXPLORER-HCM, VALOR-HCM (only 8.9% needing SRT at week 56), and SEQUOIA-HCM (pVO2 +1.7 mL/kg/min) cemented CMIs alongside multimodal CMR evaluation."
-          },
-          {
-            "era_label_vi": "Chỉ dẫn B • Đồng thuận 08–11/2026 ESC (Ten Commandments, EHJ, ACVC) (Hiện hành)",
-            "era_label_en": "Directive B • Aug–Nov 2026 ESC Updates (Ten Commandments, Inflammatory Arrhythmia & ACVC) (Current)",
-            "title_vi": "10 Quy tắc Vàng Viêm cơ tim (10/2026), Loạn nhịp Viêm (08/2026) & Tái khám Cấp (11/2026)",
-            "title_en": "Oct 2026 Ten Commandments, Aug 2026 Arrhythmia Workup & Nov 2026 ACVC Follow-Up",
-            "desc_vi": "Trong 3 tháng gần nhất (08–11/2026): ESC công bố Ten Commandments cho Viêm cơ tim–Màng ngoài tim (Eur Heart J Oct 13, 2026; PMID 42867067), Đồng thuận HFA/EHRA xử trí rối loạn nhịp trong viêm cơ tim/bệnh cơ tim viêm (Eur J Heart Fail Aug 28, 2026; PMID 42663246), và ESC-ACVC Nov 10, 2026 (PMID 43008190) về tái đánh giá ngoại trú sớm hậu cấp cứu.",
-            "desc_en": "Aug–Nov 2026 releases: ESC Ten Commandments on Myocarditis & Pericarditis (Eur Heart J Oct 13, 2026; PMID 42867067), ESC Workup & Management of Rhythm Disorders in Myocarditis/Inflammatory Cardiomyopathy (Aug 28, 2026; PMID 42663246), and Nov 10, 2026 ESC-ACVC Follow-Up Consensus (PMID 43008190)."
+            "era_label_vi": "ESC 2023",
+            "era_label_en": "ESC 2023",
+            "desc_vi": "ESC 2023 nêu cân nhắc mavacamten bổ sung nếu vẫn có triệu chứng do tắc nghẽn dù điều trị ban đầu, với theo dõi siêu âm tim (Class IIa).",
+            "desc_en": "ESC 2023 advises considering add-on mavacamten with echocardiographic monitoring for symptomatic obstruction despite initial treatment (Class IIa)."
           }
         ]
       },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/"
+        },
+        {
+          "title": "EXPLORER-HCM",
+          "pmid": "32871100",
+          "doi": "10.1016/S0140-6736(20)31792-X",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        }
+      ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622657",
+        "recommendation_id": "mavacamten-obstructive-hcm",
+        "pmid": "32871100",
+        "doi": "10.1016/S0140-6736(20)31792-X",
+        "name": "EXPLORER-HCM",
+        "journal": "The Lancet · 2020",
+        "source_kind": "landmark_rct",
+        "result": "37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)",
+        "supports_vi": "Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần.",
+        "supports_en": "More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks.",
+        "population_vi": "Người bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg.",
+        "population_en": "Patients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg.",
+        "limits_vi": "Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.",
+        "limits_en": "This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis."
+      },
+      "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 151,
       "landmark_trials": [
         {
           "name": "EXPLORER-HCM",
-          "journal": "The Lancet 2020",
-          "endpoint_label": "Composite Functional Capacity (pVO2 & NYHA Class Improvement at Week 30)",
-          "value": "37% vs. 17%",
-          "ci": "Difference +19.4% (95% CI: 8.7%–30.1%)",
-          "p": "p = 0.0005",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Thiết lập liệu pháp nhắm trúng đích sarcomere đầu tiên cho oHCM, giảm chênh lệch LVOT sau gắng sức -36 mmHg so với giả dược (p < 0,0001).",
-          "caution_vi": "Không kê đơn Mavacamten nếu LVEF < 55% ban đầu hoặc không có lịch siêu âm theo dõi LVEF định kỳ; tránh phối hợp chất ức chế mạnh CYP2C19 (Omeprazole, Fluconazole).",
-          "changes_en": "Established first-in-class cardiac myosin inhibition for oHCM, cutting post-exercise LVOT gradient (-36 mmHg vs. placebo; p < 0.0001).",
-          "caution_en": "Mandatory echocardiographic LVEF monitoring (interrupt if LVEF <50%); avoid strong CYP2C19/CYP3A4 inhibitors (omeprazole, fluconazole)."
-        },
-        {
-          "name": "VALOR-HCM",
-          "journal": "JAMA Cardiol 2023",
-          "endpoint_label": "Week-56 Proportion Proceeding to or Eligible for Septal Reduction Therapy",
-          "value": "8.9% vs. 19.2% (crossover)",
-          "ci": "Resting/Valsalva LVOT -34.0 / -45.6 mmHg",
-          "p": "89% continued long-term mavacamten",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Chứng minh đa số bệnh nhân oHCM nặng đang chờ phẫu thuật cắt vách khi dùng Mavacamten đều cải thiện đủ tốt để tránh được mổ hở qua 56 tuần.",
-          "caution_vi": "Có 11,1% (12/108) bệnh nhân giảm LVEF thoáng qua xuống <50% cần tạm ngưng/giảm liều theo quy trình siêu âm kiểm soát.",
-          "changes_en": "Proved mavacamten safely spares most severely symptomatic SRT-referred patients from surgical myectomy through week 56.",
-          "caution_en": "11.1% experienced reversible LVEF <50% requiring protocol-guided interruption/titration."
-        },
-        {
-          "name": "SEQUOIA-HCM",
-          "journal": "NEJM 2024",
-          "endpoint_label": "24-Week Change in Peak Oxygen Uptake (pVO2)",
-          "value": "+1.7 mL/kg/min",
-          "ci": "95% CI: 1.0–2.4",
-          "p": "p < 0.001",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Khẳng định hiệu ứng nhóm với Aficamten thế hệ mới (thời gian bán thải ngắn ~3,4 ngày, ít tương tác CYP), cải thiện toàn bộ 10 tiêu chí phụ và tỷ lệ giảm EF <50% rất thấp.",
-          "caution_vi": "Vẫn đòi hỏi theo dõi LVEF siêu âm khi chỉnh liều 5–20 mg/ngày; lưu ý không dùng cho bệnh cơ tim phì đại không tắc nghẽn nếu chưa đủ dữ liệu pha 3 riêng biệt.",
-          "changes_en": "Validates next-generation myosin inhibitor aficamten with shorter half-life, fewer CYP interactions, and consistent +1.7 mL/kg/min pVO2 improvement.",
-          "caution_en": "Echocardiographic titration remains mandatory; await dedicated phase 3 data before extrapolating to non-obstructive HCM."
-        }
-      ],
-      "pearls": [
-        {
-          "type": "guideline",
-          "text_vi": "Theo ESC 2023 Cardiomyopathy Guidelines, Mavacamten đạt khuyến cáo Class IIa, LOE A cho bệnh nhân oHCM còn triệu chứng trước khi cân nhắc phẫu thuật/đốt cồn vách liên thất.",
-          "text_en": "ESC 2023 endorses mavacamten (Class IIa, Level A) for persistently symptomatic oHCM before considering invasive septal reduction."
-        },
-        {
-          "type": "trial",
-          "text_vi": "EXPLORER-HCM chứng minh Mavacamten tăng gấp đôi tỷ lệ đạt tiêu chí pVO2/NYHA (37% vs 17%; p = 0,0005) và giảm chênh áp LVOT sau gắng sức (-36 mmHg so với giả dược); VALOR-HCM giúp ~89% tiếp tục thuốc tránh phẫu thuật.",
-          "text_en": "EXPLORER-HCM doubled functional/symptom response (37% vs. 17%; p = 0.0005), while VALOR-HCM spared ~89% of SRT-referred patients from invasive surgery through 56 weeks."
-        },
-        {
-          "type": "trial",
-          "text_vi": "SEQUOIA-HCM khẳng định Aficamten cải thiện đỉnh VO2 (+1,7 mL/kg/phút; p < 0,001) với thời gian bán thải ngắn hơn và ít tương tác CYP2C19.",
-          "text_en": "SEQUOIA-HCM validates aficamten (+1.7 mL/kg/min peak VO2; p < 0.001) with shorter half-life and minimal CYP interactions."
-        },
-        {
-          "type": "guideline",
-          "text_vi": "Bắt buộc kiểm tra siêu âm tim LVEF định kỳ khi dùng thuốc ức chế myosin tim và ngừng thuốc ngay nếu LVEF < 50%; tránh phối hợp Mavacamten với Omeprazole hoặc Fluconazole.",
-          "text_en": "Mandatory serial LVEF monitoring (interrupt if LVEF <50%) and strict CYP2C19/CYP3A4 screening (avoid omeprazole/fluconazole) are non-negotiable safety rules."
-        }
-      ],
-      "pubmed_anchors": [
-        {
-          "pmid": "42853674",
-          "title": "ESC Guidelines, mechanisms of myocarditis, novel insights into treatment with mineralcorticoid receptor antagonists, cardiac glycosides, and GLP-1 receptor agonists",
-          "source": "Eur Heart J",
-          "pubdate": "2026 Oct 09",
-          "doi": "10.1093/eurheartj/ehag792",
-          "url": "https://doi.org/10.1093/eurheartj/ehag792",
-          "volume": "47",
-          "pages": "5327-5333"
-        },
-        {
-          "pmid": "41818712",
-          "title": "Comprehensive evaluation of hypertrophic cardiomyopathy: European Journal of Heart Failure expert consensus document",
-          "source": "Eur J Heart Fail",
-          "pubdate": "2026 Sep 15",
-          "doi": "10.1093/ejhf/xuag035",
-          "url": "https://doi.org/10.1093/ejhf/xuag035",
-          "volume": "28",
-          "pages": "374-384"
-        },
-        {
-          "pmid": "42867067",
-          "title": "The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis.",
-          "source": "Eur Heart J (2026)",
-          "pubdate": "2026 Oct 13",
-          "doi": "10.1093/eurheartj/ehag766",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42867067/",
-          "volume": "47",
-          "pages": "6368-6369"
-        },
-        {
-          "pmid": "43008190",
-          "title": "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.",
-          "source": "Eur Heart J Acute Cardiovasc Care (2026)",
-          "pubdate": "2026 Nov 10",
-          "doi": "10.1093/ehjacc/zuag133",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/43008190/"
-        },
-        {
-          "pmid": "42663246",
-          "title": "Workup and management of rhythm disorders in myocarditis and inflammatory cardiomyopathy.",
-          "source": "Eur J Heart Fail (2026)",
-          "pubdate": "2026 Aug 28",
-          "doi": "10.1093/ejhf/xuag271",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42663246/"
-        },
-        {
-          "pmid": "37622657",
-          "title": "2023 ESC Guidelines for the management of cardiomyopathies.",
-          "source": "Eur Heart J (2023)",
-          "pubdate": "2023 Oct 1",
-          "doi": "10.1093/eurheartj/ehad194",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/",
-          "volume": "44",
-          "pages": "3503-3626"
-        },
-        {
+          "journal": "The Lancet · 2020",
           "pmid": "32871100",
-          "title": "Mavacamten for treatment of symptomatic obstructive hypertrophic cardiomyopathy (EXPLORER-HCM).",
-          "source": "The Lancet (2020)",
-          "pubdate": "2020 Sep 12",
           "doi": "10.1016/S0140-6736(20)31792-X",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/",
-          "volume": "396",
-          "pages": "759-769"
-        },
-        {
-          "pmid": "37639243",
-          "title": "Mavacamten in Patients With Hypertrophic Cardiomyopathy Referred for Septal Reduction (VALOR-HCM Week 56).",
-          "source": "JAMA Cardiol (2023)",
-          "pubdate": "2023 Oct 1",
-          "doi": "10.1001/jamacardio.2023.3342",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/37639243/",
-          "volume": "8",
-          "pages": "968-977"
-        },
-        {
-          "pmid": "38739079",
-          "title": "Aficamten for Symptomatic Obstructive Hypertrophic Cardiomyopathy (SEQUOIA-HCM).",
-          "source": "NEJM (2024)",
-          "pubdate": "2024 May 30",
-          "doi": "10.1056/NEJMoa2401424",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/38739079/",
-          "volume": "390",
-          "pages": "1849-1861"
+          "endpoint_label": "Exercise capacity and NYHA class at 30 weeks",
+          "value": "37% vs. 17%",
+          "ci": "Difference +19.4 pp (95% CI 8.7 to 30.1)",
+          "p": "p = 0.0005",
+          "changes_vi": "Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần.",
+          "changes_en": "More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks.",
+          "caution_vi": "Bắt buộc theo dõi siêu âm tim; tránh dùng cùng thuốc ức chế mạnh CYP2C19.",
+          "caution_en": "Mandatory echocardiographic monitoring; avoid strong CYP2C19 inhibitors."
         }
-      ],
-      "part1_vi_markdown": "# Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR\n\n## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (08–11/2026)\n\nChuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn**. Ba văn kiện mới nhất trong **08–11/2026** bao gồm **Ten Commandments cho Khuyến cáo ESC về Viêm cơ tim & Màng ngoài tim** (*Eur Heart J* 13/10/2026; DOI `10.1093/eurheartj/ehag766`; PMID `42867067`), **Đồng thuận Châu Âu về Rối loạn nhịp trong Viêm cơ tim & Bệnh cơ tim viêm** (*Eur J Heart Fail* 28/08/2026; DOI `10.1093/ejhf/xuag271`; PMID `42663246`), và **Đồng thuận ESC-ACVC 10/11/2026** (*Eur Heart J Acute Cardiovasc Care*; PMID `43008190`), song hành nền tảng **2023 ESC Cardiomyopathies** (`37622657`).\n\n### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại\n- **Lập trường trước đây (ESC 2014 HCM Guidelines):** Điều trị nội khoa bệnh cơ tim phì đại tắc nghẽn (oHCM) chỉ dựa vào các thuốc giảm co bóp không đặc hiệu như **Chẹn beta**, **Verapamil/Diltiazem** hoặc **Disopyramide**. Nếu bệnh nhân vẫn khó thở NYHA III–IV và chênh áp đường ra thất trái (LVOT gradient) ≥ 50 mmHg, biện pháp duy nhất là phẫu thuật cắt vách liên thất (Septal Myectomy) hoặc đốt vách bằng cồn (Alcohol Septal Ablation — ASA).\n- **Bước ngoặt chuyển dịch:** Sự ra đời của nhóm **Thuốc ức chế Myosin Tim (Cardiac Myosin Inhibitors — CMIs)** như **Mavacamten** (**EXPLORER-HCM**, **VALOR-HCM**) và **Aficamten** (**SEQUOIA-HCM**) tác động trực tiếp vào cơ chế bệnh sinh tăng hình thành cầu nối chéo actin–myosin ở mức độ sarcomere.\n- **Điểm dừng hiện tại trong ESC 2023:**\n  - **Mavacamten:** Được chính thức đưa vào hướng dẫn với khuyến cáo **Class IIa, LOE A** phối hợp cùng chẹn beta hoặc CCB (hoặc đơn trị nếu không dung nạp) ở bệnh nhân oHCM có triệu chứng (NYHA II–III) còn chênh áp LVOT ≥ 30–50 mmHg, trước khi phải cân nhắc can thiệp giảm vách xâm lấn (SRT).\n  - **Chẩn đoán đa mô thức & Di truyền:** Khuyến cáo chụp **Cộng hưởng từ tim (CMR với LGE)** là bắt buộc ở lần đánh giá đầu tiên cho mọi bệnh nhân nghi ngờ bệnh cơ tim (**Class I, LOE B**) và xét nghiệm gen hệ thống để sàng lọc gia đình.\n\n### 2. Cơ sở sinh lý bệnh học & Lưu ý an toàn tại giường bệnh\n- **Sinh lý bệnh:** Đột biến gen mã hóa protein sarcomere (*MYH7*, *MYBPC3*) làm tăng số lượng đầu myosin ở trạng thái mở/hoạt động, tạo quá mức cầu nối chéo actin–myosin. Hệ quả là cơ tim co bóp quá mức (hypercontractility), giảm thư giãn tâm trương và kéo lá trước van hai lá vào đường ra thất trái (SAM), gây tắc nghẽn LVOT động học. CMIs ức chế thuận nghịch ATPase của myosin tim, đưa các đầu myosin về trạng thái nghỉ tiết kiệm năng lượng (\"super-relaxed state\"), làm giảm trực tiếp chênh áp LVOT mà không gây hạ huyết áp toàn thân.\n- **Lưu ý an toàn sống còn tại giường bệnh:**\n  - **Nguy cơ suy giảm LVEF (< 50%):** Do cơ chế giảm co bóp trực tiếp, bắt buộc phải **siêu âm tim theo dõi LVEF định kỳ** (tuần 4, 8, 12 và mỗi 12 tuần). Phải tạm ngừng thuốc ngay nếu LVEF giảm xuống **< 50%**.\n  - **Tương tác thuốc CYP2C19/CYP3A4 của Mavacamten:** Chống chỉ định phối hợp với chất ức chế mạnh CYP2C19 (Omeprazole, Fluconazole, Fluvoxamine) hoặc CYP3A4 vì làm tích tụ thuốc gây suy tim tâm thu cấp. (Aficamten thế hệ mới có thời gian bán thải ngắn hơn ~3,4 ngày và ít tương tác CYP hơn).\n\n*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for the management of cardiomyopathies (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).\n\n---\n\n## BLOCK B — Các Thử nghiệm Lâm sàng Bản lề Đặt Nền tảng cho Khuyến cáo\n\n### 1. [RCT/Landmark Trial] EXPLORER-HCM — Mavacamten trên Bệnh nhân oHCM có Triệu chứng\n- **Nguồn/Tạp chí:** *The Lancet*, 2020; 396(10253):759–769. DOI: `10.1016/S0140-6736(20)31792-X`. PMID: `32871100`.\n- **Quần thể & Thiết kế:** **251 bệnh nhân** oHCM có triệu chứng (NYHA II–III), LVOT gradient ≥ 50 mmHg, LVEF ≥ 55%, ngẫu nhiên Mavacamten (khởi đầu 5 mg/ngày, n=123) vs giả dược (n=128) trong 30 tuần.\n- **Tiêu chí chính & Kết quả định lượng:** Tiêu chí chính (tăng ≥ 1,5 mL/kg/phút đỉnh VO2 kèm giảm ≥ 1 bậc NYHA, HOẶC tăng ≥ 3,0 mL/kg/phút pVO2 không xấu đi NYHA) đạt ở **37%** (45/123) nhóm Mavacamten vs **17%** (22/128) nhóm giả dược (**chênh lệch +19,4%; 95% CI: 8,7–30,1%; p = 0,0005**). Chênh lệch giảm LVOT gradient sau gắng sức so với giả dược đạt **-36 mmHg (95% CI: -43,2 đến -28,1; p < 0,0001)**. NNT: *Không xác định được từ nguồn chính thức*.\n- **Thay đổi / Chưa nên thay đổi:** Thiết lập liệu pháp trúng đích đầu tiên cho oHCM; không kê đơn nếu không có siêu âm tim kiểm soát LVEF định kỳ hoặc LVEF nền < 55%.\n\n### 2. [RCT/Landmark Trial] VALOR-HCM (*JAMA Cardiology 2023*) — Tránh Phẫu thuật Cắt Vách tại Tuần 56\n- **Nguồn/Tạp chí:** *JAMA Cardiology*, 2023; 8:968–977. DOI: `10.1001/jamacardio.2023.3342`. PMID: `37639243`.\n- **Quần thể & Kết quả:** **112 bệnh nhân** oHCM nặng NYHA III/IV đã được chuyển chỉ định phẫu thuật/đốt cồn vách liên thất (108 ca đánh giá tuần 56). Tại tuần 56, chỉ **8,9%** (5/56) nhóm Mavacamten ban đầu và **19,2%** (10/52) nhóm giả dược chuyển chéo còn đủ tiêu chí/đã làm SRT; 89% (96/108) tiếp tục duy trì Mavacamten dài hạn. Có 11,1% (12/108) giảm LVEF thoáng qua <50% cần chỉnh/tạm ngưng liều. NNT: *Không xác định được từ nguồn chính thức*.\n\n### 3. [RCT/Landmark Trial] SEQUOIA-HCM — Aficamten Thế hệ Mới trên Bệnh nhân oHCM\n- **Nguồn/Tạp chí:** *The New England Journal of Medicine*, 2024; 390:1849–1861. DOI: `10.1056/NEJMoa2401424`. PMID: `38739079`.\n- **Quần thể & Kết quả:** **282 bệnh nhân** oHCM (142 Aficamten 5–20 mg/ngày vs 140 giả dược) trong 24 tuần. Đỉnh tiêu thụ oxy (pVO2) lúc tuần 24 tăng **+1,8 mL/kg/phút** ở nhóm Aficamten vs **0,0 mL/kg/phút** ở nhóm giả dược (**chênh lệch trung bình +1,7 mL/kg/phút; 95% CI: 1,0–2,4; p < 0,001**), cải thiện toàn bộ 10 tiêu chí phụ. NNT: *Không xác định được từ nguồn chính thức*.\n\n---\n\n## III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS\n\n1. **[GUIDELINE EVOLUTION]** Theo ESC 2023 Cardiomyopathy Guidelines, **Mavacamten** đạt khuyến cáo **Class IIa, LOE A** cho bệnh nhân oHCM còn triệu chứng trước khi cân nhắc phẫu thuật/đốt cồn vách liên thất.\n2. **[LANDMARK TRIAL]** **EXPLORER-HCM** chứng minh Mavacamten tăng gấp đôi tỷ lệ cải thiện gắng sức/NYHA (37% vs 17%; p = 0,0005), còn **VALOR-HCM** giúp ~89% bệnh nhân tránh được mổ cắt vách ở tuần 56.\n3. **[LANDMARK TRIAL]** **SEQUOIA-HCM** khẳng định hiệu quả nhóm thuốc với Aficamten (+1,7 mL/kg/phút đỉnh VO2; p < 0,001) với dược động học linh hoạt hơn.\n4. **[GUIDELINE EVOLUTION]** Bắt buộc kiểm tra **siêu âm tim LVEF định kỳ** khi dùng CMIs và ngừng thuốc ngay nếu LVEF < 50%; tránh phối hợp Mavacamten với Omeprazole/Fluconazole.\n\n---\n\n⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.\n\n[END OF PART 1. Enter \"Continue to Part 2\" to receive the full English Clinical Briefing]\n\n### Cập nhật Crawl Guideline 3 tháng gần nhất từ NCBI PubMed (`2026-11-23 10:16`)\n- **[ESC 2026 Nov 10]** *Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit - Practical aspects on ambulatory follow-up of acute care patients: acute coronary syndromes, heart failure, ventricular arrhythmias, atrial arrhythmias, conductance disorders, myocarditis, pericarditis, other acute cardiac settings A Clinical Consensus Statement of the Association for Acute CardioVascular Care of the ESC* — *Eur Heart J Acute Cardiovasc Care* | DOI: `10.1093/ehjacc/zuag133` | PMID: `43008190`\n- **[ESC 2026 Nov 16]** *The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis* — *Eur Heart J* | DOI: `10.1093/eurheartj/ehag766` | PMID: `42867067`\n- **[ESC 2026 Oct 09]** *ESC Guidelines, mechanisms of myocarditis, novel insights into treatment with mineralcorticoid receptor antagonists, cardiac glycosides, and GLP-1 receptor agonists* — *Eur Heart J* | DOI: `10.1093/eurheartj/ehag792` | PMID: `42853674`",
-      "part2_en_markdown": "# Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR\n\n## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Aug–Nov 2026)\n\nThis briefing addresses **Pillar 8: Specific Cardiomyopathies, Pericardial Disease & ACHD**, anchored within **Aug–Nov 2026** by **The 'Ten Commandments' for the ESC Guidelines on Myocarditis and Pericarditis** (*Eur Heart J* Oct 13, 2026; DOI: `10.1093/eurheartj/ehag766`; PMID: `42867067`), **Workup and Management of Rhythm Disorders in Myocarditis and Inflammatory Cardiomyopathy** (*Eur J Heart Fail* Aug 28, 2026; DOI: `10.1093/ejhf/xuag271`; PMID: `42663246`), and **ESC-ACVC Early Ambulatory Follow-Up Consensus** (*Eur Heart J Acute Cardiovasc Care* Nov 10, 2026; PMID: `43008190`), alongside foundational **2023 ESC Cardiomyopathies Guidelines** (DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).\n\n### 1. Guideline Evolution & Pathophysiological Basis\n- **Historical Stance (2014 ESC HCM):** Medical management relied solely on non-specific negative inotropes (beta-blockers, verapamil/diltiazem, disopyramide), reserving surgical myectomy or alcohol septal ablation for refractory obstruction (LVOT ≥50 mmHg, NYHA III–IV).\n- **Contemporary Consensus (2023 ESC):** **Mavacamten** receives a **Class IIa, Level A** recommendation added to beta-blockers/CCBs (or as monotherapy) in persistently symptomatic oHCM prior to invasive septal reduction therapy. Baseline Cardiac MRI with LGE and cascade genetic testing are Class I standards.\n- **Pathophysiology & Safety Imperatives:** Sarcomere mutations increase active myosin–actin cross-bridging, inducing hypercontractility and systolic anterior motion (SAM). Cardiac myosin inhibitors reversibly shift myosin heads into an energy-sparing \"super-relaxed state.\" Serial echocardiographic LVEF monitoring is mandatory—interrupt therapy if LVEF drops <50%—and screen strictly for CYP2C19/CYP3A4 drug interactions (avoid omeprazole, fluconazole, fluvoxamine with mavacamten).\n\n*Traceable Source Identifier*: 2023 ESC Guidelines for the management of cardiomyopathies. *Eur Heart J* 2023; 44:3503–3626. DOI: `10.1093/eurheartj/ehad194`. PMID: `37622657`.\n\n---\n\n## BLOCK B — Landmark Trials Underpinning Block A\n\n### 1. [RCT/Landmark Trial] EXPLORER-HCM (*The Lancet* 2020)\n- **Identifier:** DOI: `10.1016/S0140-6736(20)31792-X` | PMID: `32871100`.\n- **Results:** 251 symptomatic oHCM patients (LVOT ≥50 mmHg, LVEF ≥55%). Mavacamten achieved the primary pVO2/NYHA endpoint in **37% vs. 17%** on placebo (**difference +19.4%; 95% CI, 8.7–30.1%; p = 0.0005**) and reduced post-exercise LVOT gradient vs. placebo by **-36 mmHg (95% CI, -43.2 to -28.1; p < 0.0001)**.\n\n### 2. [RCT/Landmark Trial] VALOR-HCM (*JAMA Cardiology* 2023)\n- **Identifier:** DOI: `10.1001/jamacardio.2023.3342` | PMID: `37639243`.\n- **Results:** 112 severely symptomatic SRT-referred oHCM patients (108 evaluated at week 56). Only **8.9%** of original mavacamten patients and **19.2%** of crossover patients proceeded to or remained eligible for SRT at week 56; 89% continued long-term mavacamten, while 11.1% experienced reversible LVEF <50%.\n\n### 3. [RCT/Landmark Trial] SEQUOIA-HCM (*NEJM* 2024)\n- **Identifier:** DOI: `10.1056/NEJMoa2401424` | PMID: `38739079`.\n- **Results:** 282 symptomatic oHCM patients. Next-generation myosin inhibitor aficamten improved 24-week peak oxygen uptake by **+1.7 mL/kg/min (95% CI, 1.0–2.4; p < 0.001)** across all 10 secondary endpoints with a shorter half-life and minimal CYP interactions.\n\n---\n\n## Take-Home Clinical Pearls for Rounds\n\n1. **[GUIDELINE EVOLUTION]** ESC 2023 endorses **mavacamten (Class IIa, Level A)** before invasive septal reduction in symptomatic oHCM.\n2. **[LANDMARK TRIAL]** EXPLORER-HCM, VALOR-HCM, and SEQUOIA-HCM validate direct sarcomere myosin inhibition to abolish LVOT gradients, avert surgery, and improve exercise capacity.\n3. **[GUIDELINE EVOLUTION]** Mandatory echocardiographic LVEF surveillance (pause if <50%) and CYP2C19/CYP3A4 screening are non-negotiable bedside safety rules.\n\n---\n\n⚠️ The clinical synthesis above is intended for evidence-based medical education; clinicians must cross-reference official ESC guidelines and individual patient parameters prior to clinical decision-making.\n\n### Live NCBI PubMed Last-3-Months Guideline Crawl (`2026-11-23 10:16`)\n- **[ESC 2026 Nov 10]** *Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit - Practical aspects on ambulatory follow-up of acute care patients: acute coronary syndromes, heart failure, ventricular arrhythmias, atrial arrhythmias, conductance disorders, myocarditis, pericarditis, other acute cardiac settings A Clinical Consensus Statement of the Association for Acute CardioVascular Care of the ESC* — *Eur Heart J Acute Cardiovasc Care* | DOI: `10.1093/ehjacc/zuag133` | PMID: `43008190`\n- **[ESC 2026 Nov 16]** *The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis* — *Eur Heart J* | DOI: `10.1093/eurheartj/ehag766` | PMID: `42867067`\n- **[ESC 2026 Oct 09]** *ESC Guidelines, mechanisms of myocarditis, novel insights into treatment with mineralcorticoid receptor antagonists, cardiac glycosides, and GLP-1 receptor agonists* — *Eur Heart J* | DOI: `10.1093/eurheartj/ehag792` | PMID: `42853674`",
-      "live_crawled_guidelines": [
-        {
-          "pmid": "43008190",
-          "title": "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit - Practical aspects on ambulatory follow-up of acute care patients: acute coronary syndromes, heart failure, ventricular arrhythmias, atrial arrhythmias, conductance disorders, myocarditis, pericarditis, other acute cardiac settings A Clinical Consensus Statement of the Association for Acute CardioVascular Care of the ESC",
-          "society": "ESC",
-          "year": 2026,
-          "source": "Eur Heart J Acute Cardiovasc Care",
-          "pubdate": "2026 Nov 10",
-          "doi": "10.1093/ehjacc/zuag133",
-          "url": "https://doi.org/10.1093/ehjacc/zuag133"
-        },
-        {
-          "pmid": "42867067",
-          "title": "The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis",
-          "society": "ESC",
-          "year": 2026,
-          "source": "Eur Heart J",
-          "pubdate": "2026 Nov 16",
-          "doi": "10.1093/eurheartj/ehag766",
-          "url": "https://doi.org/10.1093/eurheartj/ehag766"
-        },
-        {
-          "pmid": "42853674",
-          "title": "ESC Guidelines, mechanisms of myocarditis, novel insights into treatment with mineralcorticoid receptor antagonists, cardiac glycosides, and GLP-1 receptor agonists",
-          "society": "ESC",
-          "year": 2026,
-          "source": "Eur Heart J",
-          "pubdate": "2026 Oct 09",
-          "doi": "10.1093/eurheartj/ehag792",
-          "url": "https://doi.org/10.1093/eurheartj/ehag792"
-        },
-        {
-          "pmid": "41818712",
-          "title": "Comprehensive evaluation of hypertrophic cardiomyopathy: European Journal of Heart Failure expert consensus document",
-          "society": "International Cardiology Society",
-          "year": 2026,
-          "source": "Eur J Heart Fail",
-          "pubdate": "2026 Sep 15",
-          "doi": "10.1093/ejhf/xuag035",
-          "url": "https://doi.org/10.1093/ejhf/xuag035"
-        },
-        {
-          "pmid": "42663246",
-          "title": "Workup and management of rhythm disorders in myocarditis and inflammatory cardiomyopathy: a clinical consensus statement of the European Heart Rhythm Association and the Heart Failure Association of the ESC, the ESC Working Group on Myocardial & Pericardial Diseases, the European Association of Preventive Cardiology of the ESC, the Heart Rhythm Society, the Asian Pacific Heart Rhythm Society, and the Latin American Heart Rhythm Society",
-          "society": "ESC",
-          "year": 2026,
-          "source": "Eur J Heart Fail",
-          "pubdate": "2026 Aug 28",
-          "doi": "10.1093/ejhf/xuag271",
-          "url": "https://doi.org/10.1093/ejhf/xuag271"
-        }
-      ],
-      "last_guideline_crawl_at": "2026-11-23 10:16",
-      "content_source": "curated_library_rotation",
-      "curated_edition_date": "2026-11-13"
+      ]
     },
     {
       "id": "ebm-2026-11-22-p7-main",
@@ -3241,210 +3281,95 @@ window.EBM_BRIEFINGS_DATA = {
     {
       "id": "ebm-2026-11-13-p8-main",
       "date": "2026-11-13",
-      "short_date": "13/11",
-      "week_label": "Tuần 13/11/2026",
       "time": "06:00 AM",
-      "model_used": "none",
       "pillar_id": 8,
       "pillar_name": "Specific Cardiomyopathies, Pericardial Disease & ACHD",
       "pillar_vi": "Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn",
-      "topic_focus_vi": "08–11/2026: ESC Myocarditis Ten Commandments (10/2026), Loạn nhịp Viêm (08/2026) & CMI",
-      "topic_focus_en": "Aug–Nov 2026: Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 Arrhythmia & CMI",
-      "title_vi": "Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR",
-      "title_en": "Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR",
-      "word_count_vi": 1278,
-      "verified_step0": true,
-      "interaction_id": "ebm-verified-ebm-2026-11-13-p8-main",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-13",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "lesson_version": 2,
       "guideline_evolution": {
-        "prior_guideline": {
-          "name": "2023 ESC Cardiomyopathies & 2025 ESC Myocarditis/Pericarditis Guidelines",
-          "year": "2023 / 2025",
-          "doi": "10.1093/eurheartj/ehaf192",
-          "pmid": "40878297"
-        },
         "current_guideline": {
-          "name": "Oct 2026 ESC Myocarditis Ten Commandments, Aug 2026 ESC Inflammatory Arrhythmia & Nov 2026 ESC-ACVC",
-          "year": "2026 (08–11/2026)",
-          "doi": "10.1093/eurheartj/ehag766",
-          "pmid": "42867067",
-          "refs": [
-            {
-              "label": "Oct 2026 ESC Myocarditis Ten Commandments",
-              "pmid": "42867067",
-              "doi": "10.1093/eurheartj/ehag766"
-            },
-            {
-              "label": "Aug 2026 ESC Inflammatory Arrhythmia",
-              "pmid": "42663246",
-              "doi": "10.1093/ejhf/xuag271"
-            },
-            {
-              "label": "Nov 2026 ESC-ACVC Follow-Up",
-              "pmid": "43008190",
-              "doi": "10.1093/ehjacc/zuag133"
-            }
-          ]
+          "name": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194"
         },
+        "recommendation_id": "mavacamten-obstructive-hcm",
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.",
         "steps": [
           {
-            "era_label_vi": "Chỉ dẫn A • ESC 2023 Cardiomyopathies → ESC 2025 Myocarditis/Pericarditis",
-            "era_label_en": "Directive A • 2023 ESC Cardiomyopathies → 2025 ESC Myocarditis/Pericarditis",
-            "title_vi": "Mavacamten (Class IIa) & Hợp nhất Hội chứng Viêm Cơ tim–Màng ngoài tim (IMPS)",
-            "title_en": "Mavacamten (Class IIa) & Initial Unified IMPS Framework",
-            "desc_vi": "ESC 2023 đưa Mavacamten (Class IIa) vào oHCM; ESC 2025 thiết lập thuật toán CMR không xâm lấn và khái niệm IMPS hợp nhất viêm cơ tim–màng ngoài tim.",
-            "desc_en": "2023 ESC added mavacamten (Class IIa) in oHCM, and 2025 ESC introduced non-invasive CMR criteria within the IMPS syndrome."
+            "era_label_vi": "Điều trị ban đầu",
+            "era_label_en": "Initial treatment",
+            "desc_vi": "Điều trị ban đầu tập trung vào kiểm soát triệu chứng bằng thuốc chẹn beta hoặc chẹn kênh canxi phù hợp.",
+            "desc_en": "Initial treatment focuses on symptom control with appropriate beta-blockade or calcium channel blockade."
           },
           {
-            "era_label_vi": "Bước ngoặt Chứng cứ • EXPLORER-HCM, VALOR-HCM, SEQUOIA-HCM",
-            "era_label_en": "Evidence Turning Point • EXPLORER-HCM, VALOR-HCM, SEQUOIA-HCM",
-            "title_vi": "Ức chế Cầu nối Actin–Myosin Tránh Phẫu thuật & Chuẩn CMR Tích hợp",
-            "title_en": "Sarcomere Inhibition Averts Surgery & Multimodal CMR Anchoring",
-            "desc_vi": "EXPLORER-HCM (37% vs 17%; p=0,0005), VALOR-HCM (chỉ 8,9% cần SRT ở tuần 56) và SEQUOIA-HCM (pVO2 +1,7 mL/kg/phút; p<0,001) xác nhận vai trò CMIs song hành với đồng thuận đa trung tâm CMR.",
-            "desc_en": "EXPLORER-HCM, VALOR-HCM (only 8.9% needing SRT at week 56), and SEQUOIA-HCM (pVO2 +1.7 mL/kg/min) cemented CMIs alongside multimodal CMR evaluation."
-          },
-          {
-            "era_label_vi": "Chỉ dẫn B • Đồng thuận 08–11/2026 ESC (Ten Commandments, EHJ, ACVC) (Hiện hành)",
-            "era_label_en": "Directive B • Aug–Nov 2026 ESC Updates (Ten Commandments, Inflammatory Arrhythmia & ACVC) (Current)",
-            "title_vi": "10 Quy tắc Vàng Viêm cơ tim (10/2026), Loạn nhịp Viêm (08/2026) & Tái khám Cấp (11/2026)",
-            "title_en": "Oct 2026 Ten Commandments, Aug 2026 Arrhythmia Workup & Nov 2026 ACVC Follow-Up",
-            "desc_vi": "Trong 3 tháng gần nhất (08–11/2026): ESC công bố Ten Commandments cho Viêm cơ tim–Màng ngoài tim (Eur Heart J Oct 13, 2026; PMID 42867067), Đồng thuận HFA/EHRA xử trí rối loạn nhịp trong viêm cơ tim/bệnh cơ tim viêm (Eur J Heart Fail Aug 28, 2026; PMID 42663246), và ESC-ACVC Nov 10, 2026 (PMID 43008190) về tái đánh giá ngoại trú sớm hậu cấp cứu.",
-            "desc_en": "Aug–Nov 2026 releases: ESC Ten Commandments on Myocarditis & Pericarditis (Eur Heart J Oct 13, 2026; PMID 42867067), ESC Workup & Management of Rhythm Disorders in Myocarditis/Inflammatory Cardiomyopathy (Aug 28, 2026; PMID 42663246), and Nov 10, 2026 ESC-ACVC Follow-Up Consensus (PMID 43008190)."
+            "era_label_vi": "ESC 2023",
+            "era_label_en": "ESC 2023",
+            "desc_vi": "ESC 2023 nêu cân nhắc mavacamten bổ sung nếu vẫn có triệu chứng do tắc nghẽn dù điều trị ban đầu, với theo dõi siêu âm tim (Class IIa).",
+            "desc_en": "ESC 2023 advises considering add-on mavacamten with echocardiographic monitoring for symptomatic obstruction despite initial treatment (Class IIa)."
           }
         ]
       },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/"
+        },
+        {
+          "title": "EXPLORER-HCM",
+          "pmid": "32871100",
+          "doi": "10.1016/S0140-6736(20)31792-X",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        }
+      ],
+      "supporting_evidence": {
+        "guideline_pmid": "37622657",
+        "recommendation_id": "mavacamten-obstructive-hcm",
+        "pmid": "32871100",
+        "doi": "10.1016/S0140-6736(20)31792-X",
+        "name": "EXPLORER-HCM",
+        "journal": "The Lancet · 2020",
+        "source_kind": "landmark_rct",
+        "result": "37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)",
+        "supports_vi": "Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần.",
+        "supports_en": "More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks.",
+        "population_vi": "Người bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg.",
+        "population_en": "Patients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg.",
+        "limits_vi": "Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.",
+        "limits_en": "This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis."
+      },
+      "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 151,
       "landmark_trials": [
         {
           "name": "EXPLORER-HCM",
-          "journal": "The Lancet 2020",
-          "endpoint_label": "Composite Functional Capacity (pVO2 & NYHA Class Improvement at Week 30)",
-          "value": "37% vs. 17%",
-          "ci": "Difference +19.4% (95% CI: 8.7%–30.1%)",
-          "p": "p = 0.0005",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Thiết lập liệu pháp nhắm trúng đích sarcomere đầu tiên cho oHCM, giảm chênh lệch LVOT sau gắng sức -36 mmHg so với giả dược (p < 0,0001).",
-          "caution_vi": "Không kê đơn Mavacamten nếu LVEF < 55% ban đầu hoặc không có lịch siêu âm theo dõi LVEF định kỳ; tránh phối hợp chất ức chế mạnh CYP2C19 (Omeprazole, Fluconazole).",
-          "changes_en": "Established first-in-class cardiac myosin inhibition for oHCM, cutting post-exercise LVOT gradient (-36 mmHg vs. placebo; p < 0.0001).",
-          "caution_en": "Mandatory echocardiographic LVEF monitoring (interrupt if LVEF <50%); avoid strong CYP2C19/CYP3A4 inhibitors (omeprazole, fluconazole)."
-        },
-        {
-          "name": "VALOR-HCM",
-          "journal": "JAMA Cardiol 2023",
-          "endpoint_label": "Week-56 Proportion Proceeding to or Eligible for Septal Reduction Therapy",
-          "value": "8.9% vs. 19.2% (crossover)",
-          "ci": "Resting/Valsalva LVOT -34.0 / -45.6 mmHg",
-          "p": "89% continued long-term mavacamten",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Chứng minh đa số bệnh nhân oHCM nặng đang chờ phẫu thuật cắt vách khi dùng Mavacamten đều cải thiện đủ tốt để tránh được mổ hở qua 56 tuần.",
-          "caution_vi": "Có 11,1% (12/108) bệnh nhân giảm LVEF thoáng qua xuống <50% cần tạm ngưng/giảm liều theo quy trình siêu âm kiểm soát.",
-          "changes_en": "Proved mavacamten safely spares most severely symptomatic SRT-referred patients from surgical myectomy through week 56.",
-          "caution_en": "11.1% experienced reversible LVEF <50% requiring protocol-guided interruption/titration."
-        },
-        {
-          "name": "SEQUOIA-HCM",
-          "journal": "NEJM 2024",
-          "endpoint_label": "24-Week Change in Peak Oxygen Uptake (pVO2)",
-          "value": "+1.7 mL/kg/min",
-          "ci": "95% CI: 1.0–2.4",
-          "p": "p < 0.001",
-          "nnt": "Cannot be determined from an official source",
-          "changes_vi": "Khẳng định hiệu ứng nhóm với Aficamten thế hệ mới (thời gian bán thải ngắn ~3,4 ngày, ít tương tác CYP), cải thiện toàn bộ 10 tiêu chí phụ và tỷ lệ giảm EF <50% rất thấp.",
-          "caution_vi": "Vẫn đòi hỏi theo dõi LVEF siêu âm khi chỉnh liều 5–20 mg/ngày; lưu ý không dùng cho bệnh cơ tim phì đại không tắc nghẽn nếu chưa đủ dữ liệu pha 3 riêng biệt.",
-          "changes_en": "Validates next-generation myosin inhibitor aficamten with shorter half-life, fewer CYP interactions, and consistent +1.7 mL/kg/min pVO2 improvement.",
-          "caution_en": "Echocardiographic titration remains mandatory; await dedicated phase 3 data before extrapolating to non-obstructive HCM."
-        }
-      ],
-      "pearls": [
-        {
-          "type": "guideline",
-          "text_vi": "Theo ESC 2023 Cardiomyopathy Guidelines, Mavacamten đạt khuyến cáo Class IIa, LOE A cho bệnh nhân oHCM còn triệu chứng trước khi cân nhắc phẫu thuật/đốt cồn vách liên thất.",
-          "text_en": "ESC 2023 endorses mavacamten (Class IIa, Level A) for persistently symptomatic oHCM before considering invasive septal reduction."
-        },
-        {
-          "type": "trial",
-          "text_vi": "EXPLORER-HCM chứng minh Mavacamten tăng gấp đôi tỷ lệ đạt tiêu chí pVO2/NYHA (37% vs 17%; p = 0,0005) và giảm chênh áp LVOT sau gắng sức (-36 mmHg so với giả dược); VALOR-HCM giúp ~89% tiếp tục thuốc tránh phẫu thuật.",
-          "text_en": "EXPLORER-HCM doubled functional/symptom response (37% vs. 17%; p = 0.0005), while VALOR-HCM spared ~89% of SRT-referred patients from invasive surgery through 56 weeks."
-        },
-        {
-          "type": "trial",
-          "text_vi": "SEQUOIA-HCM khẳng định Aficamten cải thiện đỉnh VO2 (+1,7 mL/kg/phút; p < 0,001) với thời gian bán thải ngắn hơn và ít tương tác CYP2C19.",
-          "text_en": "SEQUOIA-HCM validates aficamten (+1.7 mL/kg/min peak VO2; p < 0.001) with shorter half-life and minimal CYP interactions."
-        },
-        {
-          "type": "guideline",
-          "text_vi": "Bắt buộc kiểm tra siêu âm tim LVEF định kỳ khi dùng thuốc ức chế myosin tim và ngừng thuốc ngay nếu LVEF < 50%; tránh phối hợp Mavacamten với Omeprazole hoặc Fluconazole.",
-          "text_en": "Mandatory serial LVEF monitoring (interrupt if LVEF <50%) and strict CYP2C19/CYP3A4 screening (avoid omeprazole/fluconazole) are non-negotiable safety rules."
-        }
-      ],
-      "pubmed_anchors": [
-        {
-          "pmid": "42867067",
-          "title": "The 'ten commandments' for the 2025 European Society of Cardiology guidelines on myocarditis and pericarditis.",
-          "source": "Eur Heart J (2026)",
-          "pubdate": "2026 Oct 13",
-          "doi": "10.1093/eurheartj/ehag766",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42867067/"
-        },
-        {
-          "pmid": "43008190",
-          "title": "Early ambulatory re-evaluation and follow-up of patients admitted in the acute cardiac care unit: clinical consensus statement of ESC ACVC.",
-          "source": "Eur Heart J Acute Cardiovasc Care (2026)",
-          "pubdate": "2026 Nov 10",
-          "doi": "10.1093/ehjacc/zuag133",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/43008190/"
-        },
-        {
-          "pmid": "42663246",
-          "title": "Workup and management of rhythm disorders in myocarditis and inflammatory cardiomyopathy.",
-          "source": "Eur J Heart Fail (2026)",
-          "pubdate": "2026 Aug 28",
-          "doi": "10.1093/ejhf/xuag271",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42663246/"
-        },
-        {
-          "pmid": "37622657",
-          "title": "2023 ESC Guidelines for the management of cardiomyopathies.",
-          "source": "Eur Heart J (2023)",
-          "pubdate": "2023 Oct 1",
-          "doi": "10.1093/eurheartj/ehad194",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/",
-          "volume": "44",
-          "pages": "3503-3626"
-        },
-        {
+          "journal": "The Lancet · 2020",
           "pmid": "32871100",
-          "title": "Mavacamten for treatment of symptomatic obstructive hypertrophic cardiomyopathy (EXPLORER-HCM).",
-          "source": "The Lancet (2020)",
-          "pubdate": "2020 Sep 12",
           "doi": "10.1016/S0140-6736(20)31792-X",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/",
-          "volume": "396",
-          "pages": "759-769"
-        },
-        {
-          "pmid": "37639243",
-          "title": "Mavacamten in Patients With Hypertrophic Cardiomyopathy Referred for Septal Reduction (VALOR-HCM Week 56).",
-          "source": "JAMA Cardiol (2023)",
-          "pubdate": "2023 Oct 1",
-          "doi": "10.1001/jamacardio.2023.3342",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/37639243/",
-          "volume": "8",
-          "pages": "968-977"
-        },
-        {
-          "pmid": "38739079",
-          "title": "Aficamten for Symptomatic Obstructive Hypertrophic Cardiomyopathy (SEQUOIA-HCM).",
-          "source": "NEJM (2024)",
-          "pubdate": "2024 May 30",
-          "doi": "10.1056/NEJMoa2401424",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/38739079/",
-          "volume": "390",
-          "pages": "1849-1861"
+          "endpoint_label": "Exercise capacity and NYHA class at 30 weeks",
+          "value": "37% vs. 17%",
+          "ci": "Difference +19.4 pp (95% CI 8.7 to 30.1)",
+          "p": "p = 0.0005",
+          "changes_vi": "Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần.",
+          "changes_en": "More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks.",
+          "caution_vi": "Bắt buộc theo dõi siêu âm tim; tránh dùng cùng thuốc ức chế mạnh CYP2C19.",
+          "caution_en": "Mandatory echocardiographic monitoring; avoid strong CYP2C19 inhibitors."
         }
-      ],
-      "part1_vi_markdown": "# Bệnh Cơ tim & Màng ngoài tim 08–11/2026 (ESC Ten Commandments 10/2026 & Loạn nhịp Viêm 08/2026): CMI & CMR\n\n## BLOCK A — Cập nhật Khuyến cáo & Đồng thuận trong 3 Tháng Gần Nhất (08–11/2026)\n\nChuyên đề thuộc **Trụ cột 8: Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn**. Ba văn kiện mới nhất trong **08–11/2026** bao gồm **Ten Commandments cho Khuyến cáo ESC về Viêm cơ tim & Màng ngoài tim** (*Eur Heart J* 13/10/2026; DOI `10.1093/eurheartj/ehag766`; PMID `42867067`), **Đồng thuận Châu Âu về Rối loạn nhịp trong Viêm cơ tim & Bệnh cơ tim viêm** (*Eur J Heart Fail* 28/08/2026; DOI `10.1093/ejhf/xuag271`; PMID `42663246`), và **Đồng thuận ESC-ACVC 10/11/2026** (*Eur Heart J Acute Cardiovasc Care*; PMID `43008190`), song hành nền tảng **2023 ESC Cardiomyopathies** (`37622657`).\n\n### 1. Phân tích diễn tiến khuyến cáo: Quá khứ → Chuyển dịch → Thực hành hiện tại\n- **Lập trường trước đây (ESC 2014 HCM Guidelines):** Điều trị nội khoa bệnh cơ tim phì đại tắc nghẽn (oHCM) chỉ dựa vào các thuốc giảm co bóp không đặc hiệu như **Chẹn beta**, **Verapamil/Diltiazem** hoặc **Disopyramide**. Nếu bệnh nhân vẫn khó thở NYHA III–IV và chênh áp đường ra thất trái (LVOT gradient) ≥ 50 mmHg, biện pháp duy nhất là phẫu thuật cắt vách liên thất (Septal Myectomy) hoặc đốt vách bằng cồn (Alcohol Septal Ablation — ASA).\n- **Bước ngoặt chuyển dịch:** Sự ra đời của nhóm **Thuốc ức chế Myosin Tim (Cardiac Myosin Inhibitors — CMIs)** như **Mavacamten** (**EXPLORER-HCM**, **VALOR-HCM**) và **Aficamten** (**SEQUOIA-HCM**) tác động trực tiếp vào cơ chế bệnh sinh tăng hình thành cầu nối chéo actin–myosin ở mức độ sarcomere.\n- **Điểm dừng hiện tại trong ESC 2023:**\n  - **Mavacamten:** Được chính thức đưa vào hướng dẫn với khuyến cáo **Class IIa, LOE A** phối hợp cùng chẹn beta hoặc CCB (hoặc đơn trị nếu không dung nạp) ở bệnh nhân oHCM có triệu chứng (NYHA II–III) còn chênh áp LVOT ≥ 30–50 mmHg, trước khi phải cân nhắc can thiệp giảm vách xâm lấn (SRT).\n  - **Chẩn đoán đa mô thức & Di truyền:** Khuyến cáo chụp **Cộng hưởng từ tim (CMR với LGE)** là bắt buộc ở lần đánh giá đầu tiên cho mọi bệnh nhân nghi ngờ bệnh cơ tim (**Class I, LOE B**) và xét nghiệm gen hệ thống để sàng lọc gia đình.\n\n### 2. Cơ sở sinh lý bệnh học & Lưu ý an toàn tại giường bệnh\n- **Sinh lý bệnh:** Đột biến gen mã hóa protein sarcomere (*MYH7*, *MYBPC3*) làm tăng số lượng đầu myosin ở trạng thái mở/hoạt động, tạo quá mức cầu nối chéo actin–myosin. Hệ quả là cơ tim co bóp quá mức (hypercontractility), giảm thư giãn tâm trương và kéo lá trước van hai lá vào đường ra thất trái (SAM), gây tắc nghẽn LVOT động học. CMIs ức chế thuận nghịch ATPase của myosin tim, đưa các đầu myosin về trạng thái nghỉ tiết kiệm năng lượng (\"super-relaxed state\"), làm giảm trực tiếp chênh áp LVOT mà không gây hạ huyết áp toàn thân.\n- **Lưu ý an toàn sống còn tại giường bệnh:**\n  - **Nguy cơ suy giảm LVEF (< 50%):** Do cơ chế giảm co bóp trực tiếp, bắt buộc phải **siêu âm tim theo dõi LVEF định kỳ** (tuần 4, 8, 12 và mỗi 12 tuần). Phải tạm ngừng thuốc ngay nếu LVEF giảm xuống **< 50%**.\n  - **Tương tác thuốc CYP2C19/CYP3A4 của Mavacamten:** Chống chỉ định phối hợp với chất ức chế mạnh CYP2C19 (Omeprazole, Fluconazole, Fluvoxamine) hoặc CYP3A4 vì làm tích tụ thuốc gây suy tim tâm thu cấp. (Aficamten thế hệ mới có thời gian bán thải ngắn hơn ~3,4 ngày và ít tương tác CYP hơn).\n\n*Nguồn trích dẫn (tìm thấy trên NCBI PubMed/DOI)*: 2023 ESC Guidelines for the management of cardiomyopathies (*Eur Heart J* 2023; 44:3503–3626; DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).\n\n---\n\n## BLOCK B — Các Thử nghiệm Lâm sàng Bản lề Đặt Nền tảng cho Khuyến cáo\n\n### 1. [RCT/Landmark Trial] EXPLORER-HCM — Mavacamten trên Bệnh nhân oHCM có Triệu chứng\n- **Nguồn/Tạp chí:** *The Lancet*, 2020; 396(10253):759–769. DOI: `10.1016/S0140-6736(20)31792-X`. PMID: `32871100`.\n- **Quần thể & Thiết kế:** **251 bệnh nhân** oHCM có triệu chứng (NYHA II–III), LVOT gradient ≥ 50 mmHg, LVEF ≥ 55%, ngẫu nhiên Mavacamten (khởi đầu 5 mg/ngày, n=123) vs giả dược (n=128) trong 30 tuần.\n- **Tiêu chí chính & Kết quả định lượng:** Tiêu chí chính (tăng ≥ 1,5 mL/kg/phút đỉnh VO2 kèm giảm ≥ 1 bậc NYHA, HOẶC tăng ≥ 3,0 mL/kg/phút pVO2 không xấu đi NYHA) đạt ở **37%** (45/123) nhóm Mavacamten vs **17%** (22/128) nhóm giả dược (**chênh lệch +19,4%; 95% CI: 8,7–30,1%; p = 0,0005**). Chênh lệch giảm LVOT gradient sau gắng sức so với giả dược đạt **-36 mmHg (95% CI: -43,2 đến -28,1; p < 0,0001)**. NNT: *Không xác định được từ nguồn chính thức*.\n- **Thay đổi / Chưa nên thay đổi:** Thiết lập liệu pháp trúng đích đầu tiên cho oHCM; không kê đơn nếu không có siêu âm tim kiểm soát LVEF định kỳ hoặc LVEF nền < 55%.\n\n### 2. [RCT/Landmark Trial] VALOR-HCM (*JAMA Cardiology 2023*) — Tránh Phẫu thuật Cắt Vách tại Tuần 56\n- **Nguồn/Tạp chí:** *JAMA Cardiology*, 2023; 8:968–977. DOI: `10.1001/jamacardio.2023.3342`. PMID: `37639243`.\n- **Quần thể & Kết quả:** **112 bệnh nhân** oHCM nặng NYHA III/IV đã được chuyển chỉ định phẫu thuật/đốt cồn vách liên thất (108 ca đánh giá tuần 56). Tại tuần 56, chỉ **8,9%** (5/56) nhóm Mavacamten ban đầu và **19,2%** (10/52) nhóm giả dược chuyển chéo còn đủ tiêu chí/đã làm SRT; 89% (96/108) tiếp tục duy trì Mavacamten dài hạn. Có 11,1% (12/108) giảm LVEF thoáng qua <50% cần chỉnh/tạm ngưng liều. NNT: *Không xác định được từ nguồn chính thức*.\n\n### 3. [RCT/Landmark Trial] SEQUOIA-HCM — Aficamten Thế hệ Mới trên Bệnh nhân oHCM\n- **Nguồn/Tạp chí:** *The New England Journal of Medicine*, 2024; 390:1849–1861. DOI: `10.1056/NEJMoa2401424`. PMID: `38739079`.\n- **Quần thể & Kết quả:** **282 bệnh nhân** oHCM (142 Aficamten 5–20 mg/ngày vs 140 giả dược) trong 24 tuần. Đỉnh tiêu thụ oxy (pVO2) lúc tuần 24 tăng **+1,8 mL/kg/phút** ở nhóm Aficamten vs **0,0 mL/kg/phút** ở nhóm giả dược (**chênh lệch trung bình +1,7 mL/kg/phút; 95% CI: 1,0–2,4; p < 0,001**), cải thiện toàn bộ 10 tiêu chí phụ. NNT: *Không xác định được từ nguồn chính thức*.\n\n---\n\n## III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS\n\n1. **[GUIDELINE EVOLUTION]** Theo ESC 2023 Cardiomyopathy Guidelines, **Mavacamten** đạt khuyến cáo **Class IIa, LOE A** cho bệnh nhân oHCM còn triệu chứng trước khi cân nhắc phẫu thuật/đốt cồn vách liên thất.\n2. **[LANDMARK TRIAL]** **EXPLORER-HCM** chứng minh Mavacamten tăng gấp đôi tỷ lệ cải thiện gắng sức/NYHA (37% vs 17%; p = 0,0005), còn **VALOR-HCM** giúp ~89% bệnh nhân tránh được mổ cắt vách ở tuần 56.\n3. **[LANDMARK TRIAL]** **SEQUOIA-HCM** khẳng định hiệu quả nhóm thuốc với Aficamten (+1,7 mL/kg/phút đỉnh VO2; p < 0,001) với dược động học linh hoạt hơn.\n4. **[GUIDELINE EVOLUTION]** Bắt buộc kiểm tra **siêu âm tim LVEF định kỳ** khi dùng CMIs và ngừng thuốc ngay nếu LVEF < 50%; tránh phối hợp Mavacamten với Omeprazole/Fluconazole.\n\n---\n\n⚠️ Nội dung trên là tổng hợp học thuật phân tích y học chứng cứ nhằm xây dựng tư duy lâm sàng, bác sĩ điều trị cần đối chiếu trực tiếp với hướng dẫn thực hành nguyên bản của ESC và tình trạng cụ thể của từng bệnh nhân trước khi ra quyết định kê đơn thực tế.\n\n[END OF PART 1. Enter \"Continue to Part 2\" to receive the full English Clinical Briefing]",
-      "part2_en_markdown": "# Aug–Nov 2026 Cardiomyopathies & Pericarditis (Oct 2026 ESC Ten Commandments & Aug 2026 Arrhythmia Consensus): CMIs & CMR\n\n## BLOCK A — Most Recent 3-Month Guideline & Consensus Updates (Aug–Nov 2026)\n\nThis briefing addresses **Pillar 8: Specific Cardiomyopathies, Pericardial Disease & ACHD**, anchored within **Aug–Nov 2026** by **The 'Ten Commandments' for the ESC Guidelines on Myocarditis and Pericarditis** (*Eur Heart J* Oct 13, 2026; DOI: `10.1093/eurheartj/ehag766`; PMID: `42867067`), **Workup and Management of Rhythm Disorders in Myocarditis and Inflammatory Cardiomyopathy** (*Eur J Heart Fail* Aug 28, 2026; DOI: `10.1093/ejhf/xuag271`; PMID: `42663246`), and **ESC-ACVC Early Ambulatory Follow-Up Consensus** (*Eur Heart J Acute Cardiovasc Care* Nov 10, 2026; PMID: `43008190`), alongside foundational **2023 ESC Cardiomyopathies Guidelines** (DOI: `10.1093/eurheartj/ehad194`; PMID: `37622657`).\n\n### 1. Guideline Evolution & Pathophysiological Basis\n- **Historical Stance (2014 ESC HCM):** Medical management relied solely on non-specific negative inotropes (beta-blockers, verapamil/diltiazem, disopyramide), reserving surgical myectomy or alcohol septal ablation for refractory obstruction (LVOT ≥50 mmHg, NYHA III–IV).\n- **Contemporary Consensus (2023 ESC):** **Mavacamten** receives a **Class IIa, Level A** recommendation added to beta-blockers/CCBs (or as monotherapy) in persistently symptomatic oHCM prior to invasive septal reduction therapy. Baseline Cardiac MRI with LGE and cascade genetic testing are Class I standards.\n- **Pathophysiology & Safety Imperatives:** Sarcomere mutations increase active myosin–actin cross-bridging, inducing hypercontractility and systolic anterior motion (SAM). Cardiac myosin inhibitors reversibly shift myosin heads into an energy-sparing \"super-relaxed state.\" Serial echocardiographic LVEF monitoring is mandatory—interrupt therapy if LVEF drops <50%—and screen strictly for CYP2C19/CYP3A4 drug interactions (avoid omeprazole, fluconazole, fluvoxamine with mavacamten).\n\n*Traceable Source Identifier*: 2023 ESC Guidelines for the management of cardiomyopathies. *Eur Heart J* 2023; 44:3503–3626. DOI: `10.1093/eurheartj/ehad194`. PMID: `37622657`.\n\n---\n\n## BLOCK B — Landmark Trials Underpinning Block A\n\n### 1. [RCT/Landmark Trial] EXPLORER-HCM (*The Lancet* 2020)\n- **Identifier:** DOI: `10.1016/S0140-6736(20)31792-X` | PMID: `32871100`.\n- **Results:** 251 symptomatic oHCM patients (LVOT ≥50 mmHg, LVEF ≥55%). Mavacamten achieved the primary pVO2/NYHA endpoint in **37% vs. 17%** on placebo (**difference +19.4%; 95% CI, 8.7–30.1%; p = 0.0005**) and reduced post-exercise LVOT gradient vs. placebo by **-36 mmHg (95% CI, -43.2 to -28.1; p < 0.0001)**.\n\n### 2. [RCT/Landmark Trial] VALOR-HCM (*JAMA Cardiology* 2023)\n- **Identifier:** DOI: `10.1001/jamacardio.2023.3342` | PMID: `37639243`.\n- **Results:** 112 severely symptomatic SRT-referred oHCM patients (108 evaluated at week 56). Only **8.9%** of original mavacamten patients and **19.2%** of crossover patients proceeded to or remained eligible for SRT at week 56; 89% continued long-term mavacamten, while 11.1% experienced reversible LVEF <50%.\n\n### 3. [RCT/Landmark Trial] SEQUOIA-HCM (*NEJM* 2024)\n- **Identifier:** DOI: `10.1056/NEJMoa2401424` | PMID: `38739079`.\n- **Results:** 282 symptomatic oHCM patients. Next-generation myosin inhibitor aficamten improved 24-week peak oxygen uptake by **+1.7 mL/kg/min (95% CI, 1.0–2.4; p < 0.001)** across all 10 secondary endpoints with a shorter half-life and minimal CYP interactions.\n\n---\n\n## Take-Home Clinical Pearls for Rounds\n\n1. **[GUIDELINE EVOLUTION]** ESC 2023 endorses **mavacamten (Class IIa, Level A)** before invasive septal reduction in symptomatic oHCM.\n2. **[LANDMARK TRIAL]** EXPLORER-HCM, VALOR-HCM, and SEQUOIA-HCM validate direct sarcomere myosin inhibition to abolish LVOT gradients, avert surgery, and improve exercise capacity.\n3. **[GUIDELINE EVOLUTION]** Mandatory echocardiographic LVEF surveillance (pause if <50%) and CYP2C19/CYP3A4 screening are non-negotiable bedside safety rules.\n\n---\n\n⚠️ The clinical synthesis above is intended for evidence-based medical education; clinicians must cross-reference official ESC guidelines and individual patient parameters prior to clinical decision-making.",
-      "content_source": "curated_library_rotation",
-      "curated_edition_date": "2026-11-13"
+      ]
     },
     {
       "id": "ebm-2026-11-12-p7-main",

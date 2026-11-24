@@ -34,7 +34,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq
-from focused_lessons import build_focused_templates
+from focused_lessons import FOCUSED_EDITION_VERSION, build_focused_templates
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1451,6 +1451,7 @@ def refresh_today_briefing(
                 if b.get("date") == today_str
                 and b.get("pillar_id") == pid
                 and b.get("lesson_format") == "single_guideline"
+                and b.get("lesson_version") == FOCUSED_EDITION_VERSION
             ]
             today_other = [
                 b for b in briefings

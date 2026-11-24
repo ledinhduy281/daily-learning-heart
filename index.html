@@ -6048,11 +6048,12 @@
 
     function getTodaySingleBriefing() {
       const pid = Number(App.todayPillarId);
+      const template = window.EBM_BRIEFINGS_DATA?.focused_lessons?.[pid];
       const exactToday = App.briefings.find(
         b => b.date === App.todayDate && Number(b.pillar_id) === pid && b.lesson_format === "single_guideline"
+          && (!template || b.lesson_version === template.lesson_version)
       );
       if (exactToday) return exactToday;
-      const template = window.EBM_BRIEFINGS_DATA?.focused_lessons?.[pid];
       if (template && App.todayDate >= template.curated_edition_date) {
         return { ...template, id: `ebm-${App.todayDate}-p${pid}-focused`, date: App.todayDate };
       }
@@ -6675,7 +6676,7 @@
         ? (isVi ? "Block A — Một khuyến cáo trọng tâm" : "Block A — One focused guideline recommendation")
         : t("guidelinePipelineTitle");
       document.getElementById("trialsSectionTitle").textContent = focused
-        ? (isVi ? "Block B — Thử nghiệm bổ trợ" : "Block B — Supporting trial")
+        ? (isVi ? "Block B — Bằng chứng bổ trợ" : "Block B — Supporting evidence")
         : t("trialsSectionTitle");
       document.getElementById("briefingPearlsCard").style.display = focused ? "none" : "";
       const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
@@ -6861,7 +6862,27 @@
 
     function renderTrialsMatrix(b, isVi) {
       if (b.lesson_format === "single_guideline") {
-        Dom.trialsGridDeck.textContent = isVi ? "Chưa có nghiên cứu bổ trợ được đối chiếu." : "No matched study is available.";
+        const evidence = b.supporting_evidence;
+        const ge = b.guideline_evolution;
+        if (!evidence || evidence.guideline_pmid !== ge.current_guideline.pmid
+            || evidence.recommendation_id !== ge.recommendation_id) {
+          Dom.trialsGridDeck.textContent = isVi ? "Chưa có nghiên cứu bổ trợ được đối chiếu." : "No matched study is available.";
+          return;
+        }
+        const lang = isVi ? "vi" : "en";
+        const items = [
+          ["supports", isVi ? "Liên hệ với khuyến cáo" : "How it supports the recommendation"],
+          ["population", isVi ? "Quần thể nghiên cứu" : "Study population"],
+          ["limits", isVi ? "Giới hạn áp dụng" : "Limits and non-extrapolation"],
+        ];
+        Dom.trialsGridDeck.innerHTML = `<div class="trial-box-card">
+          <div class="trial-box-header">
+            <h3 class="trial-title-h3"><a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(evidence.pmid)}/" target="_blank" rel="noopener noreferrer">${escapeHtml(evidence.name)}</a></h3>
+            <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
+          </div>
+          <p><strong>${escapeHtml(evidence.result)}</strong></p>
+          ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}
+        </div>`;
         return;
       }
       let cards = [];

@@ -33,4 +33,13 @@ assert.equal(context.getTodaySingleBriefing(), fallback);
 App.todayDate = "2026-11-14";
 App.briefings = bundle.briefings;
 assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
+Dom.trialsGridDeck = {};
+vm.runInContext(html.slice(html.indexOf("    function renderTrialsMatrix("),
+    html.indexOf("    function renderPearls(")), context);
+context.renderTrialsMatrix(fallback, false);
+assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
+assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.limits_en));
+assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
+context.renderTrialsMatrix({ ...fallback, supporting_evidence: bundle.focused_lessons[8].supporting_evidence }, false);
+assert.equal(Dom.trialsGridDeck.textContent, "No matched study is available.");
 console.log("Focused guideline selection and browser rendering passed");
