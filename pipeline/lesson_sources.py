@@ -87,7 +87,7 @@ def _passages(article):
         if any(marks_rights(node) for node in element.iter()):
             return False
         while (element := parents.get(element)) is not None:
-            if any(marks_rights(child) for child in element):
+            if element.tag != "article-meta" and any(marks_rights(child) for child in element):
                 return False
         return True
 
