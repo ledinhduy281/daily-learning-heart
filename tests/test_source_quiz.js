@@ -23,6 +23,35 @@ assert.ok(!first.reply.includes(q.source_quote));
 const revealed = quiz.turn(lesson, first.state, "en", "answer", "", q.correct_key);
 assert.equal(revealed.state.revealed_source_pmid, "26308684");
 assert.ok(revealed.reply.includes(q.source_quote));
+const next = revealed.state.current_question;
+assert.equal(next.options.find(o => o.key === "A").text, "0.60");
+assert.equal(next.correct_key, "B");
+assert.equal(next.options.find(o => o.key === next.correct_key).text, "0.50");
+const wrong = quiz.turn(lesson, revealed.state, "en", "answer", "", "A");
+assert.equal(wrong.state.current_question.question, next.question);
+
+const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+assert.doesNotMatch(html, /\.socratic-choice-btn:hover/);
+const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+const nodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection", "socraticChoicesWrap", "socraticChoicesGrid"]
+  .map(id => [id, {style: {}}]));
+const tutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
+  App: {selected: lesson, currentLang: "en"}, ClinicalQuiz: quiz, escapeHtml: String,
+  document: {getElementById: id => nodes[id]},
+});
+tutor.renderProgressDashboard = () => {};
+const highlightedChoices = state => {
+  tutor.getSession = () => ({...state, started: true});
+  tutor.renderUI();
+  return Array.from(nodes.socraticChoicesGrid.innerHTML.matchAll(/class="socratic-choice-btn is-revealed-correct" data-choice-key="([A-D])"/g), m => m[1]);
+};
+assert.deepEqual(highlightedChoices(first.state), []);
+assert.deepEqual(highlightedChoices(revealed.state), []);
+assert.deepEqual(highlightedChoices(wrong.state), ["B"]);
+tutor.saveStore = () => {};
+tutor.replacePendingQuestion(wrong.state, q, "en");
+assert.deepEqual(highlightedChoices(wrong.state), []);
+
 const modified = structuredClone(first.state);
 modified.current_question.options[0].text = "999";
 const rejected = quiz.turn(lesson, modified, "en", "answer", "", "A");

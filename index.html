@@ -4027,15 +4027,12 @@
       line-height: 1.45;
       text-align: left;
       cursor: pointer;
-      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     }
-    .socratic-choice-btn:hover:not(:disabled) {
+    .socratic-choice-btn.is-revealed-correct {
       border-color: var(--color-primary-deep);
       background: rgba(62, 207, 142, 0.08);
-      box-shadow: 0 0 0 1px rgba(36, 180, 126, 0.25);
-      transform: translateY(-1px);
     }
-    .socratic-choice-btn:hover:not(:disabled) .socratic-choice-badge {
+    .socratic-choice-btn.is-revealed-correct .socratic-choice-badge {
       background: var(--color-primary-deep);
       color: #ffffff;
       border-color: var(--color-primary-deep);
@@ -9052,6 +9049,7 @@
       replacePendingQuestion(sess, mcq, lang) {
         Object.assign(sess, {
           question_id: this.newQuizId(),
+          question_revealed: false,
           last_question: mcq.question,
           current_options: mcq.options,
           correct_key: mcq.correct_key,
@@ -9139,7 +9137,6 @@
                 const lang = App.currentLang || "vi";
                 const mcq = this.buildDeterministicMcq(briefing || {}, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), lang, s.difficulty || "normal");
                 this.replacePendingQuestion(s, mcq, lang);
-                s.question_revealed = false;
               }
               this.saveStore();
             }
@@ -9516,9 +9513,10 @@
         const opts = this.normalizeMcqOptions(sess.current_options);
         if (choicesWrap && choicesGrid) {
           if (sess.started && sess.phase !== "mastered" && opts.length === 4) {
+            const revealedKey = sess.question_revealed === true ? sess.current_question?.correct_key : "";
             choicesWrap.style.display = "flex";
             choicesGrid.innerHTML = opts.map((o) => `
-              <button type="button" class="socratic-choice-btn" data-choice-key="${escapeHtml(o.key)}" ${this.isBusy ? "disabled" : ""}>
+              <button type="button" class="socratic-choice-btn${o.key === revealedKey ? " is-revealed-correct" : ""}" data-choice-key="${escapeHtml(o.key)}" ${this.isBusy ? "disabled" : ""}>
                 <span class="socratic-choice-badge">${escapeHtml(o.key)}</span>
                 <span class="socratic-choice-text">${escapeHtml(o.text)}</span>
               </button>
