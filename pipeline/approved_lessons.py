@@ -1,43 +1,39 @@
-"""Approve refreshed lesson bundles and stage only the pinned archive."""
+"""Approve refreshed lesson bundles and stage only a verified archive."""
 
 import argparse
-import io
+import hashlib
 import json
-import re
-import subprocess
 import sys
-import tarfile
 from datetime import date, timedelta
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from fetch_daily_ebm import get_pillar_for_date
-from pipeline.validate_lesson import BUNDLE_ASSIGNMENT, _parse_bundle, validate_bundle
+from focused_lessons import build_focused_templates
+from pillar_library import PILLARS
+from pipeline.validate_lesson import BUNDLE_ASSIGNMENT, _read_bundle, validate_bundle, validate_lesson
 
 
 MANIFEST = Path("data/approved_lessons.json")
-BOOTSTRAP_BLOB = "394f522f6cb41453740781830bd0842d63077a9a"
-BOOTSTRAP = {"bundle_blob": BOOTSTRAP_BLOB, "previous_blob": None, "catalog_commit": None}
+WORKING_BUNDLE = Path("data/briefings.js")
+LEGACY_HASHES = Path("data/approved_legacy_sha256.txt")
+INVALID_BUNDLE = (OSError, ValueError, KeyError, TypeError, AttributeError)
 
 
-def _git(*args):
-    return subprocess.run(("git", *args), check=True, capture_output=True).stdout
-
-
-def _oid(value):
-    if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):
-        raise ValueError("Invalid approved lesson object ID")
-    return value
-
-
-def _blob(oid):
-    return _git("cat-file", "blob", _oid(oid)).decode("utf-8")
+def _digest(value):
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _rotation(bundle):
-    lessons = [row for row in bundle["briefings"] if row.get("content_source") != "model_draft"]
-    latest = max(date.fromisoformat(row["date"]) for row in lessons)
-    pillar = lambda offset: get_pillar_for_date(latest + timedelta(days=offset))["id"]
+    dates = [date.fromisoformat(row["date"]) for row in bundle["briefings"]
+             if row.get("content_source") != "model_draft"]
+    if not dates:
+        return {}
+    latest = max(dates)
+
+    def pillar(offset):
+        return get_pillar_for_date(latest + timedelta(days=offset))["id"]
+
     return {
         "last_updated": latest.isoformat(),
         "last_pillar_id": pillar(0),
@@ -48,90 +44,87 @@ def _rotation(bundle):
     }
 
 
-def _render(raw, bundle, rotation):
-    if bundle.get("rotation_state") == rotation:
-        return raw
-    payload = {**bundle, "rotation_state": rotation}
-    return BUNDLE_ASSIGNMENT + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n"
+def _recover(archive):
+    try:
+        legacy_hashes = set(LEGACY_HASHES.read_text(encoding="utf-8").splitlines())
+    except OSError:
+        legacy_hashes = set()
+
+    briefings = {}
+    scheduled_dates = set()
+    for bundle in (archive, _read_working()):
+        rows = bundle.get("briefings") if isinstance(bundle, dict) else None
+        for row in rows if isinstance(rows, list) else []:
+            try:
+                lesson_id = row["id"]
+                if not isinstance(lesson_id, str) or not lesson_id or lesson_id in briefings:
+                    continue
+                lesson_date = date.fromisoformat(row["date"])
+                if _digest(row) not in legacy_hashes:
+                    if lesson_date in scheduled_dates:
+                        continue
+                    validate_lesson(row, get_pillar_for_date(lesson_date), row["date"])
+            except INVALID_BUNDLE:
+                continue
+            briefings[lesson_id] = row
+            if row.get("content_source") != "model_draft":
+                scheduled_dates.add(lesson_date)
+    return {
+        "briefings": sorted(briefings.values(), key=lambda row: row["date"], reverse=True),
+        "pillars": PILLARS,
+        "focused_lessons": build_focused_templates(PILLARS),
+    }
 
 
-def _verify(manifest):
-    raw = _blob(manifest["bundle_blob"])
-    bundle = _parse_bundle(raw)
-    rotation = _rotation(bundle)
-    if manifest == BOOTSTRAP:
-        if validate_bundle(bundle, allow_predating_pipeline=True) is not None:
-            raise ValueError("Bootstrap archive must predate the lesson pipeline")
-    else:
-        catalog = _oid(manifest["catalog_commit"])
-        if manifest["previous_blob"] == manifest["bundle_blob"]:
-            raise ValueError("Approval cannot use its own bundle as the previous archive")
-        previous = _blob(manifest["previous_blob"])
-        if bundle["rotation_state"]["last_updated"] != rotation["last_updated"]:
-            raise ValueError("Approved edition date does not match the latest scheduled lesson")
-        with TemporaryDirectory() as target:
-            target = Path(target)
-            with tarfile.open(fileobj=io.BytesIO(_git("archive", catalog))) as archive:
-                archive.extractall(path=target, filter="data")
-            (target / "candidate.js").write_text(raw, encoding="utf-8")
-            (target / "previous.js").write_text(previous, encoding="utf-8")
-            result = subprocess.run(
-                (sys.executable, "-m", "pipeline.validate_lesson", "--bundle", "candidate.js",
-                 "--previous", "previous.js", "--date", rotation["last_updated"]),
-                cwd=target, capture_output=True, text=True,
-            )
-            if result.returncode:
-                raise ValueError(result.stderr.strip() or "Approved lesson failed validation")
-    return bundle, rotation, _render(raw, bundle, rotation)
-
-
-def _read_current():
-    return json.loads(MANIFEST.read_text(encoding="utf-8"))
-
-
-def _read_previous():
-    last_change = _git("log", "--first-parent", "-1", "--format=%H", "--", str(MANIFEST)).decode().strip()
-    return json.loads(_git("show", f"{_oid(last_change)}^1:{MANIFEST}"))
+def _read_working():
+    try:
+        return _read_bundle(WORKING_BUNDLE)
+    except INVALID_BUNDLE:
+        return None
 
 
 def _approved():
-    for read in (_read_current, _read_previous, lambda: BOOTSTRAP):
-        try:
-            manifest = read()
-            return manifest, *_verify(manifest)
-        except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.CalledProcessError,
-                tarfile.TarError) as exc:
-            print(f"::warning::Skipping unavailable or invalid lesson manifest: {exc}", file=sys.stderr)
-    raise ValueError("No approved lesson archive is available")
+    archive = None
+    try:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        archive = manifest["bundle"]
+        if manifest["schema_version"] != 1 or _digest(archive) != manifest["sha256"]:
+            raise ValueError("Approved archive checksum does not match")
+        _rotation(archive)
+        return archive
+    except INVALID_BUNDLE as exc:
+        print(f"::warning::Recovering approved lessons: {exc}", file=sys.stderr)
+        return _recover(archive)
 
 
-def _restore(destination):
-    _, _, rotation, rendered = _approved()
-    destination.mkdir(parents=True, exist_ok=True)
-    (destination / "briefings.js").write_text(rendered, encoding="utf-8")
-    (destination / "rotation_state.json").write_text(json.dumps(rotation, indent=2), encoding="utf-8")
-
-
-def _approve(expected_date):
-    previous, previous_bundle, _, rendered = _approved()
-    path = Path("data/briefings.js")
-    raw = path.read_text(encoding="utf-8")
-    if raw == rendered:
-        MANIFEST.write_text(json.dumps(previous, indent=2) + "\n", encoding="utf-8")
-        return
-    bundle = _parse_bundle(raw)
+def _write_bundle(destination, bundle):
     rotation = _rotation(bundle)
-    if rotation["last_updated"] != expected_date:
-        raise ValueError("Refresh edition date does not match the latest scheduled lesson")
-    lesson_id = validate_bundle(bundle, expected_date=expected_date, previous=previous_bundle)
-    path.write_text(_render(raw, bundle, rotation), encoding="utf-8")
-    approval = {
-        "bundle_blob": _git("hash-object", str(path)).decode().strip(),
-        "previous_blob": previous["bundle_blob"],
-        "catalog_commit": _git("rev-parse", "HEAD").decode().strip(),
-    }
-    MANIFEST.write_text(json.dumps(approval, indent=2) + "\n", encoding="utf-8")
-    print(f"Validated daily lesson: {lesson_id}")
+    bundle = {key: value for key, value in bundle.items() if key != "rotation_state"}
+    bundle["rotation_state"] = rotation
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / WORKING_BUNDLE.name).write_text(
+        BUNDLE_ASSIGNMENT + json.dumps(bundle, ensure_ascii=False, indent=2) + ";\n", encoding="utf-8",
+    )
+    (destination / "rotation_state.json").write_text(json.dumps(rotation, indent=2), encoding="utf-8")
+    return bundle
+
+
+def _write_manifest(bundle):
+    snapshot = {key: value for key, value in bundle.items() if key != "rotation_state"}
+    manifest = {"schema_version": 1, "sha256": _digest(snapshot), "bundle": snapshot}
+    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _approve(expected_date, previous_path):
+    previous = _read_bundle(previous_path)
+    bundle = _read_bundle(WORKING_BUNDLE)
+    if bundle != previous:
+        if _rotation(bundle).get("last_updated") != expected_date:
+            raise ValueError("Refresh edition date does not match the latest scheduled lesson")
+        lesson_id = validate_bundle(bundle, expected_date=expected_date, previous=previous)
+        print(f"Validated daily lesson: {lesson_id}")
+    _write_manifest(_write_bundle(WORKING_BUNDLE.parent, bundle))
 
 
 def main():
@@ -141,13 +134,14 @@ def main():
     restore.add_argument("destination", type=Path)
     approve = subcommands.add_parser("approve")
     approve.add_argument("--date", required=True)
+    approve.add_argument("--previous", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.command == "restore":
-            _restore(args.destination)
+            _write_bundle(args.destination, _approved())
         else:
-            _approve(args.date)
-    except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.CalledProcessError) as exc:
+            _approve(args.date, args.previous)
+    except INVALID_BUNDLE as exc:
         parser.exit(1, f"Lesson publication blocked: {exc}\n")
 
 

@@ -102,11 +102,10 @@ class EvidenceWorkflowTests(unittest.TestCase):
         script = """
         python3() { return 42; }
         """ + refresh_steps[gate]["run"]
-        self.assertEqual(self.bash(script).returncode, 42)
+        self.assertEqual(self.bash(script, RUNNER_TEMP=str(self.root)).returncode, 42)
 
     def test_pages_retains_last_valid_lesson_and_stages_current_evidence(self):
         steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
-        self.assertEqual(steps[0]["with"]["fetch-depth"], "0")
         assets, stage_lessons = [step["run"] for step in steps if "run" in step]
         refresh = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
         restore = next(step["run"] for step in refresh if step.get("name") == "Restore the latest approved lesson archive")
@@ -153,24 +152,29 @@ class EvidenceWorkflowTests(unittest.TestCase):
             return result.stdout.strip()
 
         def approve(lesson):
-            return self.bash(f'date() {{ printf "%s\\n" "{lesson["date"]}"; }}\n' + gate)
+            return self.bash(f'date() {{ printf "%s\\n" "{lesson["date"]}"; }}\n' + gate,
+                             RUNNER_TEMP=str(self.root))
 
         legacy = {"id": "archive-2026-11-25", "date": "2026-11-25", "pillar_id": 10}
         write_bundle(legacy)
-        seed = git("git init -q && git hash-object -w data/briefings.js")
-        module = validator / "approved_lessons.py"
-        module.write_text(module.read_text().replace(approved_lessons.BOOTSTRAP_BLOB, seed))
-        manifest.write_text(json.dumps({**approved_lessons.BOOTSTRAP, "bundle_blob": seed}))
-        git("git add *.py pipeline/ data/briefings.js data/rotation_state.json data/approved_lessons.json"
+        snapshot = {"briefings": [legacy]}
+        manifest.write_text(json.dumps({"schema_version": 1, "sha256": approved_lessons._digest(snapshot),
+                                        "bundle": snapshot}))
+        git("git init -q && git add *.py pipeline/ data/briefings.js data/rotation_state.json data/approved_lessons.json"
             " && git commit -qm 'Bootstrap approved archive'")
 
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
         write_bundle(first, legacy)
         result = approve(first)
         self.assertEqual(result.returncode, 0, result.stderr)
         git("git commit -qam 'Approved lesson'")
         approved = bundle.read_bytes()
+        main = git("git branch --show-current")
+        git("git switch -qc direct-update")
         write_bundle(bad)
         git("git commit -qam 'Direct bundle update'")
+        git(f'git switch -q "{main}" && git merge -q --no-ff direct-update -m "Merge direct bundle update"')
         with catalog.open("a") as source:
             source.write('\nLESSONS[1][0]["recommendation"] = ("Edited", "Edited")\n')
         git("git commit -qam 'Editorial change'")
@@ -186,7 +190,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual((staged / "briefings.js").read_bytes(), approved)
         self.assertEqual((staged / "pipeline" / "briefing.json").read_bytes(),
                          (evidence / "briefing.json").read_bytes())
-        result = self.bash(restore)
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(bundle.read_bytes(), approved)
         self.assertEqual(json.loads(rotation_file.read_text())["last_updated"], first["date"])
@@ -200,15 +204,38 @@ class EvidenceWorkflowTests(unittest.TestCase):
         expected = bundle.read_bytes()
         bundle.unlink()
         rotation_file.unlink()
-        manifest.unlink()
-        git("git commit -qam 'Remove working copies and manifest'")
+        git("git commit -qam 'Remove working copies'")
         result = self.bash(stage_lessons, RUNNER_TEMP=str(self.root))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((staged / "briefings.js").read_bytes(), expected)
-        result = self.bash(restore)
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(bundle.read_bytes(), expected)
         self.assertEqual(json.loads(rotation_file.read_text())["last_updated"], second["date"])
         self.assertEqual(_read_bundle(bundle)["briefings"], [second, first, legacy])
         self.assertEqual(approve(second).returncode, 0)
-        self.assertEqual(json.loads(manifest.read_text())["bundle_blob"], git("git hash-object data/briefings.js"))
+        snapshot = json.loads(manifest.read_text())
+        self.assertEqual(snapshot["sha256"], approved_lessons._digest(snapshot["bundle"]))
+
+    def test_approved_archive_bootstraps_without_files_or_git_objects(self):
+        data = self.root / "data"
+        data.mkdir()
+        manifest, working = data / "approved_lessons.json", data / "briefings.js"
+        output = self.root / "staged"
+        with patch.multiple(approved_lessons, MANIFEST=manifest, WORKING_BUNDLE=working,
+                            LEGACY_HASHES=data / "approved_legacy_sha256.txt"):
+            empty = approved_lessons._write_bundle(output, approved_lessons._approved())
+            self.assertEqual(empty["briefings"], [])
+            self.assertEqual(empty["rotation_state"], {})
+            days = [datetime.strptime(d, "%Y-%m-%d").date() for d in ("2026-11-26", "2026-11-27")]
+            with patch.object(lesson_generation, "fetch_article", return_value=None):
+                valid, invalid = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
+                                  for d in days]
+            invalid["pubmed_anchors"] = []
+            approved_lessons._write_bundle(data, {"briefings": [invalid, valid]})
+            for broken in ({"bundle_blob": "0" * 40}, {"schema_version": 1, "sha256": "0" * 64, "bundle": {}}):
+                with self.subTest(manifest=broken):
+                    manifest.write_text(json.dumps(broken))
+                    recovered = approved_lessons._write_bundle(output, approved_lessons._approved())
+                    self.assertEqual(recovered["briefings"], [valid])
+                    self.assertEqual(recovered["rotation_state"]["last_updated"], valid["date"])
