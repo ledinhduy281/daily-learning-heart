@@ -9073,14 +9073,21 @@
         this.saveStore();
       },
 
+      sessionKey(pid, briefing) {
+        return (briefing?.quiz_mode === "source_excerpt" && briefing.id) || String(pid);
+      },
+
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
-        const key = String(pid);
-        const lessonId = briefing?.quiz_mode === "source_excerpt" ? briefing.id : null;
-        if (lessonId && this.store[key]?.lesson_id !== lessonId) delete this.store[key];
+        const key = this.sessionKey(pid, briefing);
+        const pillarKey = String(pid);
+        if (key !== pillarKey && !this.store[key] && this.store[pillarKey]?.lesson_id === key) {
+          this.store[key] = this.store[pillarKey];
+          delete this.store[pillarKey];
+        }
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {
           this.store[key] = {
-            ...(lessonId ? { lesson_id: lessonId } : {}),
+            ...(key !== pillarKey ? { lesson_id: key } : {}),
             started: false,
             phase: "diagnostic",
             diag_step: 0,
@@ -9234,7 +9241,8 @@
         if (btnReset) {
           btnReset.addEventListener("click", () => {
             if (this.isBusy) return;
-            delete this.store[String(this.curPillarId)];
+            const briefing = App.selected || getTodaySingleBriefing();
+            delete this.store[this.sessionKey(this.curPillarId, briefing)];
             this.saveStore();
             this.getSession();
             this.renderUI();
@@ -9623,8 +9631,9 @@
         const pid = Number((b && b.pillar_id) || this.curPillarId || 1);
         const lang = App.currentLang || "vi";
         const sess = this.getSession(pid, b);
+        const key = this.sessionKey(pid, b);
         const sessionId = sess.session_id, questionId = sess.question_id;
-        const isCurrent = () => this.store[String(pid)] === sess && sess.session_id === sessionId && sess.question_id === questionId;
+        const isCurrent = () => this.store[key] === sess && sess.session_id === sessionId && sess.question_id === questionId;
 
         this.isBusy = true;
         const btnStart = document.getElementById("btnStartSocratic");
