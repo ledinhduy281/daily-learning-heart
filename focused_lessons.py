@@ -79,8 +79,13 @@ LESSONS = {
         "guideline": ("ESC", 2023, "37622657", "10.1093/eurheartj/ehad194",
                       "2023 ESC Guidelines for the management of cardiomyopathies"),
         "title": ("Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn", "Myosin inhibition in obstructive hypertrophic cardiomyopathy"),
-        "recommendation": ("ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
-                           "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring."),
+        "recommendation": ("ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.",
+                           "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%."),
+        "safety_source": {
+            "title": "CAMZYOS (mavacamten) U.S. prescribing information",
+            "source": "DailyMed",
+            "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b",
+        },
     }],
     9: [{
         "recommendation_id": "initial-pah-combination",
@@ -168,6 +173,8 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
             "title": evidence["name"], "pmid": evidence["pmid"], "doi": evidence["doi"],
             "url": f"https://pubmed.ncbi.nlm.nih.gov/{evidence['pmid']}/",
         })
+    if "safety_source" in lesson:
+        briefing["pubmed_anchors"].append(dict(lesson["safety_source"]))
     for i, lang in enumerate(("vi", "en")):
         title, recommendation = (lesson[key][i] for key in ("title", "recommendation"))
         briefing[f"title_{lang}"] = title

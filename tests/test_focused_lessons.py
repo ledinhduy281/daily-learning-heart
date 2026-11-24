@@ -65,6 +65,24 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertEqual(corrected["supporting_evidence"]["name"], "EXPLORER-HCM")
             self.assertNotIn("SEQUOIA-HCM", corrected["part2_en_markdown"])
 
+    def test_hcm_archive_cites_mavacamten_interruption_threshold(self):
+        archive = lessons.build_hcm_archive_edition(app.PILLARS[7], "2026-11-23")
+        recommendation = archive["guideline_evolution"]
+        self.assertIn("LVEF) dưới 50%", recommendation["recommendation_vi"])
+        self.assertIn("LVEF) falls below 50%", recommendation["recommendation_en"])
+        self.assertEqual(archive["pubmed_anchors"][-1]["source"], "DailyMed")
+
+    def test_poet_population_lists_eligible_pathogens(self):
+        evidence = lessons.build_focused_lesson(app.PILLARS[6], "2026-11-24")["supporting_evidence"]
+        self.assertEqual(evidence["pmid"], "30152252")
+        for pathogen in ("Enterococcus faecalis", "Staphylococcus aureus"):
+            self.assertIn(pathogen, evidence["population_vi"])
+            self.assertIn(pathogen, evidence["population_en"])
+        self.assertIn("liên cầu", evidence["population_vi"])
+        self.assertIn("tụ cầu coagulase âm tính", evidence["population_vi"])
+        self.assertIn("streptococci", evidence["population_en"])
+        self.assertIn("coagulase-negative staphylococci", evidence["population_en"])
+
     def test_refresh_replaces_same_day_legacy_lesson_and_is_idempotent_without_pubmed_lookup(self):
         today = datetime.date(2026, 11, 24)
         legacy = {"date": today.isoformat(), "pillar_id": app.get_pillar_for_date(today)["id"]}
@@ -79,3 +97,28 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertTrue(second["already_up_to_date"])
             self.assertEqual(first["briefing"], second["briefing"])
             self.assertEqual(app.load_existing_briefings(), [first["briefing"]])
+
+    def test_scheduled_refresh_preserves_same_day_model_drafts(self):
+        today = datetime.date(2026, 11, 24)
+        drafts = [
+            {"id": f"draft-{pid}", "date": today.isoformat(), "pillar_id": pid,
+             "model_used": "test-model", "content_source": app.MODEL_DRAFT_CONTENT_SOURCE}
+            for pid in (app.get_pillar_for_date(today)["id"], 1)
+        ]
+        with TemporaryDirectory() as directory, patch.object(app, "_today_vn", return_value=today), \
+                patch.object(app, "BRIEFINGS_JS_PATH", Path(directory) / "briefings.js"), \
+                patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"):
+            app.save_briefings_js(drafts, {})
+            result = app.refresh_today_briefing()
+            self.assertEqual(app.load_existing_briefings(), [result["briefing"], *drafts])
+            self.assertTrue(app.refresh_today_briefing()["already_up_to_date"])
+
+    def test_focused_lesson_without_source_questions_cannot_start_generic_quiz(self):
+        lesson = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24", source_quiz=False)
+        for briefings in ([lesson], [{"id": "legacy-main", "pillar_id": 9}]):
+            with patch.object(app, "load_existing_briefings", return_value=briefings), \
+                    patch.object(app, "_today_vn", return_value=datetime.date(2026, 11, 25)):
+                response = app.handle_socratic_turn(
+                    {"briefing_id": lesson["id"], "action": "start_diagnostic"}, source_only=True)
+                self.assertFalse(response["ok"])
+                self.assertIn("No source-supported questions", response["error"])
