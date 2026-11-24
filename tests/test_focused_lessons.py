@@ -49,3 +49,18 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertTrue(second["already_up_to_date"])
             self.assertEqual(first["briefing"], second["briefing"])
             self.assertEqual(app.load_existing_briefings(), [first["briefing"]])
+
+    def test_scheduled_refresh_preserves_same_day_model_drafts(self):
+        today = datetime.date(2026, 11, 24)
+        drafts = [
+            {"id": f"draft-{pid}", "date": today.isoformat(), "pillar_id": pid,
+             "model_used": "test-model", "content_source": app.MODEL_DRAFT_CONTENT_SOURCE}
+            for pid in (app.get_pillar_for_date(today)["id"], 1)
+        ]
+        with TemporaryDirectory() as directory, patch.object(app, "_today_vn", return_value=today), \
+                patch.object(app, "BRIEFINGS_JS_PATH", Path(directory) / "briefings.js"), \
+                patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"):
+            app.save_briefings_js(drafts, {})
+            result = app.refresh_today_briefing()
+            self.assertEqual(app.load_existing_briefings(), [result["briefing"], *drafts])
+            self.assertTrue(app.refresh_today_briefing()["already_up_to_date"])

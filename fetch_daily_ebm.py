@@ -1444,19 +1444,19 @@ def refresh_today_briefing(
         pid = target_pillar["id"]
         briefings = load_existing_briefings()
         state = load_rotation_state()
+        def is_daily_record(b):
+            return (b.get("date") == today_str
+                    and b.get("content_source") != MODEL_DRAFT_CONTENT_SOURCE
+                    and (pillar_id is None or b.get("pillar_id") == pid))
 
         if not force:
+            daily_records = [b for b in briefings if is_daily_record(b)]
             today_for_target = [
-                b for b in briefings
-                if b.get("date") == today_str
-                and b.get("pillar_id") == pid
+                b for b in daily_records
+                if b.get("pillar_id") == pid
                 and b.get("lesson_format") == "single_guideline"
             ]
-            today_other = [
-                b for b in briefings
-                if b.get("date") == today_str and b.get("pillar_id") != pid
-            ]
-            if len(today_for_target) == 1 and (pillar_id is not None or len(today_other) == 0):
+            if len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records):
                 if progress_cb:
                     progress_cb(100, f"Hôm nay ({today_str}) đã có bản tin Trụ cột #{pid}/10 — {target_pillar['vi_name']}.")
                 return {
@@ -1471,15 +1471,7 @@ def refresh_today_briefing(
             refresh_guideline_briefing(pillar_id=pid, date_str=today_str, progress_cb=progress_cb)
         )
 
-        # Step 4 (100%): Upsert ONLY today's single pillar briefing into data/briefings.js
-        if pillar_id is None:
-            # Strictly 1 pillar for today: remove any entries on today_str (including old multi-pillar leftovers)
-            briefings = [b for b in briefings if b.get("date") != today_str]
-        else:
-            briefings = [
-                b for b in briefings
-                if not (b.get("date") == today_str and b.get("pillar_id") == pid)
-            ]
+        briefings = [b for b in briefings if not is_daily_record(b)]
         briefings.insert(0, new_briefing)
 
         state["last_pillar_id"] = pid
