@@ -34,7 +34,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq
-from focused_lessons import build_focused_templates
+from focused_lessons import FOCUSED_EDITION_VERSION, build_focused_templates
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1455,6 +1455,7 @@ def refresh_today_briefing(
                 b for b in daily_records
                 if b.get("pillar_id") == pid
                 and b.get("lesson_format") == "single_guideline"
+                and b.get("lesson_version") == FOCUSED_EDITION_VERSION
             ]
             if len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records):
                 if progress_cb:
@@ -2755,7 +2756,7 @@ def handle_socratic_turn(req_data: dict) -> dict:
         return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     if primary is None:
         primary = next((b for b in briefings if str(b.get("pillar_id")) == str(req_data.get("pillar_id", 1)) and "-main" in b.get("id", "")), briefings[0])
-    if primary.get("lesson_format") == "single_guideline":
+    if primary.get("lesson_format") == "single_guideline" and primary.get("id", "").endswith("-focused"):
         return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     state = copy.deepcopy(req_data.get("state")) if isinstance(req_data.get("state"), dict) else {}
     if not isinstance(state.get("subskills"), list) or len(state["subskills"]) != 4:

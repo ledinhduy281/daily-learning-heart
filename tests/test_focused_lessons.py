@@ -35,6 +35,58 @@ class FocusedLessonTests(unittest.TestCase):
                 self.assertEqual(lesson[f"title_{language}"], lesson[f"topic_focus_{language}"])
                 self.assertNotEqual(lesson[f"title_{language}"], lesson["pillar_name"])
 
+    def test_block_b_matches_recommendation_before_source_priority(self):
+        hcm = lessons.select_guideline(8)
+        match = lessons.select_supporting_evidence(hcm)
+        self.assertEqual(match["pmid"], "32871100")
+        wrong_topic = {**match, "recommendation_id": "inflammatory-arrhythmia",
+                       "source_kind": "systematic_review_meta_analysis", "pmid": "90001"}
+        wrong_guideline = {**wrong_topic, "recommendation_id": match["recommendation_id"], "guideline_pmid": "90000"}
+        self.assertIsNone(lessons.select_supporting_evidence(hcm, [wrong_topic, wrong_guideline]))
+        self.assertEqual(lessons.select_supporting_evidence(hcm, [wrong_topic, match]), match)
+        better = {**wrong_topic, "recommendation_id": match["recommendation_id"]}
+        self.assertEqual(lessons.select_supporting_evidence(hcm, [match, better]), better)
+
+    def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
+        payload = read_bundle(app.BRIEFINGS_JS_PATH)
+        for lesson in payload["focused_lessons"].values():
+            evidence = lesson["supporting_evidence"]
+            guideline = lesson["guideline_evolution"]
+            self.assertEqual(evidence["recommendation_id"], guideline["recommendation_id"])
+            self.assertEqual(evidence["guideline_pmid"], guideline["current_guideline"]["pmid"])
+            self.assertEqual(evidence["pmid"], lesson["pubmed_anchors"][1]["pmid"])
+            for lang in ("vi", "en"):
+                for field in ("supports", "population", "limits"):
+                    self.assertTrue(evidence[f"{field}_{lang}"])
+        for date in ("2026-11-13", "2026-11-23"):
+            corrected = next(b for b in payload["briefings"] if b["id"] == f"ebm-{date}-p8-main")
+            self.assertIn("obstructive hypertrophic cardiomyopathy", corrected["title_en"])
+            self.assertEqual(corrected["guideline_evolution"]["current_guideline"]["pmid"], "37622657")
+            self.assertEqual(corrected["supporting_evidence"]["name"], "EXPLORER-HCM")
+            self.assertNotIn("SEQUOIA-HCM", corrected["part2_en_markdown"])
+
+    def test_hcm_archive_cites_mavacamten_interruption_threshold(self):
+        archive = lessons.build_hcm_archive_edition(app.PILLARS[7], "2026-11-23")
+        recommendation = archive["guideline_evolution"]
+        self.assertIn("LVEF) dưới 50%", recommendation["recommendation_vi"])
+        self.assertIn("LVEF) falls below 50%", recommendation["recommendation_en"])
+        self.assertEqual(archive["pubmed_anchors"][-1]["source"], "DailyMed")
+        safety_source = archive["pubmed_anchors"][-1]
+        link = f"[{safety_source['title']}]({safety_source['url']})"
+        for markdown in ("part1_vi_markdown", "part2_en_markdown"):
+            self.assertIn(link, archive[markdown])
+
+    def test_poet_population_lists_eligible_pathogens(self):
+        evidence = lessons.build_focused_lesson(app.PILLARS[6], "2026-11-24")["supporting_evidence"]
+        self.assertEqual(evidence["pmid"], "30152252")
+        for pathogen in ("Enterococcus faecalis", "Staphylococcus aureus"):
+            self.assertIn(pathogen, evidence["population_vi"])
+            self.assertIn(pathogen, evidence["population_en"])
+        self.assertIn("liên cầu", evidence["population_vi"])
+        self.assertIn("tụ cầu coagulase âm tính", evidence["population_vi"])
+        self.assertIn("streptococci", evidence["population_en"])
+        self.assertIn("coagulase-negative staphylococci", evidence["population_en"])
+
     def test_refresh_replaces_same_day_legacy_lesson_and_is_idempotent_without_pubmed_lookup(self):
         today = datetime.date(2026, 11, 24)
         legacy = {"date": today.isoformat(), "pillar_id": app.get_pillar_for_date(today)["id"]}
