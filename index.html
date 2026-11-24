@@ -8956,7 +8956,7 @@
         this.storeBaseline = JSON.stringify(latest);
       },
 
-      saveStore() {
+      saveStore(migration) {
         let latest = {};
         try {
           const parsed = JSON.parse(safeStorageGet(SOCRATIC_STATE_KEY, true));
@@ -8964,9 +8964,18 @@
         } catch (_) {}
         const base = JSON.parse(this.storeBaseline || '{}');
         for (const id of new Set([...Object.keys(base), ...Object.keys(this.store)])) {
+          if (migration && (id === migration.key || id === migration.pillarKey)) continue;
           if (JSON.stringify(this.store[id]) === JSON.stringify(base[id])) continue;
           if (Object.hasOwn(this.store, id)) latest[id] = this.store[id];
           else delete latest[id];
+        }
+        if (migration) {
+          const { key, pillarKey } = migration;
+          const legacy = latest[pillarKey];
+          if (!Object.hasOwn(latest, key) && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
+            latest[key] = { ...legacy, lesson_id: key };
+            delete latest[pillarKey];
+          }
         }
         safeStorageSet(SOCRATIC_STATE_KEY, JSON.stringify(latest));
         this.adoptStore(latest);
@@ -9092,11 +9101,8 @@
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
         const legacy = this.store[pillarKey];
-        const adopted = key !== pillarKey && !this.store[key] && legacy && (!legacy.lesson_id || legacy.lesson_id === key);
-        if (adopted) {
-          legacy.lesson_id = key;
-          this.store[key] = legacy;
-          delete this.store[pillarKey];
+        if (key !== pillarKey && !this.store[key] && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
+          this.saveStore({ key, pillarKey });
         }
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {
@@ -9194,7 +9200,6 @@
         const session = this.store[key];
         if (!session.session_id) session.session_id = this.newQuizId();
         if (!session.question_id) session.question_id = this.newQuizId();
-        if (adopted) this.saveStore();
         return session;
       },
 
