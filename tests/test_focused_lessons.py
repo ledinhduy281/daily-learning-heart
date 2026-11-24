@@ -71,6 +71,10 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertIn("LVEF) dưới 50%", recommendation["recommendation_vi"])
         self.assertIn("LVEF) falls below 50%", recommendation["recommendation_en"])
         self.assertEqual(archive["pubmed_anchors"][-1]["source"], "DailyMed")
+        safety_source = archive["pubmed_anchors"][-1]
+        link = f"[{safety_source['title']}]({safety_source['url']})"
+        for markdown in ("part1_vi_markdown", "part2_en_markdown"):
+            self.assertIn(link, archive[markdown])
 
     def test_poet_population_lists_eligible_pathogens(self):
         evidence = lessons.build_focused_lesson(app.PILLARS[6], "2026-11-24")["supporting_evidence"]

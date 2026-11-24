@@ -173,8 +173,9 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
             "title": evidence["name"], "pmid": evidence["pmid"], "doi": evidence["doi"],
             "url": f"https://pubmed.ncbi.nlm.nih.gov/{evidence['pmid']}/",
         })
-    if "safety_source" in lesson:
-        briefing["pubmed_anchors"].append(dict(lesson["safety_source"]))
+    safety_source = lesson.get("safety_source")
+    if safety_source:
+        briefing["pubmed_anchors"].append(dict(safety_source))
     for i, lang in enumerate(("vi", "en")):
         title, recommendation = (lesson[key][i] for key in ("title", "recommendation"))
         briefing[f"title_{lang}"] = title
@@ -187,6 +188,8 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         )
         briefing[f"disclaimer_{lang}"] = disclaimer
         body = f"## Block A — {block}\n\n**[{name}](https://doi.org/{doi})**\n\n{recommendation}"
+        if safety_source:
+            body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
         if evidence:
             heading = "Nghiên cứu bổ trợ" if lang == "vi" else "Supporting evidence"
             body += (
