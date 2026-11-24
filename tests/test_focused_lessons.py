@@ -119,6 +119,13 @@ class FocusedLessonTests(unittest.TestCase):
                 self.assertEqual(answer, detailed)
                 self.assertNotEqual(answer, medium)
 
+    def test_wrapped_final_choice_is_not_a_detail_request(self):
+        query = ("Which treatment is supported?\nA. Alpha\nB. Beta\nC. Gamma\n"
+                 "D. Extended-release regimen, which is\nsimpler to tolerate with nitrate")
+        _, options, follow_up = app._parse_pasted_mcq(query)
+        self.assertEqual(options["D"], "Extended-release regimen, which is simpler to tolerate with nitrate")
+        self.assertFalse(follow_up)
+
     def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
         options = "\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
