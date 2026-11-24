@@ -1932,6 +1932,12 @@
       gap: 12px;
     }
 
+    .focused-recommendation {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
     @media (max-width: 900px) {
       .evolution-pipeline {
         grid-template-columns: 1fr;
@@ -6789,10 +6795,10 @@
 
     function renderEvolutionPipeline(b, isVi) {
       const ge = b.guideline_evolution;
-      Dom.guidelinePipelineSociety.textContent = b.lesson_format === "single_guideline"
-        ? ge?.current_guideline?.society || ""
-        : "ESC / ACC";
-      if (b.lesson_format === "single_guideline") {
+      const focused = b.lesson_format === "single_guideline";
+      Dom.evolutionPipelineRow.className = focused ? "focused-recommendation" : "evolution-pipeline";
+      Dom.guidelinePipelineSociety.textContent = focused ? ge?.current_guideline?.society || "" : "ESC / ACC";
+      if (focused) {
         Dom.guidelineComparisonBanner.style.display = "block";
         Dom.guidelineComparisonBanner.innerHTML = renderGuidelineRefBox(
           ge.current_guideline, isVi ? "Guideline chính" : "Primary guideline", true
