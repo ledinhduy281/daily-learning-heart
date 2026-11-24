@@ -47,6 +47,13 @@ def _text(element):
     return " ".join("".join(element.itertext()).split()) if element is not None else ""
 
 
+def _quote_text(element):
+    if any(node.tag.rsplit("}", 1)[-1] in {"inline-formula", "disp-formula", "tex-math", "math"}
+           for node in element.iter()):
+        return ""
+    return _text(element)
+
+
 def _license(meta):
     declared = set()
     for license_el in meta.findall("./permissions/license"):
@@ -69,26 +76,52 @@ def _license(meta):
 
 
 def _passages(article):
+    parents = {child: node for node in article.iter() for child in node}
+
+    def reusable(element):
+        rights = {"permissions", "license", "license_ref", "copyright-statement", "copyright-holder", "copyright-year"}
+
+        def marks_rights(node):
+            return node.tag.rsplit("}", 1)[-1] in rights
+
+        if any(marks_rights(node) for node in element.iter()):
+            return False
+        while (element := parents.get(element)) is not None:
+            if element.tag != "article-meta" and any(marks_rights(child) for child in element):
+                return False
+        return True
+
     for i, sec in enumerate(article.findall("./body//sec"), 1):
         heading = _text(sec.find("title"))
         if (re.fullmatch(r"(?:key |specific )?recommendations?(?:\s+(?:for|on)\s+.+)?", heading, re.I)
                 or re.search(r":\s*recommendations?$", heading, re.I)):
             for j, el in enumerate(sec.findall("./p") + sec.findall("./list/list-item/p"), 1):
-                if (value := _text(el)):
+                if reusable(el) and (value := _quote_text(el)):
                     yield Passage(f"body/sec[{i}]/recommendation[{j}]", "recommendation", value)
     for i, table in enumerate(article.findall("./body//table-wrap"), 1):
+        if not reusable(table):
+            continue
         caption = _text(table.find("caption"))
         if not re.match(r"recommendations?\b", caption, re.I):
             continue
-        columns = table.findall("./table/thead/tr/th")
+        headers = table.findall("./table/thead/tr")
+        if len(headers) != 1:
+            continue
+        columns = list(headers[0])
+        if any(col.tag not in ("td", "th") or col.get("colspan", "1") != "1"
+               or col.get("rowspan", "1") != "1" for col in columns):
+            continue
         positions = [j for j, col in enumerate(columns) if _text(col).casefold() in ("recommendation", "recommendations")]
         if len(positions) != 1:
             continue
         col = positions[0]
-        for j, row in enumerate(table.findall("./table/tbody/tr"), 1):
-            cells = row.findall("td")
-            if (len(cells) == len(columns) and all(not c.get("colspan") and not c.get("rowspan") for c in cells)
-                    and (value := _text(cells[col]))):
+        rows = table.findall("./table/tbody/tr")
+        if any(cell.get("rowspan", "1") != "1" for row in rows for cell in row):
+            continue
+        for j, row in enumerate(rows, 1):
+            cells = list(row)
+            if (len(cells) == len(columns) and all(c.tag in ("td", "th") and c.get("colspan", "1") == "1" for c in cells)
+                    and (value := _quote_text(cells[col]))):
                 yield Passage(f"body/table[{i}]/row[{j}]/col[{col + 1}]", "recommendation", value)
     for i, abstract in enumerate(article.findall("./front/article-meta/abstract"), 1):
         if abstract.get("abstract-type") not in (None, "abstract") or abstract.get(LANG, "en") != "en":
@@ -102,7 +135,7 @@ def _passages(article):
             }.get(heading)
             if role:
                 for k, p in enumerate(sec.findall("p"), 1):
-                    if (value := _text(p)):
+                    if reusable(p) and (value := _quote_text(p)):
                         yield Passage(f"abstract[{i}]/sec[{j}]/p[{k}]", role, value)
 
 

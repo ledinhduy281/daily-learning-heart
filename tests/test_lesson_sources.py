@@ -81,3 +81,41 @@ class LessonSourceTests(unittest.TestCase):
             [passage.text for passage in article.passages if passage.role == "recommendation"],
             ["First, include the qualifier.", "Second recommendation.", "Preserve this condition."],
         )
+
+    def test_local_permissions_exclude_third_party_recommendation(self):
+        body = b"""<body><table-wrap>
+        <caption><title>Recommendations</title></caption>
+        <permissions><copyright-statement>All rights reserved</copyright-statement></permissions>
+        <table><thead><tr><th>Recommendation</th></tr></thead>
+        <tbody><tr><td>Third-party text.</td></tr></tbody></table>
+        </table-wrap>
+        <sec><title>Recommendations</title><p>Article-owned text.</p></sec></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Article-owned text."])
+
+    def test_table_cell_mapping_handles_row_headers_and_rejects_spans(self):
+        body = b"""<body>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th>Class</th></tr></thead>
+          <tbody><tr><th>Row header recommendation.</th><td>IIa</td></tr></tbody></table>
+        </table-wrap>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th colspan="2">Evidence</th></tr></thead>
+          <tbody><tr><th>Other recommendation.</th><td>IIa</td><td>B</td></tr></tbody></table>
+        </table-wrap>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th>Class</th></tr></thead>
+          <tbody><tr><td rowspan="2">Ambiguous.</td><td>IIa</td></tr>
+          <tr><td>B</td></tr></tbody></table>
+        </table-wrap></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Row header recommendation."])
+
+    def test_formula_representations_are_not_joined_into_a_quote(self):
+        body = b"""<body><sec><title>Recommendations</title>
+        <p>Use <alternatives><tex-math>E=mc2</tex-math>
+          <mml:math xmlns:mml="http://www.w3.org/1998/Math/MathML">E=mc2</mml:math></alternatives>.</p>
+        <p>Plain text recommendation.</p>
+        </sec></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Plain text recommendation."])
