@@ -8970,10 +8970,13 @@
           else delete latest[id];
         }
         if (migration) {
-          const { key, pillarKey } = migration;
+          const { key, pillarKey, markerKey } = migration;
           const legacy = latest[pillarKey];
-          if (!Object.hasOwn(latest, key) && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
+          if (Object.hasOwn(latest, markerKey)) {
+            delete latest[pillarKey];
+          } else if (!Object.hasOwn(latest, key) && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
             latest[key] = { ...legacy, lesson_id: key };
+            latest[markerKey] = { lesson_id: key };
             delete latest[pillarKey];
           }
         }
@@ -9088,9 +9091,11 @@
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
+        const markerKey = `legacy-migrated:${pillarKey}`;
         const legacy = this.store[pillarKey];
-        if (key !== pillarKey && !this.store[key] && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
-          this.saveStore({ key, pillarKey });
+        if (key !== pillarKey && legacy && (Object.hasOwn(this.store, markerKey) ||
+            (!this.store[key] && (!legacy.lesson_id || legacy.lesson_id === key)))) {
+          this.saveStore({ key, pillarKey, markerKey });
         }
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {
