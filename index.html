@@ -8970,10 +8970,10 @@
           else delete latest[id];
         }
         if (migration) {
-          const { key, pillarKey } = migration;
+          const { key, pillarKey, briefing } = migration;
           const legacy = latest[pillarKey];
           if (!Object.hasOwn(latest, key) && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
-            latest[key] = { ...legacy, lesson_id: key };
+            latest[key] = { ...this.prepareLegacySession(legacy, briefing), lesson_id: key };
             delete latest[pillarKey];
           }
         }
@@ -9097,12 +9097,31 @@
         return briefing?.id || String(pid);
       },
 
+      prepareLegacySession(legacy, briefing) {
+        if (briefing?.quiz_mode !== "source_excerpt" || !legacy.started || this.isFinished(legacy)) return legacy;
+        const lang = legacy.options_lang || App.currentLang || "vi";
+        if (legacy.current_question?.generation?.review_order ||
+            ClinicalQuiz.migrateSourceReview(briefing, legacy, lang)) return legacy;
+        const difficulty = legacy.difficulty || "normal";
+        const question = ClinicalQuiz.reviewQuestion(briefing, 0, 0, lang, difficulty);
+        return {
+          started: true, phase: question ? "diagnostic" : "complete",
+          answered_count: legacy.answered_count, correct_count: legacy.correct_count, subskills: legacy.subskills,
+          difficulty, question_index: 0, diag_step: 0, focus_idx: 0, attempts_on_current: 0,
+          options_lang: lang, question_revealed: false, current_question: question,
+          current_options: question?.options || [], correct_key: question?.correct_key || "",
+          explanation: question?.explanation || "", last_question: question?.question || "",
+          required_subskills: question?.required_subskills,
+          messages: question ? [{ role: "assistant", text: question.question }] : []
+        };
+      },
+
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
         const legacy = this.store[pillarKey];
         if (key !== pillarKey && !this.store[key] && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
-          this.saveStore({ key, pillarKey });
+          this.saveStore({ key, pillarKey, briefing });
         }
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {

@@ -35,12 +35,15 @@ assert.doesNotMatch(html, /\.socratic-choice-btn:hover/);
 const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
 const nodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection", "socraticChoicesWrap", "socraticChoicesGrid"]
   .map(id => [id, {style: {}}]));
+let stored;
 const tutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   App: {selected: lesson, currentLang: "en"}, ClinicalQuiz: quiz, escapeHtml: String,
   document: {getElementById: id => nodes[id]},
+  SOCRATIC_STATE_KEY: "quiz", safeStorageGet: () => stored, safeStorageSet: (_, value) => { stored = value; },
 });
 tutor.renderProgressDashboard = () => {};
 const getSavedSession = tutor.getSession;
+const saveQuizStore = tutor.saveStore;
 const highlightedChoices = state => {
   tutor.getSession = () => ({...state, started: true});
   tutor.renderUI();
@@ -109,6 +112,26 @@ for (const state of [restoredRetry, apiRetry]) {
   assert.equal(done.state.phase, "complete");
   assert.equal(done.state.correct_count, 1);
 }
+
+const legacyQuestion = quiz.build({}, 0, 0, "en");
+stored = JSON.stringify({9: {
+  started: true, phase: "loop", question_index: 5, correct_count: 3, answered_count: 4, subskills: [{level: 3}],
+  current_question: legacyQuestion, current_options: legacyQuestion.options, correct_key: legacyQuestion.correct_key,
+  last_question: legacyQuestion.question, explanation: legacyQuestion.explanation,
+  messages: [{role: "assistant", text: legacyQuestion.question}]
+}});
+tutor.saveStore = saveQuizStore;
+tutor.loadStore();
+const adopted = getSavedSession.call(tutor, 9, lesson);
+assert.equal(adopted.correct_count, 3);
+assert.equal(adopted.answered_count, 4);
+assert.equal(adopted.subskills[0].level, 3);
+assert.equal(adopted.question_index, 0);
+assert.equal(adopted.last_question, q.question);
+assert.equal(adopted.messages[0].text, q.question);
+assert.equal(JSON.parse(stored)[9], undefined);
+assert.equal(JSON.parse(stored)[lesson.id].current_question.source_quote, q.source_quote);
+assert.equal(quiz.turn(lesson, adopted, "en", "answer", "", adopted.correct_key).state.correct_count, 4);
 
 const py = spawnSync("python3", ["-c",
   "import json,sys; from clinical_mcq import build_mcq; print(json.dumps([build_mcq(b, 1, i, l) for b in json.load(sys.stdin) for l in ['vi','en'] for i in range(len(b['quiz_items']))]))"],
