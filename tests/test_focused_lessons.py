@@ -106,6 +106,19 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertIn("clinical failure", answers[0])
         self.assertNotIn("vasoconstriction", answers[0])
 
+    def test_pasted_question_accepts_detail_request_after_final_choice(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("What was the primary endpoint of AMBITION?\n"
+                 "A. Pulmonary vascular resistance\nB. Clinical failure\n"
+                 "C. Hospitalization alone\nD. All-cause death")
+        for lang, follow_up in (("en", "Please explain in detail."), ("vi", "Giải thích chi tiết nhé.")):
+            with self.subTest(lang=lang):
+                medium, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang)
+                detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="detailed")
+                answer, _ = app._compose_deterministic_ebm_answer(f"{query}\n{follow_up}", [briefing], [], lang)
+                self.assertEqual(answer, detailed)
+                self.assertNotEqual(answer, medium)
+
     def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
         options = "\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"

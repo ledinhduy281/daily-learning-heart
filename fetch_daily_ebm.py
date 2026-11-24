@@ -1846,8 +1846,8 @@ _DETAIL_REQ_RE = re.compile(
 )
 
 
-def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str]]:
-    """Return a pasted question's stem and options, preferring line-start labels."""
+def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], str]:
+    """Return a pasted question's stem, options and any standalone detail request."""
     q = (query or "").strip()
     labels = list(_MCQ_PASTE_LINE_LABEL.finditer(q))
     inline = list(_MCQ_PASTE_PAT_PUNCT.finditer(q))
@@ -1857,12 +1857,21 @@ def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str]]:
         [(m.start(), m[1], m[2]) for m in inline],
     ):
         opts: dict[str, str] = {}
-        for _, key, value in options:
+        follow_up = ""
+        for i, (_, key, value) in enumerate(options):
+            if i == len(options) - 1:
+                body, newline, last_line = value.rstrip().rpartition("\n")
+                request = re.sub(r"^(?:please\s+)?(?:explain\s+|giải thích\s+)?", "", last_line.strip(),
+                                 flags=re.IGNORECASE)
+                if newline and body.strip() and (
+                    _DETAIL_REQ_RE.match(last_line.strip()) or _DETAIL_REQ_RE.match(request)
+                ):
+                    value, follow_up = body, last_line
             if clean := " ".join(value.split()):
                 opts.setdefault(key, clean)
         if len(opts) == 4:
-            return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}
-    return q, {}
+            return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}, follow_up
+    return q, {}, ""
 
 
 def _wants_detailed_explanation(query: str) -> bool:
@@ -2002,8 +2011,8 @@ def _compose_deterministic_ebm_answer(
         if len(sources) >= 5:
             break
 
-    question, mcq_opts = _parse_pasted_mcq(query)
-    wants_detail = _wants_detailed_explanation(question)
+    question, mcq_opts, follow_up = _parse_pasted_mcq(query)
+    wants_detail = bool(follow_up) or _wants_detailed_explanation(question)
     eff_level = "detailed" if (v_norm == "detailed" or (v_norm == "medium" and wants_detail)) else v_norm
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
@@ -2527,8 +2536,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             )
             bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
             site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
-            question, mcq_opts = _parse_pasted_mcq(query)
-            wants_detail = _wants_detailed_explanation(question)
+            question, mcq_opts, follow_up = _parse_pasted_mcq(query)
+            wants_detail = bool(follow_up) or _wants_detailed_explanation(question)
             eff_level = "detailed" if (verbosity == "detailed" or (verbosity == "medium" and wants_detail)) else verbosity
             if mcq_opts:
                 if eff_level == "short":
