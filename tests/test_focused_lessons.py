@@ -118,7 +118,9 @@ class FocusedLessonTests(unittest.TestCase):
             with self.subTest(follow_up=follow_up):
                 medium, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang)
                 detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="detailed")
-                answer, _ = app._compose_deterministic_ebm_answer(f"{query}\n{follow_up}", [briefing], [], lang)
+                asked = f"{query}\n\n{follow_up}"
+                answer, _ = app._compose_deterministic_ebm_answer(asked, [briefing], [], lang)
+                self.assertEqual(app._parse_pasted_mcq(asked)[1]["D"], "All-cause death")
                 self.assertEqual(answer, detailed)
                 self.assertNotEqual(answer, medium)
 
@@ -127,6 +129,7 @@ class FocusedLessonTests(unittest.TestCase):
         for first, wrapped in (
             ("Extended-release regimen, which is", "simpler to tolerate with nitrate"),
             ("Invite patients to", "explain their symptoms in simple words."),
+            ("Explain the warning", "in detail."),
         ):
             with self.subTest(wrapped=wrapped):
                 _, options, follow_up = app._parse_pasted_mcq(f"{query}{first}\n{wrapped}")

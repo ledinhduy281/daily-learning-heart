@@ -1853,7 +1853,7 @@ _DETAIL_FOLLOW_UP_RE = re.compile(
 
 
 def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], bool]:
-    """Return the stem, intact options, and whether a standalone detail cue follows them."""
+    """Return the stem, options, and whether a blank-line-delimited detail cue follows them."""
     q = (query or "").strip()
     labels = list(_MCQ_PASTE_LINE_LABEL.finditer(q))
     inline = list(_MCQ_PASTE_PAT_PUNCT.finditer(q))
@@ -1862,13 +1862,19 @@ def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], bool]:
          for m, n in zip(labels, labels[1:] + [None])],
         [(m.start(), m[1], m[2]) for m in inline],
     ):
+        if not options:
+            continue
+        start, label, value = options[-1]
+        body, _, last_line = value.rstrip().rpartition("\n")
+        follow_up = bool(body.rstrip(" \t\r").endswith("\n")
+                         and _DETAIL_FOLLOW_UP_RE.fullmatch(last_line.strip()))
+        if follow_up:
+            options[-1] = (start, label, body)
         opts: dict[str, str] = {}
         for _, key, value in options:
             if clean := " ".join(value.split()):
                 opts.setdefault(key, clean)
         if len(opts) == 4:
-            body, _, last_line = options[-1][2].rstrip().rpartition("\n")
-            follow_up = bool(body.strip() and _DETAIL_FOLLOW_UP_RE.fullmatch(last_line.strip()))
             return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}, follow_up
     return q, {}, False
 

@@ -34,7 +34,7 @@ The scheduled [GitHub Actions workflow](.github/workflows/daily_refresh.yml) ref
 
 The bilingual walkthroughs in [`lessons/`](lessons/) explain the context, recommendation changes, and application in Block A, and the study design, results, and limits in Block B. Each file starts with the two source PMIDs; the publisher checks that they match the selected pair and that both languages contain complete walkthroughs. These are teaching drafts, not physician-reviewed guidance.
 
-For these walkthroughs, keyless local chat can show relevant lesson text for pasted questions but does not grade the answer choices. Use the in-app lesson quiz for answers linked to verbatim source excerpts.
+For these walkthroughs, keyless local chat can show relevant lesson text for pasted questions but does not grade the answer choices. Use the in-app lesson quiz for answers linked to verbatim source excerpts. For a longer excerpt, select **Detailed** or put “Explain in detail” after a blank line below the choices.
 
 Edit `SOURCE_PRIORITY` in `focused_lessons.py` to change the order for eligible cardiology sources: ESC/AHA/ACC guideline, systematic review/meta-analysis, landmark RCT, real-world cohort/registry, then expert consensus. A lower-tier source is not presented as a guideline. Running the refresh locally can update these tracked files:
 
