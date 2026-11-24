@@ -239,7 +239,8 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   const source=html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
   const getter=html.match(/function safeStorageGet\([^\n]+/)[0];
   const tab=deviceStore=>vm.runInNewContext(`${getter}\n${source};SocraticTutor`,{
-    deviceStore,SOCRATIC_STATE_KEY:key,safeStorageSet:(key,value)=>deviceStore.set(key,value)
+    deviceStore,SOCRATIC_STATE_KEY:key,safeStorageSet:(key,value)=>deviceStore.set(key,value),
+    App:{currentLang:'en'},getPillarDisplayName:()=> 'Pillar'
   });
   const a=tab(first),b=tab(second);a.loadStore();b.loadStore();
   a.store[1].answered_count=1;a.saveStore();second.snapshot();
@@ -253,6 +254,21 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(JSON.parse(second.get(key))[2],undefined);
   first.set(key,'{invalid');b.loadStore();assert.equal(Object.keys(b.store).length,0);
   first.remove(key);b.loadStore();b.saveStore();assert.equal(second.get(key),'{}');
+
+  first.set(key,JSON.stringify({8:{answered_count:1,correct_count:1}}));
+  const c=tab(second);
+  a.loadStore();b.loadStore();c.loadStore();
+  const lesson={id:'first-lesson',pillar_id:8};
+  const migrated=a.getSession(8,lesson);
+  migrated.answered_count=2;
+  migrated.correct_count=2;
+  a.saveStore();
+  assert.equal(b.getSession(8,lesson).correct_count,2);
+  assert.equal(c.getSession(8,{id:'second-lesson',pillar_id:8}).correct_count,0);
+  const saved=JSON.parse(first.snapshot().progress[key]);
+  assert.equal(saved['first-lesson'].correct_count,2);
+  assert.equal(saved['second-lesson'],undefined);
+  assert.equal(saved[8],undefined);
 }
 {
   const profile = create(new Storage(),crypto);
@@ -390,7 +406,8 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(saved[1], undefined);
   assert.equal(saved[app.selected.id].lesson_id, app.selected.id);
   tutor.loadStore();
-  assert.equal(tutor.getSession(), adopted);
+  assert.equal(tutor.getSession().correct_count, adopted.correct_count);
+  assert.equal(tutor.getSession().last_question, adopted.last_question);
   assert.equal(tutor.getSession(1, {id: "second-lesson", pillar_id: 1}).started, false);
 }
 {
