@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from clinical_mcq import validated_source_items
-from fetch_daily_ebm import get_pillar_by_id, get_pillar_for_date
+from fetch_daily_ebm import PILLARS, get_pillar_for_date
 from focused_lessons import GATE_START_DATE, GUIDELINE_SOCIETIES, _citation_url, build_focused_lesson, focused_markdown, select_guideline
 from pipeline.lesson_generation import CURATED, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
@@ -191,11 +191,18 @@ def validate_bundle(bundle, expected_date=None, *, rotation_state=None):
             governed.append(lesson)
     if expected_date:
         _require(len(governed) == 1, "Expected one scheduled lesson on the dated edition")
-    if governed:
-        latest = max(lesson["date"] for lesson in governed)
-        _require(bundle["rotation_state"]["last_updated"] == latest, "Rotation date does not match the latest lesson")
-        if rotation_state is not None:
-            _require(rotation_state == bundle["rotation_state"], "Rotation file does not match the lesson bundle")
+    state = bundle["rotation_state"]
+    if rotation_state is not None:
+        _require(rotation_state == state, "Rotation file does not match the lesson bundle")
+    if expected_date is None:
+        last = date.fromisoformat(state["last_updated"])
+        dates = {date.fromisoformat(lesson["date"]) for lesson in governed}
+        first = date.fromisoformat(GATE_START_DATE)
+        _require(not dates or max(dates) <= last, "Rotation date does not match the latest lesson")
+        _require(len(dates) == max(0, (last - first).days + 1),
+                 f"Missing scheduled lesson in the date range {first} through {last}")
+    elif governed:
+        _require(state["last_updated"] == expected_date, "Rotation date does not match the latest lesson")
     seen = set()
     for lesson in governed:
         lesson_id = lesson.get("id")
@@ -210,11 +217,13 @@ def validate_bundle(bundle, expected_date=None, *, rotation_state=None):
     if expected_date is None:
         templates = bundle.get("focused_lessons", {})
         _require(isinstance(templates, dict), "Invalid fallback lesson collection")
+        pillars = {str(pillar["id"]): pillar for pillar in PILLARS}
+        missing = pillars.keys() - templates.keys()
+        _require(not missing, f"Missing fallback lesson for rotation pillar(s): {', '.join(sorted(missing, key=int))}")
         for key, template in templates.items():
             try:
-                pillar = get_pillar_by_id(int(key))
-                _require(key == str(pillar["id"]), "Invalid fallback pillar")
-                validate_lesson(template, pillar, date.fromisoformat(template["date"]).isoformat(),
+                _require(key in pillars, "Invalid fallback pillar")
+                validate_lesson(template, pillars[key], date.fromisoformat(template["date"]).isoformat(),
                                 recorded=True, fallback=True)
             except (ValueError, KeyError, TypeError, AttributeError) as exc:
                 raise ValueError(f"Fallback pillar {key}: {exc}") from exc

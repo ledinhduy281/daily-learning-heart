@@ -3,10 +3,13 @@ import json
 import subprocess
 import sys
 import unittest
+from datetime import date
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from fetch_daily_ebm import PILLARS, get_pillar_for_date
+from focused_lessons import build_focused_templates
 from pipeline import lesson_generation
 from pipeline.validate_lesson import validate_bundle
 from test_lesson_generation import GUIDELINE, GUIDELINE_PMID, PILLAR, RESULT, TRIAL, TRIAL_PMID, article
@@ -21,13 +24,17 @@ class LessonGateTests(unittest.TestCase):
     def setUpClass(cls):
         with patch.object(lesson_generation, "fetch_article", return_value=None):
             cls.curated = lesson_generation.build_open_lesson(PILLAR, DATE)
+            cls.earlier = [lesson_generation.build_open_lesson(get_pillar_for_date(date.fromisoformat(day)), day)
+                           for day in ("2026-11-24", "2026-11-25")]
+        cls.templates = build_focused_templates(PILLARS)
         with patch.object(lesson_generation, "fetch_article", side_effect=[
             None, article(TRIAL_PMID, TRIAL["doi"], [("results", RESULT)]),
         ]):
             cls.licensed = lesson_generation.build_open_lesson(PILLAR, DATE)
 
     def bundle(self, lesson):
-        return {"rotation_state": {"last_updated": DATE}, "briefings": [copy.deepcopy(lesson)]}
+        return {"rotation_state": {"last_updated": DATE}, "briefings": copy.deepcopy([lesson, *self.earlier]),
+                "focused_lessons": self.templates}
 
     def test_curated_and_licensed_lessons_pass_without_changing_archive(self):
         for lesson in (self.curated, self.licensed):
@@ -64,7 +71,7 @@ class LessonGateTests(unittest.TestCase):
             with self.subTest(source=lesson["content_source"]), patch.dict(
                 GUIDELINE, guideline=(society, year, pmid, doi, name + " (corrected)"), recommendation=("Mới", "New")
             ), patch.dict(TRIAL, name="Corrected trial title", pmid="12345"):
-                self.assertEqual(validate_bundle(bundle), 1)
+                self.assertEqual(validate_bundle(bundle), 3)
                 self.assertEqual(bundle, archived)
                 with self.assertRaisesRegex(ValueError, "approved primary guideline"):
                     validate_bundle(bundle, DATE)
@@ -121,7 +128,8 @@ class LessonGateTests(unittest.TestCase):
                     validate_bundle(bundle)
 
     def test_legacy_rows_are_not_validated_or_modified(self):
-        bundle = {"briefings": [{"date": "2026-11-23", "legacy": True}]}
+        bundle = {"briefings": [{"date": "2026-11-23", "legacy": True}],
+                  "rotation_state": {"last_updated": "2026-11-23"}, "focused_lessons": self.templates}
         previous = copy.deepcopy(bundle)
         self.assertEqual(validate_bundle(bundle), 0)
         self.assertEqual(bundle, previous)

@@ -10,8 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from fetch_daily_ebm import get_pillar_for_date, refresh_today_briefing
-from focused_lessons import GATE_START_DATE, build_focused_lesson
+from fetch_daily_ebm import PILLARS, get_pillar_for_date, refresh_today_briefing
+from focused_lessons import GATE_START_DATE, build_focused_templates
 from pipeline import lesson_generation
 from pipeline.validate_lesson import _read_bundle
 
@@ -129,23 +129,23 @@ class EvidenceWorkflowTests(unittest.TestCase):
             shutil.copy(module, self.root)
         path = data / "briefings.js"
         rotation = data / "rotation_state.json"
-        dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in ("2026-11-26", "2026-11-27")]
+        dates = [datetime.strptime(d, "%Y-%m-%d").date()
+                 for d in (GATE_START_DATE, "2026-11-25", "2026-11-26", "2026-11-27")]
         with patch.object(lesson_generation, "fetch_article", return_value=None):
-            first, second = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
-                             for d in dates]
+            rollout, prior, first, second = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
+                                             for d in dates]
         legacy = {"id": "legacy", "date": "2026-11-23", "contents": "unchanged"}
         bad = copy.deepcopy(first)
         bad["quiz_items"][0]["answer"] = "0.94"
 
-        template = build_focused_lesson(get_pillar_for_date(dates[0]), dates[0].isoformat())
-        template["curated_edition_date"] = template["date"]
-        key = str(template["pillar_id"])
+        templates = build_focused_templates(PILLARS)
+        key = str(first["pillar_id"])
 
-        def write(latest, *rows, fallback=template):
-            state = {"last_updated": latest["date"]}
+        def write(latest, *rows, fallbacks=templates, last_updated=None):
+            state = {"last_updated": last_updated or latest["date"]}
             rotation.write_text(json.dumps(state))
             path.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps(
-                {"rotation_state": state, "briefings": [latest, *rows], "focused_lessons": {key: fallback}}) + ";")
+                {"rotation_state": state, "briefings": [latest, *rows], "focused_lessons": fallbacks}) + ";")
 
         def assert_blocked(message=f"{first['id']}: Every quiz key"):
             originals = path.read_bytes(), rotation.read_bytes()
@@ -163,10 +163,10 @@ class EvidenceWorkflowTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             return result.stdout.strip()
 
-        write(first, legacy)
+        write(first, prior, rollout, legacy)
         git("git init -qb main && git add *.py pipeline/ data/briefings.js data/rotation_state.json"
             " && git commit -qm 'Published lesson' && git switch -qc direct-merge")
-        write(bad, legacy)
+        write(bad, prior, rollout, legacy)
         git("git commit -qam 'Direct bundle edit' && git switch -q main"
             " && git merge -q --no-ff direct-merge -m 'Merge direct bundle update'")
         result = self.bash(assets)
@@ -174,15 +174,22 @@ class EvidenceWorkflowTests(unittest.TestCase):
         evidence_staged = self.root / "site" / "data" / "pipeline" / "briefing.json"
         self.assertEqual(evidence_staged.read_bytes(), (evidence / "briefing.json").read_bytes())
         assert_blocked()
-        write(second, bad, legacy)
+        write(second, bad, prior, rollout, legacy)
         assert_blocked()
 
-        bad_template = copy.deepcopy(template)
+        bad_template = copy.deepcopy(templates[key])
         bad_template["quiz_items"][0]["answer"] = "0.94"
-        write(second, first, legacy, fallback=bad_template)
+        write(second, first, prior, rollout, legacy, fallbacks={**templates, key: bad_template})
         assert_blocked(f"Fallback pillar {key}: Every quiz key")
 
-        write(second, first, legacy)
+        write(second, first, prior, rollout, legacy, fallbacks={k: v for k, v in templates.items() if k != key})
+        assert_blocked(f"Missing fallback lesson for rotation pillar(s): {key}")
+        write(legacy, last_updated=rollout["date"])
+        assert_blocked("Missing scheduled lesson")
+        write(second, first, rollout, legacy)
+        assert_blocked("Missing scheduled lesson")
+
+        write(second, first, prior, rollout, legacy)
         catalog = self.root / "focused_lessons.py"
         with catalog.open("a") as source:
             source.write('\nLESSONS[1][0]["recommendation"] = ("Edited", "Edited")\n')
@@ -190,10 +197,10 @@ class EvidenceWorkflowTests(unittest.TestCase):
         result = self.bash(gate)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Rotation file does not match the lesson bundle", result.stderr)
-        write(second, first, legacy)
+        write(second, first, prior, rollout, legacy)
         result = self.bash(gate)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Validated 2 dated archive lessons.", result.stdout)
+        self.assertIn("Validated 4 dated archive lessons.", result.stdout)
         self.assertEqual((self.root / "site" / "data" / "briefings.js").read_bytes(), path.read_bytes())
         self.assertEqual(_read_bundle(path)["briefings"][-1], legacy)
 
