@@ -9358,6 +9358,13 @@
       },
 
       renderUI() {
+        const briefing = App.selected || getTodaySingleBriefing();
+        const available = briefing?.lesson_format !== "single_guideline";
+        for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
+          const element = document.getElementById(id);
+          if (element) element.style.display = available ? "" : "none";
+        }
+        if (!available) return;
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
 

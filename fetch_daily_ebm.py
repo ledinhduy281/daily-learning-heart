@@ -2749,9 +2749,14 @@ def handle_socratic_turn(req_data: dict) -> dict:
     if not briefings:
         return {"ok": False, "error": "No briefing data available."}
     lang = "en" if req_data.get("lang") == "en" else "vi"
-    primary = next((b for b in briefings if b.get("id") == req_data.get("briefing_id")), None)
+    briefing_id = req_data.get("briefing_id")
+    primary = next((b for b in briefings if b.get("id") == briefing_id), None)
+    if primary is None and str(briefing_id).endswith("-focused"):
+        return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     if primary is None:
         primary = next((b for b in briefings if str(b.get("pillar_id")) == str(req_data.get("pillar_id", 1)) and "-main" in b.get("id", "")), briefings[0])
+    if primary.get("lesson_format") == "single_guideline":
+        return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     state = copy.deepcopy(req_data.get("state")) if isinstance(req_data.get("state"), dict) else {}
     if not isinstance(state.get("subskills"), list) or len(state["subskills"]) != 4:
         state["subskills"] = [{**s, "level": 0, "checks": 0, "answered": 0, "correct": 0} for s in _socratic_subskill_defs(primary, lang)]
