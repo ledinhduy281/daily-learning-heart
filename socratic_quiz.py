@@ -12,13 +12,14 @@ def turn(primary, state, lang, action, user_answer='', selected_choice=''):
     if source_only and action != 'start_diagnostic':
         migration = migrate_source_review(primary, state, lang)
         if migration:
-            index, question, keep = migration
+            index, question, keep, revealed = migration
             state.update(question_index=index, current_question=question)
             if not keep:
                 pending = question or {}
                 state.update(current_options=pending.get('options', []), correct_key=pending.get('correct_key', ''),
                              explanation=pending.get('explanation', ''), last_question=pending.get('question', ''),
-                             options_lang=lang, question_revealed=False, attempts_on_current=0,
+                             options_lang=lang, question_revealed=revealed,
+                             attempts_on_current=state.get('attempts_on_current', 0) if revealed else 0,
                              phase='diagnostic' if question else 'complete')
                 return pending.get('question') or ('Review complete.' if en else 'Hoàn tất ôn tập.'), state, 'partial'
     choice = (selected_choice or user_answer).strip().upper().rstrip('.:)')

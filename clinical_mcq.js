@@ -64,9 +64,10 @@ const ClinicalQuiz = (() => {
     if (matchesSourceQuestion(current,expected)) return {index:i,question:expected,keep:true};
     const old=sourceQuestion(primary,ref.slot_idx,i,lang,ref.difficulty);
     if (!matchesSourceQuestion(current,old)) return null;
-    const distinct=new Set(sourceItems(primary).slice(0,i+Number(state.question_revealed===true)).map(([,item])=>item.quote));
+    const distinct=new Set(sourceItems(primary).slice(0,i).map(([,item])=>item.quote));
     const index=distinct.size;
-    return {index,question:reviewQuestion(primary,ref.slot_idx,index,lang,ref.difficulty),keep:false};
+    const question=reviewQuestion(primary,ref.slot_idx,index,lang,ref.difficulty);
+    return {index,question,keep:false,revealed:state.question_revealed===true && question?.source_quote===current.source_quote};
   }
   function sourceQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId) {
     const items=sourceItems(primary), available=sourceId?items.filter(([i])=>sourceId===`source:${i}`):items;
@@ -188,13 +189,14 @@ const ClinicalQuiz = (() => {
     delete state.revealed_source_pmid;
     const migration=migrateSourceReview(primary,state,lang);
     if (migration && action!=='start_diagnostic') {
-      const {index,question,keep}=migration;
+      const {index,question,keep,revealed}=migration;
       state.question_index=index;
       state.current_question=question;
       if (!keep) {
         Object.assign(state,{current_options:question?.options||[],correct_key:question?.correct_key||'',
           explanation:question?.explanation||'',last_question:question?.question||'',options_lang:lang,
-          question_revealed:false,attempts_on_current:0,phase:question?'diagnostic':'complete'});
+          question_revealed:revealed,attempts_on_current:revealed?(state.attempts_on_current||0):0,
+          phase:question?'diagnostic':'complete'});
         return {reply:question?.question||(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:'partial'};
       }
     }

@@ -9062,7 +9062,7 @@
         ];
       },
 
-      replacePendingQuestion(sess, mcq, lang) {
+      replacePendingQuestion(sess, mcq, lang, revealed = false) {
         if (!mcq) {
           Object.assign(sess, {phase: "complete", current_options: [], current_question: null, last_question: "",
             correct_key: "", explanation: "", question_revealed: false});
@@ -9071,7 +9071,7 @@
         }
         Object.assign(sess, {
           question_id: this.newQuizId(),
-          question_revealed: false,
+          question_revealed: revealed,
           last_question: mcq.question,
           current_options: mcq.options,
           correct_key: mcq.correct_key,
@@ -9150,9 +9150,9 @@
               s.current_question = migration.question;
               this.saveStore();
             } else {
-              s.attempts_on_current = 0;
+              if (!migration.revealed) s.attempts_on_current = 0;
               if (migration.question) s.phase = "diagnostic";
-              this.replacePendingQuestion(s, migration.question, s.options_lang);
+              this.replacePendingQuestion(s, migration.question, s.options_lang, migration.revealed);
             }
           }
           const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim();

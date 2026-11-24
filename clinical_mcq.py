@@ -95,13 +95,15 @@ def migrate_source_review(primary, state, lang):
     slot, difficulty = ref['slot_idx'], ref.get('difficulty', 'normal')
     expected = build_source_review_question(primary, slot, index, lang, difficulty)
     if matches_source_question(current, expected):
-        return index, expected, True
+        return index, expected, True, False
     old = _source_mcq(primary, slot, index, lang, difficulty, None)
     if not matches_source_question(current, old):
         return None
-    passed = validated_source_items(primary)[:index + int(state.get('question_revealed') is True)]
+    passed = validated_source_items(primary)[:index]
     index = len({item['quote'] for _, item in passed})
-    return index, build_source_review_question(primary, slot, index, lang, difficulty), False
+    question = build_source_review_question(primary, slot, index, lang, difficulty)
+    revealed = bool(state.get('question_revealed') is True and question and question['source_quote'] == current['source_quote'])
+    return index, question, False, revealed
 
 
 def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):

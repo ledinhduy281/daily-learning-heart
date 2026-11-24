@@ -93,6 +93,22 @@ assert.equal(resumed.correct_count, 1);
 assert.equal(resumed.current_question.source_quote, next.source_quote);
 assert.equal(resumed.messages.length, 2);
 assert.equal(quiz.turn(shifted, resumed, "en", "just_tell_me").state.question_revealed, true);
+const oldRetry = quiz.build(shifted, 2, 2, "en");
+const retry = {...preUpdate, question_index: 2, current_question: oldRetry, current_options: oldRetry.options,
+  last_question: oldRetry.question, correct_key: oldRetry.correct_key, explanation: oldRetry.explanation,
+  question_revealed: true, attempts_on_current: 1};
+tutor.store[shifted.id] = structuredClone(retry);
+const restoredRetry = getSavedSession.call(tutor, 9, shifted);
+const apiRetry = quiz.turn(shifted, retry, "en", "answer", "", oldRetry.correct_key).state;
+for (const state of [restoredRetry, apiRetry]) {
+  assert.equal(state.phase, "diagnostic");
+  assert.equal(state.current_question.source_quote, oldRetry.source_quote);
+  assert.equal(state.question_revealed, true);
+  assert.equal(state.attempts_on_current, 1);
+  const done = quiz.turn(shifted, state, "en", "answer", "", state.correct_key);
+  assert.equal(done.state.phase, "complete");
+  assert.equal(done.state.correct_count, 1);
+}
 
 const py = spawnSync("python3", ["-c",
   "import json,sys; from clinical_mcq import build_mcq; print(json.dumps([build_mcq(b, 1, i, l) for b in json.load(sys.stdin) for l in ['vi','en'] for i in range(len(b['quiz_items']))]))"],
