@@ -65,6 +65,13 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertEqual(corrected["supporting_evidence"]["name"], "EXPLORER-HCM")
             self.assertNotIn("SEQUOIA-HCM", corrected["part2_en_markdown"])
 
+    def test_hcm_archive_cites_mavacamten_interruption_threshold(self):
+        archive = lessons.build_hcm_archive_edition(app.PILLARS[7], "2026-11-23")
+        recommendation = archive["guideline_evolution"]
+        self.assertIn("LVEF) dưới 50%", recommendation["recommendation_vi"])
+        self.assertIn("LVEF) falls below 50%", recommendation["recommendation_en"])
+        self.assertEqual(archive["pubmed_anchors"][-1]["source"], "DailyMed")
+
     def test_refresh_replaces_same_day_legacy_lesson_and_is_idempotent_without_pubmed_lookup(self):
         today = datetime.date(2026, 11, 24)
         legacy = {"date": today.isoformat(), "pillar_id": app.get_pillar_for_date(today)["id"]}

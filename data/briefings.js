@@ -563,8 +563,8 @@ window.EBM_BRIEFINGS_DATA = {
           "doi": "10.1093/eurheartj/ehad194"
         },
         "recommendation_id": "mavacamten-obstructive-hcm",
-        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
-        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring."
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%."
       },
       "pubmed_anchors": [
         {
@@ -578,6 +578,11 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32871100",
           "doi": "10.1016/S0140-6736(20)31792-X",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        },
+        {
+          "title": "CAMZYOS (mavacamten) U.S. prescribing information",
+          "source": "DailyMed",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b"
         }
       ],
       "supporting_evidence": {
@@ -598,11 +603,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 151
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 172
     },
     "9": {
       "id": "ebm-2026-11-24-p9-focused",
@@ -754,8 +759,8 @@ window.EBM_BRIEFINGS_DATA = {
           "doi": "10.1093/eurheartj/ehad194"
         },
         "recommendation_id": "mavacamten-obstructive-hcm",
-        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
-        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.",
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.",
         "steps": [
           {
             "era_label_vi": "Điều trị ban đầu",
@@ -783,6 +788,11 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32871100",
           "doi": "10.1016/S0140-6736(20)31792-X",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        },
+        {
+          "title": "CAMZYOS (mavacamten) U.S. prescribing information",
+          "source": "DailyMed",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b"
         }
       ],
       "supporting_evidence": {
@@ -803,11 +813,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 151,
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 172,
       "landmark_trials": [
         {
           "name": "EXPLORER-HCM",
@@ -3300,8 +3310,8 @@ window.EBM_BRIEFINGS_DATA = {
           "doi": "10.1093/eurheartj/ehad194"
         },
         "recommendation_id": "mavacamten-obstructive-hcm",
-        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
-        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.",
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.",
         "steps": [
           {
             "era_label_vi": "Điều trị ban đầu",
@@ -3329,6 +3339,11 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32871100",
           "doi": "10.1016/S0140-6736(20)31792-X",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        },
+        {
+          "title": "CAMZYOS (mavacamten) U.S. prescribing information",
+          "source": "DailyMed",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b"
         }
       ],
       "supporting_evidence": {
@@ -3349,11 +3364,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
-      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
-      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 151,
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 172,
       "landmark_trials": [
         {
           "name": "EXPLORER-HCM",
