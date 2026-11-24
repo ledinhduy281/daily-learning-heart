@@ -83,6 +83,10 @@ cp ../heart-evidence/publish/briefing.json ../heart-evidence/publish/evidence.pa
 
 The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after changes to `main`, a successful curated refresh, a successful evidence publish job, or a recovery dispatch when Pages is stale. Already-current scheduled evidence runs that skip the publish job do not redeploy the site. Use **Settings → Pages → Build and deployment → Source → GitHub Actions**. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger push workflows. Raw/bronze snapshots and backend files are not part of the deployed site.
 
+### Lesson source extraction
+
+[`pipeline.lesson_sources.fetch_article`](pipeline/lesson_sources.py) takes a PMID and resolves it to open-access JATS XML via [Europe PMC](https://europepmc.org/RestfulWebService). It requires matching article IDs and an explicit CC BY 4.0 or CC0 license URI before returning text. A browsable article or PubMed abstract alone is not reuse permission. Results include authors, a DOI, the source and license URLs, and location-tagged passages from explicit recommendation sections or tables and structured abstracts. These are candidates, not clinical judgments; extraction does not establish relevance or replace review. The scheduled lesson does not yet use this extractor.
+
 ## Repository guide
 
 | Path | Role |
