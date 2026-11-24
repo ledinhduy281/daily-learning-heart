@@ -84,8 +84,8 @@ class LessonGenerationTests(unittest.TestCase):
         self.assertEqual(lesson["supporting_evidence"]["pmid"], TRIAL_PMID)
         self.assertEqual(lesson["lesson_provenance"]["quiz"]["mode"], "curated")
         self.assertTrue(validated_source_items(lesson))
-        self.assertIn("Curated, human-reviewed content", lesson["part2_en_markdown"])
-        self.assertIn("đã được người biên tập rà soát", lesson["part1_vi_markdown"])
+        self.assertIn("Curated from the cited source — not yet physician-reviewed", lesson["part2_en_markdown"])
+        self.assertIn("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt", lesson["part1_vi_markdown"])
 
     @patch.object(lesson_coverage, "fetch_article")
     def test_coverage_separates_licensed_unmatched_unavailable_and_errors(self, fetch):

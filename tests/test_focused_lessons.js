@@ -32,6 +32,18 @@ assert.match(context.rotationNoticeFor({date: "2026-11-23"}), /Bài lưu trữ/)
 assert.equal(context.rotationNoticeFor({date: "2026-11-24"}), "");
 
 const fallback = context.getTodaySingleBriefing();
+const labels = {
+  vi: "Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt",
+  en: "Curated from the cited source — not yet physician-reviewed"
+};
+assert.equal(
+  context.normalizeCuratedMarkdown("## Block A\n*Curated, human-reviewed content*\n\nUnchanged"),
+  `## Block A\n*${labels.en}*\n\nUnchanged`
+);
+assert.equal(
+  context.normalizeCuratedMarkdown("*Nội dung tuyển chọn, đã được người biên tập rà soát*"),
+  `*${labels.vi}*`
+);
 assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
 assert.equal(fallback.guideline_evolution.current_guideline.pmid, "36017548");
 for (const isVi of [true, false]) {
@@ -42,6 +54,7 @@ for (const isVi of [true, false]) {
   const disclaimer = fallback[isVi ? "disclaimer_vi" : "disclaimer_en"];
   assert.match(disclaimer, isVi ? /^Chỉ dùng cho mục đích học tập/ : /^For education only/);
   assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
+  assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].includes(labels[isVi ? "vi" : "en"]));
 }
 context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
 assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
@@ -66,18 +79,18 @@ const excerpt = {
   license_url: "https://creativecommons.org/licenses/by/4.0/"
 };
 for (const [isVi, curated, licensed] of [
-  [true, /đã được người biên tập rà soát/, /Trích từ nguồn có giấy phép/],
-  [false, /[Cc]urated, human-reviewed/, /Extracted from a licensed source/]
+  [true, labels.vi, /Trích từ nguồn có giấy phép/],
+  [false, labels.en, /Extracted from a licensed source/]
 ]) {
   context.renderEvolutionPipeline({...fallback, guideline_evolution: {
     ...fallback.guideline_evolution, licensed_recommendation: excerpt
   }}, isVi);
-  assert.match(Dom.evolutionPipelineRow.innerHTML, curated);
+  assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(curated));
   assert.match(Dom.evolutionPipelineRow.innerHTML, licensed);
   context.renderTrialsMatrix({...fallback, supporting_evidence: {
     ...fallback.supporting_evidence, licensed_excerpts: {result: excerpt}
   }}, isVi);
-  assert.match(Dom.trialsGridDeck.innerHTML, curated);
+  assert.ok(Dom.trialsGridDeck.innerHTML.includes(curated));
   assert.match(Dom.trialsGridDeck.innerHTML, licensed);
   assert.match(Dom.trialsGridDeck.innerHTML, /creativecommons.org/);
 }
@@ -109,8 +122,8 @@ App.selected = {...fallback, quiz_mode: undefined};
 context.ClinicalQuiz = require("../clinical_mcq.js");
 context.document = {getElementById: id => quizNodes[id]};
 const tutor = vm.runInContext(quizCode + ";SocraticTutor", context);
-assert.match(tutor.quizSourceLabel(fallback, true), /đã được người biên tập rà soát/);
-assert.match(tutor.quizSourceLabel(fallback, false), /Curated, human-reviewed excerpt/);
+assert.equal(tutor.quizSourceLabel(fallback, true), labels.vi);
+assert.equal(tutor.quizSourceLabel(fallback, false), labels.en);
 const licensedQuiz = {lesson_provenance: {quiz: {mode: "licensed_excerpt"}}};
 assert.match(tutor.quizSourceLabel(licensedQuiz, true), /Trích từ nguồn có giấy phép/);
 assert.match(tutor.quizSourceLabel(licensedQuiz, false), /Extracted from a licensed source/);

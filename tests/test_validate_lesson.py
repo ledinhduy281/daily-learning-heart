@@ -86,6 +86,21 @@ class LessonGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not drawn from a licensed lesson excerpt"):
             validate_bundle(bundle)
 
+    def test_pages_accepts_older_curated_markdown_labels_without_rewriting_them(self):
+        bundle = self.bundle(self.curated)
+        lesson = bundle["briefings"][0]
+        for field, new, old in (
+            ("part1_vi_markdown", "Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt",
+             "Nội dung tuyển chọn, đã được người biên tập rà soát"),
+            ("part2_en_markdown", "Curated from the cited source — not yet physician-reviewed",
+             "Curated, human-reviewed content"),
+        ):
+            lesson[field] = lesson[field].replace(new, old)
+            self.assertIn(old, lesson[field])
+        previous = copy.deepcopy(bundle)
+        self.assertEqual(validate_bundle(bundle), 3)
+        self.assertEqual(bundle, previous)
+
     def test_blank_doi_uses_pubmed_in_both_markdown_blocks(self):
         society, year, pmid, _, name = GUIDELINE["guideline"]
         with patch.dict(GUIDELINE, guideline=(society, year, pmid, " ", name)), \

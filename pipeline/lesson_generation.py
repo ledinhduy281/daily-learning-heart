@@ -15,6 +15,10 @@ from pipeline.lesson_sources import fetch_article
 LOGGER = logging.getLogger(__name__)
 CURATED = "curated"
 LICENSED = "licensed_excerpt"
+CURATED_LABELS = {
+    "vi": "Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt",
+    "en": "Curated from the cited source — not yet physician-reviewed",
+}
 LOOKUP_ERRORS = (*TRANSIENT_READ_ERRORS, ValueError, KeyError, TypeError, ParseError)
 
 
@@ -101,7 +105,7 @@ def _licensed_quiz(lesson, pmid, excerpts):
 def _append_markdown(lesson, language, recommendation, evidence_excerpts):
     vi = language == "vi"
     field = "part1_vi_markdown" if vi else "part2_en_markdown"
-    label = "Nội dung tuyển chọn, đã được người biên tập rà soát" if vi else "Curated, human-reviewed content"
+    label = CURATED_LABELS[language]
     licensed_label = "Trích từ nguồn có giấy phép (nguyên văn tiếng Anh)" if vi else "Extracted from a licensed source"
 
     def quote(excerpt):

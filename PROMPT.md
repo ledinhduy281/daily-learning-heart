@@ -34,6 +34,8 @@ I. THE 10 CORE CARDIOLOGY PILLARS & TOPIC ROTATION LOGIC
 Rotation rule: Use the assigned pillar and date. The app cycles through pillars 1–10 by calendar day. If a reliable recent guideline is unavailable, use the latest one you can verify, state its date and the coverage gap, and do not silently switch pillars.
 
 II. TWO-BLOCK SOURCE STRUCTURE (kept separate, tightly linked to each other)
+Source curation and citation lookup do not constitute physician review. Do not claim that lesson text or quiz excerpts were reviewed by a physician unless that review is documented.
+
 BLOCK A — One Focused Guideline Recommendation
 Select one primary ESC or AHA/ACC cardiology guideline. Highlight its official title, issuing body, publication year, and link. A historical edition may provide context but must not introduce a second primary recommendation.
 Required content:

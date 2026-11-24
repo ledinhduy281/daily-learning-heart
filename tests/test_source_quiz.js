@@ -35,10 +35,11 @@ assert.equal(wrong.state.current_question.question, next.question);
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 assert.doesNotMatch(html, /\.socratic-choice-btn:hover/);
 const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+const sourceLabelCode = html.match(/function curatedSourceLabel\(isVi\) \{[\s\S]*?\n    \}/)[0];
 const nodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection", "socraticChoicesWrap", "socraticChoicesGrid"]
   .map(id => [id, {style: {}}]));
 let stored;
-const tutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
+const tutor = vm.runInNewContext(sourceLabelCode + "\n" + tutorCode + ";SocraticTutor", {
   App: {selected: lesson, currentLang: "en"}, ClinicalQuiz: quiz, escapeHtml: String,
   document: {getElementById: id => nodes[id]},
   SOCRATIC_STATE_KEY: "quiz", safeStorageGet: () => stored, safeStorageSet: (_, value) => { stored = value; },
