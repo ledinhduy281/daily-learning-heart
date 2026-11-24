@@ -35,6 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson, build_focused_templates
+from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1915,6 +1916,48 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
 
 
+def _match_focused_mcq(query, options, primary, lang):
+    option_stop = {"a", "an", "and", "for", "in", "of", "the", "to", "with", "cua", "va"}
+
+    def tokens(text):
+        return set(re.findall(r"[a-z0-9]+", normalize(text)))
+
+    def has_cue(term, terms):
+        return term in terms or (term.endswith("s") and term[:-1] in terms)
+
+    marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
+    question = tokens(query[:marker.start()]) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
+    # Match options and question cues in the same sentence, not anywhere in the lesson.
+    paragraphs = [primary["guideline_evolution"][f"recommendation_{lang}"]]
+    notes = primary["teaching"][lang]
+    paragraphs.extend(p for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS) for p in notes[key])
+    sentences = [
+        (sentence, tokens(sentence))
+        for p in paragraphs for sentence in re.split(r"(?<=[.!?])\s+", p)
+    ]
+    cue_counts = {term: sum(has_cue(term, terms) for _, terms in sentences) for term in question}
+    ranked = []
+    for letter, option in options.items():
+        words = tokens(option) - option_stop
+        if not words:
+            continue
+        cues = sorted(term for term in question - words if cue_counts[term])
+        best = (0.0, "")
+        for sentence, terms in sentences:
+            coverage = len(words & terms) / len(words)
+            if coverage >= 0.75:
+                relevance = sum(1 / cue_counts[term] for term in cues if has_cue(term, terms))
+                score = coverage * (1 + relevance)
+                if score > best[0]:
+                    best = (score, sentence)
+        if best[0]:
+            ranked.append((best[0], letter, best[1]))
+    ranked.sort(reverse=True)
+    if ranked and (len(ranked) == 1 or ranked[0][0] > ranked[1][0]):
+        return ranked[0][1:]
+    return "", ""
+
+
 def _compose_deterministic_ebm_answer(
     query: str,
     briefings: list[dict],
@@ -1969,24 +2012,22 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        teaching = primary.get("teaching")
-        evidence = primary.get("supporting_evidence") or {}
-        if primary.get("lesson_format") == "single_guideline" and teaching:
-            evid_blob = " ".join([
-                cur_g.get("name", ""), evidence.get("name", ""),
-                *(ge.get(f"recommendation_{language}", "") for language in ("vi", "en")),
-                *(paragraph for language in ("vi", "en") for key in ("design", "findings")
-                  for paragraph in teaching[language][key]),
-            ]).lower()
-        else:
-            evid_blob = " ".join([
-                cur_g.get("name", ""),
-                " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
-                " ".join(f"{tr.get('name','')} {tr.get('changes_vi','')} {tr.get('caution_vi','')} {tr.get('changes_en','')} {tr.get('caution_en','')}" for tr in trials),
-                " ".join(f"{p.get('text_vi','')} {p.get('text_en','')}" for p in pearls),
-                (primary.get("part1_vi_markdown") or "")[:3000],
-                (primary.get("part2_en_markdown") or "")[:3000],
-            ]).lower()
+        if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
+            best_k, sentence = _match_focused_mcq(query, mcq_opts, primary, lang)
+            if not best_k:
+                return (
+                    "I couldn't match one answer to the lesson evidence." if is_en
+                    else "Tôi chưa tìm thấy một đáp án rõ ràng trong bài học."
+                ), sources
+            return f"**{best_k}** — {sentence}", sources
+        evid_blob = " ".join([
+            cur_g.get("name", ""),
+            " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
+            " ".join(f"{tr.get('name','')} {tr.get('changes_vi','')} {tr.get('caution_vi','')} {tr.get('changes_en','')} {tr.get('caution_en','')}" for tr in trials),
+            " ".join(f"{p.get('text_vi','')} {p.get('text_en','')}" for p in pearls),
+            (primary.get("part1_vi_markdown") or "")[:3000],
+            (primary.get("part2_en_markdown") or "")[:3000],
+        ]).lower()
         trap_re = re.compile(
             r"(giữ nguyên ngưỡng.*cũ|trì hoãn.*12 tháng|chỉ dùng.*sốc tim|ngưng toàn bộ|không cần lưu ý|"
             r"tăng gấp đôi liều.*suy thận|chỉ dựa vào ngưỡng tuổi|bỏ qua bệnh đồng mắc|đơn trị liệu.*vượt trội|"

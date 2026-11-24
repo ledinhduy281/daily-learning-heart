@@ -59,7 +59,29 @@ class FocusedLessonTests(unittest.TestCase):
             with self.subTest(lang=lang):
                 answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
                 self.assertTrue(answer.startswith("**B**"), answer)
+                self.assertIn("clinical failure" if lang == "en" else "thất bại lâm sàng", answer)
                 self.assertIn("26308684", {source["pmid"] for source in sources})
+
+    def test_pasted_diagnosis_question_uses_guideline_application_not_trial_measures(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        questions = {
+            "en": ("Which test is required to confirm PAH?\nA. Six-minute walk distance\n"
+                   "B. Right heart catheterization\nC. Echocardiography\nD. Chest radiography"),
+            "vi": ("Xét nghiệm nào xác nhận PAH nhóm 1?\nA. Quãng đường đi bộ 6 phút\n"
+                   "B. Thông tim phải\nC. Cộng hưởng từ tim\nD. X quang ngực"),
+        }
+        for lang, query in questions.items():
+            with self.subTest(lang=lang):
+                answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
+                self.assertTrue(answer.startswith("**B**"), answer)
+                self.assertIn("right heart catheterization" if lang == "en" else "thông tim phải", answer)
+                self.assertIn("36017548", {source["pmid"] for source in sources})
+
+    def test_pasted_question_with_no_matching_option_does_not_guess(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = "Which element has atomic number 11?\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en")
+        self.assertIn("couldn't match one answer", answer)
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
