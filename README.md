@@ -89,7 +89,7 @@ The [site workflow](.github/workflows/pages.yml) deploys the allowed static asse
 
 Run `python3 -m pipeline.lesson_coverage` for a JSON report of full-text and recommendation-match coverage for the ten active rotation guidelines. It distinguishes API failures from cases where no supported reusable copy was found through Europe PMC; it does not check publisher websites.
 
-`python3 -m pipeline.validate_lesson` checks the latest dated lesson in the bundle without fetching sources. The daily workflow runs it before committing; Pages runs it again before staging assets. An invalid guideline, recommendation–evidence pair, quiz key or citation fails publication. Pages can still publish the existing archive before the first pipeline lesson; it does not re-grade archived editions against today's source selection.
+`python3 -m pipeline.validate_lesson` checks the latest dated lesson in the bundle without fetching sources. The daily workflow runs it before committing a refreshed bundle. An invalid guideline, recommendation–evidence pair, quiz key or citation blocks that commit. Pages packages the checked-in bundle alongside the independent evidence feed; it does not re-grade stored lessons against today's source selection.
 
 ## Repository guide
 

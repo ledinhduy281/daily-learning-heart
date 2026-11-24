@@ -85,3 +85,19 @@ class EvidenceWorkflowTests(unittest.TestCase):
         (step,) = deploy["steps"]
         self.assertEqual(step["uses"], "actions/deploy-pages@v4")
         self.assertEqual(step["with"]["artifact_name"], "${{ needs.build.outputs.artifact_name }}")
+
+    def test_only_daily_refresh_validates_changed_lesson_before_publication(self):
+        pages_steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
+        self.assertFalse(any("pipeline.validate_lesson" in step.get("run", "") for step in pages_steps))
+
+        refresh_steps = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
+        gate, = [i for i, step in enumerate(refresh_steps) if "pipeline.validate_lesson" in step.get("run", "")]
+        commit, = [i for i, step in enumerate(refresh_steps) if "git commit" in step.get("run", "")]
+        self.assertLess(gate, commit)
+        self.assertNotIn("continue-on-error", refresh_steps[gate])
+        script = """
+        git() { return "$DIFF_STATUS"; }
+        python3() { return 42; }
+        """ + refresh_steps[gate]["run"]
+        self.assertEqual(self.bash(script, DIFF_STATUS="0").returncode, 0)
+        self.assertEqual(self.bash(script, DIFF_STATUS="1").returncode, 42)

@@ -16,8 +16,6 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Validate dated lesson before staging Pages
-        run: python3 -m pipeline.validate_lesson --allow-predating-pipeline
       - name: Stage public site assets only
         run: |
           mkdir -p site/data

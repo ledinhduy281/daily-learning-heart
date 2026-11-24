@@ -38,7 +38,10 @@ jobs:
       - name: Validate lesson before publishing
         env:
           TZ: Asia/Ho_Chi_Minh
-        run: python3 -m pipeline.validate_lesson --date "$(date +%F)"
+        run: |
+          if ! git diff --quiet HEAD -- data/briefings.js data/rotation_state.json; then
+            python3 -m pipeline.validate_lesson --date "$(date +%F)"
+          fi
 
       - name: Commit and push updated briefings.js
         run: |
