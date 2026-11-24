@@ -328,6 +328,17 @@ const DeviceProfile = (() => {
             } catch (_) { next.progress[key] = p.progress[key]; }
           }
         }
+        const quizKey = 'ebm_socratic_state_v1';
+        if (incoming.progress[quizKey] && next.progress[quizKey]) {
+          const incomingQuiz = JSON.parse(incoming.progress[quizKey]);
+          const nextQuiz = JSON.parse(next.progress[quizKey]);
+          const markers = Object.keys(incomingQuiz).filter(pillar => /^[1-9]\d*$/.test(pillar) && Object.hasOwn(nextQuiz, pillar))
+            .map(pillar => `legacy-migrated:${pillar}`).filter(marker => Object.hasOwn(nextQuiz, marker));
+          if (markers.length) {
+            for (const marker of markers) delete nextQuiz[marker];
+            next.progress[quizKey] = JSON.stringify(nextQuiz);
+          }
+        }
         const previous = p;
         p = {...next, device_id: p.device_id, created_at: p.created_at};
         if (!persist(mode === 'replace', true, this.exportJSON() !== before)) {

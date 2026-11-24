@@ -278,6 +278,19 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(newcomer.correct_count,0);
   assert.equal(c.getSession(8,lesson).correct_count,2);
   assert.equal(JSON.parse(first.snapshot().progress[key])[8],undefined);
+
+  first.importJSON(JSON.stringify({...JSON.parse(backup), progress:{[key]:JSON.stringify({
+    8:{answered_count:4,correct_count:3}, 'legacy-migrated:7':{lesson_id:'seventh-lesson'}
+  })}}), 'merge');
+  a.loadStore();
+  assert.equal(a.getSession(8,lesson).correct_count,2);
+  const restored=a.getSession(8,{id:'second-lesson',pillar_id:8});
+  assert.equal(restored.answered_count,4);
+  assert.equal(restored.correct_count,3);
+  const imported=JSON.parse(first.get(key));
+  assert.equal(imported[8],undefined);
+  assert.equal(imported['legacy-migrated:8'].lesson_id,'second-lesson');
+  assert.equal(imported['legacy-migrated:7'].lesson_id,'seventh-lesson');
 }
 {
   const profile = create(new Storage(),crypto);
