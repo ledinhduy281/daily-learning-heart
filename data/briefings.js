@@ -112,7 +112,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
@@ -137,6 +137,47 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "26551272",
           "doi": "10.1056/NEJMoa1511939",
           "url": "https://pubmed.ncbi.nlm.nih.gov/26551272/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "26551272": [
+          "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "130",
+          "start": 68,
+          "distractors": [
+            "117",
+            "143",
+            "156"
+          ]
+        },
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "120",
+          "start": 197,
+          "distractors": [
+            "108",
+            "132",
+            "144"
+          ]
+        },
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "140",
+          "start": 254,
+          "distractors": [
+            "126",
+            "154",
+            "168"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -175,7 +216,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
@@ -200,6 +241,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "36876740",
           "doi": "10.1056/NEJMoa2215024",
           "url": "https://pubmed.ncbi.nlm.nih.gov/36876740/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "36876740": [
+          "A total of 13,970 patients underwent randomization; 6992 were assigned to the bempedoic acid group and 6978 to the placebo group.",
+          "The median duration of follow-up was 40.6 months."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "36876740",
+          "quote": "A total of 13,970 patients underwent randomization; 6992 were assigned to the bempedoic acid group and 6978 to the placebo group.",
+          "answer": "13,970",
+          "start": 11,
+          "distractors": [
+            "12,573",
+            "15,367",
+            "16,764"
+          ]
+        },
+        {
+          "pmid": "36876740",
+          "quote": "The median duration of follow-up was 40.6 months.",
+          "answer": "40.6",
+          "start": 37,
+          "distractors": [
+            "36.5",
+            "44.7",
+            "48.8"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -238,7 +310,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of chronic coronary syndromes",
@@ -263,6 +335,48 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "30266608",
           "doi": "10.1016/j.jacc.2018.09.006",
           "url": "https://pubmed.ncbi.nlm.nih.gov/30266608/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "30266608": [
+          "The primary endpoint was the mean difference in angina severity at 6 months (assessed by the Seattle Angina Questionnaire summary score).",
+          "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "30266608",
+          "quote": "The primary endpoint was the mean difference in angina severity at 6 months (assessed by the Seattle Angina Questionnaire summary score).",
+          "answer": "6",
+          "start": 67,
+          "distractors": [
+            "5",
+            "7",
+            "8"
+          ]
+        },
+        {
+          "pmid": "30266608",
+          "quote": "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group).",
+          "answer": "76",
+          "start": 99,
+          "distractors": [
+            "68",
+            "84",
+            "92"
+          ]
+        },
+        {
+          "pmid": "30266608",
+          "quote": "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group).",
+          "answer": "75",
+          "start": 126,
+          "distractors": [
+            "67",
+            "83",
+            "91"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -301,7 +415,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of acute coronary syndromes",
@@ -326,6 +440,48 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "31556978",
           "doi": "10.1056/NEJMoa1908419",
           "url": "https://pubmed.ncbi.nlm.nih.gov/31556978/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "31556978": [
+          "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "After 3 months of treatment with ticagrelor plus aspirin, patients who had not had a major bleeding event or ischemic event continued to take ticagrelor and were randomly assigned to receive aspirin or placebo for 1 year."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "31556978",
+          "quote": "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "answer": "7119",
+          "start": 31,
+          "distractors": [
+            "6407",
+            "7831",
+            "8543"
+          ]
+        },
+        {
+          "pmid": "31556978",
+          "quote": "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "answer": "3",
+          "start": 66,
+          "distractors": [
+            "2",
+            "4",
+            "5"
+          ]
+        },
+        {
+          "pmid": "31556978",
+          "quote": "After 3 months of treatment with ticagrelor plus aspirin, patients who had not had a major bleeding event or ischemic event continued to take ticagrelor and were randomly assigned to receive aspirin or placebo for 1 year.",
+          "answer": "1",
+          "start": 214,
+          "distractors": [
+            "0",
+            "2",
+            "3"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -364,7 +520,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure",
@@ -389,6 +545,59 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "36027570",
           "doi": "10.1056/NEJMoa2206286",
           "url": "https://pubmed.ncbi.nlm.nih.gov/36027570/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "36027570": [
+          "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "36027570",
+          "quote": "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "answer": "6263",
+          "start": 21,
+          "distractors": [
+            "5637",
+            "6889",
+            "7515"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "answer": "40%",
+          "start": 108,
+          "distractors": [
+            "36%",
+            "44%",
+            "48%"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001).",
+          "answer": "2.3",
+          "start": 17,
+          "distractors": [
+            "2.1",
+            "2.5",
+            "2.7"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001).",
+          "answer": "0.82",
+          "start": 188,
+          "distractors": [
+            "0.74",
+            "0.90",
+            "0.98"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -427,7 +636,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)",
@@ -452,6 +661,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32865375",
           "doi": "10.1056/NEJMoa2019422",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32865375/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32865375": [
+          "In 135 centers, 2789 patients with early atrial fibrillation (median time since diagnosis, 36 days) underwent randomization.",
+          "The trial was stopped for efficacy at the third interim analysis after a median of 5.1 years of follow-up per patient."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32865375",
+          "quote": "In 135 centers, 2789 patients with early atrial fibrillation (median time since diagnosis, 36 days) underwent randomization.",
+          "answer": "36",
+          "start": 91,
+          "distractors": [
+            "32",
+            "40",
+            "44"
+          ]
+        },
+        {
+          "pmid": "32865375",
+          "quote": "The trial was stopped for efficacy at the third interim analysis after a median of 5.1 years of follow-up per patient.",
+          "answer": "5.1",
+          "start": 83,
+          "distractors": [
+            "4.6",
+            "5.6",
+            "6.1"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -490,7 +730,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of endocarditis",
@@ -515,6 +755,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "30152252",
           "doi": "10.1056/NEJMoa1808312",
           "url": "https://pubmed.ncbi.nlm.nih.gov/30152252/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "30152252": [
+          "In all patients, antibiotic treatment was administered intravenously for at least 10 days.",
+          "The primary composite outcome occurred in 24 patients (12.1%) in the intravenously treated group and in 18 (9.0%) in the orally treated group (between-group difference, 3.1 percentage points; 95% confidence interval, -3.4 to 9.6; P=0.40), which met noninferiority criteria."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "30152252",
+          "quote": "In all patients, antibiotic treatment was administered intravenously for at least 10 days.",
+          "answer": "10",
+          "start": 82,
+          "distractors": [
+            "9",
+            "11",
+            "12"
+          ]
+        },
+        {
+          "pmid": "30152252",
+          "quote": "The primary composite outcome occurred in 24 patients (12.1%) in the intravenously treated group and in 18 (9.0%) in the orally treated group (between-group difference, 3.1 percentage points; 95% confidence interval, -3.4 to 9.6; P=0.40), which met noninferiority criteria.",
+          "answer": "3.1",
+          "start": 169,
+          "distractors": [
+            "2.8",
+            "3.4",
+            "3.7"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -553,7 +824,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -578,6 +849,36 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32871100",
           "doi": "10.1016/S0140-6736(20)31792-X",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32871100/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32871100": [
+          "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32871100",
+          "quote": "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks.",
+          "answer": "50",
+          "start": 205,
+          "distractors": [
+            "45",
+            "55",
+            "60"
+          ]
+        },
+        {
+          "pmid": "32871100",
+          "quote": "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks.",
+          "answer": "30",
+          "start": 361,
+          "distractors": [
+            "27",
+            "33",
+            "36"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -616,7 +917,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
@@ -641,6 +942,37 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "26308684",
           "doi": "10.1056/NEJMoa1413687",
           "url": "https://pubmed.ncbi.nlm.nih.gov/26308684/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "26308684": [
+          "A primary end-point event occurred in 18%, 34%, and 28% of the participants in these groups, respectively, and in 31% of the pooled-monotherapy group (the two monotherapy groups combined).",
+          "The hazard ratio for the primary end point in the combination-therapy group versus the pooled-monotherapy group was 0.50 (95% confidence interval [CI], 0.35 to 0.72; P<0.001)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "26308684",
+          "quote": "A primary end-point event occurred in 18%, 34%, and 28% of the participants in these groups, respectively, and in 31% of the pooled-monotherapy group (the two monotherapy groups combined).",
+          "answer": "31%",
+          "start": 114,
+          "distractors": [
+            "28%",
+            "34%",
+            "37%"
+          ]
+        },
+        {
+          "pmid": "26308684",
+          "quote": "The hazard ratio for the primary end point in the combination-therapy group versus the pooled-monotherapy group was 0.50 (95% confidence interval [CI], 0.35 to 0.72; P<0.001).",
+          "answer": "0.50",
+          "start": 116,
+          "distractors": [
+            "0.45",
+            "0.55",
+            "0.60"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -679,7 +1011,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes",
@@ -704,6 +1036,47 @@ window.EBM_BRIEFINGS_DATA = {
           "pmid": "32970396",
           "doi": "10.1056/NEJMoa2024816",
           "url": "https://pubmed.ncbi.nlm.nih.gov/32970396/"
+        }
+      ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32970396": [
+          "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "25",
+          "start": 93,
+          "distractors": [
+            "23",
+            "27",
+            "29"
+          ]
+        },
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "75",
+          "start": 99,
+          "distractors": [
+            "67",
+            "83",
+            "91"
+          ]
+        },
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "200",
+          "start": 265,
+          "distractors": [
+            "180",
+            "220",
+            "240"
+          ]
         }
       ],
       "supporting_evidence": {
@@ -744,7 +1117,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -3290,7 +3663,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",

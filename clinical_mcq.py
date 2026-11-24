@@ -30,7 +30,80 @@ def alternatives(text, numeric_only=False, target=None):
     return [(text, original)] + [(text[:start] + r + text[end:], r) for r in replacements]
 
 
+def validated_source_items(primary):
+    sources, rows = primary.get('quiz_source_texts'), primary.get('quiz_items')
+    if primary.get('quiz_mode') != 'source_excerpt' or not isinstance(sources, dict) or not isinstance(rows, list):
+        return []
+    evolution = primary.get('guideline_evolution') or {}
+    guideline = (evolution.get('current_guideline') or {}).get('pmid')
+    evidence = primary.get('supporting_evidence') or {}
+    allowed = {guideline}
+    if (guideline and evolution.get('recommendation_id') and evidence.get('guideline_pmid') == guideline
+            and evidence.get('recommendation_id') == evolution['recommendation_id']):
+        allowed.add(evidence.get('pmid'))
+    items = []
+    for i, item in enumerate(rows):
+        if not isinstance(item, dict):
+            continue
+        pmid, quote, answer, start, choices = (item.get(k) for k in ('pmid', 'quote', 'answer', 'start', 'distractors'))
+        if not isinstance(pmid, str) or not re.fullmatch(r'[1-9][0-9]{0,8}', pmid) or pmid not in allowed:
+            continue
+        source = sources.get(pmid)
+        if not isinstance(source, list) or not isinstance(quote, str) or not quote.strip() or quote not in source:
+            continue
+        if not isinstance(answer, str) or not answer or type(start) is not int or start < 0:
+            continue
+        end = start + len(answer)
+        if quote[start:end] != answer or (start and quote[start - 1].isalnum()) or (end < len(quote) and quote[end].isalnum()):
+            continue
+        if not any(m.start() == start and m[0] == answer for m in re.finditer(r'[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?%?', quote)):
+            continue
+        if not isinstance(choices, list) or len(choices) != 3 or not all(
+            isinstance(c, str) and re.fullmatch(r'[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?%?', c)
+            and c.endswith('%') == answer.endswith('%') for c in choices
+        ):
+            continue
+        if len({float(c.rstrip('%').replace(',', '')) for c in [answer, *choices]}) != 4:
+            continue
+        items.append((i, item))
+    return items
+
+
+def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):
+    items = [(f'source:{i}', item) for i, item in validated_source_items(primary)]
+    available = [(i, item) for i, item in items if i == source_id] if source_id else items
+    if not available:
+        return None
+    key, item = available[variant_idx % len(available)]
+    answer, quote, start, pmid = (item[k] for k in ('answer', 'quote', 'start', 'pmid'))
+    texts = [answer, *item['distractors']]
+    offset = (variant_idx + variant_idx // 4) % 4
+    order = [(i - offset) % 4 for i in range(4)]
+    en = lang == 'en'
+    correct = 'ABCD'[offset]
+    prompt = 'Complete the verbatim source excerpt' if en else 'Điền vào chỗ trống trong trích đoạn nguyên văn'
+    explanation = 'Correct answer' if en else 'Đáp án đúng'
+    kind = 'guideline' if pmid == primary['guideline_evolution']['current_guideline']['pmid'] else 'trial'
+    idx = 0 if kind == 'guideline' else 1
+    return {
+        'question': f'{prompt} (PMID {pmid}): {quote[:start]}____{quote[start + len(answer):]}',
+        'options': [{'key': 'ABCD'[i], 'text': texts[n]} for i, n in enumerate(order)],
+        'correct_key': correct,
+        'explanation': f'{explanation}: {correct}. “{quote}” (PMID {pmid})',
+        'source_quote': quote, 'source_pmid': pmid,
+        'option_ids': {'ABCD'[i]: str(n) for i, n in enumerate(order)},
+        'generation': {'slot_idx': slot_idx, 'variant_idx': variant_idx, 'source_id': key, 'difficulty': difficulty},
+        'question_kind': kind, 'difficulty': difficulty, 'subskill_idx': idx,
+        'required_subskills': sorted({0 if row['pmid'] == primary['guideline_evolution']['current_guideline']['pmid'] else 1
+                                      for _, row in items}),
+        'option_kinds': {c: kind for c in 'ABCD'},
+        'distractor_types': {c: 'numeric' for c in 'ABCD' if c != correct},
+    }
+
+
 def build_mcq(primary, slot_idx, variant_idx, lang, difficulty='normal', source_id=None):
+    if primary.get('quiz_mode') == 'source_excerpt':
+        return _source_mcq(primary, int(slot_idx), int(variant_idx), lang, difficulty, source_id)
     en = lang == 'en'
     suffix = 'en' if en else 'vi'
     ge = primary.get('guideline_evolution') or {}

@@ -4198,7 +4198,7 @@
 
         </div>
 
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay">
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay" style="display: none;">
           <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
           <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
         </button>
@@ -4485,7 +4485,7 @@
       </details>
 
       <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
-      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText">
+      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText" style="display: none;">
         <div class="socratic-header-row">
           <div class="socratic-title-block">
             <div class="socratic-title-line">
@@ -9025,7 +9025,7 @@
         const isEn = App.currentLang === "en";
         const pid = Number(b?.pillar_id || App.todayPillarId || 1);
         const curName = String(b?.guideline_evolution?.current_guideline?.name || "2026 Guidelines");
-        const trials = (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
+        const trials = b?.supporting_evidence?.name || (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
         if (isEn) {
           return [
             { id: "guideline", label: `Guideline Shifts (${curName.slice(0, 26)})` },
@@ -9059,9 +9059,12 @@
 
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = String(pid);
+        const lessonId = briefing?.quiz_mode === "source_excerpt" ? briefing.id : null;
+        if (lessonId && this.store[key]?.lesson_id !== lessonId) delete this.store[key];
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {
           this.store[key] = {
+            ...(lessonId ? { lesson_id: lessonId } : {}),
             started: false,
             phase: "diagnostic",
             diag_step: 0,
@@ -9145,14 +9148,12 @@
       syncCurrentBriefing() {
         const b = App.selected || getTodaySingleBriefing();
         this.curPillarId = Number((b && b.pillar_id) || App.todayPillarId || 1);
-        this.getSession(this.curPillarId, b);
         this.renderUI();
       },
 
       onBriefingSelected(b) {
         if (!b) return;
         this.curPillarId = Number(b.pillar_id || 1);
-        this.getSession(this.curPillarId, b);
         this.renderUI();
       },
 
@@ -9365,6 +9366,12 @@
       },
 
       renderUI() {
+        const b = App.selected || getTodaySingleBriefing();
+        const available = ClinicalQuiz.hasSourceItems(b);
+        for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
+          document.getElementById(id).style.display = available ? "" : "none";
+        }
+        if (!available) return;
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
 
@@ -9374,8 +9381,8 @@
         };
         setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
         setEl("socraticSubText", isVi
-          ? "Trắc nghiệm ôn lại kiến thức hôm nay sau khi đọc Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & cập nhật tiến độ tức thì sau mỗi câu."
-          : "Daily review quiz after reading today's pillar: 4-question diagnostic (levels 0–5), A/B/C/D clinical challenges, and real-time mastery tracking after every answer.");
+          ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
+          : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.");
 
         const phaseMapVi = {
           diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
@@ -9408,8 +9415,8 @@
 
         const btnHard = document.getElementById("btnSocCmdHarder");
         const btnEasy = document.getElementById("btnSocCmdEasier");
-        if (btnHard) btnHard.classList.toggle("active", sess.difficulty === "hard");
-        if (btnEasy) btnEasy.classList.toggle("active", sess.difficulty === "easy");
+        if (btnHard) btnHard.style.display = "none";
+        if (btnEasy) btnEasy.style.display = "none";
 
         setEl("socraticChoicesHeader", isVi
           ? "Chọn 1 đáp án đúng nhất (A, B, C hoặc D):"
@@ -9485,8 +9492,11 @@
           } else {
             box.innerHTML = msgs.map((m) => {
               const bodyHtml = escapeHtml(m.text || "");
+              const sourceHtml = m.role === "assistant" && /^[1-9][0-9]{0,8}$/.test(m.source_pmid || "")
+                ? `<br><a href="https://pubmed.ncbi.nlm.nih.gov/${m.source_pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${m.source_pmid}</a>`
+                : "";
               return `<div class="socratic-msg ${m.role === "user" ? "user" : "assistant"}">
-                <div class="socratic-msg-bubble">${bodyHtml}</div>
+                <div class="socratic-msg-bubble">${bodyHtml}${sourceHtml}</div>
               </div>`;
             }).join("");
             box.scrollTop = box.scrollHeight;
@@ -9667,7 +9677,7 @@
                   if (typeof d.correct_key === "string") sess.correct_key = d.correct_key;
                   sess.options_lang = lang;
                   sess.started = true;
-                  sess.messages.push({ role: "assistant", text: d.reply_markdown });
+                  sess.messages.push({ role: "assistant", text: d.reply_markdown, source_pmid: d.state?.revealed_source_pmid });
                   sess.question_id = this.newQuizId();
                   this.saveStore();
                   typing.remove();
@@ -9684,7 +9694,7 @@
           Object.assign(sess, out.state);
           sess.options_lang = lang;
           sess.started = true;
-          sess.messages.push({ role: "assistant", text: out.reply });
+          sess.messages.push({ role: "assistant", text: out.reply, source_pmid: out.state.revealed_source_pmid });
           sess.question_id = this.newQuizId();
           this.saveStore();
           typing.remove();
@@ -9699,6 +9709,10 @@
       },
 
       async runClientSocratic(primary, sess, action, userAnswer, lang, selectedChoice = "") {
+        if (!ClinicalQuiz.hasSourceItems(primary)) {
+          return { reply: lang === "vi" ? "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
+            : "No source-supported questions are available for this lesson.", state: {}, eval: "partial" };
+        }
         return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);
       }
 
