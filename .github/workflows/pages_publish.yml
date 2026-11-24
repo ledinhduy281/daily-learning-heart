@@ -15,17 +15,41 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
           persist-credentials: false
       - name: Stage public site assets only
         run: |
           mkdir -p site/data
           cp index.html icon.svg manifest.json clinical_distractors.js clinical_mcq.js \
             device_profile.js sync_config.js cloud_sync.js search_ranking.js evidence_feed.js offline.js site/
-          cp data/briefings.js site/data/
           if [[ -f data/pipeline/briefing.json && -f data/pipeline/evidence.parquet ]]; then
             mkdir site/data/pipeline
             cp data/pipeline/briefing.json data/pipeline/evidence.parquet site/data/pipeline/
           fi
+      - name: Stage the latest valid lesson bundle
+        run: |
+          set -o pipefail
+          snapshots=$(mktemp -d)
+          trap 'rm -rf "$snapshots"' EXIT
+          while read -r revision; do
+            snapshot="$snapshots/$revision"
+            mkdir "$snapshot"
+            git archive "$revision" | tar -x -C "$snapshot"
+            bundle="$snapshot/data/briefings.js"
+            [[ -f "$bundle" ]] || continue
+            if [[ -f "$snapshot/pipeline/validate_lesson.py" ]]; then
+              if ! (cd "$snapshot" && python3 -m pipeline.validate_lesson); then
+                echo "::warning::Skipping invalid lesson bundle from $revision"
+                continue
+              fi
+            elif ! python3 -m pipeline.validate_lesson --bundle "$bundle" --allow-predating-pipeline; then
+              echo "::warning::Skipping invalid pre-gate bundle from $revision"
+              continue
+            fi
+            cp "$bundle" site/data/
+            exit 0
+          done < <(git log --first-parent --format=%H -- data/briefings.js)
+          echo "::warning::No valid lesson bundle found; publishing the other assets only"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

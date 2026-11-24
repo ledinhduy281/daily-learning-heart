@@ -86,10 +86,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual(step["uses"], "actions/deploy-pages@v4")
         self.assertEqual(step["with"]["artifact_name"], "${{ needs.build.outputs.artifact_name }}")
 
-    def test_only_daily_refresh_validates_changed_lesson_before_publication(self):
-        pages_steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
-        self.assertFalse(any("pipeline.validate_lesson" in step.get("run", "") for step in pages_steps))
-
+    def test_daily_refresh_validates_changed_lesson_before_commit(self):
         refresh_steps = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
         gate, = [i for i, step in enumerate(refresh_steps) if "pipeline.validate_lesson" in step.get("run", "")]
         commit, = [i for i, step in enumerate(refresh_steps) if "git commit" in step.get("run", "")]
@@ -101,3 +98,47 @@ class EvidenceWorkflowTests(unittest.TestCase):
         """ + refresh_steps[gate]["run"]
         self.assertEqual(self.bash(script, DIFF_STATUS="0").returncode, 0)
         self.assertEqual(self.bash(script, DIFF_STATUS="1").returncode, 42)
+
+    def test_pages_retains_last_valid_lesson_and_stages_current_evidence(self):
+        steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
+        self.assertEqual(steps[0]["with"]["fetch-depth"], "0")
+        assets, gate = [step["run"] for step in steps if "run" in step]
+        for asset in ("index.html", "icon.svg", "manifest.json", "clinical_distractors.js",
+                      "clinical_mcq.js", "device_profile.js", "sync_config.js", "cloud_sync.js",
+                      "search_ranking.js", "evidence_feed.js", "offline.js"):
+            (self.root / asset).touch()
+        data = self.root / "data"
+        evidence = data / "pipeline"
+        evidence.mkdir(parents=True)
+        (evidence / "briefing.json").write_text('{"date":"2026-11-27"}')
+        (evidence / "evidence.parquet").touch()
+        validator = self.root / "pipeline"
+        validator.mkdir()
+        (validator / "validate_lesson.py").write_text(
+            "from pathlib import Path\n"
+            "if Path('data/briefings.js').read_text() != Path('recommendation.txt').read_text():\n"
+            "    raise SystemExit(1)\n"
+        )
+        bundle = data / "briefings.js"
+        catalog = self.root / "recommendation.txt"
+        bundle.write_text("Original approved recommendation")
+        catalog.write_bytes(bundle.read_bytes())
+        git_env = dict(GIT_AUTHOR_NAME="Test", GIT_AUTHOR_EMAIL="test@example.invalid",
+                       GIT_COMMITTER_NAME="Test", GIT_COMMITTER_EMAIL="test@example.invalid")
+        result = self.bash("git init -q && git add data/briefings.js pipeline/validate_lesson.py recommendation.txt"
+                           " && git commit -qm 'Approved lesson'", **git_env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        bundle.write_text("Invalid direct submission")
+        result = self.bash("git commit -qam 'Direct bundle update'", **git_env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        catalog.write_text("New editorial wording")
+        result = self.bash("git commit -qam 'Editorial change'", **git_env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        result = self.bash(assets + "\n" + gate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Skipping invalid lesson bundle", result.stdout)
+        staged = self.root / "site" / "data"
+        self.assertEqual((staged / "briefings.js").read_text(), "Original approved recommendation")
+        self.assertEqual((staged / "pipeline" / "briefing.json").read_bytes(),
+                         (evidence / "briefing.json").read_bytes())
