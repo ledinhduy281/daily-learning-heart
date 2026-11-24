@@ -118,9 +118,11 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertTrue(app.refresh_today_briefing()["already_up_to_date"])
 
     def test_focused_lesson_without_source_questions_cannot_start_generic_quiz(self):
-        lesson = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        lesson = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24", source_quiz=False)
         for briefings in ([lesson], [{"id": "legacy-main", "pillar_id": 9}]):
-            with patch.object(app, "load_existing_briefings", return_value=briefings):
-                response = app.handle_socratic_turn({"briefing_id": lesson["id"], "action": "start_diagnostic"})
+            with patch.object(app, "load_existing_briefings", return_value=briefings), \
+                    patch.object(app, "_today_vn", return_value=datetime.date(2026, 11, 25)):
+                response = app.handle_socratic_turn(
+                    {"briefing_id": lesson["id"], "action": "start_diagnostic"}, source_only=True)
                 self.assertFalse(response["ok"])
                 self.assertIn("No source-supported questions", response["error"])

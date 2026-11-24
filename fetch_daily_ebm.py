@@ -33,8 +33,8 @@ from search_ranking import CONCEPTS, normalize, contains, score as relevance_sco
 from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from clinical_mcq import build_mcq
-from focused_lessons import FOCUSED_EDITION_VERSION, build_focused_templates
+from clinical_mcq import build_mcq, validated_source_items
+from focused_lessons import FOCUSED_EDITION_VERSION, build_focused_lesson, build_focused_templates
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -2744,7 +2744,7 @@ def _socratic_deterministic_fallback(
                    "explanation": next_state.get("explanation", "")}
 
 
-def handle_socratic_turn(req_data: dict) -> dict:
+def handle_socratic_turn(req_data: dict, *, source_only: bool = False) -> dict:
     """Serve local, auditable clinical questions without generative answer keys."""
     briefings = load_existing_briefings()
     if not briefings:
@@ -2752,12 +2752,16 @@ def handle_socratic_turn(req_data: dict) -> dict:
     lang = "en" if req_data.get("lang") == "en" else "vi"
     briefing_id = req_data.get("briefing_id")
     primary = next((b for b in briefings if b.get("id") == briefing_id), None)
-    if primary is None and str(briefing_id).endswith("-focused"):
-        return {"ok": False, "error": "No source-supported questions are available for this lesson."}
-    if primary is None:
+    if source_only:
+        if primary is None or primary.get("lesson_version") != FOCUSED_EDITION_VERSION:
+            day = _today_vn()
+            fallback = build_focused_lesson(get_pillar_for_date(day), day.isoformat())
+            if fallback["id"] == briefing_id:
+                primary = fallback
+        if not primary or not validated_source_items(primary):
+            return {"ok": False, "error": "No source-supported questions are available for this lesson."}
+    elif primary is None:
         primary = next((b for b in briefings if str(b.get("pillar_id")) == str(req_data.get("pillar_id", 1)) and "-main" in b.get("id", "")), briefings[0])
-    if primary.get("lesson_format") == "single_guideline" and primary.get("id", "").endswith("-focused"):
-        return {"ok": False, "error": "No source-supported questions are available for this lesson."}
     state = copy.deepcopy(req_data.get("state")) if isinstance(req_data.get("state"), dict) else {}
     if not isinstance(state.get("subskills"), list) or len(state["subskills"]) != 4:
         state["subskills"] = [{**s, "level": 0, "checks": 0, "answered": 0, "correct": 0} for s in _socratic_subskill_defs(primary, lang)]
@@ -3088,7 +3092,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/socratic":
             try:
-                payload = handle_socratic_turn(req_data)
+                payload = handle_socratic_turn(req_data, source_only=True)
                 save_device_quiz(self._extract_token(body_data=req_data), req_data, payload)
                 self._send_json(200 if payload.get("ok") else 400, payload)
             except DeviceStorageError:

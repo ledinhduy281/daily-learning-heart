@@ -293,6 +293,29 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(imported['legacy-migrated:7'].lesson_id,'seventh-lesson');
 }
 {
+  const profile = create(new Storage(), crypto), key = 'ebm_socratic_state_v1';
+  const a = {id: 'ebm-2026-11-24-p9-focused', pillar_id: 9, quiz_mode: 'source_excerpt'};
+  const b = {...a, id: 'ebm-2026-12-04-p9-focused'};
+  profile.set(key, JSON.stringify({9: {lesson_id: a.id, correct_count: 1}}));
+  const source = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+  const context = {App: {currentLang: 'en', selected: a}, SOCRATIC_STATE_KEY: key,
+    getPillarDisplayName: () => 'Pillar', safeStorageGet: () => profile.get(key),
+    safeStorageSet: (_, value) => profile.set(key, value)};
+  const tutor = vm.runInNewContext(`${source};SocraticTutor`, context);
+  tutor.loadStore();
+  assert.equal(tutor.getSession(9).correct_count, 1);
+  context.App.selected = b;
+  assert.equal(tutor.getSession(9).correct_count, 0);
+  tutor.getSession(9).answered_count = 1;
+  tutor.saveStore();
+  tutor.loadStore();
+  context.App.selected = a;
+  assert.equal(tutor.getSession(9).correct_count, 1);
+  context.App.selected = b;
+  assert.equal(tutor.getSession(9).answered_count, 1);
+  assert.deepEqual(Object.keys(JSON.parse(profile.get(key))).sort(), [a.id, b.id, 'legacy-migrated:9']);
+}
+{
   const profile = create(new Storage(),crypto);
   const pending = label => ({
     started:true, phase:'loop', last_question:`Question ${label}?`,

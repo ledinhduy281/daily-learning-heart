@@ -65,6 +65,9 @@ Rules applying to both blocks (strictly enforced):
 - Do not use a review article as a substitute for an RCT when citing RCT-level data.
 - Every quantitative figure must be traceable to the original guideline or publication, with its source identifier included.
 
+REVIEW QUIZ
+Use a verbatim passage from the primary guideline or the matched Block B source. Ask the learner to fill one exact blank in that context, with distinct alternatives. Do not publish a question without the full quote, original source identifier, and a keyed answer that matches the source at the selected position. Reveal the quote and source link after the answer.
+
 III. TAKE-HOME CLINICAL PEARLS FOR ROUNDS
 3–5 short, high-yield bullet points geared toward immediate bedside diagnostic/prescribing reflexes. Each point must be labeled with its source: [GUIDELINE EVOLUTION] or [LANDMARK TRIAL].
 

@@ -28,6 +28,9 @@ for (const isVi of [true, false]) {
   assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/ERS");
   assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
   assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
+  const disclaimer = fallback[isVi ? "disclaimer_vi" : "disclaimer_en"];
+  assert.match(disclaimer, isVi ? /^Chỉ dùng cho mục đích học tập/ : /^For education only/);
+  assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
 }
 context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
 assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
@@ -67,7 +70,8 @@ App.briefings = [published, ...App.briefings];
 assert.equal(context.findArchiveBriefing(fallback.id), published);
 const quizNodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection"].map(id => [id, {style: {}}]));
 const quizCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
-App.selected = fallback;
+App.selected = {...fallback, quiz_mode: undefined};
+context.ClinicalQuiz = require("../clinical_mcq.js");
 context.document = {getElementById: id => quizNodes[id]};
 const tutor = vm.runInContext(quizCode + ";SocraticTutor", context);
 tutor.getSession = () => { assert.fail("A focused lesson without excerpts should not start a generic quiz"); };

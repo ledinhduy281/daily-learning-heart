@@ -112,7 +112,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
@@ -139,6 +139,47 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/26551272/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "26551272": [
+          "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "130",
+          "start": 68,
+          "distractors": [
+            "117",
+            "143",
+            "156"
+          ]
+        },
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "120",
+          "start": 197,
+          "distractors": [
+            "108",
+            "132",
+            "144"
+          ]
+        },
+        {
+          "pmid": "26551272",
+          "quote": "We randomly assigned 9361 persons with a systolic blood pressure of 130 mm Hg or higher and an increased cardiovascular risk, but without diabetes, to a systolic blood-pressure target of less than 120 mm Hg (intensive treatment) or a target of less than 140 mm Hg (standard treatment).",
+          "answer": "140",
+          "start": 254,
+          "distractors": [
+            "126",
+            "154",
+            "168"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "39210715",
         "recommendation_id": "sbp-target",
@@ -157,9 +198,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
       "topic_focus_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[SPRINT](https://doi.org/10.1056/NEJMoa1511939)** — NEJM · 2015\n\nNgười có nguy cơ tim mạch cao, không mắc đái tháo đường; đích tâm thu <120 so với <140 mmHg. Giảm biến cố tim mạch gộp khi điều trị tích cực, giúp giải thích vì sao ESC hướng đến huyết áp thấp hơn nếu dung nạp. (HR 0.75 (95% CI 0.64–0.89)). Hai đích thử nghiệm không trùng khoảng 120–129 mmHg của ESC. Hạ huyết áp và tổn thương thận cấp nghiêm trọng gặp nhiều hơn khi điều trị tích cực.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "On-treatment systolic blood pressure: target and tolerability",
       "topic_focus_en": "On-treatment systolic blood pressure: target and tolerability",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation.\n\n## Block B — Supporting evidence\n\n**[SPRINT](https://doi.org/10.1056/NEJMoa1511939)** — NEJM · 2015\n\nAdults at increased cardiovascular risk without diabetes; systolic targets <120 versus <140 mmHg. Fewer composite cardiovascular events with intensive treatment support aiming for lower blood pressure when tolerated. (HR 0.75 (95% CI 0.64–0.89)). The assigned targets were not the ESC range of 120–129 mmHg. Serious hypotension and acute kidney injury were more frequent with intensive treatment.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 158
     },
@@ -175,7 +218,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
@@ -202,6 +245,37 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/36876740/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "36876740": [
+          "A total of 13,970 patients underwent randomization; 6992 were assigned to the bempedoic acid group and 6978 to the placebo group.",
+          "The median duration of follow-up was 40.6 months."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "36876740",
+          "quote": "A total of 13,970 patients underwent randomization; 6992 were assigned to the bempedoic acid group and 6978 to the placebo group.",
+          "answer": "13,970",
+          "start": 11,
+          "distractors": [
+            "12,573",
+            "15,367",
+            "16,764"
+          ]
+        },
+        {
+          "pmid": "36876740",
+          "quote": "The median duration of follow-up was 40.6 months.",
+          "answer": "40.6",
+          "start": 37,
+          "distractors": [
+            "36.5",
+            "44.7",
+            "48.8"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "40878289",
         "recommendation_id": "bempedoic-statin-intolerance",
@@ -220,9 +294,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Axit bempedoic khi không thể dùng statin",
       "topic_focus_vi": "Axit bempedoic khi không thể dùng statin",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nBản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[CLEAR Outcomes](https://doi.org/10.1056/NEJMoa2215024)** — NEJM · 2023\n\nNgười không dung nạp statin đã mắc bệnh tim mạch hoặc có nguy cơ cao. Axit bempedoic làm giảm kết cục tim mạch gộp so với giả dược, ủng hộ lựa chọn thuốc cho người không dung nạp statin. (HR 0.87 (95% CI 0.79–0.96)). Không chứng minh giảm tử vong; gout và sỏi mật thường gặp hơn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Bempedoic acid when statins cannot be used",
       "topic_focus_en": "Bempedoic acid when statins cannot be used",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nThe ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins.\n\n## Block B — Supporting evidence\n\n**[CLEAR Outcomes](https://doi.org/10.1056/NEJMoa2215024)** — NEJM · 2023\n\nStatin-intolerant adults with cardiovascular disease or at high cardiovascular risk. Bempedoic acid lowered the composite cardiovascular outcome versus placebo, supporting its use when statins cannot be tolerated. (HR 0.87 (95% CI 0.79–0.96)). The trial did not establish lower mortality; gout and cholelithiasis were more frequent.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 127
     },
@@ -238,7 +314,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of chronic coronary syndromes",
@@ -265,6 +341,48 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/30266608/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "30266608": [
+          "The primary endpoint was the mean difference in angina severity at 6 months (assessed by the Seattle Angina Questionnaire summary score).",
+          "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "30266608",
+          "quote": "The primary endpoint was the mean difference in angina severity at 6 months (assessed by the Seattle Angina Questionnaire summary score).",
+          "answer": "6",
+          "start": 67,
+          "distractors": [
+            "5",
+            "7",
+            "8"
+          ]
+        },
+        {
+          "pmid": "30266608",
+          "quote": "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group).",
+          "answer": "76",
+          "start": 99,
+          "distractors": [
+            "68",
+            "84",
+            "92"
+          ]
+        },
+        {
+          "pmid": "30266608",
+          "quote": "One hundred fifty-one (39%) patients without angiographically obstructive CAD were randomized (n = 76 intervention group; n = 75 blinded control group).",
+          "answer": "75",
+          "start": 126,
+          "distractors": [
+            "67",
+            "83",
+            "91"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "39210710",
         "recommendation_id": "anoca-functional-testing",
@@ -283,9 +401,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
       "topic_focus_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[CorMicA](https://doi.org/10.1016/j.jacc.2018.09.006)** — JACC · 2018\n\nNgười đau thắt ngực không có bệnh mạch vành tắc nghẽn trên chụp mạch. Điều trị dựa trên kết quả xét nghiệm chức năng mạch vành cải thiện điểm đau thắt ngực ở tháng thứ 6 so với chăm sóc chuẩn. (+11.7 SAQ (95% CI 5.0–18.4)). Kết quả về triệu chứng không chứng minh giảm biến cố tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Angina without obstruction: coronary functional testing",
       "topic_focus_en": "Angina without obstruction: coronary functional testing",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes.\n\n## Block B — Supporting evidence\n\n**[CorMicA](https://doi.org/10.1016/j.jacc.2018.09.006)** — JACC · 2018\n\nPatients with angina and no obstructive coronary disease on angiography. Treatment guided by coronary function testing improved the angina score at six months versus usual care. (+11.7 SAQ (95% CI 5.0–18.4)). Symptom improvement does not establish a reduction in cardiovascular events.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 142
     },
@@ -301,7 +421,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of acute coronary syndromes",
@@ -328,6 +448,48 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/31556978/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "31556978": [
+          "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "After 3 months of treatment with ticagrelor plus aspirin, patients who had not had a major bleeding event or ischemic event continued to take ticagrelor and were randomly assigned to receive aspirin or placebo for 1 year."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "31556978",
+          "quote": "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "answer": "7119",
+          "start": 31,
+          "distractors": [
+            "6407",
+            "7831",
+            "8543"
+          ]
+        },
+        {
+          "pmid": "31556978",
+          "quote": "We enrolled 9006 patients, and 7119 underwent randomization after 3 months.",
+          "answer": "3",
+          "start": 66,
+          "distractors": [
+            "2",
+            "4",
+            "5"
+          ]
+        },
+        {
+          "pmid": "31556978",
+          "quote": "After 3 months of treatment with ticagrelor plus aspirin, patients who had not had a major bleeding event or ischemic event continued to take ticagrelor and were randomly assigned to receive aspirin or placebo for 1 year.",
+          "answer": "1",
+          "start": 214,
+          "distractors": [
+            "0",
+            "2",
+            "3"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "37622654",
         "recommendation_id": "post-acs-monotherapy",
@@ -346,9 +508,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
       "topic_focus_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[TWILIGHT](https://doi.org/10.1056/NEJMoa1908419)** — NEJM · 2019\n\nNgười nguy cơ cao sau PCI không có biến cố trong ba tháng điều trị kép đầu tiên. Bỏ aspirin và tiếp tục ticagrelor làm giảm chảy máu BARC loại 2, 3 hoặc 5 so với tiếp tục cả hai thuốc. (HR 0.56 (95% CI 0.45–0.68)). Không kiểm tra việc ngừng aspirin ngay sau PCI và không áp dụng cho mọi ca hội chứng vành cấp.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Single antiplatelet therapy after acute coronary syndromes",
       "topic_focus_en": "Single antiplatelet therapy after acute coronary syndromes",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk.\n\n## Block B — Supporting evidence\n\n**[TWILIGHT](https://doi.org/10.1056/NEJMoa1908419)** — NEJM · 2019\n\nSelected high-risk PCI patients without an event during the initial three months of dual therapy. Withdrawing aspirin and continuing ticagrelor reduced BARC type 2, 3 or 5 bleeding versus continuing both drugs. (HR 0.56 (95% CI 0.45–0.68)). It did not test stopping aspirin immediately after PCI and does not apply to every ACS patient.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 150
     },
@@ -364,7 +528,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure",
@@ -391,6 +555,59 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/36027570/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "36027570": [
+          "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "36027570",
+          "quote": "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "answer": "6263",
+          "start": 21,
+          "distractors": [
+            "5637",
+            "6889",
+            "7515"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "We randomly assigned 6263 patients with heart failure and a left ventricular ejection fraction of more than 40% to receive dapagliflozin (at a dose of 10 mg once daily) or matching placebo, in addition to usual therapy.",
+          "answer": "40%",
+          "start": 108,
+          "distractors": [
+            "36%",
+            "44%",
+            "48%"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001).",
+          "answer": "2.3",
+          "start": 17,
+          "distractors": [
+            "2.1",
+            "2.5",
+            "2.7"
+          ]
+        },
+        {
+          "pmid": "36027570",
+          "quote": "Over a median of 2.3 years, the primary outcome occurred in 512 of 3131 patients (16.4%) in the dapagliflozin group and in 610 of 3132 patients (19.5%) in the placebo group (hazard ratio, 0.82; 95% confidence interval [CI], 0.73 to 0.92; P<0.001).",
+          "answer": "0.82",
+          "start": 188,
+          "distractors": [
+            "0.74",
+            "0.90",
+            "0.98"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "37622666",
         "recommendation_id": "hf-lvef-above-40-sglt2",
@@ -409,9 +626,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
       "topic_focus_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nBản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[DELIVER](https://doi.org/10.1056/NEJMoa2206286)** — NEJM · 2022\n\nNgười suy tim có phân suất tống máu thất trái trên 40%. Dapagliflozin giảm kết cục gộp suy tim nặng lên hoặc tử vong tim mạch so với giả dược. (HR 0.82 (95% CI 0.73–0.92)). Khoảng tin cậy của tử vong tim mạch riêng lẻ bao gồm 1; thử nghiệm không so sánh với empagliflozin.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
       "topic_focus_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nThe ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death.\n\n## Block B — Supporting evidence\n\n**[DELIVER](https://doi.org/10.1056/NEJMoa2206286)** — NEJM · 2022\n\nPatients with heart failure and left ventricular ejection fraction above 40%. Dapagliflozin reduced the composite of worsening heart failure or cardiovascular death versus placebo. (HR 0.82 (95% CI 0.73–0.92)). The confidence interval for cardiovascular death alone included 1; this was not a comparison with empagliflozin.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 146
     },
@@ -427,7 +646,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)",
@@ -454,6 +673,37 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/32865375/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32865375": [
+          "In 135 centers, 2789 patients with early atrial fibrillation (median time since diagnosis, 36 days) underwent randomization.",
+          "The trial was stopped for efficacy at the third interim analysis after a median of 5.1 years of follow-up per patient."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32865375",
+          "quote": "In 135 centers, 2789 patients with early atrial fibrillation (median time since diagnosis, 36 days) underwent randomization.",
+          "answer": "36",
+          "start": 91,
+          "distractors": [
+            "32",
+            "40",
+            "44"
+          ]
+        },
+        {
+          "pmid": "32865375",
+          "quote": "The trial was stopped for efficacy at the third interim analysis after a median of 5.1 years of follow-up per patient.",
+          "answer": "5.1",
+          "start": 83,
+          "distractors": [
+            "4.6",
+            "5.6",
+            "6.1"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "39210723",
         "recommendation_id": "early-af-rhythm-control",
@@ -472,9 +722,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
       "topic_focus_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EAST-AFNET 4](https://doi.org/10.1056/NEJMoa2019422)** — NEJM · 2020\n\nNgười mới được chẩn đoán rung nhĩ trong vòng một năm và có bệnh tim mạch kèm theo. Kiểm soát nhịp sớm giảm kết cục tim mạch gộp so với chăm sóc thông thường. (HR 0.79 (96% CI 0.66–0.94)). Chiến lược cho phép dùng thuốc hoặc triệt đốt; không phải thử nghiệm triệt đốt đơn thuần.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Early rhythm control after an atrial fibrillation diagnosis",
       "topic_focus_en": "Early rhythm control after an atrial fibrillation diagnosis",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events.\n\n## Block B — Supporting evidence\n\n**[EAST-AFNET 4](https://doi.org/10.1056/NEJMoa2019422)** — NEJM · 2020\n\nPatients with AF diagnosed within one year and concomitant cardiovascular conditions. Early rhythm control reduced the composite cardiovascular outcome versus usual care. (HR 0.79 (96% CI 0.66–0.94)). The strategy allowed medication or ablation; it was not a trial of ablation alone.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 142
     },
@@ -490,7 +742,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of endocarditis",
@@ -517,6 +769,37 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/30152252/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "30152252": [
+          "In all patients, antibiotic treatment was administered intravenously for at least 10 days.",
+          "The primary composite outcome occurred in 24 patients (12.1%) in the intravenously treated group and in 18 (9.0%) in the orally treated group (between-group difference, 3.1 percentage points; 95% confidence interval, -3.4 to 9.6; P=0.40), which met noninferiority criteria."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "30152252",
+          "quote": "In all patients, antibiotic treatment was administered intravenously for at least 10 days.",
+          "answer": "10",
+          "start": 82,
+          "distractors": [
+            "9",
+            "11",
+            "12"
+          ]
+        },
+        {
+          "pmid": "30152252",
+          "quote": "The primary composite outcome occurred in 24 patients (12.1%) in the intravenously treated group and in 18 (9.0%) in the orally treated group (between-group difference, 3.1 percentage points; 95% confidence interval, -3.4 to 9.6; P=0.40), which met noninferiority criteria.",
+          "answer": "3.1",
+          "start": 169,
+          "distractors": [
+            "2.8",
+            "3.4",
+            "3.7"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "37622656",
         "recommendation_id": "stable-endocarditis-oral-stepdown",
@@ -535,9 +818,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
       "topic_focus_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[POET](https://doi.org/10.1056/NEJMoa1808312)** — NEJM · 2019\n\nNgười trưởng thành ổn định bị viêm nội tâm mạc bên trái do liên cầu, Enterococcus faecalis, Staphylococcus aureus hoặc tụ cầu coagulase âm tính, đã dùng kháng sinh tĩnh mạch ít nhất 10 ngày. Ở người đủ điều kiện, chuyển sang đường uống không kém hơn tiếp tục đường tĩnh mạch về kết cục chính gộp. (IV − oral: 3.1 pp (95% CI −3.4 to 9.6)). Không ủng hộ bắt đầu bằng kháng sinh uống hoặc chuyển khi chưa ổn định.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Oral antibiotic step-down in stable endocarditis",
       "topic_focus_en": "Oral antibiotic step-down in stable endocarditis",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course.\n\n## Block B — Supporting evidence\n\n**[POET](https://doi.org/10.1056/NEJMoa1808312)** — NEJM · 2019\n\nStable adults with left-sided endocarditis caused by streptococci, Enterococcus faecalis, Staphylococcus aureus, or coagulase-negative staphylococci who had received at least 10 days of intravenous antibiotics. In eligible patients, switching to oral treatment was noninferior to continuing intravenous therapy on the composite primary outcome. (IV − oral: 3.1 pp (95% CI −3.4 to 9.6)). This does not support starting with oral antibiotics or switching an unstable patient.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 164
     },
@@ -553,7 +838,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -585,6 +870,36 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32871100": [
+          "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32871100",
+          "quote": "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks.",
+          "answer": "50",
+          "start": 205,
+          "distractors": [
+            "45",
+            "55",
+            "60"
+          ]
+        },
+        {
+          "pmid": "32871100",
+          "quote": "In this phase 3, randomised, double-blind, placebo-controlled trial (EXPLORER-HCM) in 68 clinical cardiovascular centres in 13 countries, patients with hypertrophic cardiomyopathy with an LVOT gradient of 50 mm Hg or greater and New York Heart Association (NYHA) class II-III symptoms were assigned (1:1) to receive mavacamten (starting at 5 mg) or placebo for 30 weeks.",
+          "answer": "30",
+          "start": 361,
+          "distractors": [
+            "27",
+            "33",
+            "36"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "37622657",
         "recommendation_id": "mavacamten-obstructive-hcm",
@@ -603,9 +918,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 177
     },
@@ -621,7 +938,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
@@ -648,6 +965,37 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/26308684/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "26308684": [
+          "A primary end-point event occurred in 18%, 34%, and 28% of the participants in these groups, respectively, and in 31% of the pooled-monotherapy group (the two monotherapy groups combined).",
+          "The hazard ratio for the primary end point in the combination-therapy group versus the pooled-monotherapy group was 0.50 (95% confidence interval [CI], 0.35 to 0.72; P<0.001)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "26308684",
+          "quote": "A primary end-point event occurred in 18%, 34%, and 28% of the participants in these groups, respectively, and in 31% of the pooled-monotherapy group (the two monotherapy groups combined).",
+          "answer": "31%",
+          "start": 114,
+          "distractors": [
+            "28%",
+            "34%",
+            "37%"
+          ]
+        },
+        {
+          "pmid": "26308684",
+          "quote": "The hazard ratio for the primary end point in the combination-therapy group versus the pooled-monotherapy group was 0.50 (95% confidence interval [CI], 0.35 to 0.72; P<0.001).",
+          "answer": "0.50",
+          "start": 116,
+          "distractors": [
+            "0.45",
+            "0.55",
+            "0.60"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "36017548",
         "recommendation_id": "initial-pah-combination",
@@ -666,9 +1014,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
       "topic_focus_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[AMBITION](https://doi.org/10.1056/NEJMoa1413687)** — NEJM · 2015\n\nNgười chưa được điều trị tăng áp động mạch phổi, phân độ chức năng WHO II–III. Phối hợp ambrisentan và tadalafil ngay từ đầu làm giảm biến cố thất bại lâm sàng so với gộp hai nhóm đơn trị. (HR 0.50 (95% CI 0.35–0.72)). Không ngoại suy sang tăng áp phổi do bệnh tim trái; phù ngoại biên gặp nhiều hơn khi phối hợp.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Initial combination treatment in pulmonary arterial hypertension",
       "topic_focus_en": "Initial combination treatment in pulmonary arterial hypertension",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups.\n\n## Block B — Supporting evidence\n\n**[AMBITION](https://doi.org/10.1056/NEJMoa1413687)** — NEJM · 2015\n\nTreatment-naïve pulmonary arterial hypertension patients in WHO functional class II–III. Initial ambrisentan plus tadalafil reduced clinical failure versus pooled monotherapy. (HR 0.50 (95% CI 0.35–0.72)). Do not extrapolate to pulmonary hypertension due to left heart disease; peripheral edema was more frequent with combination therapy.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 161
     },
@@ -684,7 +1034,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes",
@@ -711,6 +1061,47 @@ window.EBM_BRIEFINGS_DATA = {
           "url": "https://pubmed.ncbi.nlm.nih.gov/32970396/"
         }
       ],
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "32970396": [
+          "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "25",
+          "start": 93,
+          "distractors": [
+            "23",
+            "27",
+            "29"
+          ]
+        },
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "75",
+          "start": 99,
+          "distractors": [
+            "67",
+            "83",
+            "91"
+          ]
+        },
+        {
+          "pmid": "32970396",
+          "quote": "We randomly assigned 4304 participants with an estimated glomerular filtration rate (GFR) of 25 to 75 ml per minute per 1.73 m2 of body-surface area and a urinary albumin-to-creatinine ratio (with albumin measured in milligrams and creatinine measured in grams) of 200 to 5000 to receive dapagliflozin (10 mg once daily) or placebo.",
+          "answer": "200",
+          "start": 265,
+          "distractors": [
+            "180",
+            "220",
+            "240"
+          ]
+        }
+      ],
       "supporting_evidence": {
         "guideline_pmid": "37622663",
         "recommendation_id": "t2d-ckd-sglt2",
@@ -729,9 +1120,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
       "topic_focus_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.\n\n## Block B — Nghiên cứu bổ trợ\n\n**[DAPA-CKD](https://doi.org/10.1056/NEJMoa2024816)** — NEJM · 2020\n\nNgười bệnh thận mạn có albumin niệu, có hoặc không mắc đái tháo đường típ 2; eGFR 25–75 khi tuyển. Dapagliflozin làm giảm kết cục gộp suy giảm chức năng thận, bệnh thận giai đoạn cuối hoặc tử vong do thận hay tim mạch so với giả dược. (HR 0.61 (95% CI 0.51–0.72)). Ngưỡng eGFR tuyển bệnh không phải bằng chứng trực tiếp cho khởi trị ở mức 20–24.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
       "topic_focus_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk.\n\n## Block B — Supporting evidence\n\n**[DAPA-CKD](https://doi.org/10.1056/NEJMoa2024816)** — NEJM · 2020\n\nAlbuminuric CKD with or without type 2 diabetes; entry eGFR 25–75. Dapagliflozin reduced the composite of sustained kidney function decline, end-stage kidney disease, or renal or cardiovascular death versus placebo. (HR 0.61 (95% CI 0.51–0.72)). Its entry eGFR does not directly establish initiation at 20–24.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 153
     }
@@ -749,7 +1142,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -813,9 +1206,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 177,
       "landmark_trials": [
@@ -3300,7 +3695,7 @@ window.EBM_BRIEFINGS_DATA = {
       "model_used": "none",
       "verified_step0": false,
       "lesson_format": "single_guideline",
-      "lesson_version": 2,
+      "lesson_version": 3,
       "guideline_evolution": {
         "current_guideline": {
           "name": "2023 ESC Guidelines for the management of cardiomyopathies",
@@ -3364,9 +3759,11 @@ window.EBM_BRIEFINGS_DATA = {
       },
       "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
       "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
       "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim. Theo thông tin kê đơn tại Hoa Kỳ, tạm ngừng thuốc nếu phân suất tống máu thất trái (LVEF) dưới 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Nghiên cứu bổ trợ\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nNgười bệnh cơ tim phì đại tắc nghẽn có triệu chứng NYHA II–III và chênh áp đường ra thất trái ≥50 mmHg. Mavacamten giúp nhiều người đạt tiêu chí gộp gắng sức và phân độ NYHA hơn so với giả dược sau 30 tuần. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). Không chứng minh giảm tử vong, không đánh giá thể không tắc nghẽn hoặc viêm cơ tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
       "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
       "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "disclaimer_en": "For education only. Consult the original source before applying.",
       "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring. U.S. prescribing information instructs interrupting treatment if left ventricular ejection fraction (LVEF) falls below 50%.\n\n[CAMZYOS (mavacamten) U.S. prescribing information](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=669c936b-3ee6-4e36-8a22-79dd11b1255b)\n\n## Block B — Supporting evidence\n\n**[EXPLORER-HCM](https://doi.org/10.1016/S0140-6736(20)31792-X)** — The Lancet · 2020\n\nPatients with symptomatic obstructive HCM (NYHA II–III) and left ventricular outflow gradient ≥50 mmHg. More patients on mavacamten reached the exercise-capacity and NYHA composite endpoint versus placebo at 30 weeks. (37% vs 17%; Δ 19.4 pp (95% CI 8.7–30.1)). This does not establish a mortality benefit and did not study nonobstructive HCM or myocarditis.\n\n*For education only. Consult the original source before applying.*",
       "word_count_vi": 177,
       "landmark_trials": [

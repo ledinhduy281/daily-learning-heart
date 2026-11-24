@@ -4027,15 +4027,12 @@
       line-height: 1.45;
       text-align: left;
       cursor: pointer;
-      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     }
-    .socratic-choice-btn:hover:not(:disabled) {
+    .socratic-choice-btn.is-revealed-correct {
       border-color: var(--color-primary-deep);
       background: rgba(62, 207, 142, 0.08);
-      box-shadow: 0 0 0 1px rgba(36, 180, 126, 0.25);
-      transform: translateY(-1px);
     }
-    .socratic-choice-btn:hover:not(:disabled) .socratic-choice-badge {
+    .socratic-choice-btn.is-revealed-correct .socratic-choice-badge {
       background: var(--color-primary-deep);
       color: #ffffff;
       border-color: var(--color-primary-deep);
@@ -4198,7 +4195,7 @@
 
         </div>
 
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay">
+        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay" style="display: none;">
           <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
           <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
         </button>
@@ -4485,7 +4482,7 @@
       </details>
 
       <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
-      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText">
+      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText" style="display: none;">
         <div class="socratic-header-row">
           <div class="socratic-title-block">
             <div class="socratic-title-line">
@@ -6718,7 +6715,10 @@
       renderTrialsMatrix(b, isVi);
       renderPearls(b, isVi);
 
-      if (window.marked) {
+      if (focused && b[isVi ? "disclaimer_vi" : "disclaimer_en"]) {
+        const disclaimer = b[isVi ? "disclaimer_vi" : "disclaimer_en"];
+        Dom.articleRenderedBody.innerHTML = `<p><em>${escapeHtml(disclaimer)}</em></p>`;
+      } else if (window.marked) {
         Dom.articleRenderedBody.innerHTML = marked.parse(markdownClean);
         if (window.renderMathInElement) {
           renderMathInElement(Dom.articleRenderedBody, {
@@ -8970,12 +8970,12 @@
           else delete latest[id];
         }
         if (migration) {
-          const { key, pillarKey, markerKey } = migration;
+          const { key, pillarKey, markerKey, briefing } = migration;
           const legacy = latest[pillarKey];
           if (Object.hasOwn(latest, markerKey)) {
             delete latest[pillarKey];
           } else if (!Object.hasOwn(latest, key) && legacy && (!legacy.lesson_id || legacy.lesson_id === key)) {
-            latest[key] = { ...legacy, lesson_id: key };
+            latest[key] = { ...this.prepareLegacySession(legacy, briefing), lesson_id: key };
             latest[markerKey] = { lesson_id: key };
             delete latest[pillarKey];
           }
@@ -9045,14 +9045,19 @@
       },
 
       buildDeterministicMcq(primary, slotIdx, variantIdx, lang, difficulty = "normal") {
+        if (primary.quiz_mode === "source_excerpt") return ClinicalQuiz.reviewQuestion(primary, slotIdx, variantIdx, lang, difficulty);
         return ClinicalQuiz.build(primary, slotIdx, variantIdx, lang, difficulty);
+      },
+
+      isFinished(sess) {
+        return sess.phase === "mastered" || sess.phase === "complete";
       },
 
       getSubskillDefs(b) {
         const isEn = App.currentLang === "en";
         const pid = Number(b?.pillar_id || App.todayPillarId || 1);
         const curName = String(b?.guideline_evolution?.current_guideline?.name || "2026 Guidelines");
-        const trials = (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
+        const trials = b?.supporting_evidence?.name || (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
         if (isEn) {
           return [
             { id: "guideline", label: `Guideline Shifts (${curName.slice(0, 26)})` },
@@ -9069,9 +9074,16 @@
         ];
       },
 
-      replacePendingQuestion(sess, mcq, lang) {
+      replacePendingQuestion(sess, mcq, lang, revealed = false) {
+        if (!mcq) {
+          Object.assign(sess, {phase: "complete", current_options: [], current_question: null, last_question: "",
+            correct_key: "", explanation: "", question_revealed: false});
+          this.saveStore();
+          return;
+        }
         Object.assign(sess, {
           question_id: this.newQuizId(),
+          question_revealed: revealed,
           last_question: mcq.question,
           current_options: mcq.options,
           correct_key: mcq.correct_key,
@@ -9088,6 +9100,25 @@
         return briefing?.id || String(pid);
       },
 
+      prepareLegacySession(legacy, briefing) {
+        if (briefing?.quiz_mode !== "source_excerpt" || !legacy.started || this.isFinished(legacy)) return legacy;
+        const lang = legacy.options_lang || App.currentLang || "vi";
+        if (legacy.current_question?.generation?.review_order ||
+            ClinicalQuiz.migrateSourceReview(briefing, legacy, lang)) return legacy;
+        const difficulty = legacy.difficulty || "normal";
+        const question = ClinicalQuiz.reviewQuestion(briefing, 0, 0, lang, difficulty);
+        return {
+          started: true, phase: question ? "diagnostic" : "complete",
+          answered_count: legacy.answered_count, correct_count: legacy.correct_count, subskills: legacy.subskills,
+          difficulty, question_index: 0, diag_step: 0, focus_idx: 0, attempts_on_current: 0,
+          options_lang: lang, question_revealed: false, current_question: question,
+          current_options: question?.options || [], correct_key: question?.correct_key || "",
+          explanation: question?.explanation || "", last_question: question?.question || "",
+          required_subskills: question?.required_subskills,
+          messages: question ? [{ role: "assistant", text: question.question }] : []
+        };
+      },
+
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
@@ -9095,7 +9126,7 @@
         const legacy = this.store[pillarKey];
         if (key !== pillarKey && legacy && (Object.hasOwn(this.store, markerKey) ||
             (!this.store[key] && (!legacy.lesson_id || legacy.lesson_id === key)))) {
-          this.saveStore({ key, pillarKey, markerKey });
+          this.saveStore({ key, pillarKey, markerKey, briefing });
         }
         const defs = this.getSubskillDefs(briefing);
         if (!this.store[key]) {
@@ -9144,16 +9175,30 @@
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
+          const migration = briefing?.quiz_mode === "source_excerpt" && s.started && !this.isFinished(s)
+            && ClinicalQuiz.migrateSourceReview(briefing, s, s.options_lang);
+          if (migration) {
+            s.question_index = migration.index;
+            if (migration.keep) {
+              s.current_question = migration.question;
+              this.saveStore();
+            } else {
+              if (!migration.revealed) s.attempts_on_current = 0;
+              if (migration.question) s.phase = "diagnostic";
+              this.replacePendingQuestion(s, migration.question, s.options_lang, migration.revealed);
+            }
+          }
           const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim();
           const hasValidChoices = this.normalizeMcqOptions(s.current_options).some(o => o.key === s.correct_key);
-          if (s.started && s.phase !== "mastered" && !hasPendingQuestion) s.started = false;
-          if (s.started && s.phase !== "mastered" && hasPendingQuestion && !hasValidChoices && briefing) {
-            const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), App.currentLang || "vi", s.difficulty || "normal");
+          const variantIdx = briefing?.quiz_mode === "source_excerpt" ? s.question_index || 0 : (s.diag_step || 0) + (s.attempts_on_current || 0);
+          if (s.started && !this.isFinished(s) && !hasPendingQuestion) s.started = false;
+          if (s.started && !this.isFinished(s) && hasPendingQuestion && !hasValidChoices && briefing) {
+            const mcq = this.buildDeterministicMcq(briefing, s.focus_idx || 0, variantIdx, App.currentLang || "vi", s.difficulty || "normal");
             this.replacePendingQuestion(s, mcq, App.currentLang || "vi");
           } else if (hasPendingQuestion && hasValidChoices && !s.current_question) {
             s.current_question = { question: s.last_question, options: s.current_options, correct_key: s.correct_key, explanation: s.explanation };
           }
-          if (s.started && s.phase !== "mastered" && hasPendingQuestion && hasValidChoices) {
+          if (s.started && !this.isFinished(s) && hasPendingQuestion && hasValidChoices) {
             const matchesPending = q => q && q.question === s.last_question && q.correct_key === s.correct_key &&
               JSON.stringify(this.normalizeMcqOptions(q.options)) === JSON.stringify(this.normalizeMcqOptions(s.current_options));
             const hasExplanation = q => typeof q?.explanation === "string" && q.explanation.trim();
@@ -9162,17 +9207,18 @@
             }
             if (!matchesPending(s.current_question) || !hasExplanation(s.current_question)) {
               const ref = s.current_question?.generation;
-              const restored = ref && briefing ? ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id) : null;
+              const restored = ref && briefing ? (ref.review_order
+                ? ClinicalQuiz.reviewQuestion(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty)
+                : ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id)) : null;
               if (matchesPending(restored) && hasExplanation(restored)) s.current_question = restored;
               else {
                 const lang = App.currentLang || "vi";
-                const mcq = this.buildDeterministicMcq(briefing || {}, s.focus_idx || 0, (s.diag_step || 0) + (s.attempts_on_current || 0), lang, s.difficulty || "normal");
+                const mcq = this.buildDeterministicMcq(briefing || {}, s.focus_idx || 0, variantIdx, lang, s.difficulty || "normal");
                 this.replacePendingQuestion(s, mcq, lang);
-                s.question_revealed = false;
               }
               this.saveStore();
             }
-            if (s.started) s.explanation = s.current_question.explanation;
+            if (s.started && s.current_question) s.explanation = s.current_question.explanation;
           }
         }
         const session = this.store[key];
@@ -9184,14 +9230,12 @@
       syncCurrentBriefing() {
         const b = App.selected || getTodaySingleBriefing();
         this.curPillarId = Number((b && b.pillar_id) || App.todayPillarId || 1);
-        this.getSession(this.curPillarId, b);
         this.renderUI();
       },
 
       onBriefingSelected(b) {
         if (!b) return;
         this.curPillarId = Number(b.pillar_id || 1);
-        this.getSession(this.curPillarId, b);
         this.renderUI();
       },
 
@@ -9199,7 +9243,7 @@
         const b = App.selected || getTodaySingleBriefing();
         const sess = this.getSession(this.curPillarId, b);
         const curLang = App.currentLang || "vi";
-        if (sess.started && sess.phase !== "mastered" && b && sess.options_lang !== curLang) {
+        if (sess.started && !this.isFinished(sess) && b && sess.options_lang !== curLang) {
           const previous = sess.current_question;
           const mcq = ClinicalQuiz.translate(b, previous, curLang);
           if (mcq) {
@@ -9405,8 +9449,8 @@
       },
 
       renderUI() {
-        const briefing = App.selected || getTodaySingleBriefing();
-        const available = !(briefing?.lesson_format === "single_guideline" && briefing.id?.endsWith("-focused"));
+        const b = App.selected || getTodaySingleBriefing();
+        const available = ClinicalQuiz.hasSourceItems(b);
         for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
           const element = document.getElementById(id);
           if (element) element.style.display = available ? "" : "none";
@@ -9414,6 +9458,9 @@
         if (!available) return;
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
+        const questionCount = ClinicalQuiz.sourceQuestionCount(b);
+        const startLabel = isVi ? `Bắt đầu ôn tập (${questionCount} câu)` : `Start review (${questionCount})`;
+        const completeLabel = isVi ? "Hoàn tất ôn tập" : "Review complete";
 
         const setEl = (id, txt) => {
           const el = document.getElementById(id);
@@ -9421,20 +9468,22 @@
         };
         setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
         setEl("socraticSubText", isVi
-          ? "Trắc nghiệm ôn lại kiến thức hôm nay sau khi đọc Trụ cột: chẩn đoán 4 mảng kiến thức (0–5), chọn đáp án A/B/C/D để AI phản biện & cập nhật tiến độ tức thì sau mỗi câu."
-          : "Daily review quiz after reading today's pillar: 4-question diagnostic (levels 0–5), A/B/C/D clinical challenges, and real-time mastery tracking after every answer.");
+          ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
+          : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.");
 
         const phaseMapVi = {
-          diagnostic: `Chẩn đoán (${(sess.diag_step || 0) + 1}/4) • Mục tiêu ≥ 4/5`,
+          diagnostic: `Ôn tập (${(sess.question_index || 0) + 1}/${questionCount})`,
           loop: `Trắc nghiệm ôn tập • Độ khó: ${sess.difficulty === "hard" ? "Khó" : sess.difficulty === "easy" ? "Dễ" : "Chuẩn"}`,
           final_exam: "Kiểm tra Tổng hợp Cuối kỳ",
-          mastered: "ĐÃ LÀM CHỦ (≥ 4/5) ✓"
+          mastered: "ĐÃ LÀM CHỦ (≥ 4/5) ✓",
+          complete: completeLabel
         };
         const phaseMapEn = {
-          diagnostic: `Diagnostic (${(sess.diag_step || 0) + 1}/4) • Target ≥ 4/5`,
+          diagnostic: `Review (${(sess.question_index || 0) + 1}/${questionCount})`,
           loop: `Review Quiz Loop • Level: ${sess.difficulty}`,
           final_exam: "Final Mixed Assessment",
-          mastered: "MASTERED (≥ 4/5) ✓"
+          mastered: "MASTERED (≥ 4/5) ✓",
+          complete: completeLabel
         };
         const badgeText = !sess.started
           ? (isVi ? "Trắc nghiệm • Mục tiêu ≥ 4/5" : "Multiple Choice • Target ≥ 4/5")
@@ -9442,8 +9491,8 @@
         setEl("socraticPhaseBadge", badgeText);
 
         setEl("labelStartSocratic", sess.started
-          ? (isVi ? "Đang ôn tập" : "In Session")
-          : (isVi ? "Bắt đầu Chẩn đoán (4 câu)" : "Start Diagnostic (4 Qs)"));
+          ? this.isFinished(sess) ? completeLabel : (isVi ? "Đang ôn tập" : "In Session")
+          : startLabel);
         const btnReset = document.getElementById("btnResetSocratic");
         if (btnReset) btnReset.style.display = sess.started ? "inline-flex" : "none";
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
@@ -9455,8 +9504,10 @@
 
         const btnHard = document.getElementById("btnSocCmdHarder");
         const btnEasy = document.getElementById("btnSocCmdEasier");
-        if (btnHard) btnHard.classList.toggle("active", sess.difficulty === "hard");
-        if (btnEasy) btnEasy.classList.toggle("active", sess.difficulty === "easy");
+        const btnTell = document.getElementById("btnSocCmdTellMe");
+        if (btnHard) btnHard.style.display = "none";
+        if (btnEasy) btnEasy.style.display = "none";
+        if (btnTell) btnTell.style.display = this.isFinished(sess) ? "none" : "";
 
         setEl("socraticChoicesHeader", isVi
           ? "Chọn 1 đáp án đúng nhất (A, B, C hoặc D):"
@@ -9474,7 +9525,7 @@
             const lvl = Number(s.level || 0);
             const ans = Number(s.answered || 0);
             const cor = Number(s.correct || 0);
-            const isFocus = idx === Number(sess.focus_idx || 0) && lvl < 4 && sess.phase !== "mastered";
+            const isFocus = idx === Number(sess.focus_idx || 0) && lvl < 4 && !this.isFinished(sess);
             const isMast = lvl >= 4;
             const isJust = idx === Number(sess.last_updated_idx);
             const dVal = Number(sess.last_delta || 0);
@@ -9526,14 +9577,17 @@
           if (msgs.length === 0) {
             box.innerHTML = `<div class="socratic-msg assistant"><div class="socratic-msg-bubble">${
               isVi
-                ? "Bấm <strong>Bắt đầu Chẩn đoán (4 câu)</strong> để hệ thống kiểm tra mức độ nắm vững bài <strong>Trụ cột #" + this.curPillarId + "</strong> hôm nay bằng các câu hỏi trắc nghiệm gợi mở (A/B/C/D)."
-                : "Click <strong>Start Diagnostic (4 Qs)</strong> to begin the daily review quiz on today's <strong>Pillar #" + this.curPillarId + "</strong>."
+                ? `Bấm <strong>${startLabel}</strong> để ôn tập bài <strong>Trụ cột #${this.curPillarId}</strong>.`
+                : `Click <strong>${startLabel}</strong> to review the <strong>Pillar #${this.curPillarId}</strong> lesson.`
             }</div></div>`;
           } else {
             box.innerHTML = msgs.map((m) => {
               const bodyHtml = escapeHtml(m.text || "");
+              const sourceHtml = m.role === "assistant" && /^[1-9][0-9]{0,8}$/.test(m.source_pmid || "")
+                ? `<br><a href="https://pubmed.ncbi.nlm.nih.gov/${m.source_pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${m.source_pmid}</a>`
+                : "";
               return `<div class="socratic-msg ${m.role === "user" ? "user" : "assistant"}">
-                <div class="socratic-msg-bubble">${bodyHtml}</div>
+                <div class="socratic-msg-bubble">${bodyHtml}${sourceHtml}</div>
               </div>`;
             }).join("");
             box.scrollTop = box.scrollHeight;
@@ -9545,10 +9599,11 @@
         const choicesGrid = document.getElementById("socraticChoicesGrid");
         const opts = this.normalizeMcqOptions(sess.current_options);
         if (choicesWrap && choicesGrid) {
-          if (sess.started && sess.phase !== "mastered" && opts.length === 4) {
+          if (sess.started && !this.isFinished(sess) && opts.length === 4) {
+            const revealedKey = sess.question_revealed === true ? sess.current_question?.correct_key : "";
             choicesWrap.style.display = "flex";
             choicesGrid.innerHTML = opts.map((o) => `
-              <button type="button" class="socratic-choice-btn" data-choice-key="${escapeHtml(o.key)}" ${this.isBusy ? "disabled" : ""}>
+              <button type="button" class="socratic-choice-btn${o.key === revealedKey ? " is-revealed-correct" : ""}" data-choice-key="${escapeHtml(o.key)}" ${this.isBusy ? "disabled" : ""}>
                 <span class="socratic-choice-badge">${escapeHtml(o.key)}</span>
                 <span class="socratic-choice-text">${escapeHtml(o.text)}</span>
               </button>
@@ -9604,12 +9659,13 @@
           showToast(isVi
             ? (cmd === "harder" ? "Đã tăng độ khó trắc nghiệm ôn tập." : "Đã giảm độ khó trắc nghiệm ôn tập.")
             : (cmd === "harder" ? "Difficulty set to harder." : "Difficulty set to easier."));
-          if (sess.started && sess.phase !== "mastered") {
+          if (sess.started && !this.isFinished(sess)) {
             this.callSocraticApi(cmd, cmd, "");
           }
           return;
         }
         if (cmd === "just_tell_me") {
+          if (this.isFinished(sess)) return;
           if (!sess.started) {
             this.startDiagnostic();
             return;
@@ -9715,7 +9771,7 @@
                   if (typeof d.correct_key === "string") sess.correct_key = d.correct_key;
                   sess.options_lang = lang;
                   sess.started = true;
-                  sess.messages.push({ role: "assistant", text: d.reply_markdown });
+                  sess.messages.push({ role: "assistant", text: d.reply_markdown, source_pmid: d.state?.revealed_source_pmid });
                   sess.question_id = this.newQuizId();
                   this.saveStore();
                   typing.remove();
@@ -9732,7 +9788,7 @@
           Object.assign(sess, out.state);
           sess.options_lang = lang;
           sess.started = true;
-          sess.messages.push({ role: "assistant", text: out.reply });
+          sess.messages.push({ role: "assistant", text: out.reply, source_pmid: out.state.revealed_source_pmid });
           sess.question_id = this.newQuizId();
           this.saveStore();
           typing.remove();
@@ -9747,6 +9803,10 @@
       },
 
       async runClientSocratic(primary, sess, action, userAnswer, lang, selectedChoice = "") {
+        if (!ClinicalQuiz.hasSourceItems(primary)) {
+          return { reply: lang === "vi" ? "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
+            : "No source-supported questions are available for this lesson.", state: {}, eval: "partial" };
+        }
         return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);
       }
 

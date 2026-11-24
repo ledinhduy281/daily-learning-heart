@@ -3,6 +3,7 @@
 import datetime
 
 from focused_evidence import EVIDENCE
+from focused_quiz import build_source_quiz
 
 # Organization prefixes apply to guidelines, not to evidence about a recommendation.
 SOURCE_PRIORITY = ("guideline", "systematic_review_meta_analysis", "landmark_rct",
@@ -106,7 +107,7 @@ LESSONS = {
 
 
 FOCUSED_EDITION_DATE = "2026-11-24"
-FOCUSED_EDITION_VERSION = 2
+FOCUSED_EDITION_VERSION = 3
 
 
 def source_priority(kind):
@@ -133,7 +134,7 @@ def select_supporting_evidence(lesson, candidates=EVIDENCE):
     return min(eligible, key=lambda candidate: (source_priority(candidate["source_kind"]), candidate["pmid"]), default=None)
 
 
-def build_focused_lesson(pillar, date_str):
+def build_focused_lesson(pillar, date_str, *, source_quiz=True):
     datetime.date.fromisoformat(date_str)
     pid = pillar["id"]
     lesson = select_guideline(pid)
@@ -158,6 +159,10 @@ def build_focused_lesson(pillar, date_str):
         ],
     }
     evidence = select_supporting_evidence(lesson)
+    if source_quiz:
+        briefing["quiz_mode"] = "source_excerpt"
+        if evidence:
+            briefing.update(build_source_quiz(evidence["pmid"]))
     if evidence:
         briefing["supporting_evidence"] = {
             **{key: value for key, value in evidence.items() if key not in ("supports", "population", "limits")},
@@ -181,6 +186,7 @@ def build_focused_lesson(pillar, date_str):
             if lang == "vi" else
             ("Focused guideline recommendation", "For education only. Consult the original source before applying.")
         )
+        briefing[f"disclaimer_{lang}"] = disclaimer
         body = f"## Block A — {block}\n\n**[{name}](https://doi.org/{doi})**\n\n{recommendation}"
         if safety_source:
             body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
@@ -201,7 +207,7 @@ def build_focused_templates(pillars):
 
 
 def build_hcm_archive_edition(pillar, date_str):
-    briefing = build_focused_lesson(pillar, date_str)
+    briefing = build_focused_lesson(pillar, date_str, source_quiz=False)
     briefing["id"] = f"ebm-{date_str}-p8-main"
     briefing["curated_edition_date"] = "2026-11-13"
     briefing["guideline_evolution"]["steps"] = [
