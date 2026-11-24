@@ -123,6 +123,11 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertEqual(answer, f"**B** — {statement}")
         answer, _ = app._compose_deterministic_ebm_answer(query.replace("is true?", "is false?"), [briefing], [], "en")
         self.assertIn("couldn't match one answer", answer)
+        exception_query = query.replace(
+            "Which of the following is true?", "All of the following except one are true about the AMBITION primary endpoint. Which is the exception?"
+        )
+        answer, _ = app._compose_deterministic_ebm_answer(exception_query, [briefing], [], "en")
+        self.assertIn("couldn't match one answer", answer)
 
     def test_copied_trial_comparator_does_not_outrank_endpoint(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
@@ -139,6 +144,14 @@ class FocusedLessonTests(unittest.TestCase):
         answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
         self.assertIn("couldn't match one answer", answer)
         answer, _ = app._compose_deterministic_ebm_answer(query.replace("p >", "p <"), [briefing], [], "en")
+        self.assertTrue(answer.startswith("**A**"), answer)
+        answer, _ = app._compose_deterministic_ebm_answer(query.replace("p > 0.001", "p < 0,001"), [briefing], [], "en")
+        self.assertTrue(answer.startswith("**A**"), answer)
+        answer, _ = app._compose_deterministic_ebm_answer(
+            query.replace("p >", "p <").replace(
+                "Which of the following is true?", "What was the hazard ratio for combination versus pooled monotherapy?"
+            ), [briefing], [], "en"
+        )
         self.assertTrue(answer.startswith("**A**"), answer)
 
     def test_an_eligibility_qualifier_is_not_a_negative_question(self):

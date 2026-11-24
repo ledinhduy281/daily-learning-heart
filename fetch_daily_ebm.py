@@ -1924,11 +1924,12 @@ def _match_focused_mcq(query, options, primary, lang, level):
     )
 
     def words_in(text):
-        return tuple(re.findall(r"[a-z0-9]+", normalize(text)))
+        text = re.sub(r"(?<=\d),(?=\d)", ".", normalize(text))
+        return tuple(re.findall(r"\d+(?:\.\d+)?|[a-z][a-z0-9]*", text))
 
     def comparisons(text):
         text = text.replace("≤", "<=").replace("≥", ">=").replace("−", "-")
-        return frozenset(re.findall(r"([<>=]=?)\s*(-?\d+(?:[.,]\d+)?)", text))
+        return {(op, value.replace(",", ".")) for op, value in re.findall(r"([<>=]=?)\s*(-?\d+(?:[.,]\d+)?)", text)}
 
     def has_cue(term, terms):
         return term in terms or (term.endswith("s") and term[:-1] in terms)
@@ -1938,7 +1939,7 @@ def _match_focused_mcq(query, options, primary, lang, level):
     normalized_stem = normalize(stem)
     if re.search(
         r"\b(false|incorrect|not true|sai|khong dung voi nhan dinh)\b|"
-        r"\b(except|ngoai tru)\s*[:?]?\s*$",
+        r"\b(except|ngoai tru)\s*[:?]?\s*$|\bexcept one\b|\ball of the following\b[^?]*\bexcept\b",
         normalized_stem.strip(),
     ):
         return "", ""
@@ -1967,7 +1968,7 @@ def _match_focused_mcq(query, options, primary, lang, level):
             if not words:
                 continue
             best = ((0.0, False), "")
-            cues = sorted(term for term in question - words if counts[term])
+            cues = sorted(term for term in question if counts[term])
             requested = comparisons(option)
             for sentence, sentence_words, terms, paragraph, section, section_terms in rows:
                 if requested and not requested <= comparisons(sentence):
