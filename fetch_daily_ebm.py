@@ -1969,14 +1969,24 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        evid_blob = " ".join([
-            cur_g.get("name", ""),
-            " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
-            " ".join(f"{tr.get('name','')} {tr.get('changes_vi','')} {tr.get('caution_vi','')} {tr.get('changes_en','')} {tr.get('caution_en','')}" for tr in trials),
-            " ".join(f"{p.get('text_vi','')} {p.get('text_en','')}" for p in pearls),
-            (primary.get("part1_vi_markdown") or "")[:3000],
-            (primary.get("part2_en_markdown") or "")[:3000],
-        ]).lower()
+        teaching = primary.get("teaching")
+        evidence = primary.get("supporting_evidence") or {}
+        if primary.get("lesson_format") == "single_guideline" and teaching:
+            evid_blob = " ".join([
+                cur_g.get("name", ""), evidence.get("name", ""),
+                *(ge.get(f"recommendation_{language}", "") for language in ("vi", "en")),
+                *(paragraph for language in ("vi", "en") for key in ("design", "findings")
+                  for paragraph in teaching[language][key]),
+            ]).lower()
+        else:
+            evid_blob = " ".join([
+                cur_g.get("name", ""),
+                " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
+                " ".join(f"{tr.get('name','')} {tr.get('changes_vi','')} {tr.get('caution_vi','')} {tr.get('changes_en','')} {tr.get('caution_en','')}" for tr in trials),
+                " ".join(f"{p.get('text_vi','')} {p.get('text_en','')}" for p in pearls),
+                (primary.get("part1_vi_markdown") or "")[:3000],
+                (primary.get("part2_en_markdown") or "")[:3000],
+            ]).lower()
         trap_re = re.compile(
             r"(giữ nguyên ngưỡng.*cũ|trì hoãn.*12 tháng|chỉ dùng.*sốc tim|ngưng toàn bộ|không cần lưu ý|"
             r"tăng gấp đôi liều.*suy thận|chỉ dựa vào ngưỡng tuổi|bỏ qua bệnh đồng mắc|đơn trị liệu.*vượt trội|"

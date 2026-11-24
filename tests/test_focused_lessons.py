@@ -47,6 +47,20 @@ class FocusedLessonTests(unittest.TestCase):
         better = {**wrong_topic, "recommendation_id": match["recommendation_id"]}
         self.assertEqual(lessons.select_supporting_evidence(hcm, [match, better]), better)
 
+    def test_pasted_trial_question_reads_design_after_the_guideline_walkthrough(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        questions = {
+            "en": ("What was the primary endpoint of AMBITION?\nA. Pulmonary vascular resistance\n"
+                   "B. First event of clinical failure\nC. Peak oxygen uptake\nD. Cardiovascular death alone"),
+            "vi": ("Kết cục chính của AMBITION là gì?\nA. Sức cản mạch máu phổi\n"
+                   "B. Thời gian đến thất bại lâm sàng đầu tiên\nC. Tiêu thụ oxy đỉnh\nD. Tử vong tim mạch riêng lẻ"),
+        }
+        for lang, query in questions.items():
+            with self.subTest(lang=lang):
+                answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
+                self.assertTrue(answer.startswith("**B**"), answer)
+                self.assertIn("26308684", {source["pmid"] for source in sources})
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in payload["focused_lessons"].values():
