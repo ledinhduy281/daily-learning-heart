@@ -131,12 +131,12 @@ def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False, 
     lesson_date = bundle["rotation_state"]["last_updated"]
     if expected_date:
         _require(lesson_date == expected_date, f"Refresh produced {lesson_date}, expected {expected_date}")
-    pillar = get_pillar_for_date(date.fromisoformat(lesson_date))
+    edition_date = date.fromisoformat(lesson_date)
     candidates = [lesson for lesson in briefings if lesson.get("date") == lesson_date
                   and lesson.get("content_source") != "model_draft"]
     _require(len(candidates) == 1, "Expected one scheduled lesson on the dated edition")
     if previous is None:
-        validate_lesson(candidates[0], pillar, lesson_date)
+        validate_lesson(candidates[0], get_pillar_for_date(edition_date), lesson_date)
     else:
         approved = {lesson["id"]: lesson for lesson in previous["briefings"]}
         seen = set()
@@ -145,8 +145,12 @@ def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False, 
             _require(isinstance(lesson_id, str) and lesson_id and lesson_id not in seen,
                      "Each briefing must have a unique ID")
             seen.add(lesson_id)
-            if lesson != approved.get(lesson_id) and lesson.get("content_source") != "model_draft":
+            if lesson.get("content_source") != "model_draft":
                 added_date = date.fromisoformat(lesson["date"])
+                if added_date >= edition_date:
+                    _require(lesson.get("lesson_provenance"), f"{lesson_id}: Current or future lesson is missing provenance")
+                if lesson == approved.get(lesson_id):
+                    continue
                 try:
                     validate_lesson(lesson, get_pillar_for_date(added_date), lesson["date"])
                 except ValueError as exc:

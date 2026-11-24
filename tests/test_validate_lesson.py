@@ -93,6 +93,19 @@ class LessonGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "citation, attribution, or license"):
             validate_bundle(bundle)
 
+    def test_current_or_future_lessons_cannot_use_legacy_archive_exemption(self):
+        for legacy_date in (DATE, "2026-11-27"):
+            with self.subTest(legacy_date=legacy_date):
+                bundle = self.bundle(self.curated)
+                legacy = bundle["briefings"][0]
+                if legacy_date != DATE:
+                    legacy = {"id": "future-legacy", "date": legacy_date}
+                    bundle["briefings"].append(legacy)
+                else:
+                    legacy.pop("lesson_provenance")
+                with self.assertRaisesRegex(ValueError, "Current or future lesson is missing provenance"):
+                    validate_bundle(bundle, expected_date=DATE, previous=copy.deepcopy(bundle))
+
     def test_migration_skips_only_bundles_with_no_pipeline_lesson(self):
         bundle = self.bundle({"date": DATE})
         self.assertIsNone(validate_bundle(bundle, allow_predating_pipeline=True))

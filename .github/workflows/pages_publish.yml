@@ -26,8 +26,10 @@ jobs:
             cp data/pipeline/briefing.json data/pipeline/evidence.parquet site/data/pipeline/
           fi
       - name: Stage the latest valid lesson bundle
+        env:
+          TZ: Asia/Ho_Chi_Minh
         run: |
-          if python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons"; then
+          if python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons" --date "$(date +%F)"; then
             cp "$RUNNER_TEMP/approved-lessons/briefings.js" site/data/
           else
             echo "::warning::No valid lesson bundle found; publishing the other assets only"

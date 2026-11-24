@@ -9,6 +9,9 @@ on:
     - cron: '17 23 * * *'
     - cron: '43 23 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/daily_refresh.yml']
 
 permissions:
   contents: write
@@ -30,8 +33,10 @@ jobs:
           python-version: '3.12'
 
       - name: Restore the latest approved lesson archive
+        env:
+          TZ: Asia/Ho_Chi_Minh
         run: |
-          python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons"
+          python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons" --date "$(date +%F)"
           cp "$RUNNER_TEMP/approved-lessons/"* data/
 
       - name: Build today's single pillar lesson
