@@ -300,7 +300,7 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(tutor.getSession(9).correct_count, 1);
   context.App.selected = b;
   assert.equal(tutor.getSession(9).answered_count, 1);
-  assert.deepEqual(Object.keys(JSON.parse(profile.get(key))).sort(), [a.id, b.id]);
+  assert.deepEqual(Object.keys(JSON.parse(profile.get(key))).sort(), [a.id, b.id, 'legacy-migrated:9']);
 }
 {
   const profile = create(new Storage(),crypto);
