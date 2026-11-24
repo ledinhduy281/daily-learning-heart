@@ -48,6 +48,7 @@ assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
 assert.equal(fallback.guideline_evolution.current_guideline.pmid, "36017548");
 for (const isVi of [true, false]) {
   context.renderEvolutionPipeline(fallback, isVi);
+  assert.equal(Dom.evolutionPipelineRow.className, "focused-recommendation");
   assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/ERS");
   assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
   assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
@@ -63,6 +64,15 @@ for (const isVi of [true, false]) {
 }
 context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
 assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
+const legacy = bundle.briefings.find(b => b.id === "ebm-2026-11-14-p9-main");
+context.t = key => key;
+context.formatInlineRich = text => text;
+context.renderGuidelineRefBox = (_, __, highlighted) => highlighted ? "current" : "prior";
+context.renderEvolutionPipeline(legacy, false);
+assert.equal(Dom.evolutionPipelineRow.className, "evolution-pipeline");
+assert.match(Dom.evolutionPipelineRow.innerHTML, /pipeline-step-box current/);
+context.renderEvolutionPipeline(fallback, true);
+assert.equal(Dom.evolutionPipelineRow.className, "focused-recommendation");
 App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
 assert.equal(context.getTodaySingleBriefing(), fallback);
 App.todayDate = "2026-11-14";
