@@ -119,3 +119,20 @@ class LessonSourceTests(unittest.TestCase):
         </sec></body>"""
         article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
         self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Plain text recommendation."])
+
+    def test_later_merged_cell_preserves_rows_outside_its_span(self):
+        body = b"""<body><table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th>Class</th></tr></thead>
+          <tbody>
+            <tr><td>Independent first row.</td><td>I</td></tr>
+            <tr><td rowspan="2">Shared cell.</td><td>IIa</td></tr>
+            <tr><td>IIb</td></tr>
+            <tr><th>Independent final row.</th><td>III</td></tr>
+          </tbody></table>
+        </table-wrap></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        recommendations = [(p.locator, p.text) for p in article.passages if p.role == "recommendation"]
+        self.assertEqual(recommendations, [
+            ("body/table[1]/row[1]/col[1]", "Independent first row."),
+            ("body/table[1]/row[4]/col[1]", "Independent final row."),
+        ])
