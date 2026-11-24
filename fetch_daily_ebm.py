@@ -3,9 +3,8 @@
 Daily Cardiology EBM Briefing — curated daily refresh, PubMed lookup and local server
 =====================================================================================
 The scheduled refresh (`--refresh-if-needed`) uses no AI model. It shows one of 10 pillars
-per day in a fixed rotation, reusing the latest curated edition from `pillar_library.py`
-under today's date, and looks up PMID/DOI citation identities on NCBI PubMed E-utilities.
-A citation lookup is not clinical verification.
+per day in a fixed rotation, using a curated guideline recommendation and supporting
+trial from `focused_lessons.py`. Separate PubMed lookups are not clinical verification.
 
 Optional model-based drafting (bare CLI or `/api/generate`) runs only with an explicit
 model ID and API key: Gemini-family IDs via the optional `google-genai` SDK, other IDs via
@@ -35,6 +34,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq
+from focused_lessons import build_focused_templates
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1425,101 +1425,14 @@ def submit_feedback(user: dict | None, req_data: dict) -> tuple[int, dict]:
 
 
 # ---------------------------------------------------------------------------
-# Guideline Evolution & Single-Pillar Daily Refresh
+# Single-Pillar Daily Refresh
 # ---------------------------------------------------------------------------
-
-def _merge_pubmed_anchors(existing_anchors: list, verified_refs: list) -> list:
-    merged = [copy.deepcopy(a) for a in (existing_anchors or []) if isinstance(a, dict)]
-    by_pmid = {str(a.get("pmid")): a for a in merged if a.get("pmid")}
-    for ref in verified_refs or []:
-        pmid = str(ref.get("pmid", "")).strip()
-        if not pmid:
-            continue
-        if pmid in by_pmid:
-            target = by_pmid[pmid]
-            for field in ("pubdate", "volume", "issue", "pages", "doi", "url", "source", "title"):
-                if not target.get(field) and ref.get(field):
-                    target[field] = ref[field]
-        else:
-            merged.append(copy.deepcopy(ref))
-            by_pmid[pmid] = merged[-1]
-    return merged
-
-
-def _load_curated_pillar_briefing(pillar: dict, today_str: str) -> dict | None:
-    """
-    Loads the Guideline Evolution briefing for `pillar` using
-    pillar_library.get_latest_briefing_for_pillar(pillar_id, today_str) when available,
-    gracefully falling back to pillar_library.RICH_PILLAR_TEMPLATES.
-    """
-    pid = pillar["id"]
-    try:
-        import pillar_library
-
-        if hasattr(pillar_library, "get_latest_briefing_for_pillar"):
-            curated = pillar_library.get_latest_briefing_for_pillar(pid, today_str)
-            if isinstance(curated, dict):
-                result = copy.deepcopy(curated)
-                result.pop("crawled_articles", None)
-                return result
-
-        rich_tpl = getattr(pillar_library, "RICH_PILLAR_TEMPLATES", {}).get(pid)
-        if isinstance(rich_tpl, dict):
-            tpl = copy.deepcopy(rich_tpl)
-            part1_vi = tpl.get("part1_vi_markdown", "")
-            return {
-                "id": f"ebm-{today_str}-p{pid}-main",
-                "date": today_str,
-                "time": "06:00 AM",
-                "model_used": NO_MODEL,
-                "content_source": CURATED_CONTENT_SOURCE,
-                "curated_edition_date": tpl.get("date", today_str),
-                "pillar_id": pid,
-                "pillar_name": pillar["name"],
-                "pillar_vi": pillar["vi_name"],
-                "title_vi": tpl.get("title_vi", f"Trụ cột #{pid}: {pillar['vi_name']}"),
-                "title_en": tpl.get("title_en", f"Pillar #{pid}: {pillar['name']}"),
-                "word_count_vi": len(part1_vi.split()),
-                "verified_step0": True,
-                "interaction_id": f"step0-curated-{today_str}",
-                "guideline_evolution": tpl.get("guideline_evolution"),
-                "landmark_trials": tpl.get("landmark_trials"),
-                "pearls": tpl.get("pearls"),
-                "pubmed_anchors": tpl.get("pubmed_anchors", []),
-                "part1_vi_markdown": part1_vi,
-                "part2_en_markdown": tpl.get("part2_en_markdown", ""),
-            }
-    except Exception as exc:
-        print(f"[Warning] pillar_library lookup error for Pillar #{pid}: {exc}", file=sys.stderr)
-
-    return None
-
-
-def _curated_edition_date(pillar_id: int, briefing: dict) -> str:
-    try:
-        import pillar_library
-
-        template_date = pillar_library.RICH_PILLAR_TEMPLATES[pillar_id].get("date")
-    except Exception:
-        template_date = ""
-    return template_date or _edition_date_from_interaction_id(briefing.get("interaction_id")) or briefing.get("date", "")
-
-
 def refresh_today_briefing(
     force: bool = False,
     pillar_id: int | None = None,
     progress_cb=None,
-    model_name: str = "",
-    api_key: str = "",
-    base_url: str = "",
-    use_llm: bool = False,
 ) -> dict:
-    """
-    Refreshes ONLY today's single scheduled Pillar in data/briefings.js following the
-    deterministic ascending rotation (1 -> 2 -> ... -> 10 -> 1, anchored 2026-11-16 = Pillar #1).
-    Runs Step-0 NCBI PubMed verification for current & prior Guidelines + Landmark RCTs,
-    constructing the Guideline Evolution briefing (no random news crawling).
-    """
+    """Publish today's single curated guideline recommendation."""
     with _refresh_lock:
         today = _today_vn()
         today_str = today.isoformat()
@@ -1537,7 +1450,7 @@ def refresh_today_briefing(
                 b for b in briefings
                 if b.get("date") == today_str
                 and b.get("pillar_id") == pid
-                and not b.get("crawled_articles")
+                and b.get("lesson_format") == "single_guideline"
             ]
             today_other = [
                 b for b in briefings
@@ -1552,96 +1465,11 @@ def refresh_today_briefing(
                     "already_up_to_date": True,
                 }
 
-        # Step 1 (15%): Daily ascending rotation identification & Live Latest-Guideline Crawler
-        if progress_cb:
-            progress_cb(15, f"Hôm nay: Trụ cột #{pid}/10 — {target_pillar['vi_name']}")
+        from crawl_cardiology_news import refresh_guideline_briefing
 
-        from crawl_cardiology_news import crawl_latest_guidelines, refresh_guideline_briefing
-
-        resolved_key = api_key.strip()
-        resolved_model = model_name.strip()
-
-        if progress_cb:
-            progress_cb(30, f"Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) từ NCBI PubMed cho Trụ cột #{pid}...")
-
-        if use_llm and resolved_key and resolved_model:
-            crawled_gl = crawl_latest_guidelines(pid, max_results=5, min_year=2026, days_back=90)
-            curated = refresh_guideline_briefing(pillar_id=pid, date_str=today_str)
-            if progress_cb:
-                progress_cb(65, f"Đang tổng hợp Guideline Evolution bằng `{resolved_model}` (Live Guideline + Step-0)...")
-            new_briefing = generate_briefing(
-                pillar=target_pillar,
-                model_name=resolved_model,
-                include_part2=True,
-                api_key=resolved_key,
-                base_url=base_url.strip(),
-            )
-            if curated:
-                for key in (
-                    "guideline_evolution",
-                    "landmark_trials",
-                    "pearls",
-                    "topic_focus_vi",
-                    "topic_focus_en",
-                    "week_label",
-                    "short_date",
-                    "live_crawled_guidelines",
-                    "last_guideline_crawl_at",
-                ):
-                    if curated.get(key) and not new_briefing.get(key):
-                        new_briefing[key] = curated[key]
-            crawled_anchors = [
-                {
-                    "pmid": g["pmid"],
-                    "title": g["title"],
-                    "source": g["source"],
-                    "pubdate": g["pubdate"],
-                    "doi": g["doi"],
-                    "url": g["url"],
-                }
-                for g in crawled_gl
-            ]
-            new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
-                crawled_anchors,
-                new_briefing.get("pubmed_anchors", []),
-            )
-        else:
-            # Default: run deterministic live 2025-2026 guideline crawler + Guideline Evolution merge
-            new_briefing = refresh_guideline_briefing(
-                pillar_id=pid,
-                date_str=today_str,
-                progress_cb=progress_cb,
-            )
-            new_briefing["date"] = today_str
-            new_briefing["time"] = new_briefing.get("time") or "06:00 AM"
-            new_briefing["pillar_id"] = pid
-            new_briefing["pillar_name"] = target_pillar["name"]
-            new_briefing.setdefault("pillar_vi", target_pillar["vi_name"])
-            new_briefing["model_used"] = NO_MODEL
-            new_briefing["content_source"] = CURATED_CONTENT_SOURCE
-            new_briefing["curated_edition_date"] = _curated_edition_date(pid, new_briefing)
-            new_briefing["verified_step0"] = True
-            new_briefing.pop("crawled_articles", None)
-
-            # Verify landmark trial anchors on PubMed Step-0 as well
-            gl_pmids = {
-                str(g.get("pmid", "")).strip()
-                for g in (new_briefing.get("live_crawled_guidelines") or [])
-                if g.get("pmid")
-            }
-            trial_pmids = [
-                str(a.get("pmid")).strip()
-                for a in (new_briefing.get("pubmed_anchors") or [])
-                if isinstance(a, dict) and a.get("pmid") and str(a.get("pmid")).strip() not in gl_pmids
-            ]
-            if trial_pmids:
-                if progress_cb:
-                    progress_cb(85, f"Step 0: Xác thực {len(trial_pmids[:4])} thử nghiệm Landmark RCTs trên PubMed...")
-                trial_refs = fetch_pubmed_metadata(" OR ".join(f"{p}[pmid]" for p in trial_pmids[:4]), max_results=4)
-                new_briefing["pubmed_anchors"] = _merge_pubmed_anchors(
-                    new_briefing.get("pubmed_anchors", []),
-                    trial_refs,
-                )
+        new_briefing = with_truthful_provenance(
+            refresh_guideline_briefing(pillar_id=pid, date_str=today_str, progress_cb=progress_cb)
+        )
 
         # Step 4 (100%): Upsert ONLY today's single pillar briefing into data/briefings.js
         if pillar_id is None:
@@ -1709,6 +1537,7 @@ def save_briefings_js(briefings: list, rotation_state: dict) -> None:
         "generator": BUNDLE_GENERATOR,
         "rotation_state": rotation_state,
         "pillars": PILLARS,
+        "focused_lessons": build_focused_templates(PILLARS),
         "briefings": [with_truthful_provenance(b) for b in briefings],
     }
     js_content = (
@@ -3054,7 +2883,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             try:
                 raw_pid = query_params.get("pillar_id", [None])[0]
                 req_pid = int(raw_pid) if raw_pid and str(raw_pid).isdigit() else None
-                _emit({"type": "progress", "percent": 5, "message": "Đang khởi tạo chu trình 1 Trụ cột/ngày & NCBI PubMed..."})
+                _emit({"type": "progress", "percent": 5, "message": "Đang tải chuyên đề tim mạch theo lịch..."})
                 res = refresh_today_briefing(
                     force=True,
                     pillar_id=req_pid,
@@ -3227,18 +3056,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
             try:
                 force = bool(req_data.get("force", True))
                 pillar_id = req_data.get("pillar_id")
-                model_name = str(req_data.get("model", "")).strip()
-                api_key = str(req_data.get("api_key", "")).strip()
-                base_url = str(req_data.get("base_url", "")).strip()
-                use_llm = bool(api_key and model_name)
-                result = refresh_today_briefing(
-                    force=force,
-                    pillar_id=int(pillar_id) if pillar_id else None,
-                    model_name=model_name,
-                    api_key=api_key,
-                    base_url=base_url,
-                    use_llm=use_llm,
-                )
+                result = refresh_today_briefing(force=force, pillar_id=int(pillar_id) if pillar_id else None)
                 all_briefings = load_existing_briefings()
                 today = datetime.date.today()
                 self._send_json(200, {
@@ -3421,7 +3239,7 @@ def main():
     parser.add_argument(
         "--refresh",
         action="store_true",
-        help="Fetch/refresh today's single-pillar briefing immediately (Step-0 Guideline Evolution, or LLM if --model & --api-key provided).",
+        help="Refresh today's single-pillar curated guideline briefing immediately.",
     )
     parser.add_argument(
         "--refresh-if-needed",
@@ -3486,17 +3304,7 @@ def main():
         return
 
     if args.refresh or args.refresh_if_needed:
-        model_requested = any(a == "--model" or a.startswith("--model=") for a in sys.argv[1:])
-        explicit_key = args.api_key.strip()
-        use_llm = bool(explicit_key and model_requested)
-        res = refresh_today_briefing(
-            force=bool(args.refresh),
-            pillar_id=args.pillar,
-            model_name=args.model if use_llm else "",
-            api_key=explicit_key,
-            base_url=args.base_url.strip(),
-            use_llm=use_llm,
-        )
+        res = refresh_today_briefing(force=bool(args.refresh), pillar_id=args.pillar)
         b = res["briefing"]
         tag = "Already up to date" if res.get("already_up_to_date") else "Refreshed"
         print(f"[{tag}] {b['date']} — Pillar #{b['pillar_id']}: {b['title_vi']} (model: {b['model_used']})")

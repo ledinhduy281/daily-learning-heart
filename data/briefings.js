@@ -99,6 +99,398 @@ window.EBM_BRIEFINGS_DATA = {
       "search_query": "SELECT Lincoff 2023 New England Journal of Medicine semaglutide"
     }
   ],
+  "focused_lessons": {
+    "1": {
+      "id": "ebm-2026-11-24-p1-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 1,
+      "pillar_name": "Hypertension & Risk Factors",
+      "pillar_vi": "Tăng huyết áp & Yếu tố nguy cơ",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
+          "society": "ESC",
+          "year": "2024",
+          "pmid": "39210715",
+          "doi": "10.1093/eurheartj/ehae178"
+        },
+        "recommendation_vi": "ESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.",
+        "recommendation_en": "ESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2024 ESC Guidelines for the management of elevated blood pressure and hypertension",
+          "pmid": "39210715",
+          "doi": "10.1093/eurheartj/ehae178",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39210715/"
+        }
+      ],
+      "title_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
+      "topic_focus_vi": "Huyết áp tâm thu khi điều trị: mục tiêu và khả năng dung nạp",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC hướng đến huyết áp tâm thu 120–129 mmHg khi điều trị nếu dung nạp được. Khả năng dung nạp là điều kiện, không phải chi tiết tùy chọn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "On-treatment systolic blood pressure: target and tolerability",
+      "topic_focus_en": "On-treatment systolic blood pressure: target and tolerability",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of elevated blood pressure and hypertension](https://doi.org/10.1093/eurheartj/ehae178)**\n\nESC recommends an on-treatment systolic blood pressure target of 120–129 mmHg if tolerated. Tolerability is part of the recommendation.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 65
+    },
+    "2": {
+      "id": "ebm-2026-11-24-p2-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 2,
+      "pillar_name": "Dyslipidemia & Atherosclerosis",
+      "pillar_vi": "Rối loạn Lipid máu & Xơ vữa động mạch",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
+          "society": "ESC",
+          "year": "2025",
+          "pmid": "40878289",
+          "doi": "10.1093/eurheartj/ehaf190"
+        },
+        "recommendation_vi": "Bản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.",
+        "recommendation_en": "The ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
+          "pmid": "40878289",
+          "doi": "10.1093/eurheartj/ehaf190",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40878289/"
+        }
+      ],
+      "title_vi": "Axit bempedoic khi không thể dùng statin",
+      "topic_focus_vi": "Axit bempedoic khi không thể dùng statin",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nBản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Bempedoic acid when statins cannot be used",
+      "topic_focus_en": "Bempedoic acid when statins cannot be used",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias](https://doi.org/10.1093/eurheartj/ehaf190)**\n\nThe ESC/EAS update recommends bempedoic acid to achieve the LDL-C goal in patients unable to take statins.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 56
+    },
+    "3": {
+      "id": "ebm-2026-11-24-p3-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 3,
+      "pillar_name": "Medical Coronary Artery Disease & Microvascular Disease",
+      "pillar_vi": "Bệnh mạch vành điều trị nội khoa & Bệnh lý vi mạch vành",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2024 ESC Guidelines for the management of chronic coronary syndromes",
+          "society": "ESC",
+          "year": "2024",
+          "pmid": "39210710",
+          "doi": "10.1093/eurheartj/ehae177"
+        },
+        "recommendation_vi": "ESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.",
+        "recommendation_en": "ESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2024 ESC Guidelines for the management of chronic coronary syndromes",
+          "pmid": "39210710",
+          "doi": "10.1093/eurheartj/ehae177",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39210710/"
+        }
+      ],
+      "title_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
+      "topic_focus_vi": "Đau thắt ngực không do tắc nghẽn: xét nghiệm chức năng mạch vành",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC khuyến cáo xét nghiệm chức năng mạch vành xâm lấn ở người được chọn còn triệu chứng dù đã điều trị, khi nghi ngờ ANOCA/INOCA, để xác định kiểu rối loạn có thể điều trị.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Angina without obstruction: coronary functional testing",
+      "topic_focus_en": "Angina without obstruction: coronary functional testing",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of chronic coronary syndromes](https://doi.org/10.1093/eurheartj/ehae177)**\n\nESC recommends invasive coronary functional testing in selected patients with suspected ANOCA/INOCA who remain symptomatic despite treatment, to identify treatable endotypes.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 70
+    },
+    "4": {
+      "id": "ebm-2026-11-24-p4-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 4,
+      "pillar_name": "Antithrombotic Therapy",
+      "pillar_vi": "Liệu pháp Chống huyết khối",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2023 ESC Guidelines for the management of acute coronary syndromes",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622654",
+          "doi": "10.1093/eurheartj/ehad191"
+        },
+        "recommendation_vi": "ESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.",
+        "recommendation_en": "ESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of acute coronary syndromes",
+          "pmid": "37622654",
+          "doi": "10.1093/eurheartj/ehad191",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622654/"
+        }
+      ],
+      "title_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
+      "topic_focus_vi": "Kháng tiểu cầu đơn trị sau hội chứng vành cấp",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC nêu có thể cân nhắc ưu tiên thuốc ức chế P2Y12 đơn trị sau 3–6 tháng kháng tiểu cầu kép ở người không có biến cố và không có nguy cơ thiếu máu cục bộ cao.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Single antiplatelet therapy after acute coronary syndromes",
+      "topic_focus_en": "Single antiplatelet therapy after acute coronary syndromes",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of acute coronary syndromes](https://doi.org/10.1093/eurheartj/ehad191)**\n\nESC advises considering single antiplatelet therapy, preferably a P2Y12 inhibitor, after 3–6 months of dual therapy in event-free patients who are not at high ischaemic risk.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 71
+    },
+    "5": {
+      "id": "ebm-2026-11-24-p5-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 5,
+      "pillar_name": "Comprehensive Heart Failure & Cardiogenic Shock",
+      "pillar_vi": "Suy tim Toàn diện & Sốc tim",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622666",
+          "doi": "10.1093/eurheartj/ehad195"
+        },
+        "recommendation_vi": "Bản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.",
+        "recommendation_en": "The ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure",
+          "pmid": "37622666",
+          "doi": "10.1093/eurheartj/ehad195",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622666/"
+        }
+      ],
+      "title_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
+      "topic_focus_vi": "Thuốc ức chế SGLT2 trong suy tim có phân suất tống máu trên 40%",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nBản cập nhật ESC khuyến cáo dapagliflozin hoặc empagliflozin ở người suy tim có phân suất tống máu giảm nhẹ hoặc bảo tồn để giảm nhập viện do suy tim hoặc tử vong tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
+      "topic_focus_en": "SGLT2 inhibition in heart failure with ejection fraction above 40%",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 Focused Update of the 2021 ESC Guidelines for the diagnosis and treatment of acute and chronic heart failure](https://doi.org/10.1093/eurheartj/ehad195)**\n\nThe ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 78
+    },
+    "6": {
+      "id": "ebm-2026-11-24-p6-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 6,
+      "pillar_name": "Arrhythmia, Electrophysiology & Syncope",
+      "pillar_vi": "Rối loạn nhịp, Điện sinh lý & Ngất",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)",
+          "society": "ESC",
+          "year": "2024",
+          "pmid": "39210723",
+          "doi": "10.1093/eurheartj/ehae176"
+        },
+        "recommendation_vi": "ESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.",
+        "recommendation_en": "ESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)",
+          "pmid": "39210723",
+          "doi": "10.1093/eurheartj/ehae176",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39210723/"
+        }
+      ],
+      "title_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
+      "topic_focus_vi": "Kiểm soát nhịp sớm ở người mới được chẩn đoán rung nhĩ",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC nêu cân nhắc kiểm soát nhịp trong vòng 12 tháng từ chẩn đoán ở một số người có rung nhĩ và nguy cơ biến cố tim mạch.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Early rhythm control after an atrial fibrillation diagnosis",
+      "topic_focus_en": "Early rhythm control after an atrial fibrillation diagnosis",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2024 ESC Guidelines for the management of atrial fibrillation developed in collaboration with the European Association for Cardio-Thoracic Surgery (EACTS)](https://doi.org/10.1093/eurheartj/ehae176)**\n\nESC advises considering rhythm control within 12 months of diagnosis in selected patients with atrial fibrillation at risk of cardiovascular events.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 72
+    },
+    "7": {
+      "id": "ebm-2026-11-24-p7-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 7,
+      "pillar_name": "Valvular Heart Disease & Infective Endocarditis",
+      "pillar_vi": "Bệnh van tim & Viêm nội tâm mạc nhiễm khuẩn",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2023 ESC Guidelines for the management of endocarditis",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622656",
+          "doi": "10.1093/eurheartj/ehad193"
+        },
+        "recommendation_vi": "ESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.",
+        "recommendation_en": "ESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of endocarditis",
+          "pmid": "37622656",
+          "doi": "10.1093/eurheartj/ehad193",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622656/"
+        }
+      ],
+      "title_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
+      "topic_focus_vi": "Chuyển sang kháng sinh uống ở viêm nội tâm mạc đã ổn định",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC cho phép cân nhắc điều trị ngoại trú bằng kháng sinh đường uống ở trường hợp viêm nội tâm mạc bên trái được chọn, đã điều trị tĩnh mạch ban đầu và ổn định lâm sàng.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Oral antibiotic step-down in stable endocarditis",
+      "topic_focus_en": "Oral antibiotic step-down in stable endocarditis",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of endocarditis](https://doi.org/10.1093/eurheartj/ehad193)**\n\nESC advises considering outpatient oral antibiotic treatment for selected clinically stable patients with left-sided endocarditis after an initial intravenous course.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 69
+    },
+    "8": {
+      "id": "ebm-2026-11-24-p8-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 8,
+      "pillar_name": "Specific Cardiomyopathies, Pericardial Disease & ACHD",
+      "pillar_vi": "Bệnh cơ tim chuyên biệt, Bệnh màng ngoài tim & Tim bẩm sinh người lớn",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194"
+        },
+        "recommendation_vi": "ESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.",
+        "recommendation_en": "ESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of cardiomyopathies",
+          "pmid": "37622657",
+          "doi": "10.1093/eurheartj/ehad194",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622657/"
+        }
+      ],
+      "title_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "topic_focus_vi": "Ức chế myosin trong bệnh cơ tim phì đại tắc nghẽn",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC nêu cân nhắc mavacamten bổ sung cho người trưởng thành còn triệu chứng do tắc nghẽn đường ra thất trái dù dùng điều trị ban đầu phù hợp, với theo dõi siêu âm tim.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "topic_focus_en": "Myosin inhibition in obstructive hypertrophic cardiomyopathy",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiomyopathies](https://doi.org/10.1093/eurheartj/ehad194)**\n\nESC advises considering add-on mavacamten for adults with symptomatic left ventricular outflow tract obstruction despite appropriate initial treatment, with echocardiographic monitoring.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 67
+    },
+    "9": {
+      "id": "ebm-2026-11-24-p9-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 9,
+      "pillar_name": "Pulmonary Vascular Disease, VTE & Aortic Disease",
+      "pillar_vi": "Bệnh mạch máu phổi, Thuyên tắc huyết khối tĩnh mạch & Bệnh lý Động mạch chủ",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
+          "society": "ESC",
+          "year": "2022",
+          "pmid": "36017548",
+          "doi": "10.1093/eurheartj/ehac237"
+        },
+        "recommendation_vi": "ESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.",
+        "recommendation_en": "ESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
+          "pmid": "36017548",
+          "doi": "10.1093/eurheartj/ehac237",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36017548/"
+        }
+      ],
+      "title_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
+      "topic_focus_vi": "Điều trị phối hợp ban đầu trong tăng áp động mạch phổi",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "Initial combination treatment in pulmonary arterial hypertension",
+      "topic_focus_en": "Initial combination treatment in pulmonary arterial hypertension",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension](https://doi.org/10.1093/eurheartj/ehac237)**\n\nESC/ERS recommends an initial endothelin receptor antagonist plus a PDE5 inhibitor in patients with low- or intermediate-risk PAH without cardiopulmonary comorbidities in the guideline's specified aetiologic groups.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 84
+    },
+    "10": {
+      "id": "ebm-2026-11-24-p10-focused",
+      "date": "2026-11-24",
+      "time": "06:00 AM",
+      "pillar_id": 10,
+      "pillar_name": "Cross-Specialty Cardiology & Diagnostics",
+      "pillar_vi": "Tim mạch Liên chuyên khoa & Chẩn đoán hình ảnh / Sinh học",
+      "content_source": "curated_library_rotation",
+      "curated_edition_date": "2026-11-24",
+      "model_used": "none",
+      "verified_step0": false,
+      "lesson_format": "single_guideline",
+      "guideline_evolution": {
+        "current_guideline": {
+          "name": "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes",
+          "society": "ESC",
+          "year": "2023",
+          "pmid": "37622663",
+          "doi": "10.1093/eurheartj/ehad192"
+        },
+        "recommendation_vi": "ESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.",
+        "recommendation_en": "ESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk."
+      },
+      "pubmed_anchors": [
+        {
+          "title": "2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes",
+          "pmid": "37622663",
+          "doi": "10.1093/eurheartj/ehad192",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37622663/"
+        }
+      ],
+      "title_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
+      "topic_focus_vi": "Ức chế SGLT2 trong bệnh thận mạn kèm đái tháo đường típ 2",
+      "part1_vi_markdown": "## Block A — Khuyến cáo trọng tâm\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC khuyến cáo thuốc ức chế SGLT2 ở người đái tháo đường típ 2 kèm bệnh thận mạn với eGFR từ 20 mL/phút/1,73 m² để giảm nguy cơ bệnh tim mạch và suy thận.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "title_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
+      "topic_focus_en": "SGLT2 inhibition in chronic kidney disease and type 2 diabetes",
+      "part2_en_markdown": "## Block A — Focused guideline recommendation\n\n**[2023 ESC Guidelines for the management of cardiovascular disease in patients with diabetes](https://doi.org/10.1093/eurheartj/ehad192)**\n\nESC recommends an SGLT2 inhibitor in type 2 diabetes with CKD and eGFR at least 20 mL/min/1.73 m² to reduce cardiovascular and kidney failure risk.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 71
+    }
+  },
   "briefings": [
     {
       "id": "ebm-2026-11-23-p8-main",
