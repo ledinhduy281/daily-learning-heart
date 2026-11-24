@@ -9079,8 +9079,11 @@
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
-        if (key !== pillarKey && !this.store[key] && this.store[pillarKey]?.lesson_id === key) {
-          this.store[key] = this.store[pillarKey];
+        const legacy = this.store[pillarKey];
+        const adopted = key !== pillarKey && !this.store[key] && legacy && (!legacy.lesson_id || legacy.lesson_id === key);
+        if (adopted) {
+          legacy.lesson_id = key;
+          this.store[key] = legacy;
           delete this.store[pillarKey];
         }
         const defs = this.getSubskillDefs(briefing);
@@ -9164,6 +9167,7 @@
         const session = this.store[key];
         if (!session.session_id) session.session_id = this.newQuizId();
         if (!session.question_id) session.question_id = this.newQuizId();
+        if (adopted) this.saveStore();
         return session;
       },
 
