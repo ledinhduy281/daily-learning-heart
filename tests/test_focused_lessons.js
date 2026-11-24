@@ -51,6 +51,11 @@ for (const isVi of [true, false]) {
   assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/ERS");
   assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
   assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
+  for (const key of ["context", "evolution", "application"]) {
+    assert.ok(fallback.teaching[isVi ? "vi" : "en"][key].every(
+      paragraph => Dom.evolutionPipelineRow.innerHTML.includes(paragraph)
+    ));
+  }
   const disclaimer = fallback[isVi ? "disclaimer_vi" : "disclaimer_en"];
   assert.match(disclaimer, isVi ? /^Chỉ dùng cho mục đích học tập/ : /^For education only/);
   assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
@@ -68,7 +73,7 @@ vm.runInContext(html.slice(html.indexOf("    function renderTrialsMatrix("),
     html.indexOf("    function renderPearls(")), context);
 context.renderTrialsMatrix(fallback, false);
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
-assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.limits_en));
+assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.teaching.en.interpretation[0]));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
 context.renderTrialsMatrix({...fallback, supporting_evidence: {
   ...fallback.supporting_evidence, pmid: "", doi: "10.1000/example"
@@ -91,11 +96,31 @@ for (const [isVi, curated, licensed] of [
     ...fallback.supporting_evidence, licensed_excerpts: {result: excerpt}
   }}, isVi);
   assert.ok(Dom.trialsGridDeck.innerHTML.includes(curated));
+  for (const key of ["design", "findings", "interpretation"]) {
+    assert.ok(fallback.teaching[isVi ? "vi" : "en"][key].every(
+      paragraph => Dom.trialsGridDeck.innerHTML.includes(paragraph)
+    ));
+  }
   assert.match(Dom.trialsGridDeck.innerHTML, licensed);
   assert.match(Dom.trialsGridDeck.innerHTML, /creativecommons.org/);
 }
 context.renderTrialsMatrix({ ...fallback, supporting_evidence: bundle.focused_lessons[8].supporting_evidence }, false);
 assert.equal(Dom.trialsGridDeck.textContent, "No matched study is available.");
+Dom.pearlsStackDeck = {};
+context.t = key => key;
+context.formatInlineRich = text => text;
+vm.runInContext(html.slice(html.indexOf("    function renderPearls("),
+    html.indexOf("    function renderSources(")), context);
+for (const isVi of [true, false]) {
+  context.renderPearls(fallback, isVi);
+  const notes = fallback.teaching[isVi ? "vi" : "en"];
+  assert.equal(Dom.pearlsStackDeck.innerHTML.match(/class="pearl-row"/g).length, 4);
+  assert.ok([...notes.guideline_pearls, ...notes.evidence_pearls].every(
+    text => Dom.pearlsStackDeck.innerHTML.includes(text)
+  ));
+}
+context.renderPearls({...fallback, teaching: undefined}, false);
+assert.equal(Dom.pearlsStackDeck.innerHTML, "");
 App.todayDate = "2026-11-27";
 App.mode = "history";
 App.savedGlobalMode = true;

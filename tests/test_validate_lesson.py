@@ -76,6 +76,29 @@ class LessonGateTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "approved primary guideline"):
                     validate_bundle(bundle, DATE)
 
+    def test_pages_and_refresh_reject_missing_or_incomplete_walkthroughs(self):
+        mutations = (
+            ("in-depth edition", lambda b: b.update(lesson_version=3)),
+            ("must match", lambda b: b["teaching"].update(trial_pmid="12345")),
+            ("teaching sections", lambda b: b["teaching"]["vi"].pop("application")),
+            ("Incomplete en teaching section", lambda b: b["teaching"]["en"].update(findings=["Too brief."])),
+            ("too short", lambda b: b["teaching"]["en"].update(
+                {key: ["Short."] * len(paragraphs) for key, paragraphs in b["teaching"]["en"].items()}
+            )),
+            ("three to five", lambda b: b["teaching"]["en"].update(guideline_pearls=["Extra."] * 5)),
+        )
+        for message, mutate in mutations:
+            for checked_date in (None, DATE):
+                with self.subTest(message=message, checked_date=checked_date):
+                    bundle = self.bundle(self.curated)
+                    mutate(bundle["briefings"][0])
+                    with self.assertRaisesRegex(ValueError, message):
+                        validate_bundle(bundle, checked_date)
+        bundle = self.bundle(self.curated)
+        bundle["briefings"][0]["teaching"]["en"]["context"][0] += " Unauthorized edit."
+        with self.assertRaisesRegex(ValueError, "editorial catalog"):
+            validate_bundle(bundle, DATE)
+
     def test_rejects_a_self_consistent_quiz_with_an_unlicensed_quote(self):
         bundle = self.bundle(self.licensed)
         lesson = bundle["briefings"][0]

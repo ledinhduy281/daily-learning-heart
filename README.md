@@ -32,6 +32,8 @@ After merge, the owner must paste the new `Chat.gs` into the Apps Script editor 
 
 The scheduled [GitHub Actions workflow](.github/workflows/daily_refresh.yml) refreshes around 06:00 Vietnam time, with catch-up runs. It selects one focused guideline recommendation and its matched evidence from [`focused_lessons.py`](focused_lessons.py), then retrieves reusable text for those exact publications. The bilingual summaries remain curated; the lesson includes licensed excerpts and a source-derived quiz where possible and labels the curated fallback. The workflow commits the updated bundle and rotation state. If the bundle has no daily edition, the browser uses the prebuilt curated template for the same pillar.
 
+The bilingual walkthroughs in [`lessons/`](lessons/) explain the context, recommendation changes, and application in Block A, and the study design, results, and limits in Block B. Each file starts with the two source PMIDs; the publisher checks that they match the selected pair and that both languages contain complete walkthroughs. These are teaching drafts, not physician-reviewed guidance.
+
 Edit `SOURCE_PRIORITY` in `focused_lessons.py` to change the order for eligible cardiology sources: ESC/AHA/ACC guideline, systematic review/meta-analysis, landmark RCT, real-world cohort/registry, then expert consensus. A lower-tier source is not presented as a guideline. Running the refresh locally can update these tracked files:
 
 ```sh

@@ -8,6 +8,7 @@ from xml.etree.ElementTree import ParseError
 from clinical_mcq import validated_source_items
 from focused_lessons import build_focused_lesson, select_guideline
 from focused_quiz import build_source_quiz
+from focused_teaching import TEACHING_LABELS
 from pipeline.ingest import TRANSIENT_READ_ERRORS
 from pipeline.lesson_sources import fetch_article
 
@@ -116,18 +117,21 @@ def _append_markdown(lesson, language, recommendation, evidence_excerpts):
                 f"[{source}]({excerpt['url']}) · [{license_label}]({excerpt['license_url']})")
 
     a, separator, b = lesson[field].partition("\n\n## Block B")
+    b, pearls_heading, pearls = b.partition(f"\n\n## {TEACHING_LABELS[language]['pearls']}\n\n")
     end = f"\n\n*{lesson[f'disclaimer_{language}']}*"
     if not separator:
         a = a.removesuffix(end)
-    else:
+    elif not pearls_heading:
         b = b.removesuffix(end)
+    else:
+        pearls = pearls.removesuffix(end)
     a += f"\n\n*{label}*"
     if recommendation:
         a += quote(recommendation)
     if separator:
         b += f"\n\n*{label}*"
         b += "".join(quote(excerpt) for excerpt in evidence_excerpts.values())
-    lesson[field] = a + separator + b + end
+    lesson[field] = a + separator + b + pearls_heading + pearls + end
 
 
 def build_open_lesson(pillar, date_str):
