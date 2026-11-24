@@ -47,6 +47,13 @@ def _text(element):
     return " ".join("".join(element.itertext()).split()) if element is not None else ""
 
 
+def _quote_text(element):
+    if any(node.tag.rsplit("}", 1)[-1] in {"inline-formula", "disp-formula", "tex-math", "math"}
+           for node in element.iter()):
+        return ""
+    return _text(element)
+
+
 def _license(meta):
     declared = set()
     for license_el in meta.findall("./permissions/license"):
@@ -89,7 +96,7 @@ def _passages(article):
         if (re.fullmatch(r"(?:key |specific )?recommendations?(?:\s+(?:for|on)\s+.+)?", heading, re.I)
                 or re.search(r":\s*recommendations?$", heading, re.I)):
             for j, el in enumerate(sec.findall("./p") + sec.findall("./list/list-item/p"), 1):
-                if reusable(el) and (value := _text(el)):
+                if reusable(el) and (value := _quote_text(el)):
                     yield Passage(f"body/sec[{i}]/recommendation[{j}]", "recommendation", value)
     for i, table in enumerate(article.findall("./body//table-wrap"), 1):
         if not reusable(table):
@@ -114,7 +121,7 @@ def _passages(article):
         for j, row in enumerate(rows, 1):
             cells = list(row)
             if (len(cells) == len(columns) and all(c.tag in ("td", "th") and c.get("colspan", "1") == "1" for c in cells)
-                    and (value := _text(cells[col]))):
+                    and (value := _quote_text(cells[col]))):
                 yield Passage(f"body/table[{i}]/row[{j}]/col[{col + 1}]", "recommendation", value)
     for i, abstract in enumerate(article.findall("./front/article-meta/abstract"), 1):
         if abstract.get("abstract-type") not in (None, "abstract") or abstract.get(LANG, "en") != "en":
@@ -128,7 +135,7 @@ def _passages(article):
             }.get(heading)
             if role:
                 for k, p in enumerate(sec.findall("p"), 1):
-                    if reusable(p) and (value := _text(p)):
+                    if reusable(p) and (value := _quote_text(p)):
                         yield Passage(f"abstract[{i}]/sec[{j}]/p[{k}]", role, value)
 
 

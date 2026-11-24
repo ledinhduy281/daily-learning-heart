@@ -110,3 +110,12 @@ class LessonSourceTests(unittest.TestCase):
         </table-wrap></body>"""
         article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
         self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Row header recommendation."])
+
+    def test_formula_representations_are_not_joined_into_a_quote(self):
+        body = b"""<body><sec><title>Recommendations</title>
+        <p>Use <alternatives><tex-math>E=mc2</tex-math>
+          <mml:math xmlns:mml="http://www.w3.org/1998/Math/MathML">E=mc2</mml:math></alternatives>.</p>
+        <p>Plain text recommendation.</p>
+        </sec></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Plain text recommendation."])
