@@ -13,8 +13,9 @@ class SearchTests(unittest.TestCase):
         self.assertTrue(data)
         for query, accented in [('suy tim', 'suy tim'), ('tang huyet ap', 'tăng huyết áp'), ('rung nhi', 'rung nhĩ')]:
             with self.subTest(query=query):
-                ranked = sorted(data, key=lambda b: score(b, query), reverse=True)
-                self.assertIn(normalize(accented), normalize(ranked[0]['title_vi']))
+                top_score = max(score(b, query) for b in data)
+                self.assertTrue(any(normalize(accented) in normalize(b['title_vi'])
+                                    for b in data if score(b, query) == top_score))
                 self.assertEqual([score(b, query) for b in data], [score(b, accented) for b in data])
         for abbr, term in [('AF', 'atrial fibrillation'), ('HFpEF', 'heart failure with preserved ejection fraction'), ('HFrEF', 'heart failure with reduced ejection fraction'), ('ACS', 'acute coronary syndrome'), ('SGLT2i', 'sglt2 inhibitors'), ('ARNI', 'angiotensin receptor neprilysin inhibitor'), ('GDMT', 'guideline directed medical therapy')]:
             self.assertEqual([score(b, abbr) for b in data], [score(b, term) for b in data])

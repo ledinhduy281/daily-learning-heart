@@ -15,7 +15,8 @@ class SourceQuizTests(unittest.TestCase):
         self.lesson = self.templates["9"]
 
     def test_all_topics_have_source_backed_questions_in_both_languages(self):
-        for lesson in self.templates.values():
+        published = [b for b in app.load_existing_briefings() if b.get("quiz_mode") == "source_excerpt"]
+        for lesson in [*self.templates.values(), *published]:
             items = validated_source_items(lesson)
             self.assertGreaterEqual(len(items), 2)
             self.assertEqual(len(items), len(lesson["quiz_items"]))

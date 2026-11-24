@@ -19,6 +19,17 @@ vm.runInContext(html.slice(html.indexOf("    function getTodaySingleBriefing()")
 vm.runInContext(html.slice(html.indexOf("    function renderEvolutionPipeline("),
     html.indexOf("    function renderTrialsMatrix(")), context);
 context.escapeHtml = s => s;
+vm.runInContext(html.slice(html.indexOf("    function formatDoiUrl("),
+    html.indexOf("    function safeChatSourceUrl(")), context);
+assert.equal(context.formatDoiUrl("  "), "");
+vm.runInContext(html.slice(html.indexOf("    function rotationNoticeFor("),
+    html.indexOf("    function formatFullDdMmYyyy(")), context);
+bundle.lesson_gate_start = "2026-11-24";
+App.currentLang = "en";
+assert.match(context.rotationNoticeFor({date: "2026-11-23"}), /Legacy archive lesson/);
+App.currentLang = "vi";
+assert.match(context.rotationNoticeFor({date: "2026-11-23"}), /Bài lưu trữ/);
+assert.equal(context.rotationNoticeFor({date: "2026-11-24"}), "");
 
 const fallback = context.getTodaySingleBriefing();
 assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
@@ -37,7 +48,7 @@ assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
 App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
 assert.equal(context.getTodaySingleBriefing(), fallback);
 App.todayDate = "2026-11-14";
-App.briefings = bundle.briefings;
+App.briefings = bundle.briefings.filter(b => b.id !== fallback.id);
 assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
 Dom.trialsGridDeck = {};
 vm.runInContext(html.slice(html.indexOf("    function renderTrialsMatrix("),
@@ -46,6 +57,10 @@ context.renderTrialsMatrix(fallback, false);
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.limits_en));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
+context.renderTrialsMatrix({...fallback, supporting_evidence: {
+  ...fallback.supporting_evidence, pmid: "", doi: "10.1000/example"
+}}, false);
+assert.match(Dom.trialsGridDeck.innerHTML, /href="https:\/\/doi\.org\/10\.1000\/example"/);
 const excerpt = {
   text: "<source text>", authors: ["An Author"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12345/",
   license_url: "https://creativecommons.org/licenses/by/4.0/"

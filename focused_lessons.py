@@ -108,6 +108,7 @@ LESSONS = {
 
 FOCUSED_EDITION_DATE = "2026-11-24"
 FOCUSED_EDITION_VERSION = 3
+GATE_START_DATE = "2026-11-24"
 
 
 def source_priority(kind):
@@ -134,6 +135,36 @@ def select_supporting_evidence(lesson, candidates=EVIDENCE):
     return min(eligible, key=lambda candidate: (source_priority(candidate["source_kind"]), candidate["pmid"]), default=None)
 
 
+def _citation_url(pmid, doi, *, prefer_doi=False):
+    pubmed = f"https://pubmed.ncbi.nlm.nih.gov/{pmid.strip()}/" if (pmid or "").strip() else ""
+    doi_url = f"https://doi.org/{doi.strip()}" if (doi or "").strip() else ""
+    return (doi_url or pubmed) if prefer_doi else (pubmed or doi_url)
+
+
+def _citation_markdown(name, pmid, doi):
+    url = _citation_url(pmid, doi, prefer_doi=True)
+    return f"[{name}]({url})" if url else name
+
+
+def focused_markdown(briefing, lang, safety_source=None):
+    evolution = briefing["guideline_evolution"]
+    guideline = evolution["current_guideline"]
+    block = "Khuyến cáo trọng tâm" if lang == "vi" else "Focused guideline recommendation"
+    name = _citation_markdown(guideline["name"], guideline["pmid"], guideline["doi"])
+    body = f"## Block A — {block}\n\n**{name}**\n\n{evolution[f'recommendation_{lang}']}"
+    if safety_source:
+        body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
+    if evidence := briefing.get("supporting_evidence"):
+        heading = "Nghiên cứu bổ trợ" if lang == "vi" else "Supporting evidence"
+        citation = _citation_markdown(evidence["name"], evidence["pmid"], evidence["doi"])
+        body += (
+            f"\n\n## Block B — {heading}\n\n**{citation}** — {evidence['journal']}\n\n"
+            f"{evidence[f'population_{lang}']} {evidence[f'supports_{lang}']} "
+            f"({evidence['result']}). {evidence[f'limits_{lang}']}"
+        )
+    return f"{body}\n\n*{briefing[f'disclaimer_{lang}']}*"
+
+
 def build_focused_lesson(pillar, date_str, *, source_quiz=True):
     datetime.date.fromisoformat(date_str)
     pid = pillar["id"]
@@ -155,7 +186,7 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         "lesson_version": FOCUSED_EDITION_VERSION,
         "guideline_evolution": {"current_guideline": guideline, "recommendation_id": lesson["recommendation_id"]},
         "pubmed_anchors": [
-            {"title": name, "pmid": pmid, "doi": doi, "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"}
+            {"title": name, "pmid": pmid, "doi": doi, "url": _citation_url(pmid, doi)}
         ],
     }
     evidence = select_supporting_evidence(lesson)
@@ -171,7 +202,7 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         }
         briefing["pubmed_anchors"].append({
             "title": evidence["name"], "pmid": evidence["pmid"], "doi": evidence["doi"],
-            "url": f"https://pubmed.ncbi.nlm.nih.gov/{evidence['pmid']}/",
+            "url": _citation_url(evidence["pmid"], evidence["doi"]),
         })
     safety_source = lesson.get("safety_source")
     if safety_source:
@@ -181,23 +212,12 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         briefing[f"title_{lang}"] = title
         briefing[f"topic_focus_{lang}"] = title
         briefing["guideline_evolution"][f"recommendation_{lang}"] = recommendation
-        block, disclaimer = (
-            ("Khuyến cáo trọng tâm", "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.")
-            if lang == "vi" else
-            ("Focused guideline recommendation", "For education only. Consult the original source before applying.")
-        )
+        disclaimer = ("Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng."
+                      if lang == "vi" else "For education only. Consult the original source before applying.")
         briefing[f"disclaimer_{lang}"] = disclaimer
-        body = f"## Block A — {block}\n\n**[{name}](https://doi.org/{doi})**\n\n{recommendation}"
-        if safety_source:
-            body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
-        if evidence:
-            heading = "Nghiên cứu bổ trợ" if lang == "vi" else "Supporting evidence"
-            body += (
-                f"\n\n## Block B — {heading}\n\n"
-                f"**[{evidence['name']}](https://doi.org/{evidence['doi']})** — {evidence['journal']}\n\n"
-                f"{evidence['population'][i]} {evidence['supports'][i]} ({evidence['result']}). {evidence['limits'][i]}"
-            )
-        briefing["part1_vi_markdown" if lang == "vi" else "part2_en_markdown"] = f"{body}\n\n*{disclaimer}*"
+        briefing["part1_vi_markdown" if lang == "vi" else "part2_en_markdown"] = focused_markdown(
+            briefing, lang, safety_source,
+        )
     briefing["word_count_vi"] = len(briefing["part1_vi_markdown"].split())
     return briefing
 

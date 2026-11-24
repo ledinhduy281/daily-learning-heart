@@ -20,7 +20,7 @@ const helpers = [
   extract("function rotationNoticeFor(b) {", "\n    }"),
   extract("function formatFullDdMmYyyy(iso) {", "\n    }"),
 ].join("\n");
-const context = { App: { currentLang: "vi" } };
+const context = { App: { currentLang: "vi" }, window: {} };
 runInNewContext(`${i18nSource}\n${helpers}\nthis.I18N = I18N; this.rotationNoticeFor = rotationNoticeFor; this.briefingHasCitation = briefingHasCitation;`, context);
 const { I18N, rotationNoticeFor, briefingHasCitation } = context;
 

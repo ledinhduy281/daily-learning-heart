@@ -89,6 +89,8 @@ The [site workflow](.github/workflows/pages.yml) deploys the allowed static asse
 
 Run `python3 -m pipeline.lesson_coverage` for a JSON report of full-text and recommendation-match coverage for the ten active rotation guidelines. It distinguishes API failures from cases where no supported reusable copy was found through Europe PMC; it does not check publisher websites.
 
+`python3 -m pipeline.validate_lesson` checks every dated lesson from the November 24, 2026 rollout onward and the bundled offline fallback templates. Earlier archive entries are labeled as legacy and left unchanged. The refresh matches the new edition against the curated catalog before committing. Pages checks recorded citations, provenance, and quiz excerpts without consulting the current catalog, and stages evidence assets separately. Validation is read-only; a failure leaves the last successful deployment live. Clinical claims still need human review.
+
 ## Repository guide
 
 | Path | Role |

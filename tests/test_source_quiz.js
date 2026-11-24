@@ -6,7 +6,8 @@ const quiz = require("../clinical_mcq.js");
 const scope = {window: {}};
 vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), scope);
 const bundle = scope.window.EBM_BRIEFINGS_DATA;
-const lessons = Object.values(bundle.focused_lessons);
+const published = bundle.briefings.filter(b => b.date >= bundle.lesson_gate_start);
+const lessons = [...Object.values(bundle.focused_lessons), ...published];
 const lesson = lessons[8], item = lesson.quiz_items[0];
 for (const mutation of [{quote: ""}, {pmid: "bad"}, {pmid: "32871100"}, {answer: "000"},
     {start: item.start + 1}, {distractors: [item.answer, "12%", "13%"]},
@@ -15,7 +16,8 @@ for (const mutation of [{quote: ""}, {pmid: "bad"}, {pmid: "32871100"}, {answer:
 }
 assert.equal(quiz.hasSourceItems({...lesson, quiz_source_texts: {}}), false);
 assert.equal(quiz.hasSourceItems({...lesson, supporting_evidence: {...lesson.supporting_evidence, recommendation_id: "other"}}), false);
-assert.ok(bundle.briefings.every(b => !quiz.hasSourceItems(b)));
+assert.ok(bundle.briefings.filter(b => b.date < bundle.lesson_gate_start).every(b => !quiz.hasSourceItems(b)));
+assert.ok(published.some(b => b.date === bundle.lesson_gate_start && b.lesson_provenance && quiz.hasSourceItems(b)));
 const first = quiz.turn(lesson, {}, "en", "start_diagnostic");
 assert.equal(first.state.revealed_source_pmid, undefined);
 const q = first.state.current_question;

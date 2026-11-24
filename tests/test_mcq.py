@@ -351,7 +351,7 @@ class ClinicalMcqTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.briefings = app.load_existing_briefings()
+        cls.briefings = [b for b in app.load_existing_briefings() if b.get('quiz_mode') != 'source_excerpt']
 
     def assert_question(self, question):
         self.assertTrue(question['question'])

@@ -21,11 +21,14 @@ jobs:
           mkdir -p site/data
           cp index.html icon.svg manifest.json clinical_distractors.js clinical_mcq.js \
             device_profile.js sync_config.js cloud_sync.js search_ranking.js evidence_feed.js offline.js site/
-          cp data/briefings.js site/data/
           if [[ -f data/pipeline/briefing.json && -f data/pipeline/evidence.parquet ]]; then
             mkdir site/data/pipeline
             cp data/pipeline/briefing.json data/pipeline/evidence.parquet site/data/pipeline/
           fi
+      - name: Validate and stage the lesson bundle
+        run: |
+          python3 -m pipeline.validate_lesson --rotation-state data/rotation_state.json
+          cp data/briefings.js site/data/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
