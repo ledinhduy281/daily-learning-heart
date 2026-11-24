@@ -11,6 +11,11 @@ on:
     branches: [main]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even if today's UTC snapshot is already on main
+        type: boolean
+        default: false
   pull_request:
     paths:
       - 'pipeline/**'
@@ -31,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' || github.event_name == 'push') && 'evidence-automatic' || format('evidence-run-{0}', github.run_id) }}
+  group: ${{ github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.force != true) && 'evidence-automatic' || format('evidence-run-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -49,10 +54,11 @@ jobs:
         id: snapshot
         env:
           EVENT: ${{ github.event_name }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
         run: |
           today=$(date -u +%F)
           echo "date=$today" >> "$GITHUB_OUTPUT"
-          if [[ "$EVENT" != workflow_dispatch && "$EVENT" != pull_request &&
+          if [[ "$FORCE" != true && "$EVENT" != pull_request &&
                 -s data/pipeline/briefing.json && -s data/pipeline/evidence.parquet ]] &&
              jq -e --arg date "$today" '.date == $date' data/pipeline/briefing.json >/dev/null; then
             echo "Today's UTC snapshot ($today) is already on main."
@@ -117,7 +123,7 @@ jobs:
       - name: Commit validated JSON and Parquet
         env:
           SNAPSHOT: ${{ runner.temp }}/evidence-public
-          EVENT: ${{ github.event_name }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
         run: |
           set -euo pipefail
           mkdir -p data/pipeline
@@ -128,7 +134,7 @@ jobs:
               echo "A newer snapshot is already published."
               exit 0
             fi
-            if [[ "$EVENT" != workflow_dispatch && "$candidate" == "$current" && -s data/pipeline/evidence.parquet ]]; then
+            if [[ "$FORCE" != true && "$candidate" == "$current" && -s data/pipeline/evidence.parquet ]]; then
               echo "This UTC snapshot date is already published."
               exit 0
             fi

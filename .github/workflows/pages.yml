@@ -30,29 +30,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           UPSTREAM_RUN: ${{ github.event.workflow_run.id }}
           UPSTREAM_NAME: ${{ github.event.workflow_run.name }}
+          UPSTREAM_EVENT: ${{ github.event.workflow_run.event }}
         run: |
+          set -o pipefail
           publish=true
           if [[ "$UPSTREAM_NAME" == "Daily Cardiology Evidence Pipeline" ]]; then
             publish=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$UPSTREAM_RUN/jobs" \
               --jq 'any(.jobs[]; .name == "publish" and .conclusion == "success")')
+            if [[ "$publish" == false && "$UPSTREAM_EVENT" == workflow_dispatch ]]; then
+              today=$(date -u +%F)
+              url="https://ledinhduy281.github.io/daily-learning-heart/data/pipeline/briefing.json?watchdog=$(date +%s)"
+              if ! curl -fsS --max-time 15 "$url" | jq -e --arg date "$today" '.date == $date' >/dev/null; then
+                publish=true
+              fi
+            fi
           fi
           echo "publish=$publish" >> "$GITHUB_OUTPUT"
 
-  deploy:
+  build:
     needs: check-publication
     if: needs.check-publication.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    concurrency:
-      group: deploy-pages
-      cancel-in-progress: false
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      artifact_name: github-pages-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,6 +72,24 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+          name: github-pages-${{ github.run_attempt }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact_name }}

@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-pillar-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh-daily-pillar:
     runs-on: ubuntu-latest
