@@ -23,11 +23,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Restore the latest approved lesson archive
+        run: |
+          bash pipeline/select_approved_lessons.sh "$RUNNER_TEMP/approved-lessons"
+          cp "$RUNNER_TEMP/approved-lessons/"* data/
 
       - name: Build today's single pillar lesson
         env:
@@ -39,8 +46,9 @@ jobs:
         env:
           TZ: Asia/Ho_Chi_Minh
         run: |
-          if ! git diff --quiet HEAD -- data/briefings.js data/rotation_state.json; then
-            python3 -m pipeline.validate_lesson --date "$(date +%F)"
+          previous="$RUNNER_TEMP/approved-lessons/briefings.js"
+          if ! cmp -s "$previous" data/briefings.js; then
+            python3 -m pipeline.validate_lesson --previous "$previous" --date "$(date +%F)"
           fi
 
       - name: Commit and push updated briefings.js

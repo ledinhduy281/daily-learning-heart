@@ -1,4 +1,6 @@
 import importlib.util
+import copy
+import json
 import os
 import shutil
 import subprocess
@@ -6,6 +8,10 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from fetch_daily_ebm import get_pillar_for_date
+from pipeline import lesson_generation
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,11 +99,11 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertLess(gate, commit)
         self.assertNotIn("continue-on-error", refresh_steps[gate])
         script = """
-        git() { return "$DIFF_STATUS"; }
+        cmp() { return "$DIFF_STATUS"; }
         python3() { return 42; }
         """ + refresh_steps[gate]["run"]
-        self.assertEqual(self.bash(script, DIFF_STATUS="0").returncode, 0)
-        self.assertEqual(self.bash(script, DIFF_STATUS="1").returncode, 42)
+        self.assertEqual(self.bash(script, DIFF_STATUS="0", RUNNER_TEMP=str(self.root)).returncode, 0)
+        self.assertEqual(self.bash(script, DIFF_STATUS="1", RUNNER_TEMP=str(self.root)).returncode, 42)
 
     def test_pages_retains_last_valid_lesson_and_stages_current_evidence(self):
         steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
@@ -114,31 +120,59 @@ class EvidenceWorkflowTests(unittest.TestCase):
         (evidence / "evidence.parquet").touch()
         validator = self.root / "pipeline"
         validator.mkdir()
-        (validator / "validate_lesson.py").write_text(
-            "from pathlib import Path\n"
-            "if Path('data/briefings.js').read_text() != Path('recommendation.txt').read_text():\n"
-            "    raise SystemExit(1)\n"
-        )
+        for module in ("validate_lesson.py", "lesson_generation.py", "lesson_sources.py", "ingest.py",
+                       "select_approved_lessons.sh"):
+            shutil.copy(ROOT / "pipeline" / module, validator)
+        for module in ROOT.glob("*.py"):
+            shutil.copy(module, self.root)
         bundle = data / "briefings.js"
-        catalog = self.root / "recommendation.txt"
-        bundle.write_text("Original approved recommendation")
-        catalog.write_bytes(bundle.read_bytes())
+        catalog = self.root / "focused_lessons.py"
+        dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in ("2026-11-26", "2026-11-27")]
+        with patch.object(lesson_generation, "fetch_article", return_value=None):
+            first, second = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
+                             for d in dates]
+        bad = copy.deepcopy(first)
+        bad["quiz_items"][0]["answer"] = "0.94"
+
+        def write_bundle(latest, *rows):
+            rotation = {"last_updated": latest["date"]}
+            (data / "rotation_state.json").write_text(json.dumps(rotation))
+            bundle.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps(
+                {"rotation_state": rotation, "briefings": [latest, *rows]}) + ";")
+
+        write_bundle(first)
+        approved = bundle.read_bytes()
         git_env = dict(GIT_AUTHOR_NAME="Test", GIT_AUTHOR_EMAIL="test@example.invalid",
                        GIT_COMMITTER_NAME="Test", GIT_COMMITTER_EMAIL="test@example.invalid")
-        result = self.bash("git init -q && git add data/briefings.js pipeline/validate_lesson.py recommendation.txt"
+        result = self.bash("git init -q && git add *.py pipeline/ data/briefings.js data/rotation_state.json"
                            " && git commit -qm 'Approved lesson'", **git_env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        bundle.write_text("Invalid direct submission")
+        write_bundle(bad)
         result = self.bash("git commit -qam 'Direct bundle update'", **git_env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        catalog.write_text("New editorial wording")
+        with catalog.open("a") as source:
+            source.write('\nLESSONS[1][0]["recommendation"] = ("Edited", "Edited")\n')
         result = self.bash("git commit -qam 'Editorial change'", **git_env)
         self.assertEqual(result.returncode, 0, result.stderr)
-
-        result = self.bash(assets + "\n" + gate)
+        write_bundle(second, bad)
+        result = self.bash("git commit -qam 'New valid lesson carrying over the rejected entry'", **git_env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Skipping invalid lesson bundle", result.stdout)
+
+        result = self.bash(assets + "\n" + gate, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count("Skipping invalid lesson bundle"), 2, result.stdout)
+        self.assertIn(f"{first['id']}: Every quiz key", result.stderr)
         staged = self.root / "site" / "data"
-        self.assertEqual((staged / "briefings.js").read_text(), "Original approved recommendation")
+        self.assertEqual((staged / "briefings.js").read_bytes(), approved)
         self.assertEqual((staged / "pipeline" / "briefing.json").read_bytes(),
                          (evidence / "briefing.json").read_bytes())
+        refresh = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
+        restore = next(step["run"] for step in refresh if step.get("name") == "Restore the latest approved lesson archive")
+        gate = next(step["run"] for step in refresh if "pipeline.validate_lesson" in step.get("run", ""))
+        result = self.bash(restore, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(bundle.read_bytes(), approved)
+        write_bundle(second, first)
+        result = self.bash('date() { printf "2026-11-27\\n"; }\n' + gate, RUNNER_TEMP=str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"Validated daily lesson: {second['id']}", result.stdout)

@@ -28,28 +28,11 @@ jobs:
           fi
       - name: Stage the latest valid lesson bundle
         run: |
-          set -o pipefail
-          snapshots=$(mktemp -d)
-          trap 'rm -rf "$snapshots"' EXIT
-          while read -r revision; do
-            snapshot="$snapshots/$revision"
-            mkdir "$snapshot"
-            git archive "$revision" | tar -x -C "$snapshot"
-            bundle="$snapshot/data/briefings.js"
-            [[ -f "$bundle" ]] || continue
-            if [[ -f "$snapshot/pipeline/validate_lesson.py" ]]; then
-              if ! (cd "$snapshot" && python3 -m pipeline.validate_lesson); then
-                echo "::warning::Skipping invalid lesson bundle from $revision"
-                continue
-              fi
-            elif ! python3 -m pipeline.validate_lesson --bundle "$bundle" --allow-predating-pipeline; then
-              echo "::warning::Skipping invalid pre-gate bundle from $revision"
-              continue
-            fi
-            cp "$bundle" site/data/
-            exit 0
-          done < <(git log --first-parent --format=%H -- data/briefings.js)
-          echo "::warning::No valid lesson bundle found; publishing the other assets only"
+          if bash pipeline/select_approved_lessons.sh "$RUNNER_TEMP/approved-lessons"; then
+            cp "$RUNNER_TEMP/approved-lessons/briefings.js" site/data/
+          else
+            echo "::warning::No valid lesson bundle found; publishing the other assets only"
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

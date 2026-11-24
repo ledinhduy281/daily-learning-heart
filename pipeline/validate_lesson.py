@@ -108,7 +108,16 @@ def validate_lesson(lesson, pillar, lesson_date):
         _require(lesson.get(field) == canonical[field], f"{lang} Markdown does not match the cited lesson")
 
 
-def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False):
+BUNDLE_ASSIGNMENT = "window.EBM_BRIEFINGS_DATA = "
+
+
+def _read_bundle(path):
+    _, marker, payload = path.read_text(encoding="utf-8").partition(BUNDLE_ASSIGNMENT)
+    _require(marker, "Briefing bundle assignment is missing")
+    return json.loads(payload.strip().removesuffix(";"))
+
+
+def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False, previous=None):
     briefings = bundle["briefings"]
     if allow_predating_pipeline and not any(
         "lesson_provenance" in lesson or lesson.get("content_source") == "licensed_source_rotation"
@@ -122,7 +131,22 @@ def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False):
     candidates = [lesson for lesson in briefings if lesson.get("date") == lesson_date
                   and lesson.get("content_source") != "model_draft"]
     _require(len(candidates) == 1, "Expected one scheduled lesson on the dated edition")
-    validate_lesson(candidates[0], pillar, lesson_date)
+    if previous is None:
+        validate_lesson(candidates[0], pillar, lesson_date)
+    else:
+        approved = {lesson["id"]: lesson for lesson in previous["briefings"]}
+        seen = set()
+        for lesson in briefings:
+            lesson_id = lesson.get("id")
+            _require(isinstance(lesson_id, str) and lesson_id and lesson_id not in seen,
+                     "Each briefing must have a unique ID")
+            seen.add(lesson_id)
+            if lesson != approved.get(lesson_id) and lesson.get("content_source") != "model_draft":
+                added_date = date.fromisoformat(lesson["date"])
+                try:
+                    validate_lesson(lesson, get_pillar_for_date(added_date), lesson["date"])
+                except ValueError as exc:
+                    raise ValueError(f"{lesson_id}: {exc}") from exc
     return candidates[0]["id"]
 
 
@@ -130,12 +154,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, default=Path("data/briefings.js"))
     parser.add_argument("--date", help="Require this Vietnam calendar date")
+    parser.add_argument("--previous", type=Path, help="Validate all dated lessons added or changed since this approved bundle")
     parser.add_argument("--allow-predating-pipeline", action="store_true")
     args = parser.parse_args()
     try:
-        _, marker, payload = args.bundle.read_text(encoding="utf-8").partition("window.EBM_BRIEFINGS_DATA = ")
-        _require(marker, "Briefing bundle assignment is missing")
-        lesson_id = validate_bundle(json.loads(payload.strip().removesuffix(";")), args.date, args.allow_predating_pipeline)
+        previous = _read_bundle(args.previous) if args.previous else None
+        lesson_id = validate_bundle(_read_bundle(args.bundle), args.date, args.allow_predating_pipeline, previous)
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
         parser.exit(1, f"Daily lesson publication blocked: {exc}\n")
     print(f"Validated daily lesson: {lesson_id}" if lesson_id else "Existing archive predates the lesson pipeline.")
