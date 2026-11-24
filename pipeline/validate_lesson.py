@@ -111,10 +111,14 @@ def validate_lesson(lesson, pillar, lesson_date):
 BUNDLE_ASSIGNMENT = "window.EBM_BRIEFINGS_DATA = "
 
 
-def _read_bundle(path):
-    _, marker, payload = path.read_text(encoding="utf-8").partition(BUNDLE_ASSIGNMENT)
+def _parse_bundle(raw):
+    _, marker, payload = raw.partition(BUNDLE_ASSIGNMENT)
     _require(marker, "Briefing bundle assignment is missing")
     return json.loads(payload.strip().removesuffix(";"))
+
+
+def _read_bundle(path):
+    return _parse_bundle(path.read_text(encoding="utf-8"))
 
 
 def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False, previous=None):
