@@ -46,6 +46,26 @@ context.renderTrialsMatrix(fallback, false);
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.limits_en));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
+const excerpt = {
+  text: "<source text>", authors: ["An Author"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12345/",
+  license_url: "https://creativecommons.org/licenses/by/4.0/"
+};
+for (const [isVi, curated, licensed] of [
+  [true, /đã được người biên tập rà soát/, /Trích từ nguồn có giấy phép/],
+  [false, /[Cc]urated, human-reviewed/, /Extracted from a licensed source/]
+]) {
+  context.renderEvolutionPipeline({...fallback, guideline_evolution: {
+    ...fallback.guideline_evolution, licensed_recommendation: excerpt
+  }}, isVi);
+  assert.match(Dom.evolutionPipelineRow.innerHTML, curated);
+  assert.match(Dom.evolutionPipelineRow.innerHTML, licensed);
+  context.renderTrialsMatrix({...fallback, supporting_evidence: {
+    ...fallback.supporting_evidence, licensed_excerpts: {result: excerpt}
+  }}, isVi);
+  assert.match(Dom.trialsGridDeck.innerHTML, curated);
+  assert.match(Dom.trialsGridDeck.innerHTML, licensed);
+  assert.match(Dom.trialsGridDeck.innerHTML, /creativecommons.org/);
+}
 context.renderTrialsMatrix({ ...fallback, supporting_evidence: bundle.focused_lessons[8].supporting_evidence }, false);
 assert.equal(Dom.trialsGridDeck.textContent, "No matched study is available.");
 App.todayDate = "2026-11-27";
@@ -74,6 +94,11 @@ App.selected = {...fallback, quiz_mode: undefined};
 context.ClinicalQuiz = require("../clinical_mcq.js");
 context.document = {getElementById: id => quizNodes[id]};
 const tutor = vm.runInContext(quizCode + ";SocraticTutor", context);
+assert.match(tutor.quizSourceLabel(fallback, true), /đã được người biên tập rà soát/);
+assert.match(tutor.quizSourceLabel(fallback, false), /Curated, human-reviewed excerpt/);
+const licensedQuiz = {lesson_provenance: {quiz: {mode: "licensed_excerpt"}}};
+assert.match(tutor.quizSourceLabel(licensedQuiz, true), /Trích từ nguồn có giấy phép/);
+assert.match(tutor.quizSourceLabel(licensedQuiz, false), /Extracted from a licensed source/);
 tutor.getSession = () => { assert.fail("A focused lesson without excerpts should not start a generic quiz"); };
 tutor.renderUI();
 assert.equal(quizNodes.btnOpenSocraticHeader.style.display, "none");

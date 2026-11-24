@@ -48,9 +48,9 @@ EXCERPTS = {
 }
 
 
-def build_source_quiz(pmid):
+def build_source_quiz(pmid, marked_passages=None):
     passages, items = [], []
-    for marked in EXCERPTS.get(pmid, ()):
+    for marked in EXCERPTS.get(pmid, ()) if marked_passages is None else marked_passages:
         quote = marked.replace("[[", "").replace("]]", "")
         passages.append(quote)
         for index, match in enumerate(re.finditer(r"\[\[([^\[\]]+)\]\]", marked)):
