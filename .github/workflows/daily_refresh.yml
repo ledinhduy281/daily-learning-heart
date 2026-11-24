@@ -29,11 +29,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Refresh today's single pillar briefing (Step-0 PubMed Verified)
+      - name: Build today's single pillar lesson
         env:
           TZ: Asia/Ho_Chi_Minh
         run: |
           python3 fetch_daily_ebm.py --refresh-if-needed
+
+      - name: Validate lesson before publishing
+        env:
+          TZ: Asia/Ho_Chi_Minh
+        run: python3 -m pipeline.validate_lesson --date "$(date +%F)"
 
       - name: Commit and push updated briefings.js
         run: |
@@ -47,4 +52,3 @@ jobs:
             git pull --rebase origin main || true
             git push
           fi
-
