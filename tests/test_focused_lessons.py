@@ -93,6 +93,7 @@ class FocusedLessonTests(unittest.TestCase):
         with TemporaryDirectory() as directory, patch.object(app, "_today_vn", return_value=today), \
                 patch.object(app, "BRIEFINGS_JS_PATH", Path(directory) / "briefings.js"), \
                 patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"), \
+                patch("pipeline.lesson_generation.fetch_article", return_value=None) as fetch, \
                 patch("crawl_cardiology_news.crawl_latest_guidelines", side_effect=AssertionError("Daily lookup")):
             app.save_briefings_js([legacy], {})
             first = app.refresh_today_briefing()
@@ -101,6 +102,8 @@ class FocusedLessonTests(unittest.TestCase):
             self.assertTrue(second["already_up_to_date"])
             self.assertEqual(first["briefing"], second["briefing"])
             self.assertEqual(app.load_existing_briefings(), [first["briefing"]])
+            self.assertEqual(first["briefing"]["lesson_provenance"]["quiz"]["mode"], "curated")
+            self.assertEqual(fetch.call_count, 2)
 
     def test_scheduled_refresh_preserves_same_day_model_drafts(self):
         today = datetime.date(2026, 11, 24)
@@ -111,7 +114,8 @@ class FocusedLessonTests(unittest.TestCase):
         ]
         with TemporaryDirectory() as directory, patch.object(app, "_today_vn", return_value=today), \
                 patch.object(app, "BRIEFINGS_JS_PATH", Path(directory) / "briefings.js"), \
-                patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"):
+                patch.object(app, "ROTATION_STATE_PATH", Path(directory) / "rotation_state.json"), \
+                patch("pipeline.lesson_generation.fetch_article", return_value=None):
             app.save_briefings_js(drafts, {})
             result = app.refresh_today_briefing()
             self.assertEqual(app.load_existing_briefings(), [result["briefing"], *drafts])

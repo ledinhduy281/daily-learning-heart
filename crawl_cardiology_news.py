@@ -911,11 +911,11 @@ def refresh_guideline_briefing(
     date_str: str | None = None,
     progress_cb=None,
 ) -> dict:
-    """Build the curated guideline lesson without attaching live search hits."""
-    from focused_lessons import build_focused_lesson
+    """Build the lesson using licensed text for the selected clinical pairing."""
+    from pipeline.lesson_generation import build_open_lesson
     from pillar_library import PILLARS
 
     if progress_cb:
         progress_cb(45, f"Đang tải khuyến cáo cho Trụ cột #{pillar_id}...")
     pillar = next(pillar for pillar in PILLARS if pillar["id"] == pillar_id)
-    return build_focused_lesson(pillar, date_str or datetime.date.today().isoformat())
+    return build_open_lesson(pillar, date_str or datetime.date.today().isoformat())

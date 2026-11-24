@@ -6782,6 +6782,9 @@
     }
 
     function renderEvolutionPipeline(b, isVi) {
+      const curatedLabel = isVi
+        ? "Nội dung tuyển chọn, đã được người biên tập rà soát"
+        : "Curated, human-reviewed content";
       const ge = b.guideline_evolution;
       Dom.guidelinePipelineSociety.textContent = b.lesson_format === "single_guideline"
         ? ge?.current_guideline?.society || ""
@@ -6791,7 +6794,11 @@
         Dom.guidelineComparisonBanner.innerHTML = renderGuidelineRefBox(
           ge.current_guideline, isVi ? "Guideline chính" : "Primary guideline", true
         );
-        Dom.evolutionPipelineRow.innerHTML = `<p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>`;
+        const provenance = hasFocusedProvenance(b)
+          ? `<p><small>${curatedLabel}</small></p>`
+          : "";
+        Dom.evolutionPipelineRow.innerHTML = `${provenance}<p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>`
+          + renderLicensedExcerpt(ge.licensed_recommendation, isVi);
         return;
       }
 
@@ -6875,6 +6882,21 @@
       `;
     }
 
+    function hasFocusedProvenance(b) {
+      return Boolean(b.lesson_provenance || /-focused$/.test(String(b.id || "")));
+    }
+
+    function renderLicensedExcerpt(excerpt, isVi) {
+      if (!excerpt || !/^https:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/PMC[1-9][0-9]*\/$/.test(excerpt.url)
+          || !["https://creativecommons.org/licenses/by/4.0/", "https://creativecommons.org/publicdomain/zero/1.0/"].includes(excerpt.license_url)) return "";
+      const label = isVi ? "Trích từ nguồn có giấy phép (nguyên văn tiếng Anh)" : "Extracted from a licensed source";
+      return `<blockquote><strong>${label}</strong><p lang="en">${escapeHtml(excerpt.text)}</p>
+        <small>${escapeHtml(excerpt.authors.join(", "))} ·
+        <a href="${escapeHtml(excerpt.url)}" target="_blank" rel="noopener noreferrer">${isVi ? "Nguồn gốc" : "Source"}</a> ·
+        <a href="${escapeHtml(excerpt.license_url)}" target="_blank" rel="noopener noreferrer">${isVi ? "Giấy phép" : "License"}</a></small>
+      </blockquote>`;
+    }
+
     function renderTrialsMatrix(b, isVi) {
       if (b.lesson_format === "single_guideline") {
         const evidence = b.supporting_evidence;
@@ -6895,8 +6917,10 @@
             <h3 class="trial-title-h3"><a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(evidence.pmid)}/" target="_blank" rel="noopener noreferrer">${escapeHtml(evidence.name)}</a></h3>
             <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
           </div>
+          ${hasFocusedProvenance(b) ? `<p><small>${isVi ? "Nội dung tuyển chọn, đã được người biên tập rà soát" : "Curated, human-reviewed content"}</small></p>` : ""}
           <p><strong>${escapeHtml(evidence.result)}</strong></p>
           ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}
+          ${Object.values(evidence.licensed_excerpts || {}).map(excerpt => renderLicensedExcerpt(excerpt, isVi)).join("")}
         </div>`;
         return;
       }
@@ -9448,6 +9472,17 @@
         }
       },
 
+      quizSourceLabel(b, isVi) {
+        const mode = b.lesson_provenance?.quiz?.mode || (/-focused$/.test(String(b.id || "")) ? "curated" : "");
+        if (mode === "licensed_excerpt") {
+          return isVi ? "Trích từ nguồn có giấy phép (nguyên văn tiếng Anh)." : "Extracted from a licensed source.";
+        }
+        if (mode === "curated") {
+          return isVi ? "Trích đoạn tuyển chọn, đã được người biên tập rà soát." : "Curated, human-reviewed excerpt.";
+        }
+        return "";
+      },
+
       renderUI() {
         const b = App.selected || getTodaySingleBriefing();
         const available = ClinicalQuiz.hasSourceItems(b);
@@ -9467,9 +9502,11 @@
           if (el) el.textContent = txt;
         };
         setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
-        setEl("socraticSubText", isVi
+        const sourceLabel = this.quizSourceLabel(b, isVi);
+        const instructions = isVi
           ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
-          : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.");
+          : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.";
+        setEl("socraticSubText", [sourceLabel, instructions].filter(Boolean).join(" "));
 
         const phaseMapVi = {
           diagnostic: `Ôn tập (${(sess.question_index || 0) + 1}/${questionCount})`,

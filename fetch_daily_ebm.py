@@ -82,8 +82,8 @@ BUNDLE_GENERATOR = {
     "method": "deterministic",
     "model": NO_MODEL,
     "content_source": (
-        "Curated pillar library shown in a fixed 10-pillar daily rotation; "
-        "an edition is re-dated when its pillar comes round again."
+        "Licensed lesson excerpts where available, with curated clinical content "
+        "and a fixed 10-pillar rotation."
     ),
     "citation_lookup": "NCBI PubMed E-utilities PMID/DOI identity lookup (not clinical verification)",
 }
@@ -1432,7 +1432,7 @@ def refresh_today_briefing(
     pillar_id: int | None = None,
     progress_cb=None,
 ) -> dict:
-    """Publish today's single curated guideline recommendation."""
+    """Publish today's focused lesson with licensed and curated provenance."""
     with _refresh_lock:
         today = _today_vn()
         today_str = today.isoformat()
@@ -1456,6 +1456,7 @@ def refresh_today_briefing(
                 if b.get("pillar_id") == pid
                 and b.get("lesson_format") == "single_guideline"
                 and b.get("lesson_version") == FOCUSED_EDITION_VERSION
+                and b.get("lesson_provenance")
             ]
             if len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records):
                 if progress_cb:
