@@ -587,7 +587,7 @@ async function checkStreams() {
   {
     for (const change of ['none','reset','replace','question']) {
       const tutorCode=html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
-      const quiz=require('../clinical_mcq.js'),primary={id:'first',pillar_id:1},other={id:'second',pillar_id:2};
+      const quiz=require('../clinical_mcq.js'),primary={id:'first',pillar_id:1},other={id:'second',pillar_id:1};
       const question=quiz.build(primary,0,0,'vi');
       let stored,release,entered;
       const gate=new Promise(resolve=>release=resolve),started=new Promise(resolve=>entered=resolve);
@@ -605,28 +605,31 @@ async function checkStreams() {
       const record=()=>({started:true,phase:'diagnostic',question_index:0,answered_count:0,correct_count:0,
         last_question:question.question,current_question:question,current_options:question.options,correct_key:question.correct_key,
         explanation:question.explanation,options_lang:'vi',messages:[{role:'assistant',text:question.question}]});
-      tutor.store={1:record(),2:record()};tutor.getSession(1,primary);tutor.getSession(2,other);tutor.saveStore();
-      const original=tutor.store[1],sessionId=original.session_id;
+      tutor.store={first:record()};
+      assert.equal(tutor.getSession(1,other).started,false);
+      Object.assign(tutor.getSession(1,other),record());
+      tutor.getSession(1,primary);tutor.saveStore();
+      const original=tutor.store.first,sessionId=original.session_id;
       const pending=tutor.callSocraticApi('answer',question.correct_key,question.correct_key);await started;
-      app.selected=other;tutor.curPillarId=2;app.currentLang='en';tutor.onLanguageChanged();
-      assert.equal(tutor.store[1],original);tutor.loadStore();assert.equal(tutor.store[1],original);
-      assert.equal(tutor.store[2].last_question,'Translated second question');
+      app.selected=other;tutor.curPillarId=1;app.currentLang='en';tutor.onLanguageChanged();
+      assert.equal(tutor.store.first,original);tutor.loadStore();assert.equal(tutor.store.first,original);
+      assert.equal(tutor.store.second.last_question,'Translated second question');
       if(change==='reset') {
         app.selected=primary;tutor.curPillarId=1;tutor.callSocraticApi=async()=>{};
-        await tutor.startDiagnostic();assert.notEqual(tutor.store[1].session_id,sessionId);
+        await tutor.startDiagnostic();assert.notEqual(tutor.store.first.session_id,sessionId);
       } else if(change==='replace') {
-        tutor.store[1]={...original,messages:[],correct_count:7};tutor.saveStore();
+        tutor.store.first={...original,messages:[],correct_count:7};tutor.saveStore();
       } else if(change==='question') {
         original.question_id=tutor.newQuizId();original.messages=[];tutor.saveStore();
       }
-      const before=JSON.stringify(tutor.store[1]);
+      const before=JSON.stringify(tutor.store.first);
       release();await pending;
       if(change==='none') {
-        assert.equal(tutor.store[1],original);assert.equal(JSON.parse(stored)[1].correct_count,1);
-        assert.ok(JSON.parse(stored)[1].messages.some(m=>m.text==='Graded first question'));
-      } else assert.equal(JSON.stringify(tutor.store[1]),before);
-      assert.equal(JSON.parse(stored)[2].last_question,'Translated second question');
-      assert.ok(!JSON.parse(stored)[2].messages.some(m=>m.text==='Graded first question'));
+        assert.equal(tutor.store.first,original);assert.equal(JSON.parse(stored).first.correct_count,1);
+        assert.ok(JSON.parse(stored).first.messages.some(m=>m.text==='Graded first question'));
+      } else assert.equal(JSON.stringify(tutor.store.first),before);
+      assert.equal(JSON.parse(stored).second.last_question,'Translated second question');
+      assert.ok(!JSON.parse(stored).second.messages.some(m=>m.text==='Graded first question'));
     }
   }
   {
