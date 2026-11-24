@@ -92,10 +92,15 @@ class FocusedLessonTests(unittest.TestCase):
 
     def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = "Which of the following is true?\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en")
-        self.assertIn("Use the lesson quiz", answer)
-        self.assertNotIn("\n\n", answer)
+        options = "\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
+        for lang, stem, notice in (
+            ("en", "Which of the following is true?", "Use the lesson quiz"),
+            ("vi", "Trong bài hôm nay, phát biểu nào sau đây đúng?", "Dùng bài trắc nghiệm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(stem + options, [briefing], [], lang)
+                self.assertIn(notice, answer)
+                self.assertNotIn("\n\n", answer)
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)

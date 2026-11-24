@@ -1920,7 +1920,7 @@ def _focused_question_excerpt(query, primary, lang, level):
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
     stem = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
-        r"nao|dung|sai|nhan dinh|phuong an|sau day)\b",
+        r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
         " ", normalize(query[:marker.start()]),
     )
     groups = search_terms(stem)
