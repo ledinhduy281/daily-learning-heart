@@ -1916,7 +1916,7 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
 
 
-def _match_focused_mcq(query, options, primary, lang):
+def _match_focused_mcq(query, options, primary, lang, level):
     option_stop = {"a", "an", "and", "for", "in", "of", "the", "to", "with", "cua", "va"}
 
     def tokens(text):
@@ -1928,28 +1928,42 @@ def _match_focused_mcq(query, options, primary, lang):
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
     question = tokens(query[:marker.start()]) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
     # Match options and question cues in the same sentence, not anywhere in the lesson.
-    paragraphs = [primary["guideline_evolution"][f"recommendation_{lang}"]]
-    notes = primary["teaching"][lang]
-    paragraphs.extend(p for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS) for p in notes[key])
-    sentences = [
-        (sentence, tokens(sentence))
-        for p in paragraphs for sentence in re.split(r"(?<=[.!?])\s+", p)
-    ]
-    cue_counts = {term: sum(has_cue(term, terms) for _, terms in sentences) for term in question}
+    sentences = {}
+    for language in (lang, "en" if lang == "vi" else "vi"):
+        notes = primary["teaching"][language]
+        sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
+        sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
+        sentences[language] = [
+            (sentence, tokens(sentence), paragraph, section)
+            for section in sections for paragraph in section
+            for sentence in re.split(r"(?<=[.!?])\s+", paragraph)
+        ]
+    cue_counts = {
+        language: {term: sum(has_cue(term, row[1]) for row in rows) for term in question}
+        for language, rows in sentences.items()
+    }
     ranked = []
     for letter, option in options.items():
         words = tokens(option) - option_stop
         if not words:
             continue
-        cues = sorted(term for term in question - words if cue_counts[term])
         best = (0.0, "")
-        for sentence, terms in sentences:
-            coverage = len(words & terms) / len(words)
-            if coverage >= 0.75:
-                relevance = sum(1 / cue_counts[term] for term in cues if has_cue(term, terms))
+        for language, rows in sentences.items():
+            counts = cue_counts[language]
+            cues = sorted(term for term in question - words if counts[term])
+            for sentence, terms, paragraph, section in rows:
+                coverage = len(words & terms) / len(words)
+                if coverage < 0.75 or re.search(
+                    r"\b(cannot|can't|does not|do not|did not|khong the|khong tu)\b", normalize(sentence)
+                ):
+                    continue
+                relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
                 score = coverage * (1 + relevance)
                 if score > best[0]:
-                    best = (score, sentence)
+                    excerpt = sentence if level == "short" else paragraph
+                    if level == "detailed":
+                        excerpt = "\n\n".join([paragraph, *(p for p in section if p != paragraph)])
+                    best = (score, excerpt)
         if best[0]:
             ranked.append((best[0], letter, best[1]))
     ranked.sort(reverse=True)
@@ -2013,13 +2027,13 @@ def _compose_deterministic_ebm_answer(
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
         if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
-            best_k, sentence = _match_focused_mcq(query, mcq_opts, primary, lang)
+            best_k, excerpt = _match_focused_mcq(query, mcq_opts, primary, lang, eff_level)
             if not best_k:
                 return (
                     "I couldn't match one answer to the lesson evidence." if is_en
                     else "Tôi chưa tìm thấy một đáp án rõ ràng trong bài học."
                 ), sources
-            return f"**{best_k}** — {sentence}", sources
+            return f"**{best_k}** — {excerpt}", sources
         evid_blob = " ".join([
             cur_g.get("name", ""),
             " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),

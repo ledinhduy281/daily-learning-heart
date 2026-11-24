@@ -65,8 +65,8 @@ class FocusedLessonTests(unittest.TestCase):
     def test_pasted_diagnosis_question_uses_guideline_application_not_trial_measures(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
         questions = {
-            "en": ("Which test is required to confirm PAH?\nA. Six-minute walk distance\n"
-                   "B. Right heart catheterization\nC. Echocardiography\nD. Chest radiography"),
+            "en": ("Which test can distinguish group 1 PAH from left heart or lung disease?\nA. Echocardiography\n"
+                   "B. Right heart catheterization\nC. Six-minute walk distance\nD. Chest radiography"),
             "vi": ("Xét nghiệm nào xác nhận PAH nhóm 1?\nA. Quãng đường đi bộ 6 phút\n"
                    "B. Thông tim phải\nC. Cộng hưởng từ tim\nD. X quang ngực"),
         }
@@ -82,6 +82,18 @@ class FocusedLessonTests(unittest.TestCase):
         query = "Which element has atomic number 11?\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
         answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en")
         self.assertIn("couldn't match one answer", answer)
+
+    def test_pasted_english_trial_question_in_vietnamese_and_detailed_mode(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Which adverse effect was more common with combination therapy in AMBITION?\n"
+                 "A. Seizures\nB. Peripheral edema\nC. Rhabdomyolysis\nD. Hyperkalemia")
+        short, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="short")
+        detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="detailed")
+        self.assertTrue(short.startswith("**B** — Peripheral edema"), short)
+        self.assertTrue(detailed.startswith("**B**"), detailed)
+        self.assertIn("Peripheral edema", detailed)
+        self.assertIn("0.50", detailed)
+        self.assertNotIn("0.50", short)
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
