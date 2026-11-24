@@ -1916,90 +1916,49 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
 
 
-def _match_focused_mcq(query, options, primary, lang, level):
-    option_stop = {"a", "an", "and", "for", "in", "of", "the", "to", "with", "cua", "va"}
-    negative_claim = re.compile(
-        r"\b(cannot|can't|does not|do not|did not|must not|contraindicated|avoid|"
-        r"khong the|khong tu|khong dung|khong nen|khong duoc|chong chi dinh|tranh)\b"
-    )
-
-    def numeric_text(text):
-        return re.sub(
-            r"(?<![a-z0-9])\d+[.,]\d+",
-            lambda match: match[0].replace(",", ".").rstrip("0").rstrip("."),
-            text,
-        )
-
-    def words_in(text):
-        return tuple(re.findall(r"\d+(?:\.\d+)?|[a-z][a-z0-9]*", numeric_text(normalize(text))))
-
-    def comparisons(text):
-        text = numeric_text(text.replace("≤", "<=").replace("≥", ">=").replace("−", "-"))
-        return set(re.findall(r"([<>=]=?)\s*(-?\d+(?:\.\d+)?)", text))
-
-    def has_cue(term, terms):
-        return term in terms or (term.endswith("s") and term[:-1] in terms)
-
+def _focused_question_excerpt(query, primary, lang, level):
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
-    stem = query[:marker.start()]
-    normalized_stem = normalize(stem)
-    if re.search(
-        r"\b(false|incorrect|not true|sai|khong dung voi nhan dinh)\b|"
-        r"\b(except|ngoai tru)\s*[:?]?\s*$|\b(except (for )?one|which is the exception)\b",
-        normalized_stem.strip(),
-    ):
-        return "", ""
-    question = set(words_in(stem)) - option_stop - {
-        "how", "is", "was", "what", "which", "below", "following", "statement", "true", "correct",
-        "gi", "la", "nao", "sau", "day", "nhan", "dinh", "dung",
-    }
-    asks_negative = bool(negative_claim.search(normalized_stem))
-    # Match options and question cues in the same sentence, not anywhere in the lesson.
+    stem = re.sub(
+        r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
+        r"nao|dung|sai|nhan dinh|phuong an|sau day)\b",
+        " ", normalize(query[:marker.start()]),
+    )
+    groups = search_terms(stem)
+    if not groups:
+        return ""
+    contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
+    if any(contains(stem, phrase) for phrase in contraindications):
+        groups.append(contraindications)
+
+    passages = []
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
         sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
-        rows = []
         for section in sections:
-            section_terms = set(words_in(" ".join(section)))
             for paragraph in section:
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
-                    sentence_words = words_in(sentence)
-                    rows.append((sentence, sentence_words, set(sentence_words), paragraph, section, section_terms))
-        counts = {term: sum(has_cue(term, row[2]) for row in rows) for term in question}
-        ranked = []
-        for letter, option in options.items():
-            option_words = words_in(option)
-            words = set(option_words) - option_stop
-            if not words:
-                continue
-            best = ((0.0, False, False), "")
-            cues = sorted(term for term in question if counts[term])
-            requested = comparisons(option)
-            for sentence, sentence_words, terms, paragraph, section, section_terms in rows:
-                if requested and not requested <= comparisons(sentence):
-                    continue
-                exact = len(option_words) >= 4 and option_words == sentence_words
-                coverage = len(words & terms) / len(words)
-                if not (exact and not question) and (
-                    coverage < 0.75
-                    or not any(has_cue(term, section_terms) for term in cues)
-                    or bool(negative_claim.search(normalize(sentence))) != asks_negative
-                ):
-                    continue
-                relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
-                score = (coverage * (1 + relevance), exact, bool(words - question))
-                if score > best[0]:
-                    excerpt = sentence if level == "short" else paragraph
-                    if level == "detailed":
-                        excerpt = "\n\n".join([paragraph, *(p for p in section if p != paragraph)])
-                    best = (score, excerpt)
-            if best[1]:
-                ranked.append((best[0], letter, best[1]))
-        ranked.sort(reverse=True)
-        if ranked and (len(ranked) == 1 or ranked[0][0] > ranked[1][0]):
-            return ranked[0][1:]
-    return "", ""
+                    clean = normalize(sentence)
+                    hits = {
+                        i for i, aliases in enumerate(groups)
+                        if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
+                    }
+                    passages.append((hits, sentence, paragraph, section))
+
+    frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
+    weights = [1 / frequency if frequency else 0 for frequency in frequencies]
+    hits, sentence, paragraph, section = max(
+        passages, key=lambda row: sum(weights[i] for i in sorted(row[0]))
+    )
+    if not hits:
+        return ""
+    if level == "short":
+        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+        start = max(0, sentences.index(sentence) - 1)
+        return " ".join(sentences[start:start + 2])
+    if level == "medium":
+        return paragraph
+    return "\n\n".join(section)
 
 
 def _compose_deterministic_ebm_answer(
@@ -2057,13 +2016,13 @@ def _compose_deterministic_ebm_answer(
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
         if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
-            best_k, excerpt = _match_focused_mcq(query, mcq_opts, primary, lang, eff_level)
-            if not best_k:
-                return (
-                    "I couldn't match one answer to the lesson evidence." if is_en
-                    else "Tôi chưa tìm thấy một đáp án rõ ràng trong bài học."
-                ), sources
-            return f"**{best_k}** — {excerpt}", sources
+            excerpt = _focused_question_excerpt(query, primary, lang, eff_level)
+            notice = (
+                "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
+                if is_en else
+                "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+            )
+            return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([
             cur_g.get("name", ""),
             " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),

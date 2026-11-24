@@ -47,134 +47,55 @@ class FocusedLessonTests(unittest.TestCase):
         better = {**wrong_topic, "recommendation_id": match["recommendation_id"]}
         self.assertEqual(lessons.select_supporting_evidence(hcm, [match, better]), better)
 
-    def test_pasted_trial_question_reads_design_after_the_guideline_walkthrough(self):
+    def test_pasted_questions_display_relevant_guideline_and_study_evidence_without_grading(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        questions = {
-            "en": ("What was the primary endpoint of AMBITION?\nA. Pulmonary vascular resistance\n"
-                   "B. First event of clinical failure\nC. Peak oxygen uptake\nD. Cardiovascular death alone"),
-            "vi": ("Kết cục chính của AMBITION là gì?\nA. Sức cản mạch máu phổi\n"
-                   "B. Thời gian đến thất bại lâm sàng đầu tiên\nC. Tiêu thụ oxy đỉnh\nD. Tử vong tim mạch riêng lẻ"),
-        }
-        for lang, query in questions.items():
-            with self.subTest(lang=lang):
+        cases = (
+            ("en", "What was the primary endpoint of AMBITION?",
+             "A. Pulmonary vascular resistance\nB. Clinical failure", "clinical failure", "26308684"),
+            ("vi", "Kết cục chính của AMBITION là gì?",
+             "A. Sức cản mạch máu phổi\nB. Thất bại lâm sàng", "thất bại lâm sàng", "26308684"),
+            ("en", "Which test can distinguish group 1 PAH from left heart or lung disease?",
+             "A. Echocardiography\nB. Right heart catheterization", "right heart catheterization", "36017548"),
+            ("vi", "Thuốc nào chống chỉ định dùng chung với thuốc ức chế PDE5?",
+             "A. Atorvastatin\nB. Nitrate", "không dùng cùng nitrate", "36017548"),
+        )
+        for lang, stem, options, evidence, pmid in cases:
+            with self.subTest(stem=stem):
+                query = f"{stem}\n{options}\nC. Option three\nD. Option four"
                 answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
-                self.assertTrue(answer.startswith("**B**"), answer)
-                self.assertIn("clinical failure" if lang == "en" else "thất bại lâm sàng", answer)
-                self.assertIn("26308684", {source["pmid"] for source in sources})
+                self.assertIn(evidence, answer)
+                self.assertIn("does not grade" if lang == "en" else "không chấm", answer)
+                self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+                self.assertIn(pmid, {source["pmid"] for source in sources})
 
-    def test_pasted_diagnosis_question_uses_guideline_application_not_trial_measures(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        questions = {
-            "en": ("Which test can distinguish group 1 PAH from left heart or lung disease?\nA. Echocardiography\n"
-                   "B. Right heart catheterization\nC. Six-minute walk distance\nD. Chest radiography"),
-            "vi": ("Xét nghiệm nào xác nhận PAH nhóm 1?\nA. Quãng đường đi bộ 6 phút\n"
-                   "B. Thông tim phải\nC. Cộng hưởng từ tim\nD. X quang ngực"),
-        }
-        for lang, query in questions.items():
-            with self.subTest(lang=lang):
-                answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
-                self.assertTrue(answer.startswith("**B**"), answer)
-                self.assertIn("right heart catheterization" if lang == "en" else "thông tim phải", answer)
-                self.assertIn("36017548", {source["pmid"] for source in sources})
-
-    def test_pasted_question_with_no_matching_option_does_not_guess(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = "Which element has atomic number 11?\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en")
-        self.assertIn("couldn't match one answer", answer)
-
-    def test_pasted_english_trial_question_in_vietnamese_and_detailed_mode(self):
+    def test_english_pasted_question_in_vietnamese_mode_preserves_the_requested_detail(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
         query = ("Which adverse effect was more common with combination therapy in AMBITION?\n"
                  "A. Seizures\nB. Peripheral edema\nC. Rhabdomyolysis\nD. Hyperkalemia")
         short, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="short")
         detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="detailed")
-        self.assertTrue(short.startswith("**B** — Peripheral edema"), short)
-        self.assertTrue(detailed.startswith("**B**"), detailed)
+        self.assertIn("Peripheral edema", short)
         self.assertIn("Peripheral edema", detailed)
         self.assertIn("0.50", detailed)
         self.assertNotIn("0.50", short)
 
-    def test_pasted_trial_question_prefers_a_matching_explanation_in_chat_language(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("Which drug was used in PAH with AMBITION?\nA. Tadalafil\n"
-                 "B. Selexipag\nC. Epoprostenol\nD. Macitentan")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertTrue(answer.startswith("**A**"), answer)
-        self.assertIn(answer.split(" — ", 1)[1], " ".join(
-            paragraph for paragraphs in briefing["teaching"]["en"].values() for paragraph in paragraphs
-        ))
+    def test_pasted_options_cannot_change_the_evidence_or_make_chat_select_an_answer(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[9], "2026-11-24")
+        stem = "What was the UACR entry requirement in DAPA-CKD?"
+        options = "A. 5 mg/g\nB. 5000 mg/g\nC. 0 mg/g\nD. 500 mg/g"
+        reversed_options = "A. 5000 mg/g\nB. 5 mg/g\nC. 0 mg/g\nD. 500 mg/g"
+        answer, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{options}", [briefing], [], "en")
+        reordered, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{reversed_options}", [briefing], [], "en")
+        self.assertEqual(answer, reordered)
+        self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+        self.assertIn("5,000", answer)
 
-    def test_pasted_contraindication_question_uses_explicit_negative_evidence(self):
+    def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("Thuốc nào chống chỉ định dùng chung với thuốc ức chế PDE5?\n"
-                 "A. Atorvastatin\nB. Nitrate\nC. Metformin\nD. Paracetamol")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="short")
-        self.assertTrue(answer.startswith("**B**"), answer)
-        self.assertIn("không dùng cùng nitrate", answer)
-
-    def test_pasted_generic_stem_accepts_an_exact_lesson_statement(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        statement = ("The primary endpoint was time to first clinical failure: death, hospitalization for worsening PAH, "
-                     "disease progression, or unsatisfactory long-term clinical response.")
-        query = (f"Which of the following is true?\nA. The groups were not randomized.\nB. {statement}\n"
-                 "C. Only acute coronary syndrome was enrolled.\nD. All patients died in the first year.")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertEqual(answer, f"**B** — {statement}")
-        answer, _ = app._compose_deterministic_ebm_answer(query.replace("is true?", "is false?"), [briefing], [], "en")
-        self.assertIn("couldn't match one answer", answer)
-        exception_query = query.replace(
-            "Which of the following is true?", "All of the following except one are true about the AMBITION primary endpoint. Which is the exception?"
-        )
-        answer, _ = app._compose_deterministic_ebm_answer(exception_query, [briefing], [], "en")
-        self.assertIn("couldn't match one answer", answer)
-
-    def test_copied_trial_comparator_does_not_outrank_endpoint(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("What was the primary endpoint of AMBITION?\nA. The main comparison pooled the active monotherapy arms.\n"
-                 "B. First event of clinical failure\nC. Peak oxygen uptake\nD. Cardiovascular death alone")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertTrue(answer.startswith("**B**"), answer)
-
-    def test_pasted_statement_does_not_match_reversed_inequality(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("Which of the following is true?\nA. The hazard ratio for combination versus pooled "
-                 "monotherapy was 0.50 (95% CI 0.35–0.72; p > 0.001).\nB. The groups were not randomized.\n"
-                 "C. Only acute coronary syndrome was enrolled.\nD. All patients died in the first year.")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertIn("couldn't match one answer", answer)
-        answer, _ = app._compose_deterministic_ebm_answer(query.replace("p >", "p <"), [briefing], [], "en")
-        self.assertTrue(answer.startswith("**A**"), answer)
-        answer, _ = app._compose_deterministic_ebm_answer(query.replace("p > 0.001", "p < 0,001"), [briefing], [], "en")
-        self.assertTrue(answer.startswith("**A**"), answer)
-        answer, _ = app._compose_deterministic_ebm_answer(
-            query.replace("p >", "p <").replace(
-                "Which of the following is true?", "What was the hazard ratio for combination versus pooled monotherapy?"
-            ), [briefing], [], "en"
-        )
-        self.assertTrue(answer.startswith("**A**"), answer)
-
-    def test_an_eligibility_qualifier_is_not_a_negative_question(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("Of all of the following, which initial PAH drug combination is recommended for low-risk patients, except those with important "
-                 "cardiopulmonary comorbidities?\nA. Ambrisentan and tadalafil\nB. Macitentan and riociguat\n"
-                 "C. Selexipag and sildenafil\nD. Vardenafil and epoprostenol")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertTrue(answer.startswith("**A**"), answer)
-
-    def test_pasted_question_prefers_new_information_over_repeating_the_stem(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("Which drug was paired with tadalafil in AMBITION?\nA. Tadalafil\n"
-                 "B. Ambrisentan\nC. Macitentan\nD. Epoprostenol")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertTrue(answer.startswith("**B**"), answer)
-
-    def test_pasted_number_without_trailing_zero_matches_the_lesson_value(self):
-        briefing = lessons.build_focused_lesson(app.PILLARS[1], "2026-11-24")
-        query = ("What was the baseline mean LDL-C in CLEAR Outcomes?\nA. 95 mg/dL\n"
-                 "B. 139 mg/dL\nC. 125 mg/dL\nD. 145 mg/dL")
-        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
-        self.assertTrue(answer.startswith("**B**"), answer)
+        query = "Which of the following is true?\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en")
+        self.assertIn("Use the lesson quiz", answer)
+        self.assertNotIn("\n\n", answer)
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
