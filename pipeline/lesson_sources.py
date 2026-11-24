@@ -69,14 +69,31 @@ def _license(meta):
 
 
 def _passages(article):
+    parents = {child: node for node in article.iter() for child in node}
+
+    def reusable(element):
+        rights = {"permissions", "license", "license_ref", "copyright-statement", "copyright-holder", "copyright-year"}
+
+        def marks_rights(node):
+            return node.tag.rsplit("}", 1)[-1] in rights
+
+        if any(marks_rights(node) for node in element.iter()):
+            return False
+        while (element := parents.get(element)) is not None:
+            if any(marks_rights(child) for child in element):
+                return False
+        return True
+
     for i, sec in enumerate(article.findall("./body//sec"), 1):
         heading = _text(sec.find("title"))
         if (re.fullmatch(r"(?:key |specific )?recommendations?(?:\s+(?:for|on)\s+.+)?", heading, re.I)
                 or re.search(r":\s*recommendations?$", heading, re.I)):
             for j, el in enumerate(sec.findall("./p") + sec.findall("./list/list-item/p"), 1):
-                if (value := _text(el)):
+                if reusable(el) and (value := _text(el)):
                     yield Passage(f"body/sec[{i}]/recommendation[{j}]", "recommendation", value)
     for i, table in enumerate(article.findall("./body//table-wrap"), 1):
+        if not reusable(table):
+            continue
         caption = _text(table.find("caption"))
         if not re.match(r"recommendations?\b", caption, re.I):
             continue
@@ -102,7 +119,7 @@ def _passages(article):
             }.get(heading)
             if role:
                 for k, p in enumerate(sec.findall("p"), 1):
-                    if (value := _text(p)):
+                    if reusable(p) and (value := _text(p)):
                         yield Passage(f"abstract[{i}]/sec[{j}]/p[{k}]", role, value)
 
 

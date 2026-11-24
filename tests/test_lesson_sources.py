@@ -81,3 +81,14 @@ class LessonSourceTests(unittest.TestCase):
             [passage.text for passage in article.passages if passage.role == "recommendation"],
             ["First, include the qualifier.", "Second recommendation.", "Preserve this condition."],
         )
+
+    def test_local_permissions_exclude_third_party_recommendation(self):
+        body = b"""<body><table-wrap>
+        <caption><title>Recommendations</title></caption>
+        <permissions><copyright-statement>All rights reserved</copyright-statement></permissions>
+        <table><thead><tr><th>Recommendation</th></tr></thead>
+        <tbody><tr><td>Third-party text.</td></tr></tbody></table>
+        </table-wrap>
+        <sec><title>Recommendations</title><p>Article-owned text.</p></sec></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Article-owned text."])
