@@ -5229,7 +5229,7 @@
     function formatDoiUrl(doi) {
       if (!doi) return "";
       const clean = String(doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, "");
-      return "https://doi.org/" + clean.split("/").map(seg => encodeURIComponent(seg)).join("/");
+      return clean ? "https://doi.org/" + clean.split("/").map(seg => encodeURIComponent(seg)).join("/") : "";
     }
 
     function safeChatSourceUrl(value) {
@@ -6907,6 +6907,9 @@
           return;
         }
         const lang = isVi ? "vi" : "en";
+        const pmid = String(evidence.pmid || "").trim();
+        const sourceUrl = pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(pmid)}/` : formatDoiUrl(evidence.doi);
+        const sourceTitle = escapeHtml(evidence.name);
         const items = [
           ["supports", isVi ? "Liên hệ với khuyến cáo" : "How it supports the recommendation"],
           ["population", isVi ? "Quần thể nghiên cứu" : "Study population"],
@@ -6914,7 +6917,7 @@
         ];
         Dom.trialsGridDeck.innerHTML = `<div class="trial-box-card">
           <div class="trial-box-header">
-            <h3 class="trial-title-h3"><a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(evidence.pmid)}/" target="_blank" rel="noopener noreferrer">${escapeHtml(evidence.name)}</a></h3>
+            <h3 class="trial-title-h3">${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${sourceTitle}</a>` : sourceTitle}</h3>
             <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
           </div>
           ${hasFocusedProvenance(b) ? `<p><small>${isVi ? "Nội dung tuyển chọn, đã được người biên tập rà soát" : "Curated, human-reviewed content"}</small></p>` : ""}

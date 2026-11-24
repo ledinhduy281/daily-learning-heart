@@ -19,6 +19,12 @@ def _require(condition, message):
         raise ValueError(message)
 
 
+def _require_citation_identifier(reference):
+    _require(any(isinstance(value, str) and value.strip()
+                 for value in (reference.get("pmid"), reference.get("doi"))),
+             "Each guideline and study citation must have a non-empty PMID or DOI")
+
+
 def _excerpt(excerpt, reference, role):
     _require(isinstance(excerpt, dict) and excerpt.get("role") == role,
              f"Invalid licensed {role} excerpt")
@@ -47,6 +53,7 @@ def validate_lesson(lesson, pillar, lesson_date):
              "Block A must contain exactly one approved primary guideline and recommendation")
     _require(lesson.get("pubmed_anchors") == canonical["pubmed_anchors"],
              "Missing, extra, or mismatched lesson citation")
+    _require_citation_identifier(evolution["current_guideline"])
     if recommendation is not None:
         _excerpt(recommendation, evolution["current_guideline"], "recommendation")
         approved = select_guideline(pillar["id"])
@@ -59,6 +66,7 @@ def validate_lesson(lesson, pillar, lesson_date):
     _require(evidence and evidence == canonical.get("supporting_evidence")
              and not lesson.get("landmark_trials"),
              "Block B evidence does not match the approved recommendation, population, and limits")
+    _require_citation_identifier(evidence)
     roles = {"population": "methods", "result": "results", "limits": "limitations",
              "methods_and_results": "methods_and_results"}
     _require(isinstance(excerpts, dict) and excerpts.keys() <= roles.keys(),

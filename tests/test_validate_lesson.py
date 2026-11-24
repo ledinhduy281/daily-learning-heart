@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from pipeline import lesson_generation
 from pipeline.validate_lesson import validate_bundle
-from test_lesson_generation import PILLAR, RESULT, TRIAL, TRIAL_PMID, article
+from test_lesson_generation import GUIDELINE, GUIDELINE_PMID, PILLAR, RESULT, TRIAL, TRIAL_PMID, article
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -65,6 +65,27 @@ class LessonGateTests(unittest.TestCase):
         item["quote"] = wrong_quote
         with self.assertRaisesRegex(ValueError, "not drawn from a licensed lesson excerpt"):
             validate_bundle(bundle)
+
+    def test_blank_doi_uses_pubmed_in_both_markdown_blocks(self):
+        society, year, pmid, _, name = GUIDELINE["guideline"]
+        with patch.dict(GUIDELINE, guideline=(society, year, pmid, " ", name)), \
+                patch.dict(TRIAL, doi=""), patch.object(lesson_generation, "fetch_article", return_value=None):
+            lesson = lesson_generation.build_open_lesson(PILLAR, DATE)
+            self.assertEqual(validate_bundle(self.bundle(lesson)), lesson["id"])
+        for field in ("part1_vi_markdown", "part2_en_markdown"):
+            for source_pmid in (GUIDELINE_PMID, TRIAL_PMID):
+                self.assertIn(f"](https://pubmed.ncbi.nlm.nih.gov/{source_pmid}/)", lesson[field])
+            self.assertNotIn("https://doi.org/", lesson[field])
+
+    def test_rejects_canonical_source_with_neither_citation_identifier(self):
+        society, year, _, _, name = GUIDELINE["guideline"]
+        for source, change in ((GUIDELINE, {"guideline": (society, year, "", "", name)}),
+                               (TRIAL, {"pmid": "", "doi": " "})):
+            with self.subTest(source=source), patch.dict(source, change), \
+                    patch.object(lesson_generation, "fetch_article", return_value=None):
+                lesson = lesson_generation.build_open_lesson(PILLAR, DATE)
+                with self.assertRaisesRegex(ValueError, "non-empty PMID or DOI"):
+                    validate_bundle(self.bundle(lesson))
 
     def test_rejects_missing_attribution_on_a_licensed_excerpt(self):
         bundle = self.bundle(self.licensed)

@@ -134,6 +134,17 @@ def select_supporting_evidence(lesson, candidates=EVIDENCE):
     return min(eligible, key=lambda candidate: (source_priority(candidate["source_kind"]), candidate["pmid"]), default=None)
 
 
+def _citation_url(pmid, doi, *, prefer_doi=False):
+    pubmed = f"https://pubmed.ncbi.nlm.nih.gov/{pmid.strip()}/" if (pmid or "").strip() else ""
+    doi_url = f"https://doi.org/{doi.strip()}" if (doi or "").strip() else ""
+    return (doi_url or pubmed) if prefer_doi else (pubmed or doi_url)
+
+
+def _citation_markdown(name, pmid, doi):
+    url = _citation_url(pmid, doi, prefer_doi=True)
+    return f"[{name}]({url})" if url else name
+
+
 def build_focused_lesson(pillar, date_str, *, source_quiz=True):
     datetime.date.fromisoformat(date_str)
     pid = pillar["id"]
@@ -155,7 +166,7 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         "lesson_version": FOCUSED_EDITION_VERSION,
         "guideline_evolution": {"current_guideline": guideline, "recommendation_id": lesson["recommendation_id"]},
         "pubmed_anchors": [
-            {"title": name, "pmid": pmid, "doi": doi, "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"}
+            {"title": name, "pmid": pmid, "doi": doi, "url": _citation_url(pmid, doi)}
         ],
     }
     evidence = select_supporting_evidence(lesson)
@@ -171,7 +182,7 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         }
         briefing["pubmed_anchors"].append({
             "title": evidence["name"], "pmid": evidence["pmid"], "doi": evidence["doi"],
-            "url": f"https://pubmed.ncbi.nlm.nih.gov/{evidence['pmid']}/",
+            "url": _citation_url(evidence["pmid"], evidence["doi"]),
         })
     safety_source = lesson.get("safety_source")
     if safety_source:
@@ -187,14 +198,14 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
             ("Focused guideline recommendation", "For education only. Consult the original source before applying.")
         )
         briefing[f"disclaimer_{lang}"] = disclaimer
-        body = f"## Block A — {block}\n\n**[{name}](https://doi.org/{doi})**\n\n{recommendation}"
+        body = f"## Block A — {block}\n\n**{_citation_markdown(name, pmid, doi)}**\n\n{recommendation}"
         if safety_source:
             body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
         if evidence:
             heading = "Nghiên cứu bổ trợ" if lang == "vi" else "Supporting evidence"
             body += (
                 f"\n\n## Block B — {heading}\n\n"
-                f"**[{evidence['name']}](https://doi.org/{evidence['doi']})** — {evidence['journal']}\n\n"
+                f"**{_citation_markdown(evidence['name'], evidence['pmid'], evidence['doi'])}** — {evidence['journal']}\n\n"
                 f"{evidence['population'][i]} {evidence['supports'][i]} ({evidence['result']}). {evidence['limits'][i]}"
             )
         briefing["part1_vi_markdown" if lang == "vi" else "part2_en_markdown"] = f"{body}\n\n*{disclaimer}*"

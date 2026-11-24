@@ -19,6 +19,9 @@ vm.runInContext(html.slice(html.indexOf("    function getTodaySingleBriefing()")
 vm.runInContext(html.slice(html.indexOf("    function renderEvolutionPipeline("),
     html.indexOf("    function renderTrialsMatrix(")), context);
 context.escapeHtml = s => s;
+vm.runInContext(html.slice(html.indexOf("    function formatDoiUrl("),
+    html.indexOf("    function safeChatSourceUrl(")), context);
+assert.equal(context.formatDoiUrl("  "), "");
 
 const fallback = context.getTodaySingleBriefing();
 assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
@@ -46,6 +49,10 @@ context.renderTrialsMatrix(fallback, false);
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.supporting_evidence.limits_en));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
+context.renderTrialsMatrix({...fallback, supporting_evidence: {
+  ...fallback.supporting_evidence, pmid: "", doi: "10.1000/example"
+}}, false);
+assert.match(Dom.trialsGridDeck.innerHTML, /href="https:\/\/doi\.org\/10\.1000\/example"/);
 const excerpt = {
   text: "<source text>", authors: ["An Author"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12345/",
   license_url: "https://creativecommons.org/licenses/by/4.0/"
