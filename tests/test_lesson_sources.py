@@ -92,3 +92,21 @@ class LessonSourceTests(unittest.TestCase):
         <sec><title>Recommendations</title><p>Article-owned text.</p></sec></body>"""
         article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
         self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Article-owned text."])
+
+    def test_table_cell_mapping_handles_row_headers_and_rejects_spans(self):
+        body = b"""<body>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th>Class</th></tr></thead>
+          <tbody><tr><th>Row header recommendation.</th><td>IIa</td></tr></tbody></table>
+        </table-wrap>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th colspan="2">Evidence</th></tr></thead>
+          <tbody><tr><th>Other recommendation.</th><td>IIa</td><td>B</td></tr></tbody></table>
+        </table-wrap>
+        <table-wrap><caption>Recommendations</caption>
+          <table><thead><tr><th>Recommendation</th><th>Class</th></tr></thead>
+          <tbody><tr><td rowspan="2">Ambiguous.</td><td>IIa</td></tr>
+          <tr><td>B</td></tr></tbody></table>
+        </table-wrap></body>"""
+        article = sources.parse_article(ARTICLE.replace(b"</article>", body + b"</article>"), PMID, PMCID)
+        self.assertEqual([p.text for p in article.passages if p.role == "recommendation"], ["Row header recommendation."])

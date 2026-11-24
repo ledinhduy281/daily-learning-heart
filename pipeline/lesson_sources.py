@@ -97,14 +97,23 @@ def _passages(article):
         caption = _text(table.find("caption"))
         if not re.match(r"recommendations?\b", caption, re.I):
             continue
-        columns = table.findall("./table/thead/tr/th")
+        headers = table.findall("./table/thead/tr")
+        if len(headers) != 1:
+            continue
+        columns = list(headers[0])
+        if any(col.tag not in ("td", "th") or col.get("colspan", "1") != "1"
+               or col.get("rowspan", "1") != "1" for col in columns):
+            continue
         positions = [j for j, col in enumerate(columns) if _text(col).casefold() in ("recommendation", "recommendations")]
         if len(positions) != 1:
             continue
         col = positions[0]
-        for j, row in enumerate(table.findall("./table/tbody/tr"), 1):
-            cells = row.findall("td")
-            if (len(cells) == len(columns) and all(not c.get("colspan") and not c.get("rowspan") for c in cells)
+        rows = table.findall("./table/tbody/tr")
+        if any(cell.get("rowspan", "1") != "1" for row in rows for cell in row):
+            continue
+        for j, row in enumerate(rows, 1):
+            cells = list(row)
+            if (len(cells) == len(columns) and all(c.tag in ("td", "th") and c.get("colspan", "1") == "1" for c in cells)
                     and (value := _text(cells[col]))):
                 yield Passage(f"body/table[{i}]/row[{j}]/col[{col + 1}]", "recommendation", value)
     for i, abstract in enumerate(article.findall("./front/article-meta/abstract"), 1):
