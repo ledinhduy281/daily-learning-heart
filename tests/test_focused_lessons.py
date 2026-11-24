@@ -47,6 +47,107 @@ class FocusedLessonTests(unittest.TestCase):
         better = {**wrong_topic, "recommendation_id": match["recommendation_id"]}
         self.assertEqual(lessons.select_supporting_evidence(hcm, [match, better]), better)
 
+    def test_pasted_questions_display_relevant_guideline_and_study_evidence_without_grading(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        cases = (
+            ("en", "What was the primary endpoint of AMBITION?",
+             "A. Pulmonary vascular resistance\nB. Clinical failure", "clinical failure", "26308684"),
+            ("vi", "Kết cục chính của AMBITION là gì?",
+             "A. Sức cản mạch máu phổi\nB. Thất bại lâm sàng", "thất bại lâm sàng", "26308684"),
+            ("en", "Which test can distinguish group 1 PAH from left heart or lung disease?",
+             "A. Echocardiography\nB. Right heart catheterization", "right heart catheterization", "36017548"),
+            ("vi", "Thuốc nào chống chỉ định dùng chung với thuốc ức chế PDE5?",
+             "A. Atorvastatin\nB. Nitrate", "không dùng cùng nitrate", "36017548"),
+        )
+        for lang, stem, options, evidence, pmid in cases:
+            with self.subTest(stem=stem):
+                query = f"{stem}\n{options}\nC. Option three\nD. Option four"
+                answer, sources = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="short")
+                self.assertIn(evidence, answer)
+                self.assertIn("does not grade" if lang == "en" else "không chấm", answer)
+                self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+                self.assertIn(pmid, {source["pmid"] for source in sources})
+
+    def test_english_pasted_question_in_vietnamese_mode_preserves_the_requested_detail(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Which adverse effect was more common with combination therapy in AMBITION?\n"
+                 "A. Seizures\nB. Peripheral edema\nC. Rhabdomyolysis\nD. Hyperkalemia")
+        short, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="short")
+        detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="detailed")
+        self.assertIn("Peripheral edema", short)
+        self.assertIn("Peripheral edema", detailed)
+        self.assertIn("0.50", detailed)
+        self.assertNotIn("0.50", short)
+
+    def test_pasted_options_cannot_change_the_evidence_or_make_chat_select_an_answer(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[9], "2026-11-24")
+        stem = "What was the UACR entry requirement in DAPA-CKD?"
+        options = "A. 5 mg/g\nB. 5000 mg/g\nC. 0 mg/g\nD. 500 mg/g"
+        reversed_options = "A. 5000 mg/g\nB. 5 mg/g\nC. 0 mg/g\nD. 500 mg/g"
+        answer, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{options}", [briefing], [], "en")
+        reordered, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{reversed_options}", [briefing], [], "en")
+        self.assertEqual(answer, reordered)
+        self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+        self.assertIn("5,000", answer)
+
+    def test_pasted_choice_label_inside_option_does_not_steer_evidence(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        stem = "What was the primary endpoint of AMBITION?"
+        options = (
+            "Pulmonary vascular resistance and vasoconstriction, Level B. Explain in detail.",
+            "Clinical failure", "Hospitalization alone", "All-cause death",
+        )
+        answers = []
+        for separator in (". ", "\n", ") "):
+            choices = "\n".join(f"{label}{separator}{option}" for label, option in zip("ABCD", options))
+            answer, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{choices}", [briefing], [], "en")
+            answers.append(answer)
+        self.assertEqual(answers, [answers[0]] * 3)
+        self.assertIn("clinical failure", answers[0])
+        self.assertNotIn("vasoconstriction", answers[0])
+
+    def test_pasted_question_accepts_detail_request_after_final_choice(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("What was the primary endpoint of AMBITION?\n"
+                 "A. Pulmonary vascular resistance\nB. Clinical failure\n"
+                 "C. Hospitalization alone\nD. All-cause death")
+        for lang, follow_up in (
+            ("en", "Please explain in detail."), ("en", "In detail, please."),
+            ("vi", "Giải thích chi tiết nhé."), ("vi", "Cụ thể hơn nhé."),
+        ):
+            with self.subTest(follow_up=follow_up):
+                medium, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang)
+                detailed, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], lang, verbosity="detailed")
+                asked = f"{query}\n\n{follow_up}"
+                answer, _ = app._compose_deterministic_ebm_answer(asked, [briefing], [], lang)
+                self.assertEqual(app._parse_pasted_mcq(asked)[1]["D"], "All-cause death")
+                self.assertEqual(answer, detailed)
+                self.assertNotEqual(answer, medium)
+
+    def test_wrapped_final_choice_is_not_a_detail_request(self):
+        query = "Which treatment is supported?\nA. Alpha\nB. Beta\nC. Gamma\nD. "
+        for first, wrapped in (
+            ("Extended-release regimen, which is", "simpler to tolerate with nitrate"),
+            ("Invite patients to", "explain their symptoms in simple words."),
+            ("Explain the warning", "in detail."),
+        ):
+            with self.subTest(wrapped=wrapped):
+                _, options, follow_up = app._parse_pasted_mcq(f"{query}{first}\n{wrapped}")
+                self.assertEqual(options["D"], f"{first} {wrapped}")
+                self.assertFalse(follow_up)
+
+    def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        options = "\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
+        for lang, stem, notice in (
+            ("en", "Which of the following is true?", "Use the lesson quiz"),
+            ("vi", "Trong bài hôm nay, phát biểu nào sau đây đúng?", "Dùng bài trắc nghiệm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(stem + options, [briefing], [], lang)
+                self.assertIn(notice, answer)
+                self.assertNotIn("\n\n", answer)
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in payload["focused_lessons"].values():

@@ -4,6 +4,7 @@ import datetime
 
 from focused_evidence import EVIDENCE
 from focused_quiz import build_source_quiz
+from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS, load_teaching, pearls_markdown, teaching_markdown
 
 # Organization prefixes apply to guidelines, not to evidence about a recommendation.
 SOURCE_PRIORITY = ("guideline", "systematic_review_meta_analysis", "landmark_rct",
@@ -107,7 +108,9 @@ LESSONS = {
 
 
 FOCUSED_EDITION_DATE = "2026-11-24"
-FOCUSED_EDITION_VERSION = 3
+FOCUSED_EDITION_VERSION = 4
+TEACHING_START_DATE = "2026-11-24"
+TEACHING_MIN_VERSION = 4
 GATE_START_DATE = "2026-11-24"
 
 
@@ -149,9 +152,12 @@ def _citation_markdown(name, pmid, doi):
 def focused_markdown(briefing, lang, safety_source=None):
     evolution = briefing["guideline_evolution"]
     guideline = evolution["current_guideline"]
+    notes = briefing.get("teaching")
     block = "Khuyến cáo trọng tâm" if lang == "vi" else "Focused guideline recommendation"
     name = _citation_markdown(guideline["name"], guideline["pmid"], guideline["doi"])
     body = f"## Block A — {block}\n\n**{name}**\n\n{evolution[f'recommendation_{lang}']}"
+    if notes:
+        body += teaching_markdown(notes, lang, GUIDELINE_SECTIONS)
     if safety_source:
         body += f"\n\n[{safety_source['title']}]({safety_source['url']})"
     if evidence := briefing.get("supporting_evidence"):
@@ -162,10 +168,14 @@ def focused_markdown(briefing, lang, safety_source=None):
             f"{evidence[f'population_{lang}']} {evidence[f'supports_{lang}']} "
             f"({evidence['result']}). {evidence[f'limits_{lang}']}"
         )
+        if notes:
+            body += teaching_markdown(notes, lang, EVIDENCE_SECTIONS)
+    if notes:
+        body += pearls_markdown(notes, lang)
     return f"{body}\n\n*{briefing[f'disclaimer_{lang}']}*"
 
 
-def build_focused_lesson(pillar, date_str, *, source_quiz=True):
+def build_focused_lesson(pillar, date_str, *, source_quiz=True, legacy=False):
     datetime.date.fromisoformat(date_str)
     pid = pillar["id"]
     lesson = select_guideline(pid)
@@ -183,13 +193,15 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
         "model_used": "none",
         "verified_step0": False,
         "lesson_format": "single_guideline",
-        "lesson_version": FOCUSED_EDITION_VERSION,
+        "lesson_version": 3 if legacy else FOCUSED_EDITION_VERSION,
         "guideline_evolution": {"current_guideline": guideline, "recommendation_id": lesson["recommendation_id"]},
         "pubmed_anchors": [
             {"title": name, "pmid": pmid, "doi": doi, "url": _citation_url(pmid, doi)}
         ],
     }
     evidence = select_supporting_evidence(lesson)
+    if not legacy:
+        briefing["teaching"] = load_teaching(lesson["recommendation_id"])
     if source_quiz:
         briefing["quiz_mode"] = "source_excerpt"
         if evidence:
@@ -227,7 +239,7 @@ def build_focused_templates(pillars):
 
 
 def build_hcm_archive_edition(pillar, date_str):
-    briefing = build_focused_lesson(pillar, date_str, source_quiz=False)
+    briefing = build_focused_lesson(pillar, date_str, source_quiz=False, legacy=True)
     briefing["id"] = f"ebm-{date_str}-p8-main"
     briefing["curated_edition_date"] = "2026-11-13"
     briefing["guideline_evolution"]["steps"] = [

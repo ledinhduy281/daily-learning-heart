@@ -35,6 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson, build_focused_templates
+from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1833,9 +1834,9 @@ _MCQ_PASTE_PAT_PUNCT = re.compile(
     r"(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+(.+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|\Z)",
     re.DOTALL,
 )
-_MCQ_PASTE_PAT_NEWLINE = re.compile(
-    r"(?:^|\n)\s*([ABCD])\s*\n\s*(.+?)(?=(?:\n\s*[ABCD]\s*\n)|\Z)",
-    re.DOTALL,
+_MCQ_PASTE_LINE_LABEL = re.compile(
+    r"^[^\S\n]*(?:\*\*)?([ABCD])(?:\*\*)?(?:[^\S\n]*[.):-](?=\s)|[^\S\n]*$)",
+    re.MULTILINE,
 )
 _DETAIL_REQ_RE = re.compile(
     r"(giải thích thêm|giải thích kỹ|giải thích rõ|chi tiết|phân tích kỹ|cụ thể hơn|"
@@ -1843,31 +1844,39 @@ _DETAIL_REQ_RE = re.compile(
     r"explain more|in detail|elaborate|why is that|simpler|simple words|break down)",
     re.IGNORECASE,
 )
+_DETAIL_FOLLOW_UP_RE = re.compile(
+    r"(?:please[,\s]+)?(?:explain (?:more|in detail|further)|in detail|elaborate|"
+    r"giải thích (?:thêm|kỹ|rõ|chi tiết)|phân tích kỹ|cụ thể hơn)"
+    r"(?:[,\s]+(?:please|nhé))?[.!?]*",
+    re.IGNORECASE,
+)
 
 
-def _extract_pasted_mcq_options(query: str) -> dict[str, str]:
-    """Extract A/B/C/D options when a user pastes a multiple-choice question into chat."""
+def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str], bool]:
+    """Return the stem, options, and whether a blank-line-delimited detail cue follows them."""
     q = (query or "").strip()
-    if not q or len(q) < 12:
-        return {}
-    matches = _MCQ_PASTE_PAT_PUNCT.findall(q)
-    opts: dict[str, str] = {}
-    for k, val in matches:
-        clean_v = re.sub(r"\s+", " ", val).strip()
-        if clean_v and k.upper() not in opts:
-            opts[k.upper()] = clean_v
-    if all(k in opts for k in ("A", "B", "C", "D")):
-        return {k: opts[k] for k in ("A", "B", "C", "D")}
-
-    matches_nl = _MCQ_PASTE_PAT_NEWLINE.findall(q)
-    opts_nl: dict[str, str] = {}
-    for k, val in matches_nl:
-        clean_v = re.sub(r"\s+", " ", val).strip()
-        if clean_v and k.upper() not in opts_nl:
-            opts_nl[k.upper()] = clean_v
-    if all(k in opts_nl for k in ("A", "B", "C", "D")):
-        return {k: opts_nl[k] for k in ("A", "B", "C", "D")}
-    return {}
+    labels = list(_MCQ_PASTE_LINE_LABEL.finditer(q))
+    inline = list(_MCQ_PASTE_PAT_PUNCT.finditer(q))
+    for options in (
+        [(m.start(), m[1], q[m.end():n.start() if n else len(q)])
+         for m, n in zip(labels, labels[1:] + [None])],
+        [(m.start(), m[1], m[2]) for m in inline],
+    ):
+        if not options:
+            continue
+        start, label, value = options[-1]
+        body, _, last_line = value.rstrip().rpartition("\n")
+        follow_up = bool(body.rstrip(" \t\r").endswith("\n")
+                         and _DETAIL_FOLLOW_UP_RE.fullmatch(last_line.strip()))
+        if follow_up:
+            options[-1] = (start, label, body)
+        opts: dict[str, str] = {}
+        for _, key, value in options:
+            if clean := " ".join(value.split()):
+                opts.setdefault(key, clean)
+        if len(opts) == 4:
+            return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}, follow_up
+    return q, {}, False
 
 
 def _wants_detailed_explanation(query: str) -> bool:
@@ -1913,6 +1922,50 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     if matches and matches[0].end() <= max(max_len + 220, 640):
         return clean[:matches[0].end()].strip()
     return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
+
+
+def _focused_question_excerpt(question, primary, lang, level):
+    stem = re.sub(
+        r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
+        r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
+        " ", normalize(question),
+    )
+    groups = search_terms(stem)
+    if not groups:
+        return ""
+    contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
+    if any(contains(stem, phrase) for phrase in contraindications):
+        groups.append(contraindications)
+
+    passages = []
+    for language in (lang, "en" if lang == "vi" else "vi"):
+        notes = primary["teaching"][language]
+        sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
+        sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
+        for section in sections:
+            for paragraph in section:
+                for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
+                    clean = normalize(sentence)
+                    hits = {
+                        i for i, aliases in enumerate(groups)
+                        if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
+                    }
+                    passages.append((hits, sentence, paragraph, section))
+
+    frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
+    weights = [1 / frequency if frequency else 0 for frequency in frequencies]
+    hits, sentence, paragraph, section = max(
+        passages, key=lambda row: sum(weights[i] for i in sorted(row[0]))
+    )
+    if not hits:
+        return ""
+    if level == "short":
+        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+        start = max(0, sentences.index(sentence) - 1)
+        return " ".join(sentences[start:start + 2])
+    if level == "medium":
+        return paragraph
+    return "\n\n".join(section)
 
 
 def _compose_deterministic_ebm_answer(
@@ -1963,12 +2016,20 @@ def _compose_deterministic_ebm_answer(
         if len(sources) >= 5:
             break
 
-    wants_detail = _wants_detailed_explanation(query)
+    question, mcq_opts, follow_up = _parse_pasted_mcq(query)
+    wants_detail = follow_up or _wants_detailed_explanation(question)
     eff_level = "detailed" if (v_norm == "detailed" or (v_norm == "medium" and wants_detail)) else v_norm
-    mcq_opts = _extract_pasted_mcq_options(query)
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
+        if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
+            excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
+            notice = (
+                "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
+                if is_en else
+                "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+            )
+            return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([
             cur_g.get("name", ""),
             " ".join(f"{st.get('title_vi','')} {st.get('desc_vi','')} {st.get('title_en','')} {st.get('desc_en','')}" for st in steps),
@@ -2480,8 +2541,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             )
             bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
             site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
-            mcq_opts = _extract_pasted_mcq_options(query)
-            wants_detail = _wants_detailed_explanation(query)
+            question, mcq_opts, follow_up = _parse_pasted_mcq(query)
+            wants_detail = follow_up or _wants_detailed_explanation(question)
             eff_level = "detailed" if (verbosity == "detailed" or (verbosity == "medium" and wants_detail)) else verbosity
             if mcq_opts:
                 if eff_level == "short":

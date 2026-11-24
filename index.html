@@ -1964,6 +1964,24 @@
       border-top: 3px solid var(--color-primary);
     }
 
+    .focused-lesson-notes {
+      grid-column: 1 / -1;
+      min-width: 0;
+      color: var(--color-ink-secondary);
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    .focused-lesson-notes h3 {
+      margin-top: 1em;
+      color: var(--color-ink);
+      font-size: 1em;
+    }
+
+    .focused-lesson-notes p + p {
+      margin-top: 0.75em;
+    }
+
     .step-tag-text {
       font-size: 11px;
       font-weight: 500;
@@ -6699,7 +6717,7 @@
       document.getElementById("trialsSectionTitle").textContent = focused
         ? (isVi ? "Block B — Bằng chứng bổ trợ" : "Block B — Supporting evidence")
         : t("trialsSectionTitle");
-      document.getElementById("briefingPearlsCard").style.display = focused ? "none" : "";
+      document.getElementById("briefingPearlsCard").style.display = focused && !b.teaching ? "none" : "";
       const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
       const title = cleanHeadline(rawTitle);
       const markdownRaw = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || b.part1_vi_markdown || "");
@@ -6806,8 +6824,10 @@
         const provenance = hasFocusedProvenance(b)
           ? `<p><small>${curatedSourceLabel(isVi)}</small></p>`
           : "";
-        Dom.evolutionPipelineRow.innerHTML = `${provenance}<p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>`
-          + renderLicensedExcerpt(ge.licensed_recommendation, isVi);
+        Dom.evolutionPipelineRow.innerHTML = `<div class="focused-lesson-notes">${provenance}
+          <p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>
+          ${renderTeachingSections(b, isVi, "guideline")}
+          ${renderLicensedExcerpt(ge.licensed_recommendation, isVi)}</div>`;
         return;
       }
 
@@ -6917,6 +6937,23 @@
       </blockquote>`;
     }
 
+    function renderTeachingSections(briefing, isVi, block) {
+      const notes = briefing.teaching?.[isVi ? "vi" : "en"];
+      if (!notes) return "";
+      const sections = block === "guideline" ? [
+        ["context", "Vì sao câu hỏi này quan trọng", "Why this question matters"],
+        ["evolution", "Khuyến cáo đã thay đổi thế nào", "How the recommendation evolved"],
+        ["application", "Áp dụng và theo dõi", "Application and monitoring"],
+      ] : [
+        ["design", "Nghiên cứu được thiết kế ra sao", "How the study was designed"],
+        ["findings", "Kết quả thực sự cho thấy gì", "What the results actually showed"],
+        ["interpretation", "Có thể và không thể suy rộng", "What to apply and what not to extrapolate"],
+      ];
+      return sections.map(([key, vi, en]) =>
+        `<h3>${isVi ? vi : en}</h3>${(notes[key] || []).map(p => `<p>${escapeHtml(p)}</p>`).join("")}`
+      ).join("");
+    }
+
     function renderTrialsMatrix(b, isVi) {
       if (b.lesson_format === "single_guideline") {
         const evidence = b.supporting_evidence;
@@ -6941,8 +6978,9 @@
             <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
           </div>
           ${hasFocusedProvenance(b) ? `<p><small>${curatedSourceLabel(isVi)}</small></p>` : ""}
-          <p><strong>${escapeHtml(evidence.result)}</strong></p>
-          ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}
+          ${b.teaching ? `<div class="focused-lesson-notes">${renderTeachingSections(b, isVi, "evidence")}</div>` : `
+            <p><strong>${escapeHtml(evidence.result)}</strong></p>
+            ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}`}
           ${Object.values(evidence.licensed_excerpts || {}).map(excerpt => renderLicensedExcerpt(excerpt, isVi)).join("")}
         </div>`;
         return;
@@ -7019,13 +7057,19 @@
     }
 
     function renderPearls(b, isVi) {
-      if (b.lesson_format === "single_guideline") {
+      if (b.lesson_format === "single_guideline" && !b.teaching) {
         Dom.pearlsStackDeck.innerHTML = "";
         return;
       }
       let pearls = [];
 
-      if (Array.isArray(b.pearls) && b.pearls.length > 0) {
+      const notes = b.teaching?.[isVi ? "vi" : "en"];
+      if (notes) {
+        pearls = [
+          ...notes.guideline_pearls.map(text => ({ type: "guideline", text })),
+          ...notes.evidence_pearls.map(text => ({ type: "trial", text }))
+        ];
+      } else if (Array.isArray(b.pearls) && b.pearls.length > 0) {
         pearls = b.pearls.map(p => ({
           type: p.type === "trial" ? "trial" : "guideline",
           text: isVi ? (p.text_vi || p.text_en || "") : (p.text_en || p.text_vi || "")

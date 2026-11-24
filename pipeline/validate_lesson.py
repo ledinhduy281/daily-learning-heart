@@ -10,7 +10,11 @@ from urllib.parse import urlsplit
 
 from clinical_mcq import validated_source_items
 from fetch_daily_ebm import PILLARS, get_pillar_for_date
-from focused_lessons import GATE_START_DATE, GUIDELINE_SOCIETIES, _citation_url, build_focused_lesson, focused_markdown, select_guideline
+from focused_lessons import (
+    GATE_START_DATE, GUIDELINE_SOCIETIES, TEACHING_MIN_VERSION, TEACHING_START_DATE,
+    _citation_url, build_focused_lesson, focused_markdown, select_guideline,
+)
+from focused_teaching import PEARL_SECTIONS, SECTION_KEYS
 from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 
@@ -54,6 +58,26 @@ def _recorded_wording(supplied, fields):
         value = supplied.get(field)
         _require(isinstance(value, str) and value.strip() and "\n" not in value and "\r" not in value,
                  f"Missing or invalid recorded wording: {field}")
+
+
+def _validate_teaching(lesson, guideline, evidence):
+    notes = lesson.get("teaching")
+    _require(isinstance(notes, dict) and set(notes) == {"guideline_pmid", "trial_pmid", "vi", "en"}
+             and notes["guideline_pmid"] == guideline["pmid"] and notes["trial_pmid"] == evidence["pmid"],
+             "The walkthrough must match the cited guideline and study")
+    for lang, minimum in (("vi", 1050), ("en", 420)):
+        sections = notes[lang]
+        _require(isinstance(sections, dict) and set(sections) == set(SECTION_KEYS),
+                 f"Missing {lang} teaching sections")
+        for key in SECTION_KEYS:
+            paragraphs = sections[key]
+            _require(isinstance(paragraphs, list) and len(paragraphs) >= (1 if key in PEARL_SECTIONS else 2)
+                     and all(isinstance(p, str) and p.strip() and "\n" not in p and "\r" not in p for p in paragraphs),
+                     f"Incomplete {lang} teaching section: {key}")
+        _require(3 <= sum(len(sections[key]) for key in PEARL_SECTIONS) <= 5,
+                 f"Expected three to five {lang} takeaways")
+        _require(sum(len(p.split()) for key in SECTION_KEYS for p in sections[key]) >= minimum,
+                 f"The {lang} walkthrough is too short for an in-depth lesson")
 
 
 def _recorded_sources(lesson, evolution, evidence):
@@ -114,6 +138,13 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False, fallback=Fal
         _require(evidence and evidence == canonical.get("supporting_evidence") and not lesson.get("landmark_trials"),
                  "Block B evidence does not match the approved recommendation, population, and limits")
         _require_citation_identifier(evidence)
+    if fallback or lesson_date >= TEACHING_START_DATE or "teaching" in lesson:
+        _require(type(lesson.get("lesson_version")) is int and lesson["lesson_version"] >= TEACHING_MIN_VERSION,
+                 "Daily lesson is missing the in-depth edition")
+        _validate_teaching(lesson, evolution["current_guideline"], evidence)
+        if not recorded:
+            _require(lesson["teaching"] == canonical.get("teaching"),
+                     "Walkthrough does not match the approved editorial catalog")
     if recommendation is not None:
         _excerpt(recommendation, evolution["current_guideline"], "recommendation")
         if not recorded:
@@ -167,6 +198,7 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False, fallback=Fal
             _recorded_wording(lesson, (f"disclaimer_{lang}",))
             canonical[f"disclaimer_{lang}"] = lesson[f"disclaimer_{lang}"]
             canonical[field] = focused_markdown({"guideline_evolution": evolution, "supporting_evidence": evidence,
+                                                "teaching": lesson.get("teaching"),
                                                 f"disclaimer_{lang}": lesson[f"disclaimer_{lang}"]}, lang, safety)
         if not fallback:
             _append_markdown(canonical, lang, recommendation, excerpts)
