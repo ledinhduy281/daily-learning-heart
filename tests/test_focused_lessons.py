@@ -105,6 +105,25 @@ class FocusedLessonTests(unittest.TestCase):
             paragraph for paragraphs in briefing["teaching"]["en"].values() for paragraph in paragraphs
         ))
 
+    def test_pasted_contraindication_question_uses_explicit_negative_evidence(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Thuốc nào chống chỉ định dùng chung với thuốc ức chế PDE5?\n"
+                 "A. Atorvastatin\nB. Nitrate\nC. Metformin\nD. Paracetamol")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "vi", verbosity="short")
+        self.assertTrue(answer.startswith("**B**"), answer)
+        self.assertIn("không dùng cùng nitrate", answer)
+
+    def test_pasted_generic_stem_accepts_an_exact_lesson_statement(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        statement = ("The primary endpoint was time to first clinical failure: death, hospitalization for worsening PAH, "
+                     "disease progression, or unsatisfactory long-term clinical response.")
+        query = (f"Which of the following is true?\nA. The groups were not randomized.\nB. {statement}\n"
+                 "C. Only acute coronary syndrome was enrolled.\nD. All patients died in the first year.")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertEqual(answer, f"**B** — {statement}")
+        answer, _ = app._compose_deterministic_ebm_answer(query.replace("is true?", "is false?"), [briefing], [], "en")
+        self.assertIn("couldn't match one answer", answer)
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in payload["focused_lessons"].values():

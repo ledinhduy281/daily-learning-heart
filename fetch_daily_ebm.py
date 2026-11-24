@@ -1918,15 +1918,24 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
 
 def _match_focused_mcq(query, options, primary, lang, level):
     option_stop = {"a", "an", "and", "for", "in", "of", "the", "to", "with", "cua", "va"}
+    negative_claim = re.compile(
+        r"\b(cannot|can't|does not|do not|did not|must not|contraindicated|avoid|"
+        r"khong the|khong tu|khong dung|khong nen|khong duoc|chong chi dinh|tranh)\b"
+    )
 
-    def tokens(text):
-        return set(re.findall(r"[a-z0-9]+", normalize(text)))
+    def words_in(text):
+        return tuple(re.findall(r"[a-z0-9]+", normalize(text)))
 
     def has_cue(term, terms):
         return term in terms or (term.endswith("s") and term[:-1] in terms)
 
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
-    question = tokens(query[:marker.start()]) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
+    stem = query[:marker.start()]
+    question = set(words_in(stem)) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
+    normalized_stem = normalize(stem)
+    if re.search(r"\b(false|incorrect|except|not true|sai|khong dung voi nhan dinh|ngoai tru)\b", normalized_stem):
+        return "", ""
+    asks_negative = bool(negative_claim.search(normalized_stem))
     # Match options and question cues in the same sentence, not anywhere in the lesson.
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
@@ -1934,33 +1943,37 @@ def _match_focused_mcq(query, options, primary, lang, level):
         sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         rows = []
         for section in sections:
-            section_terms = tokens(" ".join(section))
-            rows.extend(
-                (sentence, tokens(sentence), paragraph, section, section_terms)
-                for paragraph in section for sentence in re.split(r"(?<=[.!?])\s+", paragraph)
-            )
-        counts = {term: sum(has_cue(term, row[1]) for row in rows) for term in question}
+            section_terms = set(words_in(" ".join(section)))
+            for paragraph in section:
+                for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
+                    sentence_words = words_in(sentence)
+                    rows.append((sentence, sentence_words, set(sentence_words), paragraph, section, section_terms))
+        counts = {term: sum(has_cue(term, row[2]) for row in rows) for term in question}
         ranked = []
         for letter, option in options.items():
-            words = tokens(option) - option_stop
+            option_words = words_in(option)
+            words = set(option_words) - option_stop
             if not words:
                 continue
-            best = (0.0, "")
+            best = ((False, 0.0), "")
             cues = sorted(term for term in question - words if counts[term])
-            for sentence, terms, paragraph, section, section_terms in rows:
+            for sentence, sentence_words, terms, paragraph, section, section_terms in rows:
+                exact = len(option_words) >= 4 and option_words == sentence_words
                 coverage = len(words & terms) / len(words)
-                if coverage < 0.75 or not any(has_cue(term, section_terms) for term in cues) or re.search(
-                    r"\b(cannot|can't|does not|do not|did not|khong the|khong tu|khong dung)\b", normalize(sentence)
+                if not exact and (
+                    coverage < 0.75
+                    or not any(has_cue(term, section_terms) for term in cues)
+                    or bool(negative_claim.search(normalize(sentence))) != asks_negative
                 ):
                     continue
                 relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
-                score = coverage * (1 + relevance)
+                score = (exact, coverage * (1 + relevance))
                 if score > best[0]:
                     excerpt = sentence if level == "short" else paragraph
                     if level == "detailed":
                         excerpt = "\n\n".join([paragraph, *(p for p in section if p != paragraph)])
                     best = (score, excerpt)
-            if best[0]:
+            if best[1]:
                 ranked.append((best[0], letter, best[1]))
         ranked.sort(reverse=True)
         if ranked and (len(ranked) == 1 or ranked[0][0] > ranked[1][0]):
