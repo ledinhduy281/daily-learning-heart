@@ -9085,7 +9085,7 @@
       },
 
       sessionKey(pid, briefing) {
-        return (briefing?.quiz_mode === "source_excerpt" && briefing.id) || String(pid);
+        return briefing?.id || String(pid);
       },
 
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
