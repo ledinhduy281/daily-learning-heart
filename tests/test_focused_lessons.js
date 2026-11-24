@@ -1,0 +1,68 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const path = require("node:path");
+
+const root = path.join(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const window = {};
+vm.runInNewContext(fs.readFileSync(path.join(root, "data/briefings.js"), "utf8"), { window });
+const bundle = window.EBM_BRIEFINGS_DATA;
+const App = { todayPillarId: 9, todayDate: "2026-11-24", briefings: bundle.briefings };
+const Dom = { guidelineComparisonBanner: { style: {} }, guidelinePipelineSociety: {}, evolutionPipelineRow: {} };
+const context = vm.createContext({ window, App, Dom, renderGuidelineRefBox: (guideline, _, highlighted) => {
+  assert.equal(highlighted, true);
+  return guideline.name;
+} });
+vm.runInContext(html.slice(html.indexOf("    function getTodaySingleBriefing()"),
+    html.indexOf("    function setLanguage(")), context);
+vm.runInContext(html.slice(html.indexOf("    function renderEvolutionPipeline("),
+    html.indexOf("    function renderTrialsMatrix(")), context);
+context.escapeHtml = s => s;
+
+const fallback = context.getTodaySingleBriefing();
+assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
+assert.equal(fallback.guideline_evolution.current_guideline.pmid, "36017548");
+for (const isVi of [true, false]) {
+  context.renderEvolutionPipeline(fallback, isVi);
+  assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/ERS");
+  assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
+  assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
+}
+context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
+assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
+App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
+assert.equal(context.getTodaySingleBriefing(), fallback);
+App.todayDate = "2026-11-14";
+App.briefings = bundle.briefings;
+assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
+App.todayDate = "2026-11-27";
+App.mode = "history";
+App.savedGlobalMode = true;
+App.searchQuery = "";
+App.user = {bookmarked_ids: [fallback.id, "ebm-2026-11-30-p9-focused", "ebm-2026-11-31-p9-focused", "missing"]};
+assert.ok(!App.briefings.some(b => b.id === fallback.id));
+assert.equal(context.getHistoryScopeBriefings().length, 1);
+assert.equal(context.getHistoryScopeBriefings()[0].id, fallback.id);
+assert.equal(context.getHistoryScopeBriefings()[0].title_en, fallback.title_en);
+App.todayDate = "2026-12-01";
+assert.equal(context.findArchiveBriefing("ebm-2026-11-31-p9-focused"), null);
+let opened;
+context.selectBriefing = b => { opened = b; };
+vm.runInContext(html.slice(html.indexOf("    window.onSelectBriefingItem ="),
+    html.indexOf("    function selectBriefing(")), context);
+window.onSelectBriefingItem(fallback.id);
+assert.equal(opened.id, fallback.id);
+const published = {...fallback, title_en: "Published edition"};
+App.briefings = [published, ...App.briefings];
+assert.equal(context.findArchiveBriefing(fallback.id), published);
+const quizNodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection"].map(id => [id, {style: {}}]));
+const quizCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+App.selected = fallback;
+context.document = {getElementById: id => quizNodes[id]};
+const tutor = vm.runInContext(quizCode + ";SocraticTutor", context);
+tutor.getSession = () => { assert.fail("A focused lesson without excerpts should not start a generic quiz"); };
+tutor.renderUI();
+assert.equal(quizNodes.btnOpenSocraticHeader.style.display, "none");
+assert.equal(quizNodes.socraticTutorSection.style.display, "none");
+console.log("Focused guideline selection and browser rendering passed");

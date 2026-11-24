@@ -4441,7 +4441,7 @@
       <div class="summary-card-feature">
         <div class="summary-title-line">
           <span id="guidelinePipelineTitle">Diễn Tiến Khuyến Cáo Thực Hành Qua Các Thế Hệ</span>
-          <span style="color: var(--color-ink-mute); font-family: var(--font-mono); font-size: 11px;">ESC / ACC</span>
+          <span id="guidelinePipelineSociety" style="color: var(--color-ink-mute); font-family: var(--font-mono); font-size: 11px;"></span>
         </div>
 
         <div class="guideline-comparison-banner" id="guidelineComparisonBanner">
@@ -4462,7 +4462,7 @@
       </div>
 
       <!-- 3. TAKE-HOME CLINICAL PEARLS -->
-      <div class="pearls-card-supa">
+      <div class="pearls-card-supa" id="briefingPearlsCard">
         <div class="pearls-header-title">
           <i class="fa-solid fa-stethoscope" style="color: var(--color-primary-deep);"></i>
           <span id="pearlsHeaderTitle">Điểm Nhấn Lâm Sàng Khi Đi Buồng</span>
@@ -5133,6 +5133,7 @@
       btnNavLangEn: document.getElementById("btnNavLangEn"),
 
       guidelineComparisonBanner: document.getElementById("guidelineComparisonBanner"),
+      guidelinePipelineSociety: document.getElementById("guidelinePipelineSociety"),
       evolutionPipelineRow: document.getElementById("evolutionPipelineRow"),
       trialsGridDeck: document.getElementById("trialsGridDeck"),
       pearlsStackDeck: document.getElementById("pearlsStackDeck"),
@@ -5877,8 +5878,7 @@
       const isVi = App.currentLang === "vi";
       const saved = new Set(bookmarked_ids);
       const ids = new Set([...saved, ...read_ids.slice().reverse()]);
-      const briefings = new Map(App.briefings.map(briefing => [briefing.id, briefing]));
-      const recent = Array.from(ids, id => briefings.get(id)).filter(Boolean).slice(0, 6);
+      const recent = Array.from(ids, findArchiveBriefing).filter(Boolean).slice(0, 6);
       if (!recent.length) {
         const note = document.createElement("p");
         note.className = "profile-note";
@@ -6027,8 +6027,9 @@
       renderPillarsTiles();
       renderModeSpecificPanels();
 
-      if (preserveSelection && selected && App.briefings.some(b => b.id === selected.id)) {
-        selectBriefing(selected, {markRead: false});
+      const archivedSelection = preserveSelection && selected && findArchiveBriefing(selected.id);
+      if (archivedSelection) {
+        selectBriefing(archivedSelection, {markRead: false});
       } else if (App.mode === "today") {
         const b = getTodaySingleBriefing();
         if (b) {
@@ -6049,32 +6050,48 @@
     function getTodaySingleBriefing() {
       const pid = Number(App.todayPillarId);
       const exactToday = App.briefings.find(
-        b => b.date === App.todayDate && Number(b.pillar_id) === pid
+        b => b.date === App.todayDate && Number(b.pillar_id) === pid && b.lesson_format === "single_guideline"
       );
       if (exactToday) return exactToday;
+      const fallback = getFocusedTemplateBriefing(App.todayDate, pid);
+      if (fallback) return fallback;
+      const legacyToday = App.briefings.find(b => b.date === App.todayDate && Number(b.pillar_id) === pid);
+      if (legacyToday) return legacyToday;
       const byPillar = App.briefings
         .filter(b => Number(b.pillar_id) === pid)
         .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       return byPillar[0] || App.briefings[0] || null;
     }
 
-    function getHistoryScopeBriefings() {
-      let list = [];
-      if (App.savedGlobalMode && App.user) {
-        const savedSet = new Set(App.user.bookmarked_ids || []);
-        list = App.briefings.filter(b => savedSet.has(b.id));
-      } else {
-        list = App.briefings.filter(b => Number(b.pillar_id) === Number(App.historyPillarId));
+    function getFocusedTemplateBriefing(date, pid) {
+      const template = window.EBM_BRIEFINGS_DATA?.focused_lessons?.[pid];
+      if (template && date >= template.curated_edition_date) {
+        return { ...template, id: `ebm-${date}-p${pid}-focused`, date };
       }
+      return null;
+    }
 
-      if (!App.savedGlobalMode && App.user) {
-        if (App.historyFilter === "saved") {
-          const savedSet = new Set(App.user.bookmarked_ids || []);
-          list = list.filter(b => savedSet.has(b.id));
-        } else if (App.historyFilter === "read") {
-          const readSet = new Set(App.user.read_ids || []);
-          list = list.filter(b => readSet.has(b.id));
-        }
+    function findArchiveBriefing(id) {
+      const published = App.briefings.find(b => b.id === id);
+      if (published) return published;
+      const match = /^ebm-(\d{4}-\d{2}-\d{2})-p([1-9]|10)-focused$/.exec(id);
+      if (!match || match[1] > App.todayDate) return null;
+      const date = new Date(match[1] + "T00:00:00Z");
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== match[1]) return null;
+      return getFocusedTemplateBriefing(match[1], Number(match[2]));
+    }
+
+    function getHistoryScopeBriefings() {
+      const globalSaved = App.savedGlobalMode && App.user;
+      let list = App.briefings;
+      if (App.user) {
+        const ids = globalSaved || App.historyFilter === "saved" ? App.user.bookmarked_ids || []
+          : App.historyFilter === "read" ? App.user.read_ids || []
+          : null;
+        if (ids) list = Array.from(new Set(ids), findArchiveBriefing).filter(Boolean);
+      }
+      if (!globalSaved) {
+        list = list.filter(b => Number(b.pillar_id) === Number(App.historyPillarId));
       }
 
       if (App.searchQuery.trim() !== "") {
@@ -6623,7 +6640,7 @@
     }
 
     window.onSelectBriefingItem = function(id) {
-      const match = App.briefings.find(b => b.id === id);
+      const match = findArchiveBriefing(id);
       if (match) {
         if (App.mode === "history" && App.savedGlobalMode) {
           App.historyPillarId = Number(match.pillar_id);
@@ -6664,6 +6681,14 @@
       if (!b) return;
 
       const isVi = App.currentLang === "vi";
+      const focused = b.lesson_format === "single_guideline";
+      document.getElementById("guidelinePipelineTitle").textContent = focused
+        ? (isVi ? "Block A — Một khuyến cáo trọng tâm" : "Block A — One focused guideline recommendation")
+        : t("guidelinePipelineTitle");
+      document.getElementById("trialsSectionTitle").textContent = focused
+        ? (isVi ? "Block B — Thử nghiệm bổ trợ" : "Block B — Supporting trial")
+        : t("trialsSectionTitle");
+      document.getElementById("briefingPearlsCard").style.display = focused ? "none" : "";
       const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
       const title = cleanHeadline(rawTitle);
       const markdownRaw = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || b.part1_vi_markdown || "");
@@ -6746,7 +6771,7 @@
         : titleText;
       return `
         <div class="guideline-ref-box ${isCurrent ? "current" : ""}">
-          <div class="guideline-ref-kicker">${escapeHtml(roleLabel)} ${g.year ? `&bull; ${escapeHtml(g.year)}` : ""}${livePill}</div>
+          <div class="guideline-ref-kicker">${escapeHtml(roleLabel)}${g.society ? ` &bull; ${escapeHtml(g.society)}` : ""}${g.year ? ` &bull; ${escapeHtml(g.year)}` : ""}${livePill}</div>
           <div class="guideline-ref-name">${titleHtml}</div>
           ${links.length > 0 ? `<div class="guideline-ref-meta">${links.join(" &bull; ")}</div>` : ""}
           ${subrefsHtml}
@@ -6756,6 +6781,17 @@
 
     function renderEvolutionPipeline(b, isVi) {
       const ge = b.guideline_evolution;
+      Dom.guidelinePipelineSociety.textContent = b.lesson_format === "single_guideline"
+        ? ge?.current_guideline?.society || ""
+        : "ESC / ACC";
+      if (b.lesson_format === "single_guideline") {
+        Dom.guidelineComparisonBanner.style.display = "block";
+        Dom.guidelineComparisonBanner.innerHTML = renderGuidelineRefBox(
+          ge.current_guideline, isVi ? "Guideline chính" : "Primary guideline", true
+        );
+        Dom.evolutionPipelineRow.innerHTML = `<p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>`;
+        return;
+      }
 
       if (ge && Array.isArray(ge.steps) && ge.steps.length >= 3) {
         const hasComp = Boolean(ge.prior_guideline || ge.current_guideline);
@@ -6838,6 +6874,10 @@
     }
 
     function renderTrialsMatrix(b, isVi) {
+      if (b.lesson_format === "single_guideline") {
+        Dom.trialsGridDeck.textContent = isVi ? "Chưa có nghiên cứu bổ trợ được đối chiếu." : "No matched study is available.";
+        return;
+      }
       let cards = [];
 
       if (Array.isArray(b.landmark_trials) && b.landmark_trials.length > 0) {
@@ -6910,6 +6950,10 @@
     }
 
     function renderPearls(b, isVi) {
+      if (b.lesson_format === "single_guideline") {
+        Dom.pearlsStackDeck.innerHTML = "";
+        return;
+      }
       let pearls = [];
 
       if (Array.isArray(b.pearls) && b.pearls.length > 0) {
@@ -7325,154 +7369,25 @@
         }, 1200);
       };
 
-      // Client-side Live Latest-Guideline Crawler (Strict Last 3 Months / 90 Days: Aug–Nov 2026)
-      const CLIENT_GUIDELINE_QUERIES = {
-        1: '(hypertension[Title] OR "blood pressure"[Title] OR antihypertensive[Title]) NOT "pulmonary"[Title] NOT "portal"[Title]',
-        2: '(dyslipidaemias[Title] OR dyslipidemia[Title] OR cholesterol[Title] OR ASCVD[Title] OR "lipid-lowering"[Title]) NOT "anesthetic"[Title]',
-        3: '("coronary"[Title] OR "acute coronary"[Title] OR "PCI"[Title] OR "angina"[Title] OR "coronary computed tomographic"[Title])',
-        4: '(antiplatelet[Title] OR anticoagulant[Title] OR anticoagulation[Title] OR "stroke prevention"[Title] OR "thromboembolism"[Title])',
-        5: '("heart failure"[Title] OR "cardiogenic shock"[Title] OR "HFpEF"[Title] OR "HFrEF"[Title])',
-        6: '("atrial fibrillation"[Title] OR "arrhythmia"[Title] OR "arrhythmic"[Title] OR "rhythm disorders"[Title] OR "ventricular"[Title]) NOT "desmoid"[Title] NOT "thyroid"[Title]',
-        7: '("valvular"[Title] OR "aortic valve"[Title] OR "aortic stenosis"[Title] OR "mitral"[Title] OR "tricuspid"[Title] OR "infective endocarditis"[Title])',
-        8: '(myocarditis[Title] OR pericarditis[Title] OR "cardiomyopathy"[Title] OR "cardiomyopathies"[Title] OR "congenital heart"[Title]) NOT "neonates"[Title]',
-        9: '("pulmonary embolism"[Title] OR "pulmonary hypertension"[Title] OR "aortic surgery"[Title] OR "aortic dissection"[Title] OR "peripheral artery"[Title] OR "venous thromboembolism"[Title]) NOT "infants"[Title]',
-        10: '("chronic kidney disease"[Title] OR "cardiac rehabilitation"[Title] OR "exercise prescriptions"[Title] OR "cardiovascular disease and pregnancy"[Title])'
-      };
-
-      async function crawlLatestGuidelineFromPubMed(pillarId, daysBack = 90) {
-        const topicQ = CLIENT_GUIDELINE_QUERIES[pillarId] || '("ESC Guidelines"[Title] OR "AHA/ACC"[Title] OR "ACC/AHA"[Title])';
-        const now = new Date();
-        const minDate = new Date(Math.max(now.getTime() - daysBack * 86400000, Date.UTC(2026, 0, 1)));
-        const maxDate = new Date(now.getTime() + 45 * 86400000);
-        const fmt = (d) => `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}`;
-        const dateFilter = `("${fmt(minDate)}"[Date - Publication] : "${fmt(maxDate)}"[Date - Publication])`;
-        const socFilter = '("ESC"[Title] OR "AHA"[Title] OR "ACC"[Title] OR "ISH"[Title] OR "APHRS"[Title] OR "EACTS"[Title] OR "CCS"[Title] OR "JCS"[Title] OR "KDOQI"[Title] OR "THS"[Title] OR "iCARDIO"[Title] OR "PERT"[Title] OR "Eur Heart J"[Journal] OR "Circulation"[Journal] OR "J Am Coll Cardiol"[Journal] OR "Hypertension"[Journal] OR "J Hypertens"[Journal] OR "Hypertens Res"[Journal] OR "J Arrhythm"[Journal] OR "Can J Cardiol"[Journal] OR "Eur J Prev Cardiol"[Journal] OR "Eur J Cardiothorac Surg"[Journal] OR "JACC Adv"[Journal] OR "Am J Kidney Dis"[Journal])';
-        const typeFilter = '("Practice Guideline"[Publication Type] OR "Guideline"[Publication Type] OR "Guidelines"[Title] OR "Guideline"[Title] OR "Focused Update"[Title] OR "Expert Consensus"[Title] OR "Scientific Statement"[Title] OR "Consensus Statement"[Title] OR "Consensus Document"[Title] OR "Position Paper"[Title] OR "Ten Commandments"[Title]) NOT "Correction to"[Title] NOT "Correction:"[Title] NOT "Corrigendum"[Title] NOT "WITHDRAWN"[Title] NOT "Author Correction"[Title] NOT "Reply"[Title] NOT "Large Language Model"[Title] NOT "ChatGPT"[Title] NOT "2024 ESC"[Title]';
-        const term = `(${topicQ}) AND ${socFilter} AND ${typeFilter} AND ${dateFilter}`;
-        const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(term)}&retmode=json&retmax=12&sort=pub+date`;
-        const sResp = await fetch(esearchUrl);
-        if (!sResp.ok) return [];
-        const sJson = await sResp.json();
-        const ids = (sJson && sJson.esearchresult && sJson.esearchresult.idlist) || [];
-        if (ids.length === 0) return [];
-        const sumUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(ids.slice(0, 12).join(","))}&retmode=json`;
-        const sumResp = await fetch(sumUrl);
-        if (!sumResp.ok) return [];
-        const sumJson = await sumResp.json();
-        const resultObj = (sumJson && sumJson.result) || {};
-        const list = [];
-        for (const pid of ids) {
-          const it = resultObj[pid];
-          if (!it || !it.title) continue;
-          const titleClean = String(it.title).replace(/\.+$/, "").trim();
-          const low = titleClean.toLowerCase();
-          if (/(correction to|correction:|corrigendum|withdrawn|reply to|demographic reporting|informing the 202|patient perspective|missing stakeholders|large language model|chatgpt)/i.test(low)) continue;
-          const doiObj = (it.articleids || []).find((a) => a.idtype === "doi");
-          const doi = doiObj ? doiObj.value : "";
-          const pubdate = it.pubdate || "";
-          const pubYrMatch = pubdate.match(/\b(20\d{2})\b/);
-          if (pubYrMatch && Number(pubYrMatch[1]) < 2026) continue;
-          const yrMatch = (pubdate.match(/\b(202[6-9]|203\d)\b/) || titleClean.match(/\b(202[6-9]|203\d)\b/));
-          const year = yrMatch ? yrMatch[1] : "2026";
-          const isPrimary = /guideline(s)?\s+(for|on)|focused update|expert consensus|scientific statement|consensus statement|ten commandments/i.test(low);
-          const isFlagship = /Eur Heart J|Circulation|J Am Coll Cardiol|Hypertension|J Hypertens|Hypertens Res|J Arrhythm|Can J Cardiol|Circ J|Eur J Cardiothorac Surg/i.test(it.source || "");
-          const score = (Number(year) * 100) + (isPrimary ? 18 : 5) + (isFlagship ? 4 : 0);
-          list.push({
-            pmid: String(pid),
-            title: titleClean,
-            source: it.source || "PubMed",
-            pubdate,
-            year,
-            doi,
-            url: doi ? `https://doi.org/${doi}` : `https://pubmed.ncbi.nlm.nih.gov/${pid}/`,
-            _score: score
-          });
-        }
-        list.sort((a, b) => b._score - a._score);
-        return list.slice(0, 4);
-      }
-
-      // GitHub Pages / Static Cloud PWA live NCBI PubMed Guideline Crawler mode (Last 3 Months)
       if (!App.serverAvailable || isFileOrigin()) {
-        if (!force && !isFileOrigin()) {
-          await reloadSeedBriefingsScript();
-        }
-        const localToday = getScheduledCycleDate();
-        const pid = getPillarIdForDate(localToday);
-        App.todayDate = localToday;
-        computeRotationPillarsFromDate(localToday);
-        setProgress(20, `Đang đồng bộ chu kỳ Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}...`);
         try {
-          let target = getTodaySingleBriefing();
-          const alreadyFresh = !force && target && target.date === localToday && Number(target.pillar_id) === pid;
-          let crawled = [];
-          if (!alreadyFresh) {
-            setProgress(45, `Đang crawl Guideline trong 3 tháng gần nhất (08–11/2026) cho Trụ cột #${pid}...`);
-            crawled = await crawlLatestGuidelineFromPubMed(pid, 90);
-            setProgress(85, "Đang cập nhật sơ đồ Guideline Evolution & Nguồn Step-0...");
-          }
-          if (target && !alreadyFresh) {
-            // Clone into today's scheduled date edition so historical template stays intact
-            target = JSON.parse(JSON.stringify(target));
-            target.id = `ebm-${localToday}-p${pid}-main`;
-            target.date = localToday;
-            target.time = "06:00 AM";
-            if (crawled.length > 0) {
-              const top = crawled[0];
-              const ge = target.guideline_evolution || (target.guideline_evolution = {});
-              const cur = ge.current_guideline || {};
-              const curYears = (String(cur.year || "").match(/\b20\d{2}\b/g) || []).map(Number);
-              const curMaxYear = curYears.length > 0 ? Math.max(...curYears) : 0;
-              const nowStamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-              if (Number(top.year) > curMaxYear) {
-                if (cur.name || cur.title) {
-                  ge.prior_guideline = {
-                    name: cur.name || cur.title,
-                    year: String(curMaxYear || 2025),
-                    doi: cur.doi || "",
-                    pmid: cur.pmid || ""
-                  };
-                }
-                ge.current_guideline = {
-                  name: top.title,
-                  year: `${top.year} (3T gần nhất)`,
-                  doi: top.doi,
-                  pmid: top.pmid,
-                  crawled_live: true,
-                  crawled_at: nowStamp
-                };
-              } else {
-                cur.crawled_live = true;
-                cur.crawled_at = nowStamp;
-                ge.current_guideline = cur;
-              }
-              const existing = Array.isArray(target.pubmed_anchors) ? target.pubmed_anchors : [];
-              const seenPmid = new Set(existing.map((a) => String(a.pmid || "")));
-              const newAnchors = crawled
-                .filter((g) => g.pmid && !seenPmid.has(g.pmid))
-                .map(({ _score, year, ...rest }) => rest);
-              target.pubmed_anchors = [...newAnchors, ...existing];
-              target.last_guideline_crawl_at = nowStamp;
-            }
-            App.briefings = [target, ...App.briefings.filter((b) => b.id !== target.id)];
-          }
+          if (force && !isFileOrigin()) await reloadSeedBriefingsScript();
+          App.todayDate = getScheduledCycleDate();
+          computeRotationPillarsFromDate(App.todayDate);
           renderDailyRotationBanner();
           renderPillarsTiles();
           renderModeSpecificPanels();
-          if (target) selectBriefing(target);
-          setProgress(100, alreadyFresh
-            ? `Đã đồng bộ bản tin Trụ cột #${pid}/10 ngày ${formatShortDdMm(localToday)}!`
-            : `Đã crawl ${crawled.length} Guideline mới nhất (3 tháng gần nhất) cho Trụ cột #${pid}/10!`);
-          if (!silent) showToast(tt("toastPillarUpdated", { pid, date: formatShortDdMm(localToday) }));
-        } catch (_) {
-          setProgress(100, "Đã đồng bộ dữ liệu cục bộ.");
+          const target = getTodaySingleBriefing();
+          if (target && App.mode === "today") selectBriefing(target);
+          setProgress(100, "Đã đồng bộ bản tin theo khuyến cáo tuyển chọn.");
+          if (!silent) showToast(tt("toastPillarUpdated", { pid: App.todayPillarId, date: formatShortDdMm(App.todayDate) }));
         } finally {
           finishRefresh();
         }
         return;
       }
 
-      setProgress(1, `Đang tra cứu trích dẫn NCBI PubMed cho Trụ cột #${App.todayPillarId} hôm nay...`);
+      setProgress(1, `Đang tải khuyến cáo cho Trụ cột #${App.todayPillarId} hôm nay...`);
 
       if (window.ReadableStream) {
         const onMessage = async (evt) => {
@@ -9443,6 +9358,13 @@
       },
 
       renderUI() {
+        const briefing = App.selected || getTodaySingleBriefing();
+        const available = briefing?.lesson_format !== "single_guideline";
+        for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
+          const element = document.getElementById(id);
+          if (element) element.style.display = available ? "" : "none";
+        }
+        if (!available) return;
         const isVi = App.currentLang === "vi";
         const sess = this.getSession();
 

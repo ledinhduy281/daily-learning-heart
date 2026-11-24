@@ -435,6 +435,7 @@ const streamCode = html.match(/async function consumeApiEvents\(path, onMessage\
   const init = vm.runInNewContext(`(${html.match(/function renderAllViewsAfterAuth\([^)]*\) \{[\s\S]*?\n    \}/)[0]})`, {
     App: app, applyLocalizationChrome: noop, renderUserWorkspace: noop, renderDailyRotationBanner: noop,
     renderPillarsTiles: noop, renderModeSpecificPanels: noop, getTodaySingleBriefing: () => lesson,
+    findArchiveBriefing: id => app.briefings.find(b => b.id === id),
     selectBriefing: (...args) => select(...args)
   });
   const select = vm.runInNewContext(`(${html.match(/function selectBriefing\(briefing, [^\n]+\n[\s\S]*?\n    \}/)[0]})`, {
@@ -540,6 +541,7 @@ async function checkProfilePanel() {
   }};
   const context = vm.createContext({
     App, Dom, deviceStore: profile, navigator, document, cleanHeadline: title => title,
+    findArchiveBriefing: id => App.briefings.find(b => b.id === id),
     formatShortDdMm: () => '22/11',
     t: key => (App.currentLang === 'vi'
       ? {filterSaved: 'Đã lưu', filterRead: 'Đã đọc'}
