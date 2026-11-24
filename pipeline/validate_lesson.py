@@ -9,7 +9,7 @@ from pathlib import Path
 
 from clinical_mcq import validated_source_items
 from fetch_daily_ebm import get_pillar_for_date
-from focused_lessons import build_focused_lesson, select_guideline
+from focused_lessons import GATE_START_DATE, build_focused_lesson, focused_markdown, select_guideline
 from pipeline.lesson_generation import CURATED, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 
@@ -43,12 +43,22 @@ def _excerpt(excerpt, reference, role):
     )
 
 
-def validate_lesson(lesson, pillar, lesson_date):
+def _recorded_wording(expected, supplied, fields):
+    for field in fields:
+        value = supplied.get(field)
+        _require(isinstance(value, str) and value.strip() and "\n" not in value and "\r" not in value,
+                 f"Missing or invalid recorded wording: {field}")
+        expected[field] = value
+
+
+def validate_lesson(lesson, pillar, lesson_date, *, recorded=False):
     canonical = build_focused_lesson(pillar, lesson_date)
     _require(all(lesson.get(key) == canonical[key] for key in ("id", "date", "pillar_id", "lesson_format")),
              "Lesson does not match the scheduled pillar and date")
     evolution = dict(lesson.get("guideline_evolution") or {})
     recommendation = evolution.pop("licensed_recommendation", None)
+    if recorded:
+        _recorded_wording(canonical["guideline_evolution"], evolution, ("recommendation_vi", "recommendation_en"))
     _require(evolution == canonical["guideline_evolution"] and not lesson.get("live_crawled_guidelines"),
              "Block A must contain exactly one approved primary guideline and recommendation")
     _require(lesson.get("pubmed_anchors") == canonical["pubmed_anchors"],
@@ -57,12 +67,15 @@ def validate_lesson(lesson, pillar, lesson_date):
     if recommendation is not None:
         _excerpt(recommendation, evolution["current_guideline"], "recommendation")
         approved = select_guideline(pillar["id"])
-        _require(recommendation["text"] == approved["recommendation"][1]
+        _require(recommendation["text"] == canonical["guideline_evolution"]["recommendation_en"]
                  or hashlib.sha256(recommendation["text"].encode()).hexdigest() == approved.get("recommendation_excerpt_sha256"),
                  "Licensed guideline passage does not match the approved recommendation")
 
     evidence = dict(lesson.get("supporting_evidence") or {})
     excerpts = evidence.pop("licensed_excerpts", {})
+    if recorded and evidence and canonical.get("supporting_evidence"):
+        fields = tuple(f"{field}_{lang}" for field in ("population", "supports", "limits") for lang in ("vi", "en"))
+        _recorded_wording(canonical["supporting_evidence"], evidence, (*fields, "result"))
     _require(evidence and evidence == canonical.get("supporting_evidence")
              and not lesson.get("landmark_trials"),
              "Block B evidence does not match the approved recommendation, population, and limits")
@@ -104,6 +117,8 @@ def validate_lesson(lesson, pillar, lesson_date):
                  "Curated quiz does not match the approved lesson")
 
     for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
+        if recorded:
+            canonical[field] = focused_markdown(canonical, lang, select_guideline(pillar["id"]).get("safety_source"))
         _append_markdown(canonical, lang, recommendation, excerpts)
         _require(lesson.get(field) == canonical[field], f"{lang} Markdown does not match the cited lesson")
 
@@ -121,56 +136,49 @@ def _read_bundle(path):
     return _parse_bundle(path.read_text(encoding="utf-8"))
 
 
-def validate_bundle(bundle, expected_date=None, allow_predating_pipeline=False, previous=None):
-    briefings = bundle["briefings"]
-    if allow_predating_pipeline and not any(
-        "lesson_provenance" in lesson or lesson.get("content_source") == "licensed_source_rotation"
-        for lesson in briefings
-    ):
-        return None
-    lesson_date = bundle["rotation_state"]["last_updated"]
+def validate_bundle(bundle, expected_date=None, *, rotation_state=None):
+    governed = []
+    for lesson in bundle["briefings"]:
+        lesson_date = date.fromisoformat(lesson["date"]).isoformat()
+        if lesson_date < GATE_START_DATE:
+            continue
+        if expected_date is None or (lesson_date == expected_date and lesson.get("content_source") != "model_draft"):
+            governed.append(lesson)
     if expected_date:
-        _require(lesson_date == expected_date, f"Refresh produced {lesson_date}, expected {expected_date}")
-    edition_date = date.fromisoformat(lesson_date)
-    candidates = [lesson for lesson in briefings if lesson.get("date") == lesson_date
-                  and lesson.get("content_source") != "model_draft"]
-    _require(len(candidates) == 1, "Expected one scheduled lesson on the dated edition")
-    if previous is None:
-        validate_lesson(candidates[0], get_pillar_for_date(edition_date), lesson_date)
-    else:
-        approved = {lesson["id"]: lesson for lesson in previous["briefings"]}
-        seen = set()
-        for lesson in briefings:
-            lesson_id = lesson.get("id")
-            _require(isinstance(lesson_id, str) and lesson_id and lesson_id not in seen,
-                     "Each briefing must have a unique ID")
-            seen.add(lesson_id)
-            if lesson.get("content_source") != "model_draft":
-                added_date = date.fromisoformat(lesson["date"])
-                if added_date >= edition_date:
-                    _require(lesson.get("lesson_provenance"), f"{lesson_id}: Current or future lesson is missing provenance")
-                if lesson == approved.get(lesson_id):
-                    continue
-                try:
-                    validate_lesson(lesson, get_pillar_for_date(added_date), lesson["date"])
-                except ValueError as exc:
-                    raise ValueError(f"{lesson_id}: {exc}") from exc
-    return candidates[0]["id"]
+        _require(len(governed) == 1, "Expected one scheduled lesson on the dated edition")
+    if governed:
+        latest = max(lesson["date"] for lesson in governed)
+        _require(bundle["rotation_state"]["last_updated"] == latest, "Rotation date does not match the latest lesson")
+        if rotation_state is not None:
+            _require(rotation_state == bundle["rotation_state"], "Rotation file does not match the lesson bundle")
+    seen = set()
+    for lesson in governed:
+        lesson_id = lesson.get("id")
+        _require(lesson_id not in seen, "Expected one scheduled lesson on the dated edition")
+        seen.add(lesson_id)
+        try:
+            _require(lesson.get("lesson_provenance"), "Dated lesson is missing provenance")
+            validate_lesson(lesson, get_pillar_for_date(date.fromisoformat(lesson["date"])),
+                            lesson["date"], recorded=expected_date is None)
+        except ValueError as exc:
+            raise ValueError(f"{lesson_id}: {exc}") from exc
+    return governed[0]["id"] if expected_date else len(governed)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, default=Path("data/briefings.js"))
-    parser.add_argument("--date", help="Require this Vietnam calendar date")
-    parser.add_argument("--previous", type=Path, help="Validate all dated lessons added or changed since this approved bundle")
-    parser.add_argument("--allow-predating-pipeline", action="store_true")
+    parser.add_argument("--date", help="Validate only this newly generated Vietnam calendar edition")
+    parser.add_argument("--rotation-state", type=Path, help="Check the separate rotation state against the bundle")
     args = parser.parse_args()
     try:
-        previous = _read_bundle(args.previous) if args.previous else None
-        lesson_id = validate_bundle(_read_bundle(args.bundle), args.date, args.allow_predating_pipeline, previous)
+        state = json.loads(args.rotation_state.read_text(encoding="utf-8")) if args.rotation_state else None
+        if args.rotation_state:
+            _require(isinstance(state, dict), "Invalid rotation file")
+        result = validate_bundle(_read_bundle(args.bundle), args.date, rotation_state=state)
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
         parser.exit(1, f"Daily lesson publication blocked: {exc}\n")
-    print(f"Validated daily lesson: {lesson_id}" if lesson_id else "Existing archive predates the lesson pipeline.")
+    print(f"Validated daily lesson: {result}" if args.date else f"Validated {result} dated archive lessons.")
 
 
 if __name__ == "__main__":

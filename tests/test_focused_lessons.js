@@ -22,6 +22,14 @@ context.escapeHtml = s => s;
 vm.runInContext(html.slice(html.indexOf("    function formatDoiUrl("),
     html.indexOf("    function safeChatSourceUrl(")), context);
 assert.equal(context.formatDoiUrl("  "), "");
+vm.runInContext(html.slice(html.indexOf("    function rotationNoticeFor("),
+    html.indexOf("    function formatFullDdMmYyyy(")), context);
+bundle.lesson_gate_start = "2026-11-24";
+App.currentLang = "en";
+assert.match(context.rotationNoticeFor({date: "2026-11-23"}), /Legacy archive lesson/);
+App.currentLang = "vi";
+assert.match(context.rotationNoticeFor({date: "2026-11-23"}), /Bài lưu trữ/);
+assert.equal(context.rotationNoticeFor({date: "2026-11-24"}), "");
 
 const fallback = context.getTodaySingleBriefing();
 assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");

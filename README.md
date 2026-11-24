@@ -89,7 +89,7 @@ The [site workflow](.github/workflows/pages.yml) deploys the allowed static asse
 
 Run `python3 -m pipeline.lesson_coverage` for a JSON report of full-text and recommendation-match coverage for the ten active rotation guidelines. It distinguishes API failures from cases where no supported reusable copy was found through Europe PMC; it does not check publisher websites.
 
-`python3 -m pipeline.validate_lesson --previous <approved-bundle>` checks dated lessons added or changed since the approved bundle without fetching sources. The daily refresh updates `data/approved_lessons.json`, a self-contained archive with a SHA-256 content checksum, only after validation. It marks known pre-pipeline entries as legacy, not validated. Only past editions are grandfathered: rollout triggers a refresh to generate today's lesson with provenance. Pages uses the archive without re-grading approved lessons against later editorial wording. If the archive is missing or damaged, recovery keeps only entries that pass the current gate or match a known past legacy entry. Rotation state comes from these entries, and evidence can deploy independently.
+`python3 -m pipeline.validate_lesson` checks every dated lesson from the November 24, 2026 rollout onward. Earlier archive entries are labeled as legacy and left unchanged. The refresh checks the new edition before committing, and Pages checks all governed editions against their recorded wording and excerpts before deploying. It stages evidence assets separately. Validation is read-only; a failure leaves the last successful deployment live.
 
 ## Repository guide
 

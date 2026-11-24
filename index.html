@@ -5413,6 +5413,12 @@
     }
 
     function rotationNoticeFor(b) {
+      const gateStart = window.EBM_BRIEFINGS_DATA?.lesson_gate_start;
+      if (gateStart && b?.date && b.date < gateStart && b.content_source !== "model_draft") {
+        return App.currentLang === "vi"
+          ? "Bài lưu trữ trước khi có kiểm tra xuất bản."
+          : "Legacy archive lesson — predates publication checks.";
+      }
       if (!b || b.content_source !== "curated_library_rotation") return "";
       const edition = b.curated_edition_date;
       if (!edition || edition === b.date) return "";

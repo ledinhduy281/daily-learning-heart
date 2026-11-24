@@ -25,15 +25,10 @@ jobs:
             mkdir site/data/pipeline
             cp data/pipeline/briefing.json data/pipeline/evidence.parquet site/data/pipeline/
           fi
-      - name: Stage the latest valid lesson bundle
-        env:
-          TZ: Asia/Ho_Chi_Minh
+      - name: Validate and stage the lesson bundle
         run: |
-          if python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons" --date "$(date +%F)"; then
-            cp "$RUNNER_TEMP/approved-lessons/briefings.js" site/data/
-          else
-            echo "::warning::No valid lesson bundle found; publishing the other assets only"
-          fi
+          python3 -m pipeline.validate_lesson --rotation-state data/rotation_state.json
+          cp data/briefings.js site/data/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

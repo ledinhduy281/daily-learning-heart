@@ -34,7 +34,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
-from focused_lessons import FOCUSED_EDITION_VERSION, build_focused_lesson, build_focused_templates
+from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson, build_focused_templates
 from socratic_quiz import turn as quiz_turn
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1458,7 +1458,8 @@ def refresh_today_briefing(
                 and b.get("lesson_version") == FOCUSED_EDITION_VERSION
                 and b.get("lesson_provenance")
             ]
-            if len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records):
+            if (len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records)
+                    and state["last_updated"] == today_str):
                 if progress_cb:
                     progress_cb(100, f"Hôm nay ({today_str}) đã có bản tin Trụ cột #{pid}/10 — {target_pillar['vi_name']}.")
                 return {
@@ -1530,6 +1531,7 @@ def save_briefings_js(briefings: list, rotation_state: dict) -> None:
         "default_model": NO_MODEL,
         "generator": BUNDLE_GENERATOR,
         "rotation_state": rotation_state,
+        "lesson_gate_start": GATE_START_DATE,
         "pillars": PILLARS,
         "focused_lessons": build_focused_templates(PILLARS),
         "briefings": [with_truthful_provenance(b) for b in briefings],

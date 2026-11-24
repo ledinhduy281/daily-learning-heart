@@ -32,13 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Restore the latest approved lesson archive
-        env:
-          TZ: Asia/Ho_Chi_Minh
-        run: |
-          python3 -m pipeline.approved_lessons restore "$RUNNER_TEMP/approved-lessons" --date "$(date +%F)"
-          cp "$RUNNER_TEMP/approved-lessons/"* data/
-
       - name: Build today's single pillar lesson
         env:
           TZ: Asia/Ho_Chi_Minh
@@ -49,14 +42,15 @@ jobs:
         env:
           TZ: Asia/Ho_Chi_Minh
         run: |
-          python3 -m pipeline.approved_lessons approve --date "$(date +%F)" \
-            --previous "$RUNNER_TEMP/approved-lessons/briefings.js"
+          if ! git diff --quiet HEAD -- data/briefings.js data/rotation_state.json; then
+            python3 -m pipeline.validate_lesson --date "$(date +%F)" --rotation-state data/rotation_state.json
+          fi
 
       - name: Commit and push updated briefings.js
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/briefings.js data/rotation_state.json data/approved_lessons.json
+          git add data/briefings.js data/rotation_state.json
           if git diff --staged --quiet; then
             echo "No briefing changes to commit."
           else

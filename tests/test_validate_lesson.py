@@ -71,7 +71,7 @@ class LessonGateTests(unittest.TestCase):
         with patch.dict(GUIDELINE, guideline=(society, year, pmid, " ", name)), \
                 patch.dict(TRIAL, doi=""), patch.object(lesson_generation, "fetch_article", return_value=None):
             lesson = lesson_generation.build_open_lesson(PILLAR, DATE)
-            self.assertEqual(validate_bundle(self.bundle(lesson)), lesson["id"])
+            self.assertEqual(validate_bundle(self.bundle(lesson), DATE), lesson["id"])
         for field in ("part1_vi_markdown", "part2_en_markdown"):
             for source_pmid in (GUIDELINE_PMID, TRIAL_PMID):
                 self.assertIn(f"](https://pubmed.ncbi.nlm.nih.gov/{source_pmid}/)", lesson[field])
@@ -101,17 +101,17 @@ class LessonGateTests(unittest.TestCase):
                 if legacy_date != DATE:
                     legacy = {"id": "future-legacy", "date": legacy_date}
                     bundle["briefings"].append(legacy)
+                    bundle["rotation_state"]["last_updated"] = legacy_date
                 else:
                     legacy.pop("lesson_provenance")
-                with self.assertRaisesRegex(ValueError, "Current or future lesson is missing provenance"):
-                    validate_bundle(bundle, expected_date=DATE, previous=copy.deepcopy(bundle))
+                with self.assertRaisesRegex(ValueError, "Dated lesson is missing provenance"):
+                    validate_bundle(bundle)
 
-    def test_migration_skips_only_bundles_with_no_pipeline_lesson(self):
-        bundle = self.bundle({"date": DATE})
-        self.assertIsNone(validate_bundle(bundle, allow_predating_pipeline=True))
-        bundle["briefings"].append({**self.curated, "date": "2026-11-25"})
-        with self.assertRaisesRegex(ValueError, "scheduled pillar"):
-            validate_bundle(bundle, allow_predating_pipeline=True)
+    def test_legacy_rows_are_not_validated_or_modified(self):
+        bundle = {"briefings": [{"date": "2026-11-23", "legacy": True}]}
+        previous = copy.deepcopy(bundle)
+        self.assertEqual(validate_bundle(bundle), 0)
+        self.assertEqual(bundle, previous)
 
     def test_cli_exits_nonzero_for_invalid_publish_candidate(self):
         bundle = self.bundle(self.curated)
@@ -131,4 +131,5 @@ class LessonGateTests(unittest.TestCase):
             bundle["briefings"][0]["pubmed_anchors"] = []
             result = run()
             self.assertEqual(result.returncode, 1)
-            self.assertIn("Daily lesson publication blocked: Missing, extra, or mismatched lesson citation", result.stderr)
+            self.assertIn(f"Daily lesson publication blocked: {self.curated['id']}: Missing, extra, or mismatched lesson citation",
+                          result.stderr)

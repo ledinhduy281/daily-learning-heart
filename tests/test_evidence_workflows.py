@@ -11,7 +11,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fetch_daily_ebm import get_pillar_for_date, refresh_today_briefing
-from pipeline import approved_lessons, lesson_generation
+from focused_lessons import GATE_START_DATE
+from pipeline import lesson_generation
 from pipeline.validate_lesson import _read_bundle
 
 
@@ -94,22 +95,23 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual(step["with"]["artifact_name"], "${{ needs.build.outputs.artifact_name }}")
 
     def test_daily_refresh_validates_changed_lesson_before_commit(self):
-        refresh_steps = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
-        gate, = [i for i, step in enumerate(refresh_steps) if "approved_lessons approve" in step.get("run", "")]
-        commit, = [i for i, step in enumerate(refresh_steps) if "git commit" in step.get("run", "")]
+        workflow = self.workflow("daily_refresh")
+        self.assertEqual(workflow["on"]["push"]["branches"], ["main"])
+        steps = workflow["jobs"]["refresh-daily-pillar"]["steps"]
+        build, = [i for i, step in enumerate(steps) if "--refresh-if-needed" in step.get("run", "")]
+        gate, = [i for i, step in enumerate(steps) if "pipeline.validate_lesson" in step.get("run", "")]
+        commit, = [i for i, step in enumerate(steps) if "git commit" in step.get("run", "")]
+        self.assertLess(build, gate)
         self.assertLess(gate, commit)
-        self.assertNotIn("continue-on-error", refresh_steps[gate])
-        script = """
-        python3() { return 42; }
-        """ + refresh_steps[gate]["run"]
-        self.assertEqual(self.bash(script, RUNNER_TEMP=str(self.root)).returncode, 42)
+        self.assertNotIn("continue-on-error", steps[gate])
+        script = 'git() { return "$DIFF_STATUS"; }\npython3() { return 42; }\n' + steps[gate]["run"]
+        self.assertEqual(self.bash(script, DIFF_STATUS="0").returncode, 0)
+        self.assertEqual(self.bash(script, DIFF_STATUS="1").returncode, 42)
 
-    def test_pages_retains_last_valid_lesson_and_stages_current_evidence(self):
+    def test_pages_blocks_direct_merge_and_carryover_without_editing_legacy_or_evidence(self):
         steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
-        assets, stage_lessons = [step["run"] for step in steps if "run" in step]
-        refresh = self.workflow("daily_refresh")["jobs"]["refresh-daily-pillar"]["steps"]
-        restore = next(step["run"] for step in refresh if step.get("name") == "Restore the latest approved lesson archive")
-        gate = next(step["run"] for step in refresh if "approved_lessons approve" in step.get("run", ""))
+        assets, gate = [step["run"] for step in steps if "run" in step]
+        self.assertNotIn("continue-on-error", next(step for step in steps if "pipeline.validate_lesson" in step.get("run", "")))
         for asset in ("index.html", "icon.svg", "manifest.json", "clinical_distractors.js",
                       "clinical_mcq.js", "device_profile.js", "sync_config.js", "cloud_sync.js",
                       "search_ranking.js", "evidence_feed.js", "offline.js"):
@@ -119,29 +121,35 @@ class EvidenceWorkflowTests(unittest.TestCase):
         evidence.mkdir(parents=True)
         (evidence / "briefing.json").write_text('{"date":"2026-11-27"}')
         (evidence / "evidence.parquet").touch()
-        validator = self.root / "pipeline"
-        validator.mkdir()
-        for module in ("validate_lesson.py", "lesson_generation.py", "lesson_sources.py", "ingest.py",
-                       "approved_lessons.py"):
-            shutil.copy(ROOT / "pipeline" / module, validator)
+        pipeline = self.root / "pipeline"
+        pipeline.mkdir()
+        for module in ("validate_lesson.py", "lesson_generation.py", "lesson_sources.py", "ingest.py"):
+            shutil.copy(ROOT / "pipeline" / module, pipeline)
         for module in ROOT.glob("*.py"):
             shutil.copy(module, self.root)
-        bundle = data / "briefings.js"
-        rotation_file = data / "rotation_state.json"
-        manifest = data / "approved_lessons.json"
-        catalog = self.root / "focused_lessons.py"
+        path = data / "briefings.js"
+        rotation = data / "rotation_state.json"
         dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in ("2026-11-26", "2026-11-27")]
         with patch.object(lesson_generation, "fetch_article", return_value=None):
             first, second = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
                              for d in dates]
+        legacy = {"id": "legacy", "date": "2026-11-23", "contents": "unchanged"}
         bad = copy.deepcopy(first)
         bad["quiz_items"][0]["answer"] = "0.94"
 
-        def write_bundle(latest, *rows):
-            rotation = {"last_updated": latest["date"]}
-            rotation_file.write_text(json.dumps(rotation))
-            bundle.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps(
-                {"rotation_state": rotation, "briefings": [latest, *rows]}) + ";")
+        def write(latest, *rows):
+            state = {"last_updated": latest["date"]}
+            rotation.write_text(json.dumps(state))
+            path.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps(
+                {"rotation_state": state, "briefings": [latest, *rows]}) + ";")
+
+        def assert_blocked():
+            originals = path.read_bytes(), rotation.read_bytes()
+            result = self.bash(gate)
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"{first['id']}: Every quiz key", result.stderr)
+            self.assertFalse((self.root / "site" / "data" / "briefings.js").exists())
+            self.assertEqual((path.read_bytes(), rotation.read_bytes()), originals)
 
         git_env = dict(GIT_AUTHOR_NAME="Test", GIT_AUTHOR_EMAIL="test@example.invalid",
                        GIT_COMMITTER_NAME="Test", GIT_COMMITTER_EMAIL="test@example.invalid")
@@ -151,125 +159,51 @@ class EvidenceWorkflowTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             return result.stdout.strip()
 
-        def approve(lesson):
-            return self.bash(f'date() {{ printf "%s\\n" "{lesson["date"]}"; }}\n' + gate,
-                             RUNNER_TEMP=str(self.root))
-
-        legacy = {"id": "archive-2026-11-25", "date": "2026-11-25", "pillar_id": 10}
-        write_bundle(legacy)
-        snapshot = {"briefings": [legacy]}
-        legacy_hash = approved_lessons._digest(legacy)
-        (data / "approved_legacy_sha256.txt").write_text(legacy_hash + "\n")
-        payload = {"bundle": snapshot, "legacy": {legacy["id"]: legacy_hash}}
-        manifest.write_text(json.dumps({"schema_version": 2, "sha256": approved_lessons._digest(payload), **payload}))
-        git("git init -q && git add *.py pipeline/ data/briefings.js data/rotation_state.json "
-            "data/approved_lessons.json data/approved_legacy_sha256.txt"
-            " && git commit -qm 'Bootstrap approved archive'")
-
-        rollout_date = 'date() { printf "2026-11-26\\n"; }\n'
-        result = self.bash(rollout_date + restore, RUNNER_TEMP=str(self.root))
+        write(first, legacy)
+        git("git init -qb main && git add *.py pipeline/ data/briefings.js data/rotation_state.json"
+            " && git commit -qm 'Published lesson' && git switch -qc direct-merge")
+        write(bad, legacy)
+        git("git commit -qam 'Direct bundle edit' && git switch -q main"
+            " && git merge -q --no-ff direct-merge -m 'Merge direct bundle update'")
+        result = self.bash(assets)
         self.assertEqual(result.returncode, 0, result.stderr)
-        write_bundle(first, legacy)
-        result = approve(first)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        git("git commit -qam 'Approved lesson'")
-        approved = bundle.read_bytes()
-        main = git("git branch --show-current")
-        git("git switch -qc direct-update")
-        write_bundle(bad)
-        git("git commit -qam 'Direct bundle update'")
-        git(f'git switch -q "{main}" && git merge -q --no-ff direct-update -m "Merge direct bundle update"')
+        evidence_staged = self.root / "site" / "data" / "pipeline" / "briefing.json"
+        self.assertEqual(evidence_staged.read_bytes(), (evidence / "briefing.json").read_bytes())
+        assert_blocked()
+        write(second, bad, legacy)
+        assert_blocked()
+
+        write(second, first, legacy)
+        catalog = self.root / "focused_lessons.py"
         with catalog.open("a") as source:
             source.write('\nLESSONS[1][0]["recommendation"] = ("Edited", "Edited")\n')
-        git("git commit -qam 'Editorial change'")
-        write_bundle(second, bad, legacy)
-        git("git commit -qam 'New valid lesson carrying over the rejected entry'")
-        self.assertNotEqual(approve(second).returncode, 0)
-        rotation_file.write_text('{"last_updated":"2026-10-01"}')
-        git("git commit -qam 'Rotation-only regression'")
+        rotation.write_text('{"last_updated":"2026-01-01"}')
+        result = self.bash(gate)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Rotation file does not match the lesson bundle", result.stderr)
+        write(second, first, legacy)
+        result = self.bash(gate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Validated 2 dated archive lessons.", result.stdout)
+        self.assertEqual((self.root / "site" / "data" / "briefings.js").read_bytes(), path.read_bytes())
+        self.assertEqual(_read_bundle(path)["briefings"][-1], legacy)
 
-        result = self.bash(rollout_date + assets + "\n" + stage_lessons, RUNNER_TEMP=str(self.root))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        staged = self.root / "site" / "data"
-        self.assertEqual((staged / "briefings.js").read_bytes(), approved)
-        self.assertEqual((staged / "pipeline" / "briefing.json").read_bytes(),
-                         (evidence / "briefing.json").read_bytes())
-        result = self.bash(rollout_date + restore, RUNNER_TEMP=str(self.root))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(bundle.read_bytes(), approved)
-        self.assertEqual(json.loads(rotation_file.read_text())["last_updated"], first["date"])
-        self.assertEqual(approve(first).returncode, 0)
-        write_bundle(second, first, legacy)
-        result = approve(second)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(f"Validated daily lesson: {second['id']}", result.stdout)
-        git("git commit -qam 'Approve the next lesson from the clean archive'")
-
-        expected = bundle.read_bytes()
-        bundle.unlink()
-        rotation_file.unlink()
-        git("git commit -qam 'Remove working copies'")
-        result = self.bash(rollout_date + stage_lessons, RUNNER_TEMP=str(self.root))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual((staged / "briefings.js").read_bytes(), expected)
-        result = self.bash(rollout_date + restore, RUNNER_TEMP=str(self.root))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(bundle.read_bytes(), expected)
-        self.assertEqual(json.loads(rotation_file.read_text())["last_updated"], second["date"])
-        self.assertEqual(_read_bundle(bundle)["briefings"], [second, first, legacy])
-        self.assertEqual(approve(second).returncode, 0)
-        snapshot = json.loads(manifest.read_text())
-        self.assertEqual(snapshot["sha256"], approved_lessons._digest(
-            {"bundle": snapshot["bundle"], "legacy": snapshot["legacy"]}))
-
-    def test_approved_archive_bootstraps_without_files_or_git_objects(self):
-        data = self.root / "data"
-        data.mkdir()
-        manifest, working = data / "approved_lessons.json", data / "briefings.js"
-        output = self.root / "staged"
-        with patch.multiple(approved_lessons, MANIFEST=manifest, WORKING_BUNDLE=working,
-                            LEGACY_HASHES=data / "approved_legacy_sha256.txt"):
-            days = [datetime.strptime(d, "%Y-%m-%d").date() for d in ("2026-11-26", "2026-11-27")]
-            empty = approved_lessons._write_bundle(output, approved_lessons._approved(days[0]))
-            self.assertEqual(empty["briefings"], [])
-            self.assertEqual(empty["rotation_state"], {})
-            with patch.object(lesson_generation, "fetch_article", return_value=None):
-                valid, invalid = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
-                                  for d in days]
-            invalid["pubmed_anchors"] = []
-            approved_lessons._write_bundle(data, {"briefings": [invalid, valid]})
-            for broken in ({"bundle_blob": "0" * 40}, {"schema_version": 1, "sha256": "0" * 64, "bundle": {}}):
-                with self.subTest(manifest=broken):
-                    manifest.write_text(json.dumps(broken))
-                    recovered = approved_lessons._write_bundle(output, approved_lessons._approved(days[0]))
-                    self.assertEqual(recovered["briefings"], [valid])
-                    self.assertEqual(recovered["rotation_state"]["last_updated"], valid["date"])
-
-    def test_rollout_grandfathers_only_past_lessons_and_regenerates_today(self):
-        day = datetime.strptime("2026-11-26", "%Y-%m-%d").date()
-        past = {"id": "pre-pipeline-past", "date": "2026-11-25", "pillar_id": 10}
-        today = {"id": "pre-pipeline-today", "date": day.isoformat(), "pillar_id": 1}
-        future = {"id": "pre-pipeline-future", "date": "2026-11-27", "pillar_id": 2}
+    def test_rollout_regenerates_today_without_modifying_past_entries(self):
+        day = datetime.strptime(GATE_START_DATE, "%Y-%m-%d").date()
+        legacy = {"id": "pre-pipeline-past", "date": "2026-11-23", "pillar_id": 8}
+        pid = get_pillar_for_date(day)["id"]
+        today = {"id": f"ebm-{day}-p{pid}-focused", "date": day.isoformat(), "pillar_id": pid,
+                 "lesson_format": "single_guideline"}
         working = self.root / "briefings.js"
         rotation = self.root / "rotation_state.json"
-        manifest = self.root / "approved_lessons.json"
-        hashes = self.root / "approved_legacy_sha256.txt"
-        rows = [future, today, past]
-        hashes.write_text("\n".join(approved_lessons._digest(row) for row in rows))
-        with patch.multiple(approved_lessons, MANIFEST=manifest, WORKING_BUNDLE=working, LEGACY_HASHES=hashes):
-            approved_lessons._write_manifest({"briefings": rows})
-            self.assertEqual(set(json.loads(manifest.read_text())["legacy"]), {row["id"] for row in rows})
-            restored = approved_lessons._write_bundle(self.root, approved_lessons._approved(day))
-            self.assertEqual(restored["briefings"], [past])
-            previous = self.root / "previous.js"
-            previous.write_bytes(working.read_bytes())
-            with patch.multiple("fetch_daily_ebm", BRIEFINGS_JS_PATH=working, ROTATION_STATE_PATH=rotation), \
-                    patch("fetch_daily_ebm._today_vn", return_value=day), \
-                    patch.object(lesson_generation, "fetch_article", return_value=None):
-                result = refresh_today_briefing()
-            self.assertFalse(result["already_up_to_date"])
-            self.assertTrue(result["briefing"]["lesson_provenance"])
-            approved_lessons._approve(day.isoformat(), previous)
-            updated = json.loads(manifest.read_text())
-            self.assertEqual(set(updated["legacy"]), {past["id"]})
-            self.assertEqual(updated["bundle"]["briefings"], [result["briefing"], past])
+        rotation.write_text(json.dumps({"last_updated": day.isoformat()}))
+        working.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps({"briefings": [today, legacy]}) + ";")
+        with patch.multiple("fetch_daily_ebm", BRIEFINGS_JS_PATH=working, ROTATION_STATE_PATH=rotation), \
+                patch("fetch_daily_ebm._today_vn", return_value=day), \
+                patch.object(lesson_generation, "fetch_article", return_value=None):
+            result = refresh_today_briefing()
+        self.assertFalse(result["already_up_to_date"])
+        self.assertTrue(result["briefing"]["lesson_provenance"])
+        bundle = _read_bundle(working)
+        self.assertEqual(bundle["briefings"], [result["briefing"], legacy])
+        self.assertEqual(bundle["lesson_gate_start"], GATE_START_DATE)
