@@ -21,6 +21,7 @@ on:
       - 'pipeline/**'
       - '.github/workflows/evidence_pipeline.yml'
       - '.github/workflows/pages.yml'
+      - '.github/workflows/pages_publish.yml'
       - 'evidence_feed.js'
       - 'offline.js'
       - 'index.html'

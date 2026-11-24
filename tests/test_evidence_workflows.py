@@ -61,18 +61,26 @@ class EvidenceWorkflowTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(self.output.read_text().strip(), f"publish={expected}")
 
+    def test_pages_serializes_build_and_deploy_after_publication_gate(self):
+        wrapper = self.workflow("pages")
+        self.assertNotIn("concurrency", wrapper)
+        publish = wrapper["jobs"]["publish-site"]
+        self.assertEqual(publish["needs"], "check-publication")
+        self.assertEqual(publish["if"], "needs.check-publication.outputs.publish == 'true'")
+        self.assertEqual(publish["concurrency"], {"group": "deploy-pages", "cancel-in-progress": "false"})
+        self.assertEqual(publish["uses"], "./.github/workflows/pages_publish.yml")
+
     def test_pages_deploy_waits_for_build_and_uses_its_attempts_artifact(self):
-        jobs = self.workflow("pages")["jobs"]
-        build, deploy = jobs["build"], jobs["deploy"]
+        workflow = self.workflow("pages_publish")
+        self.assertIn("workflow_call", workflow["on"])
+        build, deploy = workflow["jobs"]["build"], workflow["jobs"]["deploy"]
         name = "github-pages-${{ github.run_attempt }}"
         upload = build["steps"][-1]
-        self.assertEqual(build["needs"], "check-publication")
-        self.assertEqual(build["if"], "needs.check-publication.outputs.publish == 'true'")
         self.assertEqual(upload["uses"], "actions/upload-pages-artifact@v3")
         self.assertEqual(upload["with"]["name"], name)
         self.assertEqual(build["outputs"]["artifact_name"], name)
         self.assertEqual(deploy["needs"], "build")
-        self.assertEqual(deploy["concurrency"]["group"], "deploy-pages")
+        self.assertNotIn("concurrency", deploy)
         self.assertNotIn("if", deploy)
         (step,) = deploy["steps"]
         self.assertEqual(step["uses"], "actions/deploy-pages@v4")
