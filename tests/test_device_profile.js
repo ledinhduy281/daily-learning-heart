@@ -399,6 +399,22 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   }
   tutor.store = {1:{started:true,phase:'mastered',last_question:'',current_options:[],messages:[]}};
   assert.equal(tutor.getSession().started,true);
+
+  const legacy = {...second, correct_count: 4, subskills: [{level: 4}]};
+  profile.set("ebm_socratic_state_v1", JSON.stringify({1: legacy}));
+  tutor.loadStore();
+  app.selected = {id: "first-lesson", pillar_id: 1};
+  const adopted = tutor.getSession();
+  assert.equal(adopted.lesson_id, app.selected.id);
+  assert.equal(adopted.last_question, legacy.last_question);
+  assert.equal(adopted.correct_count, 4);
+  assert.equal(adopted.subskills[0].level, 4);
+  const saved = JSON.parse(profile.get("ebm_socratic_state_v1"));
+  assert.equal(saved[1], undefined);
+  assert.equal(saved[app.selected.id].lesson_id, app.selected.id);
+  tutor.loadStore();
+  assert.equal(tutor.getSession(), adopted);
+  assert.equal(tutor.getSession(1, {id: "second-lesson", pillar_id: 1}).started, false);
 }
 {
   const malicious = '<img src=x onerror="throw 1">';
