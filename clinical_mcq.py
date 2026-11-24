@@ -69,6 +69,15 @@ def validated_source_items(primary):
     return items
 
 
+def build_source_review_question(primary, slot_idx, question_index, lang, difficulty):
+    sources = {}
+    for i, item in validated_source_items(primary):
+        sources.setdefault(item['quote'], f'source:{i}')
+    if 0 <= question_index < len(sources):
+        return _source_mcq(primary, slot_idx, question_index, lang, difficulty, list(sources.values())[question_index])
+    return None
+
+
 def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):
     items = [(f'source:{i}', item) for i, item in validated_source_items(primary)]
     available = [(i, item) for i, item in items if i == source_id] if source_id else items

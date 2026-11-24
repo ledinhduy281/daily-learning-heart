@@ -67,3 +67,32 @@ class SourceQuizTests(unittest.TestCase):
                 focused = app.handle_socratic_turn({**args, "briefing_id": "ebm-2026-11-24-p9-focused"}, source_only=True)
             self.assertTrue(focused["ok"])
             self.assertIn("____", focused["reply_markdown"])
+
+    def test_review_asks_only_one_blank_per_passage_and_does_not_wrap(self):
+        for lesson in (self.templates["1"], self.lesson):
+            state = {"subskills": [{"level": 0, "checks": 0} for _ in range(4)]}
+            _, state, _ = turn(lesson, state, "en", "start_diagnostic")
+            quotes = set()
+            while state["current_question"]:
+                question = state["current_question"]
+                self.assertNotIn(question["source_quote"], quotes)
+                quotes.add(question["source_quote"])
+                reply, state, _ = turn(lesson, state, "en", "answer", selected_choice=question["correct_key"])
+                self.assertIn(question["source_quote"], reply)
+            self.assertEqual(quotes, {item["quote"] for item in lesson["quiz_items"]})
+            self.assertEqual(state["phase"], "complete")
+            self.assertEqual(state["correct_count"], len(quotes))
+            self.assertEqual(state["subskills"][1]["checks"], len(quotes))
+            self.assertEqual(state["current_options"], [])
+            self.assertIn("Review complete.", reply)
+            _, state, _ = turn(lesson, state, "en", "answer", selected_choice="A")
+            self.assertEqual(state["correct_count"], len(quotes))
+
+    def test_revealed_single_passage_finishes_without_mastery_credit(self):
+        lesson = self.templates["1"]
+        _, state, _ = turn(lesson, {}, "vi", "start_diagnostic")
+        _, told, _ = turn(lesson, state, "vi", "just_tell_me")
+        _, complete, result = turn(lesson, told, "vi", "answer", selected_choice=state["correct_key"])
+        self.assertEqual(result, "partial")
+        self.assertEqual(complete["phase"], "complete")
+        self.assertEqual(complete["correct_count"], 0)

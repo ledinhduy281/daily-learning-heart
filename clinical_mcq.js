@@ -37,6 +37,17 @@ const ClinicalQuiz = (() => {
         new Set([answer,...distractors].map(c=>Number(c.replace(/[,%]/g,'')))).size===4;
     });
   }
+  function sourceReviewIds(primary) {
+    const ids = new Map();
+    for (const [i, item] of sourceItems(primary)) {
+      if (!ids.has(item.quote)) ids.set(item.quote, `source:${i}`);
+    }
+    return [...ids.values()];
+  }
+  function reviewQuestion(primary,slotIdx,questionIndex,lang,difficulty) {
+    const id = sourceReviewIds(primary)[questionIndex];
+    return id ? sourceQuestion(primary,slotIdx,questionIndex,lang,difficulty,id) : null;
+  }
   function sourceQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId) {
     const items=sourceItems(primary), available=sourceId?items.filter(([i])=>sourceId===`source:${i}`):items;
     if (!available.length) return null;
@@ -152,20 +163,22 @@ const ClinicalQuiz = (() => {
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en';
+    const sourceOnly=primary.quiz_mode==='source_excerpt';
     delete state.revealed_source_pmid;
     let current=state.current_question;
     const choice=String(selectedChoice||userAnswer).trim().toUpperCase().replace(/[.:)]+$/,'');
     let valid=current && ['A','B','C','D'].includes(current.correct_key) && current.options?.length===4 && current.explanation;
-    if (valid && primary.quiz_mode==='source_excerpt') {
+    if (valid && sourceOnly) {
       const {slot_idx,variant_idx,source_id,difficulty}=current.generation||{};
       const canonical=Number.isInteger(slot_idx)&&Number.isInteger(variant_idx)&&variant_idx>=0&&
-        typeof source_id==='string'&&source_id.startsWith('source:')&&build(primary,slot_idx,variant_idx,lang,difficulty,source_id);
+        variant_idx===(state.question_index||0)&&reviewQuestion(primary,slot_idx,variant_idx,lang,difficulty);
       valid=canonical&&['correct_key','source_quote','source_pmid'].every(k=>current[k]===canonical[k])&&
+        source_id===canonical.generation.source_id&&
         current.options.every((o,i)=>o?.key===canonical.options[i].key&&o?.text===canonical.options[i].text);
       if (valid) current=state.current_question=canonical;
     }
     if (['answer','just_tell_me'].includes(action) && !valid) return {reply:en?'Please restart the quiz; this saved question has no reliable answer rationale.':'Vui lòng bắt đầu lại bài trắc nghiệm; câu đã lưu chưa có giải thích đáp án đáng tin cậy.',state,eval:'partial'};
-    if (['answer','just_tell_me'].includes(action) && primary.quiz_mode==='source_excerpt') state.revealed_source_pmid=current.source_pmid;
+    if (['answer','just_tell_me'].includes(action) && sourceOnly) state.revealed_source_pmid=current.source_pmid;
     const correct=valid && choice===current.correct_key;
     if (action==='just_tell_me' || (action==='answer' && !correct)) {
       Object.assign(state,{correct_key:current.correct_key,explanation:current.explanation,current_options:current.options,last_question:current.question});
@@ -193,14 +206,20 @@ const ClinicalQuiz = (() => {
         state.phase='final_exam';
       }
     } else if (['harder','easier'].includes(action)) {state.difficulty=action==='harder'?'hard':'easy';state.question_index=(state.question_index||0)+1;}
-    const question=build(primary,state.focus_idx||0,state.question_index||0,lang,state.difficulty||'normal');
+    const next=sourceOnly?reviewQuestion:build;
+    const question=next(primary,state.focus_idx||0,state.question_index||0,lang,state.difficulty||'normal');
     if (!question) {
       Object.assign(state,{current_question:null,correct_key:'',explanation:'',current_options:[],last_question:''});
+      if (sourceOnly && action==='answer') {
+        Object.assign(state,{phase:'complete',question_revealed:false,last_eval:evaluation});
+        return {reply:feedback+(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:evaluation};
+      }
       return {reply:en?'No source-supported questions are available for this lesson.':'Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.',state,eval:'partial'};
     }
     Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,required_subskills:question.required_subskills,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
-  return {build,turn,translate,normalized,hasSourceItems:primary=>sourceItems(primary).length>0};
+  return {build,turn,translate,normalized,reviewQuestion,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
+    hasSourceItems:primary=>sourceItems(primary).length>0};
 })();
 if (typeof module !== 'undefined') module.exports=ClinicalQuiz;

@@ -48,6 +48,12 @@ const highlightedChoices = state => {
 assert.deepEqual(highlightedChoices(first.state), []);
 assert.deepEqual(highlightedChoices(revealed.state), []);
 assert.deepEqual(highlightedChoices(wrong.state), ["B"]);
+const complete = quiz.turn(lesson, wrong.state, "en", "answer", "", next.correct_key);
+assert.equal(complete.state.phase, "complete");
+assert.equal(complete.state.correct_count, 1);
+assert.match(complete.reply, /Review complete\./);
+assert.deepEqual(highlightedChoices(complete.state), []);
+assert.equal(nodes.socraticChoicesGrid.innerHTML, "");
 tutor.saveStore = () => {};
 tutor.replacePendingQuestion(wrong.state, q, "en");
 assert.deepEqual(highlightedChoices(wrong.state), []);
@@ -57,6 +63,17 @@ modified.current_question.options[0].text = "999";
 const rejected = quiz.turn(lesson, modified, "en", "answer", "", "A");
 assert.equal(rejected.state.revealed_source_pmid, undefined);
 assert.equal(rejected.eval, "partial");
+
+const sprint = lessons[0];
+assert.ok(sprint.quiz_items.length > 1);
+assert.equal(quiz.sourceQuestionCount(sprint), 1);
+const sprintFirst = quiz.turn(sprint, {subskills: Array.from({length: 4}, () => ({level: 0}))}, "vi", "start_diagnostic");
+const sprintComplete = quiz.turn(sprint, sprintFirst.state, "vi", "answer", "", sprintFirst.state.correct_key);
+assert.equal(sprintComplete.state.phase, "complete");
+assert.equal(sprintComplete.state.correct_count, 1);
+assert.equal(sprintComplete.state.subskills[1].checks, 1);
+assert.equal(sprintComplete.state.current_question, null);
+assert.equal(quiz.turn(sprint, sprintComplete.state, "vi", "answer", "", "A").state.correct_count, 1);
 
 const py = spawnSync("python3", ["-c",
   "import json,sys; from clinical_mcq import build_mcq; print(json.dumps([build_mcq(b, 1, i, l) for b in json.load(sys.stdin) for l in ['vi','en'] for i in range(len(b['quiz_items']))]))"],
