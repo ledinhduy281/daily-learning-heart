@@ -6,10 +6,11 @@ import json
 import re
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from clinical_mcq import validated_source_items
-from fetch_daily_ebm import get_pillar_for_date
-from focused_lessons import GATE_START_DATE, build_focused_lesson, focused_markdown, select_guideline
+from fetch_daily_ebm import get_pillar_by_id, get_pillar_for_date
+from focused_lessons import GATE_START_DATE, GUIDELINE_SOCIETIES, _citation_url, build_focused_lesson, focused_markdown, select_guideline
 from pipeline.lesson_generation import CURATED, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 
@@ -43,43 +44,79 @@ def _excerpt(excerpt, reference, role):
     )
 
 
-def _recorded_wording(expected, supplied, fields):
+def _recorded_wording(supplied, fields):
     for field in fields:
         value = supplied.get(field)
         _require(isinstance(value, str) and value.strip() and "\n" not in value and "\r" not in value,
                  f"Missing or invalid recorded wording: {field}")
-        expected[field] = value
 
 
-def validate_lesson(lesson, pillar, lesson_date, *, recorded=False):
-    canonical = build_focused_lesson(pillar, lesson_date)
-    _require(all(lesson.get(key) == canonical[key] for key in ("id", "date", "pillar_id", "lesson_format")),
+def _recorded_sources(lesson, evolution, evidence):
+    guideline = evolution.get("current_guideline") or {}
+    _require(set(evolution) == {"current_guideline", "recommendation_id", "recommendation_vi", "recommendation_en"}
+             and set(guideline) == {"name", "society", "year", "pmid", "doi"}
+             and guideline["society"] in GUIDELINE_SOCIETIES and not lesson.get("live_crawled_guidelines"),
+             "Block A must contain exactly one approved primary guideline and recommendation")
+    _recorded_wording(evolution, ("recommendation_id", "recommendation_vi", "recommendation_en"))
+    _recorded_wording(guideline, ("name", "year"))
+    _require_citation_identifier(guideline)
+    _require(evidence and evidence.get("guideline_pmid") == guideline["pmid"]
+             and evidence.get("recommendation_id") == evolution["recommendation_id"]
+             and not lesson.get("landmark_trials")
+             and not any(guideline[key] and evidence.get(key) == guideline[key] for key in ("pmid", "doi")),
+             "Block B evidence does not match the recorded recommendation")
+    _recorded_wording(evidence, ("name", "journal", "result", *(f"{field}_{lang}"
+                       for field in ("population", "supports", "limits") for lang in ("vi", "en"))))
+    citations = []
+    _require_citation_identifier(evidence)
+    for source in (guideline, evidence):
+        citations.append({"title": source["name"], "pmid": source["pmid"], "doi": source["doi"],
+                          "url": _citation_url(source["pmid"], source["doi"])})
+    anchors = lesson.get("pubmed_anchors")
+    _require(isinstance(anchors, list) and anchors[:2] == citations and len(anchors) in {2, 3},
+             "Missing, extra, or mismatched lesson citation")
+    if len(anchors) == 3:
+        safety = anchors[2]
+        _recorded_wording(safety, ("title", "url"))
+        url = urlsplit(safety["url"])
+        _require(set(safety) == {"title", "source", "url"} and safety["source"] == "DailyMed"
+                 and url.scheme == "https" and url.netloc == "dailymed.nlm.nih.gov" and url.path,
+                 "Missing, extra, or mismatched lesson citation")
+        return safety
+    return None
+
+
+def validate_lesson(lesson, pillar, lesson_date, *, recorded=False, fallback=False):
+    pid = pillar["id"]
+    _require(lesson.get("id") == f"ebm-{lesson_date}-p{pid}-focused"
+             and lesson.get("date") == lesson_date and lesson.get("pillar_id") == pid
+             and lesson.get("lesson_format") == "single_guideline",
              "Lesson does not match the scheduled pillar and date")
     evolution = dict(lesson.get("guideline_evolution") or {})
     recommendation = evolution.pop("licensed_recommendation", None)
-    if recorded:
-        _recorded_wording(canonical["guideline_evolution"], evolution, ("recommendation_vi", "recommendation_en"))
-    _require(evolution == canonical["guideline_evolution"] and not lesson.get("live_crawled_guidelines"),
-             "Block A must contain exactly one approved primary guideline and recommendation")
-    _require(lesson.get("pubmed_anchors") == canonical["pubmed_anchors"],
-             "Missing, extra, or mismatched lesson citation")
-    _require_citation_identifier(evolution["current_guideline"])
-    if recommendation is not None:
-        _excerpt(recommendation, evolution["current_guideline"], "recommendation")
-        approved = select_guideline(pillar["id"])
-        _require(recommendation["text"] == canonical["guideline_evolution"]["recommendation_en"]
-                 or hashlib.sha256(recommendation["text"].encode()).hexdigest() == approved.get("recommendation_excerpt_sha256"),
-                 "Licensed guideline passage does not match the approved recommendation")
-
     evidence = dict(lesson.get("supporting_evidence") or {})
     excerpts = evidence.pop("licensed_excerpts", {})
-    if recorded and evidence and canonical.get("supporting_evidence"):
-        fields = tuple(f"{field}_{lang}" for field in ("population", "supports", "limits") for lang in ("vi", "en"))
-        _recorded_wording(canonical["supporting_evidence"], evidence, (*fields, "result"))
-    _require(evidence and evidence == canonical.get("supporting_evidence")
-             and not lesson.get("landmark_trials"),
-             "Block B evidence does not match the approved recommendation, population, and limits")
-    _require_citation_identifier(evidence)
+    if recorded:
+        safety = _recorded_sources(lesson, evolution, evidence)
+        canonical = {}
+    else:
+        canonical = build_focused_lesson(pillar, lesson_date)
+        _require(evolution == canonical["guideline_evolution"] and not lesson.get("live_crawled_guidelines"),
+                 "Block A must contain exactly one approved primary guideline and recommendation")
+        _require(lesson.get("pubmed_anchors") == canonical["pubmed_anchors"],
+                 "Missing, extra, or mismatched lesson citation")
+        _require_citation_identifier(evolution["current_guideline"])
+        _require(evidence and evidence == canonical.get("supporting_evidence") and not lesson.get("landmark_trials"),
+                 "Block B evidence does not match the approved recommendation, population, and limits")
+        _require_citation_identifier(evidence)
+    if recommendation is not None:
+        _excerpt(recommendation, evolution["current_guideline"], "recommendation")
+        if not recorded:
+            approved = select_guideline(pid)
+            _require(recommendation["text"] == evolution["recommendation_en"]
+                     or hashlib.sha256(recommendation["text"].encode()).hexdigest() == approved.get("recommendation_excerpt_sha256"),
+                     "Licensed guideline passage does not match the approved recommendation")
+
     roles = {"population": "methods", "result": "results", "limits": "limitations",
              "methods_and_results": "methods_and_results"}
     _require(isinstance(excerpts, dict) and excerpts.keys() <= roles.keys(),
@@ -88,12 +125,16 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False):
         _excerpt(excerpt, evidence, roles[key])
 
     provenance = lesson.get("lesson_provenance") or {}
-    _require(provenance.get("block_a") == {
-        "summary_vi": CURATED, "summary_en": CURATED, "recommendation_excerpt": LICENSED if recommendation else None,
-    } and provenance.get("block_b") == {
-        "population_vi": CURATED, "population_en": CURATED, "supports": CURATED,
-        "limits": CURATED, "result": CURATED, "excerpts": {key: LICENSED for key in excerpts},
-    }, "Block A or Block B provenance does not match its content")
+    if fallback:
+        _require(lesson.get("curated_edition_date") == lesson_date and not provenance
+                 and recommendation is None and not excerpts, "Fallback must be a curated lesson template")
+    else:
+        _require(provenance.get("block_a") == {
+            "summary_vi": CURATED, "summary_en": CURATED, "recommendation_excerpt": LICENSED if recommendation else None,
+        } and provenance.get("block_b") == {
+            "population_vi": CURATED, "population_en": CURATED, "supports": CURATED,
+            "limits": CURATED, "result": CURATED, "excerpts": {key: LICENSED for key in excerpts},
+        }, "Block A or Block B provenance does not match its content")
     _require(lesson.get("content_source") == ("licensed_source_rotation" if recommendation or excerpts
              else "curated_library_rotation") and lesson.get("model_used") == "none",
              "Lesson source label does not match its content")
@@ -101,7 +142,7 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False):
     items = lesson.get("quiz_items")
     _require(isinstance(items, list) and bool(items) and len(validated_source_items(lesson)) == len(items),
              "Every quiz key must occur at its marked offset in its cited excerpt")
-    quiz = provenance.get("quiz") or {}
+    quiz = {"mode": CURATED, "excerpt_roles": []} if fallback else provenance.get("quiz") or {}
     if quiz.get("mode") == LICENSED:
         authorized = {**excerpts, **({"recommendation": recommendation} if recommendation else {})}
         _require(all(any(item["pmid"] == source["pmid"] and item["quote"] in source["text"]
@@ -112,14 +153,18 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False):
         _require(used == set(quiz.get("excerpt_roles", ())), "Licensed quiz provenance does not match its excerpts")
     else:
         _require(quiz == {"mode": CURATED, "excerpt_roles": []}
-                 and items == canonical.get("quiz_items")
-                 and lesson.get("quiz_source_texts") == canonical.get("quiz_source_texts"),
+                 and (recorded or (items == canonical.get("quiz_items")
+                                   and lesson.get("quiz_source_texts") == canonical.get("quiz_source_texts"))),
                  "Curated quiz does not match the approved lesson")
 
     for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
         if recorded:
-            canonical[field] = focused_markdown(canonical, lang, select_guideline(pillar["id"]).get("safety_source"))
-        _append_markdown(canonical, lang, recommendation, excerpts)
+            _recorded_wording(lesson, (f"disclaimer_{lang}",))
+            canonical[f"disclaimer_{lang}"] = lesson[f"disclaimer_{lang}"]
+            canonical[field] = focused_markdown({"guideline_evolution": evolution, "supporting_evidence": evidence,
+                                                f"disclaimer_{lang}": lesson[f"disclaimer_{lang}"]}, lang, safety)
+        if not fallback:
+            _append_markdown(canonical, lang, recommendation, excerpts)
         _require(lesson.get(field) == canonical[field], f"{lang} Markdown does not match the cited lesson")
 
 
@@ -162,6 +207,17 @@ def validate_bundle(bundle, expected_date=None, *, rotation_state=None):
                             lesson["date"], recorded=expected_date is None)
         except ValueError as exc:
             raise ValueError(f"{lesson_id}: {exc}") from exc
+    if expected_date is None:
+        templates = bundle.get("focused_lessons", {})
+        _require(isinstance(templates, dict), "Invalid fallback lesson collection")
+        for key, template in templates.items():
+            try:
+                pillar = get_pillar_by_id(int(key))
+                _require(key == str(pillar["id"]), "Invalid fallback pillar")
+                validate_lesson(template, pillar, date.fromisoformat(template["date"]).isoformat(),
+                                recorded=True, fallback=True)
+            except (ValueError, KeyError, TypeError, AttributeError) as exc:
+                raise ValueError(f"Fallback pillar {key}: {exc}") from exc
     return governed[0]["id"] if expected_date else len(governed)
 
 

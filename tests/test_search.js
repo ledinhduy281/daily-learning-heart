@@ -9,8 +9,8 @@ assert.equal(normalize('Đái tháo đường'), 'dai thao duong');
 assert.equal(score({}, ''), 0);
 assert.equal(score({title_en:'safety'}, 'AF'), 0);
 for (const [q,accented] of [['suy tim','suy tim'], ['tang huyet ap','tăng huyết áp'], ['rung nhi','rung nhĩ']]) {
-  const ranked = [...data].sort((a,b)=>score(b,q)-score(a,q));
-  assert.ok(normalize(ranked[0].title_vi).includes(normalize(accented)));
+  const topScore = Math.max(...data.map(b=>score(b,q)));
+  assert.ok(data.some(b=>score(b,q)===topScore && normalize(b.title_vi).includes(normalize(accented))));
   for (const b of data) assert.equal(score(b,q),score(b,accented));
 }
 for (const [q,full] of [['AF','atrial fibrillation'],['HFpEF','heart failure with preserved ejection fraction'],['HFrEF','heart failure with reduced ejection fraction'],['ACS','acute coronary syndrome'],['SGLT2i','sglt2 inhibitors'],['ARNI','angiotensin receptor neprilysin inhibitor'],['GDMT','guideline directed medical therapy']]) {

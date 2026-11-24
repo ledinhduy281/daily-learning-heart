@@ -44,7 +44,7 @@ class LessonGateTests(unittest.TestCase):
             ("exactly one", lambda b: b["guideline_evolution"].update(prior_guideline={"pmid": "5"})),
             ("exactly one", lambda b: b["guideline_evolution"]["current_guideline"].update(refs=[{"pmid": "5"}])),
             ("does not match", lambda b: b["supporting_evidence"].update(recommendation_id="other-topic")),
-            ("does not match", lambda b: b["supporting_evidence"].update(pmid="12345")),
+            ("mismatched lesson citation", lambda b: b["supporting_evidence"].update(pmid="12345")),
             ("citation", lambda b: b["pubmed_anchors"].pop()),
             ("quiz key", lambda b: b["quiz_items"][0].update(answer="0.94")),
             ("Markdown", lambda b: b.update(part2_en_markdown=b["part2_en_markdown"] + "\nAnother guideline.")),
@@ -55,6 +55,19 @@ class LessonGateTests(unittest.TestCase):
                 mutate(bundle["briefings"][0])
                 with self.assertRaisesRegex(ValueError, message):
                     validate_bundle(bundle)
+
+    def test_pages_uses_recorded_sources_but_refresh_matches_the_catalog(self):
+        society, year, pmid, doi, name = GUIDELINE["guideline"]
+        for lesson in (self.curated, self.licensed):
+            bundle = self.bundle(lesson)
+            archived = copy.deepcopy(bundle)
+            with self.subTest(source=lesson["content_source"]), patch.dict(
+                GUIDELINE, guideline=(society, year, pmid, doi, name + " (corrected)"), recommendation=("Mới", "New")
+            ), patch.dict(TRIAL, name="Corrected trial title", pmid="12345"):
+                self.assertEqual(validate_bundle(bundle), 1)
+                self.assertEqual(bundle, archived)
+                with self.assertRaisesRegex(ValueError, "approved primary guideline"):
+                    validate_bundle(bundle, DATE)
 
     def test_rejects_a_self_consistent_quiz_with_an_unlicensed_quote(self):
         bundle = self.bundle(self.licensed)

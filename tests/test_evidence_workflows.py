@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fetch_daily_ebm import get_pillar_for_date, refresh_today_briefing
-from focused_lessons import GATE_START_DATE
+from focused_lessons import GATE_START_DATE, build_focused_lesson
 from pipeline import lesson_generation
 from pipeline.validate_lesson import _read_bundle
 
@@ -137,17 +137,21 @@ class EvidenceWorkflowTests(unittest.TestCase):
         bad = copy.deepcopy(first)
         bad["quiz_items"][0]["answer"] = "0.94"
 
-        def write(latest, *rows):
+        template = build_focused_lesson(get_pillar_for_date(dates[0]), dates[0].isoformat())
+        template["curated_edition_date"] = template["date"]
+        key = str(template["pillar_id"])
+
+        def write(latest, *rows, fallback=template):
             state = {"last_updated": latest["date"]}
             rotation.write_text(json.dumps(state))
             path.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps(
-                {"rotation_state": state, "briefings": [latest, *rows]}) + ";")
+                {"rotation_state": state, "briefings": [latest, *rows], "focused_lessons": {key: fallback}}) + ";")
 
-        def assert_blocked():
+        def assert_blocked(message=f"{first['id']}: Every quiz key"):
             originals = path.read_bytes(), rotation.read_bytes()
             result = self.bash(gate)
             self.assertNotEqual(result.returncode, 0, result.stdout)
-            self.assertIn(f"{first['id']}: Every quiz key", result.stderr)
+            self.assertIn(message, result.stderr)
             self.assertFalse((self.root / "site" / "data" / "briefings.js").exists())
             self.assertEqual((path.read_bytes(), rotation.read_bytes()), originals)
 
@@ -172,6 +176,11 @@ class EvidenceWorkflowTests(unittest.TestCase):
         assert_blocked()
         write(second, bad, legacy)
         assert_blocked()
+
+        bad_template = copy.deepcopy(template)
+        bad_template["quiz_items"][0]["answer"] = "0.94"
+        write(second, first, legacy, fallback=bad_template)
+        assert_blocked(f"Fallback pillar {key}: Every quiz key")
 
         write(second, first, legacy)
         catalog = self.root / "focused_lessons.py"

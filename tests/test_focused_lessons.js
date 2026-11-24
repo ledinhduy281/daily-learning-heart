@@ -48,7 +48,7 @@ assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
 App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
 assert.equal(context.getTodaySingleBriefing(), fallback);
 App.todayDate = "2026-11-14";
-App.briefings = bundle.briefings;
+App.briefings = bundle.briefings.filter(b => b.id !== fallback.id);
 assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
 Dom.trialsGridDeck = {};
 vm.runInContext(html.slice(html.indexOf("    function renderTrialsMatrix("),
