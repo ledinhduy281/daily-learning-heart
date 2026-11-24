@@ -178,6 +178,7 @@ def build_focused_lesson(pillar, date_str, *, source_quiz=True):
             if lang == "vi" else
             ("Focused guideline recommendation", "For education only. Consult the original source before applying.")
         )
+        briefing[f"disclaimer_{lang}"] = disclaimer
         body = f"## Block A — {block}\n\n**[{name}](https://doi.org/{doi})**\n\n{recommendation}"
         if evidence:
             heading = "Nghiên cứu bổ trợ" if lang == "vi" else "Supporting evidence"

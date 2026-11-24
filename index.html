@@ -6706,7 +6706,10 @@
       renderTrialsMatrix(b, isVi);
       renderPearls(b, isVi);
 
-      if (window.marked) {
+      if (focused && b[isVi ? "disclaimer_vi" : "disclaimer_en"]) {
+        const disclaimer = b[isVi ? "disclaimer_vi" : "disclaimer_en"];
+        Dom.articleRenderedBody.innerHTML = `<p><em>${escapeHtml(disclaimer)}</em></p>`;
+      } else if (window.marked) {
         Dom.articleRenderedBody.innerHTML = marked.parse(markdownClean);
         if (window.renderMathInElement) {
           renderMathInElement(Dom.articleRenderedBody, {

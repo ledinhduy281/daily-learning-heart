@@ -27,6 +27,9 @@ for (const isVi of [true, false]) {
   context.renderEvolutionPipeline(fallback, isVi);
   assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
   assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
+  const disclaimer = fallback[isVi ? "disclaimer_vi" : "disclaimer_en"];
+  assert.match(disclaimer, isVi ? /^Chỉ dùng cho mục đích học tập/ : /^For education only/);
+  assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
 }
 App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
 assert.equal(context.getTodaySingleBriefing(), fallback);
