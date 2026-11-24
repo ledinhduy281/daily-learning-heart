@@ -46,7 +46,18 @@ Do not use the bare `python3 fetch_daily_ebm.py` command for the free refresh pa
 
 ## Daily evidence pipeline
 
-The [daily evidence workflow](.github/workflows/evidence_pipeline.yml) tries at 00:13, 00:47, 01:26 and 02:08 UTC. GitHub can delay or miss cron runs, so completion of the curated daily pillar refresh above also triggers an attempt. Once both files for the current UTC date are on `main`, automatic runs skip the build and publication; an on-demand run can rebuild that date. The pipeline uses public APIs, standard GitHub-hosted runners, and Pages for this public repo: no cloud account, credit card, API key, or AI service is needed.
+The [daily evidence workflow](.github/workflows/evidence_pipeline.yml) has GitHub fallback slots at 00:13, 00:47, 01:26 and 02:08 UTC and can also start after the curated pillar refresh. GitHub can delay or miss its scheduled events, so the owner can enable the independent, free Apps Script watchdog below. Runs skip ingestion once both files for today's UTC date are on `main`. To rebuild explicitly, choose **Actions → Daily Cardiology Evidence Pipeline → Run workflow** on `main` and enable **force**. Ingestion uses public APIs without API keys or paid services.
+
+### Enable the free watchdog (repository owner)
+
+After merging the workflow changes:
+
+1. In GitHub, go to **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Set the resource owner to `ledinhduy281`, choose **Only select repositories → daily-learning-heart**, and grant **Actions: Read and write** only (GitHub includes read-only Metadata automatically). Set an expiration and renew the token before it expires.
+2. In the existing Apps Script project, add a script file named **Evidence** and paste [`backend/apps_script/Evidence.gs`](backend/apps_script/Evidence.gs) into it. In **Project Settings → Script Properties**, set **GITHUB_DISPATCH_TOKEN** to the token. Do not paste it into code, GitHub, or chat.
+3. Save the script. In the editor select **installEvidenceTrigger**, click **Run** once, and authorize it. Confirm an hourly time-driven trigger for **dispatchStaleHeartSnapshots_** under **Triggers**. This does not require replacing the existing web app deployment or changing its URL.
+4. Check **Executions** in Apps Script and the repository **Actions** tab after the next run between 00:00 and 06:00 UTC. A healthy day may have no watchdog dispatch because both snapshots are current. If the log reports HTTP 401 or 403, check the token's expiration and repository permissions.
+
+The trigger checks the public Pages evidence date in UTC and the pillar rotation date on `main` in Vietnam time. It checks once an hour from 00:00 through 05:59 UTC and requests only missing or stale workflows. At most 24 URL Fetch calls per day are made by this trigger, within the free Apps Script quota. A watchdog dispatch that finds evidence already on `main` can repair a stale Pages deployment without re-ingesting the data.
 
 | Layer | What it does |
 | --- | --- |
@@ -68,7 +79,7 @@ mkdir -p data/pipeline
 cp ../heart-evidence/publish/briefing.json ../heart-evidence/publish/evidence.parquet data/pipeline/
 ```
 
-The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after changes to `main`, a successful curated refresh, or a successful evidence publish job. Already-current evidence attempts that skip the publish job do not redeploy the site. Use **Settings → Pages → Build and deployment → Source → GitHub Actions**. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger push workflows. Raw/bronze snapshots and backend files are not part of the deployed site.
+The [site workflow](.github/workflows/pages.yml) deploys the allowed static assets after changes to `main`, a successful curated refresh, a successful evidence publish job, or a recovery dispatch when Pages is stale. Already-current scheduled evidence runs that skip the publish job do not redeploy the site. Use **Settings → Pages → Build and deployment → Source → GitHub Actions**. The deployment handoff via `workflow_run` is needed because bot commits made with `GITHUB_TOKEN` do not trigger push workflows. Raw/bronze snapshots and backend files are not part of the deployed site.
 
 ## Repository guide
 

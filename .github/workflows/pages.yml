@@ -30,19 +30,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           UPSTREAM_RUN: ${{ github.event.workflow_run.id }}
           UPSTREAM_NAME: ${{ github.event.workflow_run.name }}
+          UPSTREAM_EVENT: ${{ github.event.workflow_run.event }}
         run: |
+          set -o pipefail
           publish=true
           if [[ "$UPSTREAM_NAME" == "Daily Cardiology Evidence Pipeline" ]]; then
             publish=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$UPSTREAM_RUN/jobs" \
               --jq 'any(.jobs[]; .name == "publish" and .conclusion == "success")')
+            if [[ "$publish" == false && "$UPSTREAM_EVENT" == workflow_dispatch ]]; then
+              today=$(date -u +%F)
+              url="https://ledinhduy281.github.io/daily-learning-heart/data/pipeline/briefing.json?watchdog=$(date +%s)"
+              if ! curl -fsS --max-time 15 "$url" | jq -e --arg date "$today" '.date == $date' >/dev/null; then
+                publish=true
+              fi
+            fi
           fi
           echo "publish=$publish" >> "$GITHUB_OUTPUT"
 
-  deploy:
+  publish-site:
     needs: check-publication
     if: needs.check-publication.outputs.publish == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     concurrency:
       group: deploy-pages
       cancel-in-progress: false
@@ -50,27 +57,4 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          persist-credentials: false
-      - name: Stage public site assets only
-        run: |
-          mkdir -p site/data
-          cp index.html icon.svg manifest.json clinical_distractors.js clinical_mcq.js \
-            device_profile.js sync_config.js cloud_sync.js search_ranking.js evidence_feed.js offline.js site/
-          cp data/briefings.js site/data/
-          if [[ -f data/pipeline/briefing.json && -f data/pipeline/evidence.parquet ]]; then
-            mkdir site/data/pipeline
-            cp data/pipeline/briefing.json data/pipeline/evidence.parquet site/data/pipeline/
-          fi
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+    uses: ./.github/workflows/pages_publish.yml
