@@ -115,14 +115,23 @@ def _passages(article):
         if len(positions) != 1:
             continue
         col = positions[0]
-        rows = table.findall("./table/tbody/tr")
-        if any(cell.get("rowspan", "1") != "1" for row in rows for cell in row):
-            continue
-        for j, row in enumerate(rows, 1):
-            cells = list(row)
-            if (len(cells) == len(columns) and all(c.tag in ("td", "th") and c.get("colspan", "1") == "1" for c in cells)
-                    and (value := _quote_text(cells[col]))):
-                yield Passage(f"body/table[{i}]/row[{j}]/col[{col + 1}]", "recommendation", value)
+        row_offset = 0
+        for group in table.findall("./table/tbody"):
+            rows = group.findall("tr")
+            blocked_until = 0
+            for j, row in enumerate(rows, 1):
+                cells = list(row)
+                for cell in cells:
+                    span = cell.get("rowspan", "1")
+                    if not re.fullmatch(r"[1-9][0-9]{0,4}", span):
+                        blocked_until = len(rows)
+                    elif int(span) > 1:
+                        blocked_until = max(blocked_until, j + int(span) - 1)
+                if (j > blocked_until and len(cells) == len(columns)
+                        and all(c.tag in ("td", "th") and c.get("colspan", "1") == "1" for c in cells)
+                        and (value := _quote_text(cells[col]))):
+                    yield Passage(f"body/table[{i}]/row[{row_offset + j}]/col[{col + 1}]", "recommendation", value)
+            row_offset += len(rows)
     for i, abstract in enumerate(article.findall("./front/article-meta/abstract"), 1):
         if abstract.get("abstract-type") not in (None, "abstract") or abstract.get(LANG, "en") != "en":
             continue
