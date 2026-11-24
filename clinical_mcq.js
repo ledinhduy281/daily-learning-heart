@@ -46,7 +46,27 @@ const ClinicalQuiz = (() => {
   }
   function reviewQuestion(primary,slotIdx,questionIndex,lang,difficulty) {
     const id = sourceReviewIds(primary)[questionIndex];
-    return id ? sourceQuestion(primary,slotIdx,questionIndex,lang,difficulty,id) : null;
+    if (!id) return null;
+    const q = sourceQuestion(primary,slotIdx,questionIndex,lang,difficulty,id);
+    q.generation.review_order = true;
+    return q;
+  }
+  function matchesSourceQuestion(current, canonical) {
+    return canonical && ['correct_key','source_quote','source_pmid'].every(k=>current[k]===canonical[k]) &&
+      current.generation.source_id===canonical.generation.source_id && current.options?.length===4 &&
+      current.options.every((o,i)=>o?.key===canonical.options[i].key&&o?.text===canonical.options[i].text);
+  }
+  function migrateSourceReview(primary, state, lang) {
+    const current=state.current_question, ref=current?.generation, i=state.question_index||0;
+    if (primary?.quiz_mode!=='source_excerpt' || !ref || ref.review_order || !Number.isInteger(i) || i<0 ||
+        ref.variant_idx!==i || !Number.isInteger(ref.slot_idx)) return null;
+    const expected=reviewQuestion(primary,ref.slot_idx,i,lang,ref.difficulty);
+    if (matchesSourceQuestion(current,expected)) return {index:i,question:expected,keep:true};
+    const old=sourceQuestion(primary,ref.slot_idx,i,lang,ref.difficulty);
+    if (!matchesSourceQuestion(current,old)) return null;
+    const distinct=new Set(sourceItems(primary).slice(0,i+Number(state.question_revealed===true)).map(([,item])=>item.quote));
+    const index=distinct.size;
+    return {index,question:reviewQuestion(primary,ref.slot_idx,index,lang,ref.difficulty),keep:false};
   }
   function sourceQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId) {
     const items=sourceItems(primary), available=sourceId?items.filter(([i])=>sourceId===`source:${i}`):items;
@@ -158,23 +178,34 @@ const ClinicalQuiz = (() => {
   function translate(primary,current,lang) {
     const ref=current?.generation;
     if (!ref||!current.option_ids) return null;
-    const translated=build(primary,ref.slot_idx,ref.variant_idx,lang,ref.difficulty,ref.source_id);
+    const translated=ref.review_order ? reviewQuestion(primary,ref.slot_idx,ref.variant_idx,lang,ref.difficulty)
+      : build(primary,ref.slot_idx,ref.variant_idx,lang,ref.difficulty,ref.source_id);
     return translated && Object.keys(current.option_ids).every(k=>translated.option_ids[k]===current.option_ids[k])?translated:null;
   }
   function turn(primary,input,lang,action,userAnswer='',selectedChoice='') {
     const state=JSON.parse(JSON.stringify(input)),en=lang==='en';
     const sourceOnly=primary.quiz_mode==='source_excerpt';
     delete state.revealed_source_pmid;
+    const migration=migrateSourceReview(primary,state,lang);
+    if (migration && action!=='start_diagnostic') {
+      const {index,question,keep}=migration;
+      state.question_index=index;
+      state.current_question=question;
+      if (!keep) {
+        Object.assign(state,{current_options:question?.options||[],correct_key:question?.correct_key||'',
+          explanation:question?.explanation||'',last_question:question?.question||'',options_lang:lang,
+          question_revealed:false,attempts_on_current:0,phase:question?'diagnostic':'complete'});
+        return {reply:question?.question||(en?'Review complete.':'Hoàn tất ôn tập.'),state,eval:'partial'};
+      }
+    }
     let current=state.current_question;
     const choice=String(selectedChoice||userAnswer).trim().toUpperCase().replace(/[.:)]+$/,'');
     let valid=current && ['A','B','C','D'].includes(current.correct_key) && current.options?.length===4 && current.explanation;
     if (valid && sourceOnly) {
-      const {slot_idx,variant_idx,source_id,difficulty}=current.generation||{};
+      const {slot_idx,variant_idx,difficulty}=current.generation||{};
       const canonical=Number.isInteger(slot_idx)&&Number.isInteger(variant_idx)&&variant_idx>=0&&
         variant_idx===(state.question_index||0)&&reviewQuestion(primary,slot_idx,variant_idx,lang,difficulty);
-      valid=canonical&&['correct_key','source_quote','source_pmid'].every(k=>current[k]===canonical[k])&&
-        source_id===canonical.generation.source_id&&
-        current.options.every((o,i)=>o?.key===canonical.options[i].key&&o?.text===canonical.options[i].text);
+      valid=matchesSourceQuestion(current,canonical);
       if (valid) current=state.current_question=canonical;
     }
     if (['answer','just_tell_me'].includes(action) && !valid) return {reply:en?'Please restart the quiz; this saved question has no reliable answer rationale.':'Vui lòng bắt đầu lại bài trắc nghiệm; câu đã lưu chưa có giải thích đáp án đáng tin cậy.',state,eval:'partial'};
@@ -219,7 +250,7 @@ const ClinicalQuiz = (() => {
     Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,required_subskills:question.required_subskills,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
-  return {build,turn,translate,normalized,reviewQuestion,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
+  return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
     hasSourceItems:primary=>sourceItems(primary).length>0};
 })();
 if (typeof module !== 'undefined') module.exports=ClinicalQuiz;

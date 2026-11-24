@@ -1,7 +1,7 @@
 """Deterministic question lifecycle shared by API tutoring helpers."""
 import copy
 
-from clinical_mcq import build_mcq, build_source_review_question
+from clinical_mcq import build_mcq, build_source_review_question, matches_source_question, migrate_source_review
 
 
 def turn(primary, state, lang, action, user_answer='', selected_choice=''):
@@ -9,19 +9,29 @@ def turn(primary, state, lang, action, user_answer='', selected_choice=''):
     source_only = primary.get('quiz_mode') == 'source_excerpt'
     state = copy.deepcopy(state)
     state.pop('revealed_source_pmid', None)
+    if source_only and action != 'start_diagnostic':
+        migration = migrate_source_review(primary, state, lang)
+        if migration:
+            index, question, keep = migration
+            state.update(question_index=index, current_question=question)
+            if not keep:
+                pending = question or {}
+                state.update(current_options=pending.get('options', []), correct_key=pending.get('correct_key', ''),
+                             explanation=pending.get('explanation', ''), last_question=pending.get('question', ''),
+                             options_lang=lang, question_revealed=False, attempts_on_current=0,
+                             phase='diagnostic' if question else 'complete')
+                return pending.get('question') or ('Review complete.' if en else 'Hoàn tất ôn tập.'), state, 'partial'
     choice = (selected_choice or user_answer).strip().upper().rstrip('.:)')
     current = state.get('current_question')
     valid = (isinstance(current, dict) and current.get('correct_key') in ('A', 'B', 'C', 'D')
              and len(current.get('options', [])) == 4 and bool(current.get('explanation')))
     if valid and source_only:
         ref = current.get('generation') or {}
-        source = ref.get('source_id')
         slot, variant = ref.get('slot_idx'), ref.get('variant_idx')
         valid = type(slot) is int and type(variant) is int and variant == state.get('question_index', 0)
         if valid:
             canonical = build_source_review_question(primary, slot, variant, lang, ref.get('difficulty', 'normal'))
-            valid = bool(canonical and source == canonical['generation']['source_id']
-                         and all(current.get(k) == canonical[k] for k in ('options', 'correct_key', 'source_quote', 'source_pmid')))
+            valid = matches_source_question(current, canonical)
             if valid:
                 current = canonical
                 state['current_question'] = canonical

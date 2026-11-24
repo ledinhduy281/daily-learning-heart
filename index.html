@@ -9142,6 +9142,19 @@
           if (!Array.isArray(s.current_options)) s.current_options = [];
           if (!s.correct_key) s.correct_key = "";
           if (!s.options_lang) s.options_lang = App.currentLang || "vi";
+          const migration = briefing?.quiz_mode === "source_excerpt" && s.started && !this.isFinished(s)
+            && ClinicalQuiz.migrateSourceReview(briefing, s, s.options_lang);
+          if (migration) {
+            s.question_index = migration.index;
+            if (migration.keep) {
+              s.current_question = migration.question;
+              this.saveStore();
+            } else {
+              s.attempts_on_current = 0;
+              if (migration.question) s.phase = "diagnostic";
+              this.replacePendingQuestion(s, migration.question, s.options_lang);
+            }
+          }
           const hasPendingQuestion = typeof s.last_question === "string" && s.last_question.trim();
           const hasValidChoices = this.normalizeMcqOptions(s.current_options).some(o => o.key === s.correct_key);
           const variantIdx = briefing?.quiz_mode === "source_excerpt" ? s.question_index || 0 : (s.diag_step || 0) + (s.attempts_on_current || 0);
@@ -9161,7 +9174,9 @@
             }
             if (!matchesPending(s.current_question) || !hasExplanation(s.current_question)) {
               const ref = s.current_question?.generation;
-              const restored = ref && briefing ? ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id) : null;
+              const restored = ref && briefing ? (ref.review_order
+                ? ClinicalQuiz.reviewQuestion(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty)
+                : ClinicalQuiz.build(briefing, ref.slot_idx, ref.variant_idx, s.options_lang, ref.difficulty, ref.source_id)) : null;
               if (matchesPending(restored) && hasExplanation(restored)) s.current_question = restored;
               else {
                 const lang = App.currentLang || "vi";

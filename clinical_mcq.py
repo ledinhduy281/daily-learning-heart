@@ -74,8 +74,34 @@ def build_source_review_question(primary, slot_idx, question_index, lang, diffic
     for i, item in validated_source_items(primary):
         sources.setdefault(item['quote'], f'source:{i}')
     if 0 <= question_index < len(sources):
-        return _source_mcq(primary, slot_idx, question_index, lang, difficulty, list(sources.values())[question_index])
+        question = _source_mcq(primary, slot_idx, question_index, lang, difficulty, list(sources.values())[question_index])
+        question['generation']['review_order'] = True
+        return question
     return None
+
+
+def matches_source_question(current, canonical):
+    return bool(canonical and current['generation'].get('source_id') == canonical['generation']['source_id']
+                and all(current.get(k) == canonical[k] for k in ('options', 'correct_key', 'source_quote', 'source_pmid')))
+
+
+def migrate_source_review(primary, state, lang):
+    current = state.get('current_question')
+    ref = current.get('generation') if isinstance(current, dict) else None
+    index = state.get('question_index', 0)
+    if (not isinstance(ref, dict) or ref.get('review_order') or type(index) is not int or index < 0
+            or ref.get('variant_idx') != index or type(ref.get('slot_idx')) is not int):
+        return None
+    slot, difficulty = ref['slot_idx'], ref.get('difficulty', 'normal')
+    expected = build_source_review_question(primary, slot, index, lang, difficulty)
+    if matches_source_question(current, expected):
+        return index, expected, True
+    old = _source_mcq(primary, slot, index, lang, difficulty, None)
+    if not matches_source_question(current, old):
+        return None
+    passed = validated_source_items(primary)[:index + int(state.get('question_revealed') is True)]
+    index = len({item['quote'] for _, item in passed})
+    return index, build_source_review_question(primary, slot, index, lang, difficulty), False
 
 
 def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):

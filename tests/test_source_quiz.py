@@ -96,3 +96,17 @@ class SourceQuizTests(unittest.TestCase):
         self.assertEqual(result, "partial")
         self.assertEqual(complete["phase"], "complete")
         self.assertEqual(complete["correct_count"], 0)
+
+    def test_resumes_legacy_duplicate_passage_without_consuming_old_choice(self):
+        first, second = self.lesson["quiz_items"]
+        lesson = {**self.lesson, "quiz_items": [first, first, second]}
+        old = build_mcq(lesson, 1, 1, "en")
+        saved = {"question_index": 1, "current_question": old, "correct_count": 1}
+        reply, resumed, result = turn(lesson, saved, "en", "answer", selected_choice=old["correct_key"])
+        self.assertEqual(result, "partial")
+        self.assertEqual(resumed["correct_count"], 1)
+        self.assertEqual(resumed["current_question"]["source_quote"], second["quote"])
+        self.assertEqual(reply, resumed["last_question"])
+        _, final, _ = turn(lesson, resumed, "en", "answer", selected_choice=resumed["correct_key"])
+        self.assertEqual(final["correct_count"], 2)
+        self.assertEqual(final["phase"], "complete")

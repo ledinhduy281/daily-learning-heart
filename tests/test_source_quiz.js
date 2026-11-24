@@ -40,6 +40,7 @@ const tutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   document: {getElementById: id => nodes[id]},
 });
 tutor.renderProgressDashboard = () => {};
+const getSavedSession = tutor.getSession;
 const highlightedChoices = state => {
   tutor.getSession = () => ({...state, started: true});
   tutor.renderUI();
@@ -74,6 +75,24 @@ assert.equal(sprintComplete.state.correct_count, 1);
 assert.equal(sprintComplete.state.subskills[1].checks, 1);
 assert.equal(sprintComplete.state.current_question, null);
 assert.equal(quiz.turn(sprint, sprintComplete.state, "vi", "answer", "", "A").state.correct_count, 1);
+
+const shifted = {...lesson, quiz_items: [item, item, lesson.quiz_items[1]]};
+const oldQuestion = quiz.build(shifted, 1, 1, "en");
+const preUpdate = {...first.state, started: true, correct_count: 1, question_index: 1, current_question: oldQuestion,
+  current_options: oldQuestion.options, last_question: oldQuestion.question, correct_key: oldQuestion.correct_key,
+  explanation: oldQuestion.explanation, messages: [{role: "assistant", text: oldQuestion.explanation}]};
+const recovered = quiz.turn(shifted, preUpdate, "en", "answer", "", oldQuestion.correct_key);
+assert.equal(recovered.eval, "partial");
+assert.equal(recovered.state.correct_count, 1);
+assert.equal(recovered.state.current_question.source_quote, next.source_quote);
+tutor.getSubskillDefs = () => [{id: "trials", label: "Trials"}];
+tutor.newQuizId = () => "test-id";
+tutor.store = {[shifted.id]: preUpdate};
+const resumed = getSavedSession.call(tutor, 9, shifted);
+assert.equal(resumed.correct_count, 1);
+assert.equal(resumed.current_question.source_quote, next.source_quote);
+assert.equal(resumed.messages.length, 2);
+assert.equal(quiz.turn(shifted, resumed, "en", "just_tell_me").state.question_revealed, true);
 
 const py = spawnSync("python3", ["-c",
   "import json,sys; from clinical_mcq import build_mcq; print(json.dumps([build_mcq(b, 1, i, l) for b in json.load(sys.stdin) for l in ['vi','en'] for i in range(len(b['quiz_items']))]))"],
