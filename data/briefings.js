@@ -179,7 +179,7 @@ window.EBM_BRIEFINGS_DATA = {
       "guideline_evolution": {
         "current_guideline": {
           "name": "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias",
-          "society": "ESC",
+          "society": "ESC/EAS",
           "year": "2025",
           "pmid": "40878289",
           "doi": "10.1093/eurheartj/ehaf190"
@@ -620,7 +620,7 @@ window.EBM_BRIEFINGS_DATA = {
       "guideline_evolution": {
         "current_guideline": {
           "name": "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension",
-          "society": "ESC",
+          "society": "ESC/ERS",
           "year": "2022",
           "pmid": "36017548",
           "doi": "10.1093/eurheartj/ehac237"

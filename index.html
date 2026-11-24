@@ -4441,7 +4441,7 @@
       <div class="summary-card-feature">
         <div class="summary-title-line">
           <span id="guidelinePipelineTitle">Diễn Tiến Khuyến Cáo Thực Hành Qua Các Thế Hệ</span>
-          <span style="color: var(--color-ink-mute); font-family: var(--font-mono); font-size: 11px;">ESC / ACC</span>
+          <span id="guidelinePipelineSociety" style="color: var(--color-ink-mute); font-family: var(--font-mono); font-size: 11px;"></span>
         </div>
 
         <div class="guideline-comparison-banner" id="guidelineComparisonBanner">
@@ -5133,6 +5133,7 @@
       btnNavLangEn: document.getElementById("btnNavLangEn"),
 
       guidelineComparisonBanner: document.getElementById("guidelineComparisonBanner"),
+      guidelinePipelineSociety: document.getElementById("guidelinePipelineSociety"),
       evolutionPipelineRow: document.getElementById("evolutionPipelineRow"),
       trialsGridDeck: document.getElementById("trialsGridDeck"),
       pearlsStackDeck: document.getElementById("pearlsStackDeck"),
@@ -6771,6 +6772,9 @@
 
     function renderEvolutionPipeline(b, isVi) {
       const ge = b.guideline_evolution;
+      Dom.guidelinePipelineSociety.textContent = b.lesson_format === "single_guideline"
+        ? ge?.current_guideline?.society || ""
+        : "ESC / ACC";
       if (b.lesson_format === "single_guideline") {
         Dom.guidelineComparisonBanner.style.display = "block";
         Dom.guidelineComparisonBanner.innerHTML = renderGuidelineRefBox(
