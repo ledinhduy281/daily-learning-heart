@@ -9,7 +9,7 @@ const window = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, "data/briefings.js"), "utf8"), { window });
 const bundle = window.EBM_BRIEFINGS_DATA;
 const App = { todayPillarId: 9, todayDate: "2026-11-24", briefings: bundle.briefings };
-const Dom = { guidelineComparisonBanner: { style: {} }, evolutionPipelineRow: {} };
+const Dom = { guidelineComparisonBanner: { style: {} }, guidelinePipelineSociety: {}, evolutionPipelineRow: {} };
 const context = vm.createContext({ window, App, Dom, renderGuidelineRefBox: (guideline, _, highlighted) => {
   assert.equal(highlighted, true);
   return guideline.name;
@@ -25,12 +25,15 @@ assert.equal(fallback.id, "ebm-2026-11-24-p9-focused");
 assert.equal(fallback.guideline_evolution.current_guideline.pmid, "36017548");
 for (const isVi of [true, false]) {
   context.renderEvolutionPipeline(fallback, isVi);
+  assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/ERS");
   assert.equal(Dom.guidelineComparisonBanner.innerHTML, fallback.guideline_evolution.current_guideline.name);
   assert.ok(Dom.evolutionPipelineRow.innerHTML.includes(fallback.guideline_evolution[isVi ? "recommendation_vi" : "recommendation_en"]));
   const disclaimer = fallback[isVi ? "disclaimer_vi" : "disclaimer_en"];
   assert.match(disclaimer, isVi ? /^Chỉ dùng cho mục đích học tập/ : /^For education only/);
   assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
 }
+context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
+assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
 App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
 assert.equal(context.getTodaySingleBriefing(), fallback);
 App.todayDate = "2026-11-14";

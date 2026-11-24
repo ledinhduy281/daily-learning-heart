@@ -8,7 +8,7 @@ from focused_quiz import build_source_quiz
 # Organization prefixes apply to guidelines, not to evidence about a recommendation.
 SOURCE_PRIORITY = ("guideline", "systematic_review_meta_analysis", "landmark_rct",
                    "real_world_cohort_registry", "expert_consensus")
-GUIDELINE_SOCIETIES = {"ESC", "ACC/AHA"}
+GUIDELINE_SOCIETIES = {"ESC", "ESC/EAS", "ESC/ERS", "ACC/AHA", "AHA/ACC/HFSA"}
 
 LESSONS = {
     1: [{
@@ -21,7 +21,7 @@ LESSONS = {
     }],
     2: [{
         "recommendation_id": "bempedoic-statin-intolerance",
-        "guideline": ("ESC", 2025, "40878289", "10.1093/eurheartj/ehaf190",
+        "guideline": ("ESC/EAS", 2025, "40878289", "10.1093/eurheartj/ehaf190",
                       "2025 Focused Update of the 2019 ESC/EAS Guidelines for the management of dyslipidaemias"),
         "title": ("Axit bempedoic khi không thể dùng statin", "Bempedoic acid when statins cannot be used"),
         "recommendation": ("Bản cập nhật ESC/EAS khuyến cáo axit bempedoic để đạt mục tiêu LDL-C ở người không thể dùng statin.",
@@ -52,7 +52,7 @@ LESSONS = {
                            "The ESC update recommends dapagliflozin or empagliflozin in heart failure with mildly reduced or preserved ejection fraction to reduce heart failure hospitalization or cardiovascular death."),
     }, {
         "recommendation_id": "hfpef-sglt2",
-        "guideline": ("ACC/AHA", 2022, "35363499", "10.1161/CIR.0000000000001063",
+        "guideline": ("AHA/ACC/HFSA", 2022, "35363499", "10.1161/CIR.0000000000001063",
                       "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure: A Report of the American College of Cardiology/American Heart Association Joint Committee on Clinical Practice Guidelines"),
         "title": ("Ức chế SGLT2 trong suy tim có phân suất tống máu bảo tồn", "SGLT2 inhibition in heart failure with preserved ejection fraction"),
         "recommendation": ("AHA/ACC/HFSA nêu thuốc ức chế SGLT2 có thể có lợi ở người suy tim có phân suất tống máu bảo tồn để giảm nhập viện do suy tim và tử vong tim mạch.",
@@ -84,7 +84,7 @@ LESSONS = {
     }],
     9: [{
         "recommendation_id": "initial-pah-combination",
-        "guideline": ("ESC", 2022, "36017548", "10.1093/eurheartj/ehac237",
+        "guideline": ("ESC/ERS", 2022, "36017548", "10.1093/eurheartj/ehac237",
                       "2022 ESC/ERS Guidelines for the diagnosis and treatment of pulmonary hypertension"),
         "title": ("Điều trị phối hợp ban đầu trong tăng áp động mạch phổi", "Initial combination treatment in pulmonary arterial hypertension"),
         "recommendation": ("ESC/ERS khuyến cáo khởi đầu phối hợp thuốc đối kháng thụ thể endothelin và thuốc ức chế PDE5 ở người tăng áp động mạch phổi nguy cơ thấp hoặc trung bình, không có bệnh đồng mắc tim phổi, thuộc các nhóm căn nguyên được chỉ định trong hướng dẫn.",
