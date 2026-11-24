@@ -1834,9 +1834,9 @@ _MCQ_PASTE_PAT_PUNCT = re.compile(
     r"(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+(.+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|\Z)",
     re.DOTALL,
 )
-_MCQ_PASTE_PAT_NEWLINE = re.compile(
-    r"(?:^|\n)\s*([ABCD])\s*\n\s*(.+?)(?=(?:\n\s*[ABCD]\s*\n)|\Z)",
-    re.DOTALL,
+_MCQ_PASTE_LINE_LABEL = re.compile(
+    r"^[^\S\n]*(?:\*\*)?([ABCD])(?:\*\*)?(?:[^\S\n]*[.):-](?=\s)|[^\S\n]*$)",
+    re.MULTILINE,
 )
 _DETAIL_REQ_RE = re.compile(
     r"(giải thích thêm|giải thích kỹ|giải thích rõ|chi tiết|phân tích kỹ|cụ thể hơn|"
@@ -1846,29 +1846,23 @@ _DETAIL_REQ_RE = re.compile(
 )
 
 
-def _extract_pasted_mcq_options(query: str) -> dict[str, str]:
-    """Extract A/B/C/D options when a user pastes a multiple-choice question into chat."""
+def _parse_pasted_mcq(query: str) -> tuple[str, dict[str, str]]:
+    """Return a pasted question's stem and options, preferring line-start labels."""
     q = (query or "").strip()
-    if not q or len(q) < 12:
-        return {}
-    matches = _MCQ_PASTE_PAT_PUNCT.findall(q)
-    opts: dict[str, str] = {}
-    for k, val in matches:
-        clean_v = re.sub(r"\s+", " ", val).strip()
-        if clean_v and k.upper() not in opts:
-            opts[k.upper()] = clean_v
-    if all(k in opts for k in ("A", "B", "C", "D")):
-        return {k: opts[k] for k in ("A", "B", "C", "D")}
-
-    matches_nl = _MCQ_PASTE_PAT_NEWLINE.findall(q)
-    opts_nl: dict[str, str] = {}
-    for k, val in matches_nl:
-        clean_v = re.sub(r"\s+", " ", val).strip()
-        if clean_v and k.upper() not in opts_nl:
-            opts_nl[k.upper()] = clean_v
-    if all(k in opts_nl for k in ("A", "B", "C", "D")):
-        return {k: opts_nl[k] for k in ("A", "B", "C", "D")}
-    return {}
+    labels = list(_MCQ_PASTE_LINE_LABEL.finditer(q))
+    inline = list(_MCQ_PASTE_PAT_PUNCT.finditer(q))
+    for options in (
+        [(m.start(), m[1], q[m.end():n.start() if n else len(q)])
+         for m, n in zip(labels, labels[1:] + [None])],
+        [(m.start(), m[1], m[2]) for m in inline],
+    ):
+        opts: dict[str, str] = {}
+        for _, key, value in options:
+            if clean := " ".join(value.split()):
+                opts.setdefault(key, clean)
+        if len(opts) == 4:
+            return q[:options[0][0]].rstrip(), {k: opts[k] for k in "ABCD"}
+    return q, {}
 
 
 def _wants_detailed_explanation(query: str) -> bool:
@@ -1916,12 +1910,11 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
     return clean if re.search(r"[.!?…][\"'\)\]\*`]*$", clean) else f"{clean}."
 
 
-def _focused_question_excerpt(query, primary, lang, level):
-    marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
+def _focused_question_excerpt(question, primary, lang, level):
     stem = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
-        " ", normalize(query[:marker.start()]),
+        " ", normalize(question),
     )
     groups = search_terms(stem)
     if not groups:
@@ -2009,14 +2002,14 @@ def _compose_deterministic_ebm_answer(
         if len(sources) >= 5:
             break
 
-    wants_detail = _wants_detailed_explanation(query)
+    question, mcq_opts = _parse_pasted_mcq(query)
+    wants_detail = _wants_detailed_explanation(question)
     eff_level = "detailed" if (v_norm == "detailed" or (v_norm == "medium" and wants_detail)) else v_norm
-    mcq_opts = _extract_pasted_mcq_options(query)
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
         if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
-            excerpt = _focused_question_excerpt(query, primary, lang, eff_level)
+            excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
             notice = (
                 "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
                 if is_en else
@@ -2534,8 +2527,8 @@ def answer_ebm_chat_query(req_data: dict) -> dict:
             )
             bot_name = "Med Bro" if lang == "en" else "Soái ca Y khoa"
             site_name = "Daily Learning Heart" if lang == "en" else "Xem Tim Mỗi Ngày"
-            mcq_opts = _extract_pasted_mcq_options(query)
-            wants_detail = _wants_detailed_explanation(query)
+            question, mcq_opts = _parse_pasted_mcq(query)
+            wants_detail = _wants_detailed_explanation(question)
             eff_level = "detailed" if (verbosity == "detailed" or (verbosity == "medium" and wants_detail)) else verbosity
             if mcq_opts:
                 if eff_level == "short":

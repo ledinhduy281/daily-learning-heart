@@ -90,6 +90,22 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
         self.assertIn("5,000", answer)
 
+    def test_pasted_choice_label_inside_option_does_not_steer_evidence(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        stem = "What was the primary endpoint of AMBITION?"
+        options = (
+            "Pulmonary vascular resistance and vasoconstriction, Level B. Explain in detail.",
+            "Clinical failure", "Hospitalization alone", "All-cause death",
+        )
+        answers = []
+        for separator in (". ", "\n", ") "):
+            choices = "\n".join(f"{label}{separator}{option}" for label, option in zip("ABCD", options))
+            answer, _ = app._compose_deterministic_ebm_answer(f"{stem}\n{choices}", [briefing], [], "en")
+            answers.append(answer)
+        self.assertEqual(answers, [answers[0]] * 3)
+        self.assertIn("clinical failure", answers[0])
+        self.assertNotIn("vasoconstriction", answers[0])
+
     def test_pasted_questions_without_context_redirect_to_the_lesson_quiz(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
         options = "\nA. Yttrium\nB. Chromium\nC. Technetium\nD. Sodium"
