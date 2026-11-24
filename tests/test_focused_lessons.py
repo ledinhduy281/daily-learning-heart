@@ -95,6 +95,16 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertIn("0.50", detailed)
         self.assertNotIn("0.50", short)
 
+    def test_pasted_trial_question_prefers_a_matching_explanation_in_chat_language(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Which drug was used in PAH with AMBITION?\nA. Tadalafil\n"
+                 "B. Selexipag\nC. Epoprostenol\nD. Macitentan")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertTrue(answer.startswith("**A**"), answer)
+        self.assertIn(answer.split(" — ", 1)[1], " ".join(
+            paragraph for paragraphs in briefing["teaching"]["en"].values() for paragraph in paragraphs
+        ))
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in payload["focused_lessons"].values():

@@ -1928,33 +1928,29 @@ def _match_focused_mcq(query, options, primary, lang, level):
     marker = _MCQ_PASTE_PAT_PUNCT.search(query) or _MCQ_PASTE_PAT_NEWLINE.search(query)
     question = tokens(query[:marker.start()]) - option_stop - {"how", "is", "was", "what", "which", "gi", "la", "nao"}
     # Match options and question cues in the same sentence, not anywhere in the lesson.
-    sentences = {}
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
         sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
-        sentences[language] = [
-            (sentence, tokens(sentence), paragraph, section)
-            for section in sections for paragraph in section
-            for sentence in re.split(r"(?<=[.!?])\s+", paragraph)
-        ]
-    cue_counts = {
-        language: {term: sum(has_cue(term, row[1]) for row in rows) for term in question}
-        for language, rows in sentences.items()
-    }
-    ranked = []
-    for letter, option in options.items():
-        words = tokens(option) - option_stop
-        if not words:
-            continue
-        best = (0.0, "")
-        for language, rows in sentences.items():
-            counts = cue_counts[language]
+        rows = []
+        for section in sections:
+            section_terms = tokens(" ".join(section))
+            rows.extend(
+                (sentence, tokens(sentence), paragraph, section, section_terms)
+                for paragraph in section for sentence in re.split(r"(?<=[.!?])\s+", paragraph)
+            )
+        counts = {term: sum(has_cue(term, row[1]) for row in rows) for term in question}
+        ranked = []
+        for letter, option in options.items():
+            words = tokens(option) - option_stop
+            if not words:
+                continue
+            best = (0.0, "")
             cues = sorted(term for term in question - words if counts[term])
-            for sentence, terms, paragraph, section in rows:
+            for sentence, terms, paragraph, section, section_terms in rows:
                 coverage = len(words & terms) / len(words)
-                if coverage < 0.75 or re.search(
-                    r"\b(cannot|can't|does not|do not|did not|khong the|khong tu)\b", normalize(sentence)
+                if coverage < 0.75 or not any(has_cue(term, section_terms) for term in cues) or re.search(
+                    r"\b(cannot|can't|does not|do not|did not|khong the|khong tu|khong dung)\b", normalize(sentence)
                 ):
                     continue
                 relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
@@ -1964,11 +1960,11 @@ def _match_focused_mcq(query, options, primary, lang, level):
                     if level == "detailed":
                         excerpt = "\n\n".join([paragraph, *(p for p in section if p != paragraph)])
                     best = (score, excerpt)
-        if best[0]:
-            ranked.append((best[0], letter, best[1]))
-    ranked.sort(reverse=True)
-    if ranked and (len(ranked) == 1 or ranked[0][0] > ranked[1][0]):
-        return ranked[0][1:]
+            if best[0]:
+                ranked.append((best[0], letter, best[1]))
+        ranked.sort(reverse=True)
+        if ranked and (len(ranked) == 1 or ranked[0][0] > ranked[1][0]):
+            return ranked[0][1:]
     return "", ""
 
 
