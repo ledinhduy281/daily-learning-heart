@@ -6697,7 +6697,7 @@
       const rawTitle = isVi ? b.title_vi : (b.title_en || b.title_vi);
       const title = cleanHeadline(rawTitle);
       const markdownRaw = isVi ? (b.part1_vi_markdown || "") : (b.part2_en_markdown || b.part1_vi_markdown || "");
-      const markdownClean = markdownRaw
+      const markdownClean = normalizeCuratedMarkdown(markdownRaw)
         .replace(/\n*(?:\[?\s*END OF PART\s*[12][\s\S]*$|PART\s*1\.\s*Enter\s*"Continue to Part 2"[\s\S]*$)/i, "")
         .replace(/^(#{1,3}\s*)(?:PHẦN|PART)\s*[12]\s*[:—\-–]\s*/gim, "$1")
         .trim();
@@ -6788,9 +6788,6 @@
     }
 
     function renderEvolutionPipeline(b, isVi) {
-      const curatedLabel = isVi
-        ? "Nội dung tuyển chọn, đã được người biên tập rà soát"
-        : "Curated, human-reviewed content";
       const ge = b.guideline_evolution;
       Dom.guidelinePipelineSociety.textContent = b.lesson_format === "single_guideline"
         ? ge?.current_guideline?.society || ""
@@ -6801,7 +6798,7 @@
           ge.current_guideline, isVi ? "Guideline chính" : "Primary guideline", true
         );
         const provenance = hasFocusedProvenance(b)
-          ? `<p><small>${curatedLabel}</small></p>`
+          ? `<p><small>${curatedSourceLabel(isVi)}</small></p>`
           : "";
         Dom.evolutionPipelineRow.innerHTML = `${provenance}<p>${escapeHtml(isVi ? ge.recommendation_vi : ge.recommendation_en)}</p>`
           + renderLicensedExcerpt(ge.licensed_recommendation, isVi);
@@ -6888,6 +6885,17 @@
       `;
     }
 
+    function curatedSourceLabel(isVi) {
+      return isVi ? "Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt"
+        : "Curated from the cited source — not yet physician-reviewed";
+    }
+
+    function normalizeCuratedMarkdown(markdown) {
+      return markdown
+        .replace(/^\*Nội dung tuyển chọn, đã được người biên tập rà soát\*$/gm, `*${curatedSourceLabel(true)}*`)
+        .replace(/^\*Curated, human-reviewed content\*$/gm, `*${curatedSourceLabel(false)}*`);
+    }
+
     function hasFocusedProvenance(b) {
       return Boolean(b.lesson_provenance || /-focused$/.test(String(b.id || "")));
     }
@@ -6926,7 +6934,7 @@
             <h3 class="trial-title-h3">${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${sourceTitle}</a>` : sourceTitle}</h3>
             <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
           </div>
-          ${hasFocusedProvenance(b) ? `<p><small>${isVi ? "Nội dung tuyển chọn, đã được người biên tập rà soát" : "Curated, human-reviewed content"}</small></p>` : ""}
+          ${hasFocusedProvenance(b) ? `<p><small>${curatedSourceLabel(isVi)}</small></p>` : ""}
           <p><strong>${escapeHtml(evidence.result)}</strong></p>
           ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}
           ${Object.values(evidence.licensed_excerpts || {}).map(excerpt => renderLicensedExcerpt(excerpt, isVi)).join("")}
@@ -7654,7 +7662,7 @@
         const b = App.selected;
         if (!b) return;
         const txtRaw = App.currentLang === "vi" ? b.part1_vi_markdown : (b.part2_en_markdown || b.part1_vi_markdown);
-        const txt = String(txtRaw || "")
+        const txt = normalizeCuratedMarkdown(String(txtRaw || ""))
           .replace(/\n*(?:\[?\s*END OF PART\s*[12][\s\S]*$|PART\s*1\.\s*Enter\s*"Continue to Part 2"[\s\S]*$)/i, "")
           .trim();
         navigator.clipboard.writeText(txt).then(() => {
@@ -9487,7 +9495,7 @@
           return isVi ? "Trích từ nguồn có giấy phép (nguyên văn tiếng Anh)." : "Extracted from a licensed source.";
         }
         if (mode === "curated") {
-          return isVi ? "Trích đoạn tuyển chọn, đã được người biên tập rà soát." : "Curated, human-reviewed excerpt.";
+          return curatedSourceLabel(isVi);
         }
         return "";
       },

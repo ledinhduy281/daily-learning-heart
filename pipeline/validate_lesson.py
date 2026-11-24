@@ -11,8 +11,13 @@ from urllib.parse import urlsplit
 from clinical_mcq import validated_source_items
 from fetch_daily_ebm import PILLARS, get_pillar_for_date
 from focused_lessons import GATE_START_DATE, GUIDELINE_SOCIETIES, _citation_url, build_focused_lesson, focused_markdown, select_guideline
-from pipeline.lesson_generation import CURATED, LICENSED, _append_markdown
+from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
+
+LEGACY_CURATED_LABELS = {
+    "vi": "Nội dung tuyển chọn, đã được người biên tập rà soát",
+    "en": "Curated, human-reviewed content",
+}
 
 
 def _require(condition, message):
@@ -165,7 +170,11 @@ def validate_lesson(lesson, pillar, lesson_date, *, recorded=False, fallback=Fal
                                                 f"disclaimer_{lang}": lesson[f"disclaimer_{lang}"]}, lang, safety)
         if not fallback:
             _append_markdown(canonical, lang, recommendation, excerpts)
-        _require(lesson.get(field) == canonical[field], f"{lang} Markdown does not match the cited lesson")
+        supplied = lesson.get(field)
+        if recorded and not fallback and isinstance(supplied, str):
+            supplied = re.sub(rf"^\*{re.escape(LEGACY_CURATED_LABELS[lang])}\*$",
+                              f"*{CURATED_LABELS[lang]}*", supplied, flags=re.MULTILINE)
+        _require(supplied == canonical[field], f"{lang} Markdown does not match the cited lesson")
 
 
 BUNDLE_ASSIGNMENT = "window.EBM_BRIEFINGS_DATA = "
