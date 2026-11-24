@@ -256,8 +256,8 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   first.remove(key);b.loadStore();b.saveStore();assert.equal(second.get(key),'{}');
 
   first.set(key,JSON.stringify({8:{answered_count:1,correct_count:1}}));
-  const c=tab(second);
-  a.loadStore();b.loadStore();c.loadStore();
+  const c=tab(second),oldTab=tab(first);
+  a.loadStore();b.loadStore();c.loadStore();oldTab.loadStore();
   const lesson={id:'first-lesson',pillar_id:8};
   const migrated=a.getSession(8,lesson);
   migrated.answered_count=2;
@@ -269,6 +269,15 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(saved['first-lesson'].correct_count,2);
   assert.equal(saved['second-lesson'],undefined);
   assert.equal(saved[8],undefined);
+  oldTab.store[8]={answered_count:2,correct_count:1};
+  oldTab.saveStore();
+  assert.equal(JSON.parse(first.get(key))[8].answered_count,2);
+  c.loadStore();
+  const newcomer=c.getSession(8,{id:'second-lesson',pillar_id:8});
+  assert.equal(newcomer.answered_count,0);
+  assert.equal(newcomer.correct_count,0);
+  assert.equal(c.getSession(8,lesson).correct_count,2);
+  assert.equal(JSON.parse(first.snapshot().progress[key])[8],undefined);
 }
 {
   const profile = create(new Storage(), crypto), key = 'ebm_socratic_state_v1';
