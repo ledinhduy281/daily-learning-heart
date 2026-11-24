@@ -72,6 +72,17 @@ class FocusedLessonTests(unittest.TestCase):
         self.assertIn("LVEF) falls below 50%", recommendation["recommendation_en"])
         self.assertEqual(archive["pubmed_anchors"][-1]["source"], "DailyMed")
 
+    def test_poet_population_lists_eligible_pathogens(self):
+        evidence = lessons.build_focused_lesson(app.PILLARS[6], "2026-11-24")["supporting_evidence"]
+        self.assertEqual(evidence["pmid"], "30152252")
+        for pathogen in ("Enterococcus faecalis", "Staphylococcus aureus"):
+            self.assertIn(pathogen, evidence["population_vi"])
+            self.assertIn(pathogen, evidence["population_en"])
+        self.assertIn("liên cầu", evidence["population_vi"])
+        self.assertIn("tụ cầu coagulase âm tính", evidence["population_vi"])
+        self.assertIn("streptococci", evidence["population_en"])
+        self.assertIn("coagulase-negative staphylococci", evidence["population_en"])
+
     def test_refresh_replaces_same_day_legacy_lesson_and_is_idempotent_without_pubmed_lookup(self):
         today = datetime.date(2026, 11, 24)
         legacy = {"date": today.isoformat(), "pillar_id": app.get_pillar_for_date(today)["id"]}
