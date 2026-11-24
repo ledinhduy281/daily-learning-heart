@@ -156,11 +156,25 @@ class FocusedLessonTests(unittest.TestCase):
 
     def test_an_eligibility_qualifier_is_not_a_negative_question(self):
         briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
-        query = ("What initial PAH drug combination is recommended for low-risk patients, except those with important "
+        query = ("Of all of the following, which initial PAH drug combination is recommended for low-risk patients, except those with important "
                  "cardiopulmonary comorbidities?\nA. Ambrisentan and tadalafil\nB. Macitentan and riociguat\n"
                  "C. Selexipag and sildenafil\nD. Vardenafil and epoprostenol")
         answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
         self.assertTrue(answer.startswith("**A**"), answer)
+
+    def test_pasted_question_prefers_new_information_over_repeating_the_stem(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[8], "2026-11-24")
+        query = ("Which drug was paired with tadalafil in AMBITION?\nA. Tadalafil\n"
+                 "B. Ambrisentan\nC. Macitentan\nD. Epoprostenol")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertTrue(answer.startswith("**B**"), answer)
+
+    def test_pasted_number_without_trailing_zero_matches_the_lesson_value(self):
+        briefing = lessons.build_focused_lesson(app.PILLARS[1], "2026-11-24")
+        query = ("What was the baseline mean LDL-C in CLEAR Outcomes?\nA. 95 mg/dL\n"
+                 "B. 139 mg/dL\nC. 125 mg/dL\nD. 145 mg/dL")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [briefing], [], "en", verbosity="short")
+        self.assertTrue(answer.startswith("**B**"), answer)
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)

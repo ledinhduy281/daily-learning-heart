@@ -1923,13 +1923,19 @@ def _match_focused_mcq(query, options, primary, lang, level):
         r"khong the|khong tu|khong dung|khong nen|khong duoc|chong chi dinh|tranh)\b"
     )
 
+    def numeric_text(text):
+        return re.sub(
+            r"(?<![a-z0-9])\d+[.,]\d+",
+            lambda match: match[0].replace(",", ".").rstrip("0").rstrip("."),
+            text,
+        )
+
     def words_in(text):
-        text = re.sub(r"(?<=\d),(?=\d)", ".", normalize(text))
-        return tuple(re.findall(r"\d+(?:\.\d+)?|[a-z][a-z0-9]*", text))
+        return tuple(re.findall(r"\d+(?:\.\d+)?|[a-z][a-z0-9]*", numeric_text(normalize(text))))
 
     def comparisons(text):
-        text = text.replace("≤", "<=").replace("≥", ">=").replace("−", "-")
-        return {(op, value.replace(",", ".")) for op, value in re.findall(r"([<>=]=?)\s*(-?\d+(?:[.,]\d+)?)", text)}
+        text = numeric_text(text.replace("≤", "<=").replace("≥", ">=").replace("−", "-"))
+        return set(re.findall(r"([<>=]=?)\s*(-?\d+(?:\.\d+)?)", text))
 
     def has_cue(term, terms):
         return term in terms or (term.endswith("s") and term[:-1] in terms)
@@ -1939,7 +1945,7 @@ def _match_focused_mcq(query, options, primary, lang, level):
     normalized_stem = normalize(stem)
     if re.search(
         r"\b(false|incorrect|not true|sai|khong dung voi nhan dinh)\b|"
-        r"\b(except|ngoai tru)\s*[:?]?\s*$|\bexcept one\b|\ball of the following\b[^?]*\bexcept\b",
+        r"\b(except|ngoai tru)\s*[:?]?\s*$|\b(except (for )?one|which is the exception)\b",
         normalized_stem.strip(),
     ):
         return "", ""
@@ -1967,7 +1973,7 @@ def _match_focused_mcq(query, options, primary, lang, level):
             words = set(option_words) - option_stop
             if not words:
                 continue
-            best = ((0.0, False), "")
+            best = ((0.0, False, False), "")
             cues = sorted(term for term in question if counts[term])
             requested = comparisons(option)
             for sentence, sentence_words, terms, paragraph, section, section_terms in rows:
@@ -1982,7 +1988,7 @@ def _match_focused_mcq(query, options, primary, lang, level):
                 ):
                     continue
                 relevance = sum(1 / counts[term] for term in cues if has_cue(term, terms))
-                score = (coverage * (1 + relevance), exact)
+                score = (coverage * (1 + relevance), exact, bool(words - question))
                 if score > best[0]:
                     excerpt = sentence if level == "short" else paragraph
                     if level == "detailed":
