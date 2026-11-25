@@ -62,8 +62,13 @@ for (const isVi of [true, false]) {
   assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].endsWith(`*${disclaimer}*`));
   assert.ok(fallback[isVi ? "part1_vi_markdown" : "part2_en_markdown"].includes(labels[isVi ? "vi" : "en"]));
 }
-context.renderEvolutionPipeline(bundle.focused_lessons[2], false);
-assert.equal(Dom.guidelinePipelineSociety.textContent, "ESC/EAS");
+context.formatFullDdMmYyyy = iso => iso.split("-").reverse().join("/");
+const recent = bundle.focused_lessons[2];
+assert.equal(recent.lesson_format, "single_source");
+context.renderEvolutionPipeline(recent, false);
+assert.equal(Dom.guidelinePipelineSociety.textContent, "N Engl J Med");
+assert.equal(Dom.guidelineComparisonBanner.innerHTML, recent.primary_source.name);
+assert.ok(recent.teaching.en.summary.every(paragraph => Dom.evolutionPipelineRow.innerHTML.includes(paragraph)));
 const legacy = bundle.briefings.find(b => b.id === "ebm-2026-11-14-p9-main");
 context.t = key => key;
 context.formatInlineRich = text => text;
@@ -73,13 +78,18 @@ assert.equal(Dom.evolutionPipelineRow.className, "evolution-pipeline");
 assert.match(Dom.evolutionPipelineRow.innerHTML, /pipeline-step-box current/);
 context.renderEvolutionPipeline(fallback, true);
 assert.equal(Dom.evolutionPipelineRow.className, "focused-recommendation");
-App.briefings = [ { ...fallback, lesson_format: undefined }, fallback ];
-assert.equal(context.getTodaySingleBriefing(), fallback);
+const today = bundle.briefings.find(b => b.lesson_format === "single_source");
+Object.assign(App, {todayDate: today.date, todayPillarId: today.pillar_id});
+App.briefings = [ { ...today, lesson_format: undefined }, today ];
+assert.equal(context.getTodaySingleBriefing(), today);
+App.todayPillarId = 9;
 App.todayDate = "2026-11-14";
 App.briefings = bundle.briefings.filter(b => b.id !== fallback.id);
 assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
 Dom.trialsGridDeck = {};
-vm.runInContext(html.slice(html.indexOf("    function renderTrialsMatrix("),
+vm.runInContext(html.slice(html.indexOf("    function renderGuidelineRefBox("),
+    html.indexOf("    function renderEvolutionPipeline(")), context);
+vm.runInContext(html.slice(html.indexOf("    function renderFocusedBlockB("),
     html.indexOf("    function renderPearls(")), context);
 context.renderTrialsMatrix(fallback, false);
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
@@ -132,25 +142,27 @@ for (const isVi of [true, false]) {
 context.renderPearls({...fallback, teaching: undefined}, false);
 assert.equal(Dom.pearlsStackDeck.innerHTML, "");
 App.todayDate = "2026-11-27";
+const saved = context.getFocusedTemplateBriefing("2026-11-26", 1);
+assert.equal(context.getFocusedTemplateBriefing("2026-11-24", 9), null);
 App.mode = "history";
 App.savedGlobalMode = true;
 App.searchQuery = "";
-App.user = {bookmarked_ids: [fallback.id, "ebm-2026-11-30-p9-focused", "ebm-2026-11-31-p9-focused", "missing"]};
-assert.ok(!App.briefings.some(b => b.id === fallback.id));
+App.user = {bookmarked_ids: [saved.id, "ebm-2026-11-30-p9-focused", "ebm-2026-11-31-p9-focused", "missing"]};
+assert.ok(!App.briefings.some(b => b.id === saved.id));
 assert.equal(context.getHistoryScopeBriefings().length, 1);
-assert.equal(context.getHistoryScopeBriefings()[0].id, fallback.id);
-assert.equal(context.getHistoryScopeBriefings()[0].title_en, fallback.title_en);
+assert.equal(context.getHistoryScopeBriefings()[0].id, saved.id);
+assert.equal(context.getHistoryScopeBriefings()[0].title_en, saved.title_en);
 App.todayDate = "2026-12-01";
 assert.equal(context.findArchiveBriefing("ebm-2026-11-31-p9-focused"), null);
 let opened;
 context.selectBriefing = b => { opened = b; };
 vm.runInContext(html.slice(html.indexOf("    window.onSelectBriefingItem ="),
     html.indexOf("    function selectBriefing(")), context);
-window.onSelectBriefingItem(fallback.id);
-assert.equal(opened.id, fallback.id);
-const published = {...fallback, title_en: "Published edition"};
+window.onSelectBriefingItem(saved.id);
+assert.equal(opened.id, saved.id);
+const published = {...saved, title_en: "Published edition"};
 App.briefings = [published, ...App.briefings];
-assert.equal(context.findArchiveBriefing(fallback.id), published);
+assert.equal(context.findArchiveBriefing(saved.id), published);
 const quizNodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection"].map(id => [id, {style: {}}]));
 const quizCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
 App.selected = {...fallback, quiz_mode: undefined};

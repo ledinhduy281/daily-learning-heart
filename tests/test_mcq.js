@@ -5,7 +5,7 @@ const {spawnSync}=require('node:child_process');
 const quiz=require('../clinical_mcq.js');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'),'utf8'),context);
-const briefings=context.window.EBM_BRIEFINGS_DATA.briefings.filter(b=>b.quiz_mode!=='source_excerpt');
+const briefings=context.window.EBM_BRIEFINGS_DATA.briefings.filter(b=>b.quiz_mode!=='source_excerpt'&&b.lesson_format!=='single_source');
 const {numericTargets}=require('../clinical_distractors.js');
 {
   const b=briefings.find(b=>b.id==='ebm-2026-08-23-p3-hist1');
@@ -258,7 +258,7 @@ for (const lang of ['vi','en']) {
 }
 for (const lang of ['vi','en']) {check(quiz.build({},0,0,lang));assert.ok(quiz.turn({}, {},lang,'just_tell_me').reply);}
 const py=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
-print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefings() if b.get('quiz_mode') != 'source_excerpt' for l in ('vi','en') for s in range(4) for v in range(3)],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
+print(json.dumps([a._build_socratic_mcq(b,s,v,l) for b in a.load_existing_briefings() if b.get('quiz_mode') != 'source_excerpt' and b.get('lesson_format') != 'single_source' for l in ('vi','en') for s in range(4) for v in range(3)],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
 assert.equal(py.status,0,py.stderr);
 assert.deepEqual(generated,JSON.parse(py.stdout));
 const difficult=Array.from(briefings).concat({}).flatMap(b=>['vi','en'].flatMap(l=>['easy','hard'].map(d=>quiz.build(b,1,0,l,d))));
@@ -276,7 +276,7 @@ for(const [id,slot,variant,field]of [['ebm-2026-09-15-p7-hist1',0,0,'age:75'],['
   }
 }
 const pyDifficult=spawnSync('python3',['-c',`import json,fetch_daily_ebm as a
-print(json.dumps([a._build_socratic_mcq(b,1,0,l,d) for b in a.load_existing_briefings()+[{}] if b.get('quiz_mode') != 'source_excerpt' for l in ('vi','en') for d in ('easy','hard')],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
+print(json.dumps([a._build_socratic_mcq(b,1,0,l,d) for b in a.load_existing_briefings()+[{}] if b.get('quiz_mode') != 'source_excerpt' and b.get('lesson_format') != 'single_source' for l in ('vi','en') for d in ('easy','hard')],ensure_ascii=False))`],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',maxBuffer:16*1024*1024});
 assert.equal(pyDifficult.status,0,pyDifficult.stderr);
 assert.deepEqual(difficult,JSON.parse(pyDifficult.stdout));
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');

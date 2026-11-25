@@ -30,13 +30,17 @@ After merge, the owner must paste the new `Chat.gs` into the Apps Script editor 
 
 ## Daily refresh
 
-The scheduled [GitHub Actions workflow](.github/workflows/daily_refresh.yml) refreshes around 06:00 Vietnam time, with catch-up runs. It selects one focused guideline recommendation and its matched evidence from [`focused_lessons.py`](focused_lessons.py), then retrieves reusable text for those exact publications. The bilingual summaries remain curated; the lesson includes licensed excerpts and a source-derived quiz where possible and labels the curated fallback. The workflow commits the updated bundle and rotation state. If the bundle has no daily edition, the browser uses the prebuilt curated template for the same pillar.
+The scheduled [GitHub Actions workflow](.github/workflows/daily_refresh.yml) refreshes around 06:00 Vietnam time, with catch-up runs. From 2026-11-25, each daily lesson is built from one primary source for its pillar in [`recent_lessons.py`](recent_lessons.py). Every source was published online within `SOURCE_WINDOW_DAYS` (92 days, about three months) of the catalog edition date, and the publisher rejects a lesson whose source falls outside that window. Block A summarizes the source; Block B reads the same source closely (design, results, limits) and shows the same citation box. The workflow commits the updated bundle and rotation state. If the bundle has no daily edition, the browser uses the prebuilt template for the same pillar. Lessons dated before 2026-11-25 keep the earlier guideline-plus-trial format from [`focused_lessons.py`](focused_lessons.py) in the archive.
 
-The bilingual walkthroughs in [`lessons/`](lessons/) explain the context, recommendation changes, and application in Block A, and the study design, results, and limits in Block B. Each file starts with the two source PMIDs; the publisher checks that they match the selected pair and that both languages contain complete walkthroughs. These are teaching drafts, not physician-reviewed guidance.
+The bilingual walkthroughs for the recent sources are in [`lessons/recent/`](lessons/recent/). Each file starts with the source PMID; the publisher checks it and that both languages contain every section. These are teaching drafts, not physician-reviewed guidance.
+
+Quizzes use only verbatim text from the cited source. For trials, meta-analyses, and statements, the excerpts come from the PubMed abstract, with the PMID and the publisher's copyright line shown next to them. Guideline lessons have no quiz until a physician enters verbatim recommendation lines from the guideline PDF in `PHYSICIAN_LINES` in `recent_lessons.py`, each with its Class, Level, and page or table. The lesson then shows those lines and quizzes on them. Do not infer a recommendation from a title, an abstract, or an older guideline.
+
+To refresh the catalog for a new three-month window, choose one source per pillar in the priority order below, add its walkthrough under `lessons/recent/`, update `RECENT_EDITION_DATE`, and bump `RECENT_LESSON_VERSION`.
 
 For these walkthroughs, keyless local chat can show relevant lesson text for pasted questions but does not grade the answer choices. Use the in-app lesson quiz for answers linked to verbatim source excerpts. For a longer excerpt, select **Detailed** or put “Explain in detail” after a blank line below the choices.
 
-Edit `SOURCE_PRIORITY` in `focused_lessons.py` to change the order for eligible cardiology sources: ESC/AHA/ACC guideline, systematic review/meta-analysis, landmark RCT, real-world cohort/registry, then expert consensus. A lower-tier source is not presented as a guideline. Running the refresh locally can update these tracked files:
+Source priority for eligible cardiology sources is ESC/AHA/ACC guideline, systematic review/meta-analysis, landmark RCT, real-world cohort/registry, then expert consensus (`SOURCE_KINDS` in `recent_lessons.py`). A lower-tier source is not presented as a guideline. Running the refresh locally can update these tracked files:
 
 ```sh
 python3 fetch_daily_ebm.py --refresh-if-needed

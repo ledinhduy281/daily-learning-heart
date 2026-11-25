@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import fetch_daily_ebm as app
 import focused_lessons as lessons
+import recent_lessons
 
 
 def read_bundle(path):
@@ -24,8 +25,9 @@ class FocusedLessonTests(unittest.TestCase):
 
     def test_static_templates_match_python_selection_in_every_pillar(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
-        self.assertEqual(payload["focused_lessons"], lessons.build_focused_templates(app.PILLARS))
-        for lesson in payload["focused_lessons"].values():
+        self.assertEqual(payload["focused_lessons"], recent_lessons.build_recent_templates(app.PILLARS))
+        self.assertTrue(all(t["lesson_format"] == "single_source" for t in payload["focused_lessons"].values()))
+        for lesson in lessons.build_focused_templates(app.PILLARS).values():
             self.assertEqual(lesson["lesson_format"], "single_guideline")
             guideline = lesson["guideline_evolution"]["current_guideline"]
             self.assertEqual([a["pmid"] for a in lesson["pubmed_anchors"][:1]], [guideline["pmid"]])
@@ -150,7 +152,7 @@ class FocusedLessonTests(unittest.TestCase):
 
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
-        for lesson in payload["focused_lessons"].values():
+        for lesson in lessons.build_focused_templates(app.PILLARS).values():
             evidence = lesson["supporting_evidence"]
             guideline = lesson["guideline_evolution"]
             self.assertEqual(evidence["recommendation_id"], guideline["recommendation_id"])

@@ -8,7 +8,8 @@ vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf
 const bundle = scope.window.EBM_BRIEFINGS_DATA;
 const published = bundle.briefings.filter(b => b.date >= bundle.lesson_gate_start);
 const lessons = [...Object.values(bundle.focused_lessons), ...published];
-const lesson = lessons[8], item = lesson.quiz_items[0];
+const lesson = published.find(b => b.date === bundle.lesson_gate_start && b.lesson_format === "single_guideline");
+const item = lesson.quiz_items[0];
 for (const mutation of [{quote: ""}, {pmid: "bad"}, {pmid: "32871100"}, {answer: "000"},
     {start: item.start + 1}, {distractors: [item.answer, "12%", "13%"]},
     {distractors: ["1.0%", "1.00%", "13%"]}]) {
@@ -17,6 +18,14 @@ for (const mutation of [{quote: ""}, {pmid: "bad"}, {pmid: "32871100"}, {answer:
 assert.equal(quiz.hasSourceItems({...lesson, quiz_source_texts: {}}), false);
 assert.equal(quiz.hasSourceItems({...lesson, supporting_evidence: {...lesson.supporting_evidence, recommendation_id: "other"}}), false);
 assert.ok(bundle.briefings.filter(b => b.date < bundle.lesson_gate_start).every(b => !quiz.hasSourceItems(b)));
+for (const recent of lessons.filter(b => b.lesson_format === "single_source")) {
+  const guideline = recent.primary_source.kind === "guideline";
+  assert.equal(quiz.hasSourceItems(recent), !guideline, recent.id);
+  if (guideline) continue;
+  assert.ok(recent.quiz_items.every(q => q.pmid === recent.primary_source.pmid));
+  assert.equal(quiz.hasSourceItems({...recent, primary_source: {...recent.primary_source, pmid: "26308684"}}), false);
+  assert.equal(quiz.build(recent, 0, 0, "en").question_kind, "trial");
+}
 assert.ok(published.some(b => b.date === bundle.lesson_gate_start && b.lesson_provenance && quiz.hasSourceItems(b)));
 const first = quiz.turn(lesson, {}, "en", "start_diagnostic");
 assert.equal(first.state.revealed_source_pmid, undefined);
@@ -71,8 +80,8 @@ const rejected = quiz.turn(lesson, modified, "en", "answer", "", "A");
 assert.equal(rejected.state.revealed_source_pmid, undefined);
 assert.equal(rejected.eval, "partial");
 
-const sprint = lessons[0];
-assert.ok(sprint.quiz_items.length > 1);
+const sprint = lessons.find(b => b.lesson_format === "single_source" && b.primary_source.kind === "expert_consensus");
+assert.equal(sprint.quiz_items.length, 1);
 assert.equal(quiz.sourceQuestionCount(sprint), 1);
 const sprintFirst = quiz.turn(sprint, {subskills: Array.from({length: 4}, () => ({level: 0}))}, "vi", "start_diagnostic");
 const sprintComplete = quiz.turn(sprint, sprintFirst.state, "vi", "answer", "", sprintFirst.state.correct_key);

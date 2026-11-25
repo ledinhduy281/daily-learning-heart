@@ -32,10 +32,16 @@ SECTION_LABELS = {
 }
 
 
+# Verbatim guideline recommendation lines entered by a physician from the original PDF, keyed by source id.
+# Each line is {"text": "... [[number]] ...", "class": "I", "level": "A", "locator": "Table 5, p. 12"};
+# mark one number per line with [[ ]] so the quiz can blank it. Guidelines without lines have no quiz.
+PHYSICIAN_LINES = {}
+
+
 def _source(pid, slug, kind, pmid, doi, name, journal, online_date, title, quiz=(), copyright="", label=""):
     return dict(pillar_id=pid, id=slug, kind=kind, pmid=pmid, doi=doi, name=name, journal=journal,
                 online_date=online_date, title=title, quiz=quiz, copyright=copyright, label=label,
-                physician_lines=())
+                physician_lines=tuple(PHYSICIAN_LINES.get(slug, ())))
 
 
 SOURCES = {s["pillar_id"]: s for s in (
