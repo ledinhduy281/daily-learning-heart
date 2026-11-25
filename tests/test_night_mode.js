@@ -55,4 +55,5 @@ manual.handlers.change();
 manual.system.matches = true;
 manual.handlers.change();
 assert.equal(manual.root.dataset.theme, "light");
+assert.match(html, /:root\[data-theme="dark"\] ::placeholder \{\s*color: var\(--color-ink-mute\);\s*opacity: 1;/);
 console.log("Night mode system default, toggle, and persisted override: OK");
