@@ -68,7 +68,7 @@ const CloudSync = (() => {
       if(id!==expectedId)throw new Error('SYNC_SUPERSEDED');
     }
     const status=code=>onStatus(code);
-    async function request(action,fields={},expectedId=null,restoring=false) {
+    async function request(action,fields={},expectedId=null,restoring=false,signal) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
       if(expectedId!==null)requireActive(expectedId);
       const expectedBaseline=baselineRaw;
@@ -80,12 +80,16 @@ const CloudSync = (() => {
       if(action==='push'&&!restoring&&readConsent()!=='allowed')throw new Error('CONSENT_REQUIRED');
       const body=JSON.stringify({action,...fields});
       if(bytes(body)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
-      const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
+      const controller=signal?null:new AbortController();
+      const timeout=controller?setTimeout(()=>controller.abort(),30000):null;
+      const requestSignal=signal||controller.signal;
       try {
-        const res=await fetcher(endpoint,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow',signal:controller.signal});
+        if(requestSignal.aborted)throw new Error('EMAIL_TIMEOUT');
+        const res=await fetcher(endpoint,{method:'POST',headers:{'Content-Type':'text/plain'},body,redirect:'follow',signal:requestSignal});
         checkCurrent();
         if(!res.ok)throw new Error('SYNC_FAILED');
         const text=await res.text();
+        if(requestSignal.aborted)throw new Error(signal?'EMAIL_TIMEOUT':'SYNC_FAILED');
         checkCurrent();
         if(bytes(text)>MAX_BYTES+4096)throw new Error('TOO_LARGE');
         const result=JSON.parse(text);if(!result||result.ok!==true)throw new Error('SYNC_FAILED');
@@ -112,7 +116,7 @@ const CloudSync = (() => {
         storage.setItem(BASE_KEY,raw);baselineRaw=raw;
       }catch(_){}
     }
-    async function exchange(target,adopt=false,force=false) {
+    async function exchange(target,adopt=false,force=false,signal) {
       if(!enabled)throw new Error('NOT_CONFIGURED');
       readState();
       if(!adopt&&readConsent()!=='allowed')return;
@@ -124,7 +128,7 @@ const CloudSync = (() => {
       let localBase=JSON.parse(profile.exportJSON());
       const localEdits=[];
       let draft=adopt?profile.fork():profile;
-      let remote=await request('pull',{userId:target},initialId,adopt);
+      let remote=await request('pull',{userId:target},initialId,adopt,signal);
       if(adopt&&remote.profile==null)throw new Error('BACKUP_NOT_FOUND');
       let base=target===id?baseline:null;
       merge(remote.profile,base,draft);
@@ -147,7 +151,7 @@ const CloudSync = (() => {
         if(bytes(text)>MAX_BYTES)throw new Error('TOO_LARGE');
         if(!meaningful(data)&&!adopt&&!force)return;
         if(adopt&&readConsent()!=='allowed'&&(consent!==initialConsent||consentVersion!==initialConsentVersion))throw new Error('CONSENT_REQUIRED');
-        const result=await request('push',{userId:target,profile:data,revision:remote.revision},adopt?initialId:target,adopt);
+        const result=await request('push',{userId:target,profile:data,revision:remote.revision},adopt?initialId:target,adopt,signal);
         if(!result.conflict) {
           if(adopt) {
             const before=profile.exportJSON();
@@ -219,11 +223,21 @@ const CloudSync = (() => {
       async email(action,email,lang='vi') {
         if(!['backup','restore_request'].includes(action)||typeof email!=='string'||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))throw new Error('INVALID_EMAIL');
         if(enabled&&action==='backup')rememberConsent(true);
-        return enqueue(async()=>{
-          if(action==='backup')await exchange(id,false,true);
-          await request(action,{userId:id,email:email.trim(),lang});
+        const controller=new AbortController(),signal=controller.signal;
+        let timer;
+        const deadline=new Promise((_,reject)=>{
+          timer=setTimeout(()=>{reject(new Error('EMAIL_TIMEOUT'));controller.abort();},30000);
+        });
+        const work=queue.then(async()=>{
+          if(signal.aborted)throw new Error('EMAIL_TIMEOUT');
+          if(action==='backup')await exchange(id,false,true,signal);
+          await request(action,{userId:id,email:email.trim(),lang},null,false,signal);
+          if(signal.aborted)throw new Error('EMAIL_TIMEOUT');
           status('EMAIL_SENT');return {ok:true};
         });
+        queue=work.catch(()=>{});
+        try {return await Promise.race([work,deadline]);}
+        finally {clearTimeout(timer);}
       },
       stop(){clearTimeout(timer);unsubscribe();}
     };

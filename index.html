@@ -4653,6 +4653,7 @@
               <label class="form-field-label" for="cloudEmail" id="labelCloudEmail">Email của bạn</label>
               <input id="cloudEmail" type="email" class="supa-text-input" autocomplete="email" maxlength="254" required>
               <button type="submit" id="btnCloudEmail" class="btn btn-primary-green">Gửi liên kết sao lưu cho tôi</button>
+              <p class="profile-note profile-status" id="cloudEmailStatus" role="status"></p>
             </form>
             <p class="profile-note" id="cloudEmailPrivacy"></p>
           </div>
@@ -5349,7 +5350,7 @@
     }
 
     async function consumeApiEvents(path, onMessage) {
-      const response = await fetch(path, {headers: getAuthHeaders()});
+      const response = await fetch(path, {headers: getAuthHeaders(), signal: AbortSignal.timeout(60000)});
       if (!response.ok || !response.body) throw new Error("Stream unavailable");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -5377,6 +5378,15 @@
       Dom.toastBox.classList.add("show");
       if (toastTimer) clearTimeout(toastTimer);
       toastTimer = setTimeout(() => Dom.toastBox.classList.remove("show"), 2600);
+    }
+
+    async function copyMarkdown(text, successMessage) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMessage);
+      } catch (_) {
+        showToast(App.currentLang === "en" ? "Could not copy. Select and copy the text manually." : "Không thể sao chép. Hãy chọn và sao chép văn bản theo cách thủ công.");
+      }
     }
 
     /* ========================================================================
@@ -5513,6 +5523,13 @@
     async function reloadSeedBriefingsScript() {
       return new Promise((resolve) => {
         const sc = document.createElement("script");
+        const finish = loaded => {
+          clearTimeout(timer);
+          sc.onload = sc.onerror = null;
+          sc.remove();
+          resolve(loaded);
+        };
+        const timer = setTimeout(() => finish(false), 15000);
         sc.src = `data/briefings.js?v=${Date.now()}`;
         sc.async = true;
         sc.onload = () => {
@@ -5522,13 +5539,9 @@
               App.rotation = window.EBM_BRIEFINGS_DATA.rotation_state;
             }
           }
-          sc.remove();
-          resolve(true);
+          finish(true);
         };
-        sc.onerror = () => {
-          sc.remove();
-          resolve(false);
-        };
+        sc.onerror = () => finish(false);
         document.head.appendChild(sc);
       });
     }
@@ -5551,6 +5564,7 @@
     })());
     let cloudSync = null;
     let cloudEmailAction = "backup";
+    let cloudEmailStatus = "";
     let cloudStatus = "";
 
     function renderCloudSync() {
@@ -5584,15 +5598,22 @@
       text("cloudBackupTab", "Back up this device", "Sao lưu thiết bị này");
       text("cloudRestoreTab", "Restore on this device", "Khôi phục trên thiết bị này");
       text("labelCloudEmail", "Your email", "Email của bạn");
-      text("btnCloudEmail", cloudEmailAction === "backup" ? "Email me a backup link" : "Email me a restore link", cloudEmailAction === "backup" ? "Gửi liên kết sao lưu cho tôi" : "Gửi liên kết khôi phục cho tôi");
+      const emailPending = cloudEmailStatus === "EMAIL_SENDING";
+      document.getElementById("btnCloudEmail").disabled = emailPending;
+      text("btnCloudEmail", emailPending ? "Sending link…" : cloudEmailAction === "backup" ? "Email me a backup link" : "Email me a restore link", emailPending ? "Đang gửi liên kết…" : cloudEmailAction === "backup" ? "Gửi liên kết sao lưu cho tôi" : "Gửi liên kết khôi phục cho tôi");
       text("cloudEmailPrivacy", "We never store your email address, only a fingerprint of it. Google processes the address to deliver your email.", "Chúng tôi không lưu địa chỉ email, chỉ lưu dấu vân tay của địa chỉ đó. Google xử lý địa chỉ để gửi email cho bạn.");
       const messages = {
         NOT_CONFIGURED: ["Cloud sync is not configured. Restore a local JSON backup instead.", "Chưa cấu hình đồng bộ đám mây. Hãy khôi phục từ bản sao JSON cục bộ."],
         SYNC_FAILED: ["Could not sync. Your local progress is safe; try again later.", "Chưa thể đồng bộ. Tiến độ trên thiết bị vẫn an toàn, hãy thử lại sau."],
         SYNCED: ["Progress synced.", "Đã đồng bộ tiến độ."],
+        SYNC_RESTORING: ["Restoring progress…", "Đang khôi phục tiến độ…"],
         SYNC_ALLOWED: ["Cloud sync enabled.", "Đã bật đồng bộ đám mây."],
         CONSENT_REQUIRED: ["Cloud sync is off. Your progress stays on this device.", "Đồng bộ đám mây đang tắt. Tiến độ được lưu trên thiết bị này."],
         BACKUP_NOT_FOUND: ["No backup found for this ID. Check the ID and try again.", "Không tìm thấy bản sao lưu cho mã này. Hãy kiểm tra mã rồi thử lại."],
+        EMAIL_SENDING: ["Requesting an email link…", "Đang yêu cầu gửi liên kết qua email…"],
+        EMAIL_FAILED: ["Could not request an email link. Your local progress is safe; try again later.", "Chưa thể yêu cầu gửi liên kết. Tiến độ trên thiết bị vẫn an toàn, hãy thử lại sau."],
+        EMAIL_TIMEOUT: ["The request took too long. Check your inbox before trying again.", "Yêu cầu mất quá nhiều thời gian. Hãy kiểm tra hộp thư trước khi thử lại."],
+        INVALID_EMAIL: ["Enter a valid email address.", "Vui lòng nhập địa chỉ email hợp lệ."],
         EMAIL_SENT: ["If available, a confirmation or restore link will be emailed to that address. Confirm a new backup before restoring by email. Wait at least 10 minutes before requesting again.", "Nếu có thể, liên kết xác nhận hoặc khôi phục sẽ được gửi tới địa chỉ đó. Hãy xác nhận bản sao lưu mới trước khi khôi phục bằng email. Vui lòng đợi ít nhất 10 phút trước khi yêu cầu lại."],
         EMAIL_CONFIRMED: ["Email backup confirmed.", "Đã xác nhận sao lưu bằng email."],
         EMAIL_CONFIRM_INVALID: ["This confirmation link has expired or was already used. Request a new backup email.", "Liên kết xác nhận đã hết hạn hoặc đã được sử dụng. Hãy yêu cầu email sao lưu mới."],
@@ -5600,10 +5621,32 @@
       };
       const message = messages[cloudStatus];
       document.getElementById("cloudSyncStatus").textContent = message ? message[vi ? 1 : 0] : "";
+      const emailMessage = messages[cloudEmailStatus]?.[vi ? 1 : 0] || "";
+      const emailStatusEl = document.getElementById("cloudEmailStatus");
+      if (emailStatusEl.textContent !== emailMessage) emailStatusEl.textContent = emailMessage;
+    }
+
+    async function submitCloudEmail(event) {
+      event.preventDefault();
+      if (cloudEmailStatus === "EMAIL_SENDING") return;
+      const input = document.getElementById("cloudEmail");
+      const email = input.value;
+      cloudEmailStatus = "EMAIL_SENDING";
+      try {
+        renderCloudSync();
+        await cloudSync.email(cloudEmailAction, email, App.currentLang);
+        if (input.value === email) input.value = "";
+        cloudEmailStatus = "EMAIL_SENT";
+      } catch (error) {
+        cloudEmailStatus = ["INVALID_EMAIL", "EMAIL_TIMEOUT"].includes(error.message) ? error.message : "EMAIL_FAILED";
+      } finally {
+        renderCloudSync();
+      }
     }
 
     function initializeCloudSync() {
       const status = code => {
+        if (code === "EMAIL_SENT") return;
         cloudStatus = code; renderCloudSync();
         if (["EMAIL_CONFIRMED", "EMAIL_CONFIRM_INVALID", "NOT_CONFIGURED"].includes(code)) showToast(document.getElementById("cloudSyncStatus").textContent);
       };
@@ -5617,13 +5660,17 @@
         document.getElementById("btnDeclineCloudSync").addEventListener("click", () => {cloudSync.setConsent(false);Dom.userProfilePill.focus();});
         document.getElementById("cloudSyncEnabled").addEventListener("change", event => cloudSync.setConsent(event.target.checked));
         document.getElementById("btnRestoreSyncId").addEventListener("click", async () => {
+          const button = document.getElementById("btnRestoreSyncId");
           try {
             const id = CloudSync.validId(document.getElementById("restoreSyncId").value);
             if (!cloudSync.enabled) { status("NOT_CONFIGURED"); return; }
             if (window.confirm(App.currentLang === "en" ? "Send this device's progress and saved chats to the project's Google Apps Script backup and merge both devices' progress? Anyone with this ID can access the synced profile." : "Gửi tiến độ và các cuộc trò chuyện đã lưu trên thiết bị này tới bản sao lưu Google Apps Script của dự án và hợp nhất tiến độ của hai thiết bị? Ai có mã đều có thể truy cập hồ sơ đã đồng bộ.")) {
+              button.disabled = true;
+              status("SYNC_RESTORING");
               await cloudSync.restore(id); renderCloudSync();
             }
           } catch (error) { status(["INVALID_ID", "BACKUP_NOT_FOUND", "CONSENT_REQUIRED"].includes(error.message) ? error.message : "SYNC_FAILED"); }
+          finally { button.disabled = false; }
         });
         document.getElementById("btnDownloadSyncId").addEventListener("click", () => {
           const url = URL.createObjectURL(new Blob([cloudSync.userId],{type:"text/plain"}));
@@ -5637,11 +5684,7 @@
             document.getElementById("cloudEmailPanel").setAttribute("aria-labelledby",id);renderCloudSync();
           });
         }
-        document.getElementById("cloudEmailPanel").addEventListener("submit", async event => {
-          event.preventDefault();const button=document.getElementById("btnCloudEmail");button.disabled=true;
-          try {await cloudSync.email(cloudEmailAction,document.getElementById("cloudEmail").value,App.currentLang);document.getElementById("cloudEmail").value="";}
-          catch (_) {status("SYNC_FAILED");}finally{button.disabled=false;}
-        });
+        document.getElementById("cloudEmailPanel").addEventListener("submit", submitCloudEmail);
         window.addEventListener("storage",refreshDeviceActivity);
         cloudSync.start({url:location.href,confirm:()=>window.confirm(App.currentLang === "en" ? "This device's progress and saved chats will be sent to the project's Google Apps Script backup and merged into this ID's cloud copy, accessible to anyone with that ID. Continue only if it is your own ID." : "Tiến độ và các cuộc trò chuyện đã lưu trên thiết bị này sẽ được gửi tới bản sao lưu Google Apps Script của dự án và hợp nhất vào bản sao của mã này. Ai có mã đều có thể truy cập. Chỉ tiếp tục nếu đây là mã của chính bạn."),replaceUrl:url=>history.replaceState(null,"",url)}).catch(error=>status(["INVALID_ID","NOT_CONFIGURED","BACKUP_NOT_FOUND","CONSENT_REQUIRED"].includes(error.message)?error.message:error.message==="INVALID_CONFIRMATION"?"EMAIL_CONFIRM_INVALID":"SYNC_FAILED"));
       } catch (_) {status("SYNC_FAILED");}
@@ -5684,7 +5727,7 @@
         let legacyToken = null;
         try { legacyToken = window.localStorage.getItem("ebm_auth_token"); } catch (_) {}
         if (legacyToken && !safeStorageGet("ebm_legacy_server_migrated")) {
-          const res = await fetch("/api/auth/me", {headers: getAuthHeaders({Authorization: `Bearer ${legacyToken}`})});
+          const res = await fetch("/api/auth/me", {headers: getAuthHeaders({Authorization: `Bearer ${legacyToken}`}), signal: AbortSignal.timeout(10000)});
           if (res.ok) {
             const data = await res.json();
             if (data.user) setAuthenticatedUser(data.user);
@@ -5692,7 +5735,7 @@
           }
         }
         await syncDeviceActivity();
-        const res = await fetch("/api/status", {headers: getAuthHeaders()});
+        const res = await fetch("/api/status", {headers: getAuthHeaders(), signal: AbortSignal.timeout(10000)});
         if (res.ok) {
           const data = await res.json();
           if (data.ok) applyServerStatus(data);
@@ -5781,6 +5824,7 @@
       try {
         const res = await fetch("/api/user/activity", {
           method: "POST", headers: getAuthHeaders({"Content-Type": "application/json"}),
+          signal: AbortSignal.timeout(10000),
           body: JSON.stringify({action: "sync", read_ids: profile.read_ids,
             bookmarked_ids: profile.bookmarked_ids, display_name: profile.display_name})
         });
@@ -7201,12 +7245,11 @@
         return;
       }
 
-      const st = getFeedbackState(bid);
-      st.reports += 1;
-      st.user_reported = true;
-      renderFeedbackBars(bid);
-
       if (!App.serverAvailable || App.offlineDemo || isFileOrigin()) {
+        const st = getFeedbackState(bid);
+        st.reports += 1;
+        st.user_reported = true;
+        renderFeedbackBars(bid);
         saveOfflineFeedbackStore();
         Dom.feedbackReportComment.value = "";
         closeFeedbackReportModal();
@@ -7215,9 +7258,11 @@
       }
 
       Dom.btnSubmitFeedbackReport.disabled = true;
+      showToast(App.currentLang === "en" ? "Sending report…" : "Đang gửi báo cáo…");
       try {
         const res = await fetch("/api/feedback", {
           method: "POST",
+          signal: AbortSignal.timeout(15000),
           headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             briefing_id: bid,
@@ -7369,70 +7414,70 @@
         Dom.iconRefreshToday.classList.remove("fa-spin");
         Dom.labelRefreshToday.textContent = t("refreshBtn");
         setTimeout(() => {
-          if (stripEl) stripEl.style.display = "none";
+          if (stripEl && !Dom.btnRefreshToday.disabled) stripEl.style.display = "none";
         }, 1200);
       };
 
+      const isEn = App.currentLang === "en";
+      setProgress(1, isEn ? "Refreshing today’s briefing…" : "Đang cập nhật bản tin hôm nay…");
       if (!App.serverAvailable || isFileOrigin()) {
         try {
-          if (force && !isFileOrigin()) await reloadSeedBriefingsScript();
+          const loaded = !force || isFileOrigin() || await reloadSeedBriefingsScript();
           App.todayDate = getScheduledCycleDate();
           computeRotationPillarsFromDate(App.todayDate);
           renderDailyRotationBanner();
           renderPillarHistory();
           const target = getTodaySingleBriefing();
           if (target && App.mode === "today") selectBriefing(target);
-          setProgress(100, "Đã đồng bộ bản tin theo khuyến cáo tuyển chọn.");
+          if (!loaded) throw new Error(isEn ? "Could not load the latest briefing; showing the local copy." : "Chưa tải được bản tin mới nhất; đang hiển thị bản có sẵn.");
+          setProgress(100, isEn ? "Daily briefing refreshed." : "Đã đồng bộ bản tin theo khuyến cáo tuyển chọn.");
           if (!silent) showToast(tt("toastPillarUpdated", { pid: App.todayPillarId, date: formatShortDdMm(App.todayDate) }));
+        } catch (err) {
+          if (!silent) showToast(tt("toastUpdateError", { err: err.message }));
         } finally {
           finishRefresh();
         }
         return;
       }
 
-      setProgress(1, `Đang tải khuyến cáo cho Trụ cột #${App.todayPillarId} hôm nay...`);
-
       if (window.ReadableStream) {
         const onMessage = async (evt) => {
-          try {
-            const data = JSON.parse(evt.data);
-            if (data.type === "progress") {
-              setProgress(data.percent || 0, data.message || "");
-            } else if (data.type === "done") {
-              setProgress(100, `Hoàn tất cập nhật Trụ cột #${App.todayPillarId} hôm nay!`);
-              if (Array.isArray(data.briefings)) App.briefings = data.briefings;
-              if (data.rotation_state) App.rotation = data.rotation_state;
-              if (data.today_date) App.todayDate = data.today_date;
-              computeRotationPillarsFromDate(App.todayDate);
+          const data = JSON.parse(evt.data);
+          if (data.type === "progress") {
+            setProgress(data.percent || 0, data.message || "");
+          } else if (data.type === "done") {
+            setProgress(100, t("toastTodayDone"));
+            if (Array.isArray(data.briefings)) App.briefings = data.briefings;
+            if (data.rotation_state) App.rotation = data.rotation_state;
+            if (data.today_date) App.todayDate = data.today_date;
+            computeRotationPillarsFromDate(App.todayDate);
 
-              try {
-                const stRes = await fetch("/api/status", { headers: getAuthHeaders() });
-                if (stRes.ok) applyServerStatus(await stRes.json());
-              } catch (_) {}
+            try {
+              const stRes = await fetch("/api/status", { headers: getAuthHeaders(), signal: AbortSignal.timeout(10000) });
+              if (stRes.ok) applyServerStatus(await stRes.json());
+            } catch (_) {}
 
-              renderDailyRotationBanner();
-              renderPillarHistory();
+            renderDailyRotationBanner();
+            renderPillarHistory();
 
-              if (App.mode === "today") {
-                const target = data.briefing || getTodaySingleBriefing();
-                if (target) selectBriefing(target);
-              } else {
-                renderBriefingsList();
-              }
-              showToast(tt("toastPillarDone", { pid: App.todayPillarId }));
-              finishRefresh();
-              return false;
-            } else if (data.type === "error") {
-              if (!silent) showToast(tt("toastUpdateError", { err: data.error || "Unknown error" }));
-              finishRefresh();
-              return false;
+            if (App.mode === "today") {
+              const target = data.briefing || getTodaySingleBriefing();
+              if (target) selectBriefing(target);
+            } else {
+              renderBriefingsList();
             }
-          } catch (_) {}
+            showToast(tt("toastPillarDone", { pid: App.todayPillarId }));
+            return false;
+          } else if (data.type === "error") {
+            if (!silent) showToast(tt("toastUpdateError", { err: data.error || "Unknown error" }));
+            return false;
+          }
         };
         try {
           await consumeApiEvents("/api/refresh-stream", onMessage);
         } catch (_) {
           if (!silent) showToast(t("toastStreamLost"));
+        } finally {
           finishRefresh();
         }
         return;
@@ -7441,6 +7486,7 @@
       try {
         const res = await fetch("/api/refresh", {
           method: "POST",
+          signal: AbortSignal.timeout(60000),
           headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ force: force, pillar_id: App.todayPillarId })
         });
@@ -7448,7 +7494,7 @@
         if (!data.ok) throw new Error(data.error || "Không thể cập nhật dữ liệu.");
         if (Array.isArray(data.briefings)) App.briefings = data.briefings;
         if (data.rotation_state) App.rotation = data.rotation_state;
-        setProgress(100, "Hoàn tất!");
+        setProgress(100, t("toastTodayDone"));
         renderDailyRotationBanner();
         renderPillarHistory();
         if (data.briefing) selectBriefing(data.briefing);
@@ -7615,9 +7661,7 @@
         const txt = normalizeCuratedMarkdown(String(txtRaw || ""))
           .replace(/\n*(?:\[?\s*END OF PART\s*[12][\s\S]*$|PART\s*1\.\s*Enter\s*"Continue to Part 2"[\s\S]*$)/i, "")
           .trim();
-        navigator.clipboard.writeText(txt).then(() => {
-          showToast(App.currentLang === "vi" ? "Đã sao chép nội dung Markdown." : "Copied Markdown to clipboard.");
-        });
+        copyMarkdown(txt, App.currentLang === "vi" ? "Đã sao chép nội dung Markdown." : "Copied Markdown to clipboard.");
       });
 
       Dom.btnPrintArticle.addEventListener("click", () => window.print());
@@ -7629,16 +7673,14 @@
         safeStorageSet("ebm_font_scale", App.fontScale);
       };
       Dom.btnFontInc.addEventListener("click", () => {
-        if (App.fontScale < 1.25) {
-          App.fontScale += 0.08;
-          updateFontScale();
-        }
+        if (App.fontScale >= 1.25) return showToast(App.currentLang === "en" ? "Maximum text size reached." : "Đã đạt cỡ chữ lớn nhất.");
+        App.fontScale = Math.min(1.25, App.fontScale + 0.08);
+        updateFontScale();
       });
       Dom.btnFontDec.addEventListener("click", () => {
-        if (App.fontScale > 0.85) {
-          App.fontScale -= 0.08;
-          updateFontScale();
-        }
+        if (App.fontScale <= 0.85) return showToast(App.currentLang === "en" ? "Minimum text size reached." : "Đã đạt cỡ chữ nhỏ nhất.");
+        App.fontScale = Math.max(0.85, App.fontScale - 0.08);
+        updateFontScale();
       });
       Dom.btnFontReset.addEventListener("click", () => {
         App.fontScale = 1.0;
@@ -7751,6 +7793,7 @@
       isExpanded: false,
       isHistoryOpen: false,
       isBusy: false,
+      activeReply: null,
       verbosity: "medium",
       dailyLimit: 500,
       quota: { date: "", used: 0, limit: 500, exhausted: false, stop_reason: "" },
@@ -7871,19 +7914,28 @@
         if (Dom.chatHistoryList) {
           Dom.chatHistoryList.addEventListener("click", (e) => {
             const delBtn = e.target.closest("[data-del-sid]");
-            if (delBtn) {
-              e.stopPropagation();
-              this.deleteSession(delBtn.dataset.delSid);
+            const sessionId = delBtn ? delBtn.dataset.delSid : e.target.closest(".chat-history-item[data-sid]")?.dataset.sid;
+            if (!this.sessions.some(session => session.id === sessionId)) return;
+            if (!delBtn && sessionId === this.currentSessionId) {
+              this.toggleHistoryDrawer(false);
               return;
             }
-            const item = e.target.closest(".chat-history-item[data-sid]");
-            if (item) {
-              this.switchSession(item.dataset.sid);
+            const cancelled = this.cancelReply();
+            if (delBtn) {
+              e.stopPropagation();
+              this.deleteSession(sessionId);
+            } else {
+              this.switchSession(sessionId);
             }
+            const isEn = App.currentLang === "en";
+            const notice = delBtn ? (isEn ? "Conversation deleted." : "Đã xóa cuộc trò chuyện.")
+              : (isEn ? "Conversation opened." : "Đã mở cuộc trò chuyện.");
+            showToast((cancelled ? (isEn ? "Reply canceled. " : "Đã hủy câu trả lời. ") : "") + notice);
           });
         }
 
         Dom.btnClearChat.addEventListener("click", () => {
+          const cancelled = this.cancelReply();
           const cid = this.currentSessionId;
           if (cid) {
             this.deleteSession(cid);
@@ -7892,12 +7944,15 @@
             Dom.chatMessagesList.innerHTML = "";
             this.pushWelcomeMessage();
           }
-          showToast(t("toastChatCleared"));
+          showToast(cancelled
+            ? (App.currentLang === "en" ? "Reply canceled. Current conversation cleared." : "Đã hủy câu trả lời và xóa cuộc trò chuyện hiện tại.")
+            : t("toastChatCleared"));
         });
 
         Dom.chatQuickPrompts.addEventListener("click", (e) => {
           const chip = e.target.closest(".chat-quick-chip");
-          if (!chip || this.isBusy) return;
+          if (!chip) return;
+          if (this.isBusy) return showToast(App.currentLang === "en" ? "Please wait for the current reply." : "Vui lòng đợi câu trả lời hiện tại.");
           const q = chip.dataset.q || chip.textContent.trim();
           Dom.chatInputField.value = q;
           this.sendQuestion(q);
@@ -7906,7 +7961,12 @@
         Dom.chatInputForm.addEventListener("submit", (e) => {
           e.preventDefault();
           const q = (Dom.chatInputField.value || "").trim();
-          if (!q || this.isBusy) return;
+          if (this.isBusy) return;
+          if (!q) {
+            showToast(App.currentLang === "en" ? "Enter a question first." : "Vui lòng nhập câu hỏi.");
+            Dom.chatInputField.focus();
+            return;
+          }
           this.sendQuestion(q);
         });
 
@@ -8055,6 +8115,7 @@
       },
 
       createNewSession(notify = true) {
+        const cancelled = notify && this.cancelReply();
         if (this.isBusy) return;
         const b = App.selected || getTodaySingleBriefing();
         const pid = (b && b.pillar_id) || App.todayPillarId || 1;
@@ -8075,7 +8136,9 @@
         this.toggleHistoryDrawer(false);
         this.pushWelcomeMessage();
         if (notify) {
-          showToast(App.currentLang === "en" ? "Started a new conversation with Med Bro." : "Đã bắt đầu cuộc trò chuyện mới với Soái ca Y khoa.");
+          showToast(App.currentLang === "en"
+            ? (cancelled ? "Reply canceled. Started a new conversation." : "Started a new conversation with Med Bro.")
+            : (cancelled ? "Đã hủy câu trả lời và bắt đầu cuộc trò chuyện mới." : "Đã bắt đầu cuộc trò chuyện mới với Soái ca Y khoa."));
         }
         if (this.isOpen && Dom.chatInputField) {
           setTimeout(() => Dom.chatInputField.focus(), 50);
@@ -8320,7 +8383,7 @@
           cpBtn.className = "chat-copy-btn";
           cpBtn.innerHTML = `<i class="fa-regular fa-copy"></i> ${App.currentLang === "en" ? "Copy" : "Sao chép"}`;
           cpBtn.addEventListener("click", () => {
-            navigator.clipboard.writeText(markdownText || "").then(() => showToast(App.currentLang === "en" ? "Copied response." : "Đã sao chép câu trả lời."));
+            copyMarkdown(markdownText || "", App.currentLang === "en" ? "Copied response." : "Đã sao chép câu trả lời.");
           });
           meta.appendChild(cpBtn);
           wrap.appendChild(meta);
@@ -8379,14 +8442,26 @@
         return score;
       },
 
-      async translateSnippetToVi(text) {
+      chatRequestSignal(replySignal, requestSignal) {
+        const signals = [replySignal, requestSignal];
+        if (typeof AbortSignal.any === "function") return AbortSignal.any(signals);
+        const controller = new AbortController();
+        const aborted = signals.find(signal => signal.aborted);
+        if (aborted) {
+          controller.abort(aborted.reason);
+        } else {
+          for (const signal of signals) {
+            signal.addEventListener("abort", () => controller.abort(signal.reason), {once: true, signal: controller.signal});
+          }
+        }
+        return controller.signal;
+      },
+
+      async translateSnippetToVi(text, replySignal) {
         if (!text || text.length < 10) return text;
         try {
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 3500);
           const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 320))}&langpair=en|vi`;
-          const res = await fetch(url, { signal: ctrl.signal });
-          clearTimeout(tid);
+          const res = await fetch(url, {signal: this.chatRequestSignal(replySignal, AbortSignal.timeout(3500))});
           if (!res.ok) return text;
           const d = await res.json();
           const tr = d?.responseData?.translatedText || "";
@@ -8397,7 +8472,7 @@
         return text;
       },
 
-      async fetchOpenFdaDrugNote(query) {
+      async fetchOpenFdaDrugNote(query, replySignal) {
         try {
           const qLow = (query || "").toLowerCase();
           let matchedDrug = "";
@@ -8410,7 +8485,7 @@
           if (!matchedDrug) return null;
 
           const url = `https://api.fda.gov/drug/label.json?search=${encodeURIComponent(`openfda.generic_name:"${matchedDrug}"`)}&limit=1`;
-          const res = await fetch(url);
+          const res = await fetch(url, {signal: this.chatRequestSignal(replySignal, AbortSignal.timeout(5000))});
           if (!res.ok) return null;
           const d = await res.json();
           const r = d?.results?.[0];
@@ -8448,7 +8523,7 @@
         }
       },
 
-      async fetchLivePubMedAbstracts(query, primaryBriefing) {
+      async fetchLivePubMedAbstracts(query, primaryBriefing, replySignal) {
         try {
           const qLow = (query || "").toLowerCase();
           const terms = [];
@@ -8466,14 +8541,16 @@
             : `${fallbackQ} AND 2026[dp]`;
 
           const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(pmTerm)}&retmode=json&retmax=3&sort=relevance`;
-          const sRes = await fetch(sUrl);
+          const signal = this.chatRequestSignal(replySignal, AbortSignal.timeout(7000));
+          const sRes = await fetch(sUrl, {signal});
           if (!sRes.ok) return [];
           const sData = await sRes.json();
+          if (signal.aborted) return [];
           const ids = sData.esearchresult?.idlist || [];
           if (ids.length === 0) return [];
 
           const efUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(",")}&retmode=xml`;
-          const efRes = await fetch(efUrl);
+          const efRes = await fetch(efUrl, {signal});
           if (!efRes.ok) return [];
           const xmlText = await efRes.text();
           const doc = new DOMParser().parseFromString(xmlText, "text/xml");
@@ -8595,7 +8672,7 @@
         return /[.!?…]["'\)\]\*`]*$/.test(clean) ? clean : `${clean}.`;
       },
 
-      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang, verbosity = "medium") {
+      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang, verbosity = "medium", replySignal) {
         const isEn = lang === "en";
         const vNorm = ["short", "medium", "detailed"].includes(String(verbosity || "").toLowerCase())
           ? String(verbosity).toLowerCase()
@@ -8717,7 +8794,7 @@
             const tr0 = trials[0];
             shortSegs.push(`**${tr0.name}** (${tr0.value}, ${tr0.p}): ${this.firstCleanSentence(isEn ? tr0.changes_en : tr0.changes_vi, 180)}`);
           } else if (fdaNote && fdaNote.text) {
-            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220)), 200);
+            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220), replySignal), 200);
             shortSegs.push(`**${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
           }
           return { markdown: this.ensureCompleteSentence(shortSegs.join(" ")), sources };
@@ -8736,7 +8813,7 @@
             sections.push(`- **${tr.name}** (*${tr.journal}*, **${tr.value}**, ${tr.p}): ${this.firstCleanSentence(isEn ? tr.changes_en : tr.changes_vi, 340)} ${this.firstCleanSentence(isEn ? tr.caution_en : tr.caution_vi, 340)}`);
           });
           if (fdaNote && fdaNote.text) {
-            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 360)), 360);
+            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 360), replySignal), 360);
             sections.push(`- **${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
           }
           if (pearls.length > 0) {
@@ -8763,13 +8840,23 @@
           if (pt) parts.push(`- **${isEn ? "Pearl" : "Lưu ý đi buồng"}:** ${this.firstCleanSentence(pt, 380)}`);
         });
         if (fdaNote && fdaNote.text) {
-          const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text), 360);
+          const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text, replySignal), 360);
           parts.push(`- **${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
         }
         return { markdown: this.ensureCompleteSentence(parts.join("\n")), sources };
       },
 
+      cancelReply() {
+        if (!this.activeReply) return false;
+        this.activeReply.abort();
+        this.activeReply = null;
+        this.isBusy = false;
+        Dom.btnSendChat.disabled = false;
+        return true;
+      },
+
       async sendQuestion(query) {
+        if (this.isBusy) return;
         this.isBusy = true;
         Dom.btnSendChat.disabled = true;
         Dom.chatInputField.value = "";
@@ -8792,11 +8879,14 @@
           return;
         }
 
+        const reply = this.activeReply = new AbortController();
+        const {signal} = reply;
         const typingEl = document.createElement("div");
         typingEl.className = "chat-msg assistant";
         typingEl.innerHTML = lang === "en"
           ? `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Med Bro is searching Guidelines, PubMed &amp; OpenFDA...</div>`
           : `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Soái ca Y khoa đang tra cứu Guideline, PubMed &amp; OpenFDA...</div>`;
+        signal.addEventListener("abort", () => typingEl.remove(), {once: true});
         Dom.chatMessagesList.appendChild(typingEl);
         Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
 
@@ -8807,6 +8897,7 @@
             try {
               const res = await fetch("/api/chat", {
                 method: "POST",
+                signal: this.chatRequestSignal(signal, AbortSignal.timeout(20000)),
                 headers: getAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   query,
@@ -8818,21 +8909,23 @@
                   history: priorHistory
                 })
               });
+              if (signal.aborted) return;
               const ct = res.headers.get("content-type") || "";
               if (res.ok && ct.includes("application/json")) {
                 const data = await res.json();
+                if (signal.aborted) return;
                 if (data.ok && data.answer_markdown) {
                   if (data.quota) {
                     this.quota = data.quota;
                     this.renderQuotaBadge();
                   }
-                  typingEl.remove();
                   this.appendMessage("assistant", data.answer_markdown, data.sources || [], data.engine_used || `${botName} • EBM & PubMed`);
                   return;
                 }
               }
             } catch (_) {}
           }
+          if (signal.aborted) return;
 
           // Client-side engine (GitHub Pages & Mobile PWA — EBM + PubMed + OpenFDA)
           const priorUsers = priorHistory.filter((m) => m.role === "user").map((m) => m.content);
@@ -8849,10 +8942,12 @@
           }
 
           const [pubmedHits, fdaNote] = await Promise.all([
-            this.fetchLivePubMedAbstracts(searchQuery, primary),
-            this.fetchOpenFdaDrugNote(searchQuery)
+            this.fetchLivePubMedAbstracts(searchQuery, primary, signal),
+            this.fetchOpenFdaDrugNote(searchQuery, signal)
           ]);
-          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium");
+          if (signal.aborted) return;
+          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium", signal);
+          if (signal.aborted) return;
           let answerMarkdown = det.markdown;
           let engineLabel = fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`;
           const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
@@ -8861,6 +8956,7 @@
             try {
               const chatDigest = await window.crypto.subtle.digest("SHA-256",
                 new TextEncoder().encode("dlh-chat-v1:" + deviceStore.profile.device_id.toLowerCase()));
+              if (signal.aborted) return;
               const chatDeviceId = Array.from(new Uint8Array(chatDigest), b => b.toString(16).padStart(2, "0")).join("");
               const suffix = lang === "en" ? "en" : "vi";
               const context = [
@@ -8876,7 +8972,7 @@
               const controller = new AbortController();
               timer = setTimeout(() => controller.abort(), 20000);
               const response = await fetch(endpoint, {
-                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
+                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: this.chatRequestSignal(signal, controller.signal),
                 body: JSON.stringify({action: "chat", device_id: chatDeviceId, question: query,
                   history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
                   context, lang, verbosity: this.verbosity || "medium"})
@@ -8894,16 +8990,18 @@
             }
           }
 
-          typingEl.remove();
-          this.appendMessage("assistant", answerMarkdown, det.sources, engineLabel);
+          if (!signal.aborted) this.appendMessage("assistant", answerMarkdown, det.sources, engineLabel);
         } catch (err) {
-          typingEl.remove();
-          this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
+          if (!signal.aborted) this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
         } finally {
-          this.isBusy = false;
-          this.loadSessions();
-          Dom.btnSendChat.disabled = false;
-          Dom.chatInputField.focus();
+          typingEl.remove();
+          if (this.activeReply === reply) {
+            this.activeReply = null;
+            this.isBusy = false;
+            Dom.btnSendChat.disabled = false;
+            this.loadSessions();
+            Dom.chatInputField.focus();
+          }
         }
       }
     };
@@ -9351,6 +9449,7 @@
             } else {
               const firstChoice = document.querySelector("#socraticChoicesGrid .socratic-choice-btn");
               if (firstChoice) firstChoice.focus();
+              else if (this.isFinished(sess)) showToast(App.currentLang === "en" ? "Review complete. Choose Restart to practice again." : "Đã hoàn tất ôn tập. Chọn Học lại để luyện tập lại.");
             }
           });
         }
@@ -9635,7 +9734,7 @@
         if (btnNewSet) {
           const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
           btnNewSet.style.display = total ? "inline-flex" : "none";
-          btnNewSet.disabled = Boolean(this.isBusy) || left <= 0;
+          btnNewSet.disabled = Boolean(this.isBusy);
           btnNewSet.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
             : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
           setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới bằng AI (còn ${left} lượt)` : `New AI questions (${left} left)`);
@@ -9862,6 +9961,7 @@
             try {
               const res = await fetch("/api/socratic", {
                 method: "POST",
+                signal: AbortSignal.timeout(15000),
                 headers: getAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   pillar_id: pid,
