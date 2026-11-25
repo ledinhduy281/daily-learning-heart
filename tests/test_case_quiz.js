@@ -77,4 +77,47 @@ const daily = {...lesson, case_quiz_items: [kase, {...kase, quote: "invented"}]}
 assert.equal(quiz.sourceQuestionCount(daily), quiz.sourceQuestionCount(lesson) + 1, "valid daily case items follow the verbatim quiz");
 const guideline = {...scope.window.EBM_BRIEFINGS_DATA.focused_lessons["1"], quiz_items: [], quiz_status: "awaiting_physician_excerpts"};
 assert.equal(quiz.hasSourceItems({...guideline, generated_quiz: {set_id: "s3", items: [theory, kase]}}), false);
+
+const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+const escapeHtmlCode = html.match(/    function escapeHtml\(str\) \{[\s\S]*?\n    \}/)[0];
+const escapeHtml = vm.runInNewContext(escapeHtmlCode + ";escapeHtml");
+const nodes = {btnNewQuizSet: {style: {}}, labelNewQuizSet: {}};
+const App = {selected: generated};
+const tutor = vm.runInNewContext(escapeHtmlCode + "\n" + tutorCode + ";SocraticTutor", {
+  App, CaseQuiz, ClinicalQuiz: quiz, document: {getElementById: id => nodes[id]},
+});
+tutor.quizSets.attach = b => b;
+tutor.quizSets.available = () => [generated.generated_quiz];
+tutor.quizSourceLabel = () => "";
+tutor.renderProgressDashboard = () => {};
+for (const lang of ["vi", "en"]) {
+  const vi = lang === "vi";
+  const first = quiz.turn(generated, {}, lang, "start_diagnostic").state;
+  const turn = quiz.turn(generated, first, lang, "answer", first.correct_key);
+  const saved = {role: "assistant", text: turn.reply, source_pmid: turn.state.revealed_source_pmid};
+  const markup = tutor.renderTranscriptMessage(saved, turn.state, 2, vi);
+  const [feedback, questionCard] = markup.split('<div class="socratic-transcript-card socratic-question-card">');
+  assert.match(feedback, vi ? /<h2>Đáp án đúng: [A-D]\.<\/h2>/ : /<h2>Correct answer: [A-D]\.<\/h2>/);
+  assert.ok(feedback.includes(escapeHtml(theory["explanation_" + lang])));
+  assert.ok(feedback.includes(`<blockquote>“${escapeHtml(quote)}”</blockquote>`));
+  assert.ok(feedback.includes(`href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/"`));
+  assert.ok(feedback.includes(CaseQuiz.AI_NOTE[lang]));
+  assert.ok(!feedback.includes(escapeHtml(kase["stem_" + lang])));
+  assert.match(questionCard, vi ? /<h2>Câu 2\/2 · Tình huống lâm sàng<\/h2>/ : /<h2>Question 2\/2 · Clinical case<\/h2>/);
+  assert.ok(questionCard.includes(escapeHtml(kase["stem_" + lang])));
+  assert.doesNotMatch(questionCard, /<blockquote>|<a href=/);
+  const complete = quiz.turn(generated, turn.state, lang, "answer", turn.state.correct_key);
+  const completion = tutor.renderTranscriptMessage({role: "assistant", text: complete.reply}, complete.state, 2, vi);
+  assert.match(completion, vi ? /Hoàn tất ôn tập\./ : /Review complete\./);
+  assert.doesNotMatch(completion, /socratic-question-card/);
+  App.currentLang = lang;
+  tutor.getSession = () => turn.state;
+  for (const remaining of [2, 0]) {
+    tutor.quizSets.remaining = () => remaining;
+    tutor.renderUI();
+    assert.equal(nodes.labelNewQuizSet.textContent,
+      vi ? `Tạo câu hỏi mới bằng AI (còn ${remaining} lượt)` : `New AI questions (${remaining} left)`);
+  }
+}
 console.log("Case quiz checks passed (grounding, fallback, mixed set, bilingual, AI label).");

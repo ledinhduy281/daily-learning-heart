@@ -476,8 +476,11 @@ const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.equal(fn({role:malicious,markdownText:malicious}).className,'chat-msg assistant');
   assert.equal(scope.safeChatSourceUrl('javascript:alert(1)'), '#');
   assert.equal(scope.safeChatSourceUrl('https://pubmed.ncbi.nlm.nih.gov/'), 'https://pubmed.ncbi.nlm.nih.gov/');
-  const body = html.match(/const bodyHtml = ([\s\S]*?);\n              return/)[1];
-  assert.ok(vm.runInNewContext(body, {...scope, m: {role:'assistant', text:malicious}}).startsWith('&lt;img'));
+  const transcript = html.match(/      renderTranscriptMessage\(message, sess, questionCount, isVi\) \{[\s\S]*?\n      \},/)[0];
+  const renderTranscript = vm.runInNewContext(`({${transcript}}).renderTranscriptMessage`, scope);
+  const quizMessage = renderTranscript({role: 'assistant', text: malicious, source_pmid: malicious}, {}, 0, false);
+  assert.ok(quizMessage.includes(scope.escapeHtml(malicious)));
+  assert.doesNotMatch(quizMessage, /<img|href=/);
 }
 assert.ok(!/authGateOverlay|auth-locked|type="password"|\/api\/auth\/(login|register|logout|reset-password)/.test(html));
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
