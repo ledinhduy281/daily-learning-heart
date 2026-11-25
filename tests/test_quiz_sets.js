@@ -19,11 +19,11 @@ const opts = l => l.map(t => ({vi: t, en: t}));
 const theory = n => ({type: "theory", pmid, quote, answer: "B", options: opts(["1.10", "0.70", "0.50", "0.94"]),
   stem_vi: `Câu ${n}: hazard ratio của biến cố tim mạch chính trong STAREE là bao nhiêu?`,
   stem_en: `Item ${n}: what was the hazard ratio for a primary cardiovascular event in STAREE?`,
-  explanation_vi: "Abstract báo cáo hazard ratio 0.70; B đúng.", explanation_en: "The abstract reports a hazard ratio of 0.70; B is right."});
+  explanation_vi: "Abstract báo cáo hazard ratio 0.70.", explanation_en: "The abstract reports a hazard ratio of 0.70."});
 const kase = n => ({...theory(n), type: "case", answer: "A", options: opts(["Fewer primary events", "No effect", "More events", "Not tested"]),
   stem_vi: `Ca ${n}: bà 74 tuổi, LDL 3,2 mmol/L, chưa có bệnh tim mạch, hỏi atorvastatin có giảm biến cố không; câu nào đúng với STAREE?`,
   stem_en: `Case ${n}: a 74-year-old woman (LDL 3.2 mmol/L) without cardiovascular disease asks whether atorvastatin lowers events; which fits STAREE?`,
-  explanation_en: "STAREE enrolled 9,971 participants and the hazard ratio was 0.70; B, C and D contradict this."});
+  explanation_en: "STAREE enrolled 9,971 participants and the hazard ratio was 0.70; the other options contradict this."});
 const reply = obj => ({ok: true, status: 200, headers: {get: () => null}, json: async () => ({choices: [{message: {content: JSON.stringify(obj)}}]})});
 
 function fakeGroq(rounds) {
@@ -55,7 +55,7 @@ const quiet = () => {};
     {questions: [theory(1), kase(1), {...kase(9), quote: "paraphrased text that is not in the source"}], answers: ["B", "A"]},
     {questions: [theory(2), kase(2), {...theory(8), explanation_en: "Not 1.10: the abstract reports 0.70."}], answers: ["B", "C", "B"]},
     {questions: [theory(3), kase(3), {...kase(7), stem_en: kase(7).stem_en + " She takes atorvastatin 80 mg."}], answers: ["B", "A"]},
-    {questions: [{...theory(4), quote: undefined, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}, {...kase(4), options: opts(["A. Fewer primary events", "B. No effect", "C. More events", "D. Not tested"]), explanation_vi: "Trích dẫn 1 cho thấy hazard ratio 0.70, nên chọn A."}], answers: ["B", "A"]},
+    {questions: [{...theory(4), quote: undefined, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}, {...kase(4), options: opts(["A. Fewer primary events", "B. No effect", "C. More events", "D. Not tested"]), explanation_vi: "Trích dẫn 1 cho thấy hazard ratio 0.70, nên atorvastatin giảm biến cố."}], answers: ["B", "A"]},
   ]);
   const logs = [];
   assert.equal(await main({root, env, date, fetchImpl: g.fetchImpl, log: m => logs.push(m)}), 3);

@@ -35,7 +35,8 @@ function systemPrompt(pmid, avoid) {
     'options (exactly 4 objects {"vi": ..., "en": ...}), answer ("A"-"D"), explanation_vi, explanation_en. Rules: ' +
     'Vietnamese uses standard medical terminology. Every number in the correct option and in both explanations must appear ' +
     'in the excerpts or the stem, written the same way (no thousands separators). Explanations say why the correct answer ' +
-    'follows from the quote and refer to wrong options only by letter, never repeating their numbers. Never mention a drug ' +
+    'follows from the quote and why the other options do not fit, without naming any option by letter (the app shuffles ' +
+    'them) and without repeating their numbers. Never mention a drug ' +
     'dose or lab value with units (mg, g, mmol, mL, IU) that is not in the quote. Wrong options must be plausible but ' +
     'contradicted or unsupported by the quote. Vary the position of the correct answer.' +
     (avoid.length ? ' Do not repeat these existing questions: ' + avoid.map(s => JSON.stringify(s.slice(0, 160))).join('; ') : '');
