@@ -72,6 +72,23 @@ class RecentLessonTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_lesson(broken, pillar, "2026-11-26", recorded=True)
 
+    def test_archived_lessons_survive_a_catalog_version_bump(self):
+        lesson = build_recent_lesson(PILLARS[1], "2026-11-26")
+        with patch("pipeline.validate_lesson.RECENT_LESSON_VERSION", lesson["lesson_version"] + 1), \
+                patch("pipeline.validate_lesson.SOURCE_WINDOW_DAYS", 60):
+            validate_lesson(lesson, PILLARS[1], "2026-11-26", recorded=True)
+            with self.assertRaises(ValueError):
+                validate_lesson(lesson, PILLARS[1], "2026-11-26")
+
+    def test_local_chat_does_not_grade_pasted_questions_on_recent_lessons(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[6], "2026-11-26")
+        query = "Which is true about antibiotic duration in endocarditis?\nA. Longer\nB. Response-tailored\nC. None\nD. All"
+        for lang, notice in (("en", "does not grade"), ("vi", "không chấm")):
+            answer, _ = app._compose_deterministic_ebm_answer(query, [lesson], [], lang)
+            self.assertIn(notice, answer)
+            self.assertNotRegex(answer, r"(?i)\b(correct answer|đáp án đúng)\b")
+
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")
