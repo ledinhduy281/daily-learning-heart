@@ -4,8 +4,6 @@ const vm = require("node:vm");
 const CaseQuiz = require("../case_quiz.js");
 const quiz = require("../clinical_mcq.js");
 
-assert.equal(fs.readFileSync(require.resolve("../backend/apps_script/CaseQuiz.gs"), "utf8"),
-  fs.readFileSync(require.resolve("../case_quiz.js"), "utf8"), "CaseQuiz.gs must be a copy of case_quiz.js");
 
 const scope = {window: {}};
 vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), scope);

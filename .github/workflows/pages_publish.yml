@@ -28,7 +28,7 @@ jobs:
       - name: Validate and stage the lesson bundle
         run: |
           python3 -m pipeline.validate_lesson --rotation-state data/rotation_state.json
-          cp data/briefings.js site/data/
+          cp data/briefings.js data/quiz_sets.js site/data/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

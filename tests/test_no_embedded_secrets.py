@@ -48,7 +48,9 @@ class NoEmbeddedSecretsTests(unittest.TestCase):
             or "return ClinicalQuiz.turn(primary, sess, lang, action, userAnswer, selectedChoice);" in source
         )
         for filename in ROOT.rglob("*.js"):
-            if "backend/apps_script" in filename.relative_to(ROOT).as_posix() or "tests" in filename.relative_to(ROOT).parts:
+            # generate_quiz_sets.js runs only in GitHub Actions with a repo secret and is not published.
+            if ("backend/apps_script" in filename.relative_to(ROOT).as_posix() or "tests" in filename.relative_to(ROOT).parts
+                    or filename.name == "generate_quiz_sets.js"):
                 continue
             self.assertNotIn("api.groq.com", filename.read_text(), str(filename))
 

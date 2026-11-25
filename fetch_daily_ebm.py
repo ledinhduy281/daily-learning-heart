@@ -2882,7 +2882,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         target = (BASE_DIR / 'index.html' if is_home else Path(self.translate_path(self.path))).resolve()
         public_assets = {'index.html', 'device_profile.js', 'sync_config.js', 'cloud_sync.js', 'search_ranking.js',
                          'clinical_distractors.js', 'case_quiz.js', 'clinical_mcq.js',
-                         'manifest.json', 'icon.svg', 'data/briefings.js',
+                         'manifest.json', 'icon.svg', 'data/briefings.js', 'data/quiz_sets.js',
                          'offline.js', 'evidence_feed.js', 'data/pipeline/briefing.json',
                          'data/pipeline/evidence.parquet'}
         allowed = {(BASE_DIR / name).resolve() for name in public_assets}
