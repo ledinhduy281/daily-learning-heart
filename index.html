@@ -1141,6 +1141,9 @@
       display: grid;
       grid-template-columns: 340px 1fr;
       gap: 24px;
+    }
+
+    .study-content {
       flex: 1;
     }
 
@@ -3448,8 +3451,13 @@
     /* ========================================================================
        SOCRATIC TUTOR ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING")
        ======================================================================== */
+    .quiz-tab-panel {
+      max-width: 1040px;
+      margin: 24px auto 64px;
+      padding: 0 clamp(16px, 3vw, 28px);
+    }
+
     .socratic-card-supa {
-      margin-top: 28px;
       background: var(--color-canvas);
       border: 1px solid var(--color-hairline);
       border-top: 3px solid var(--color-primary-deep);
@@ -3459,6 +3467,14 @@
       flex-direction: column;
       gap: 14px;
       box-shadow: var(--shadow-1);
+    }
+    .socratic-card-supa[hidden] {
+      display: none;
+    }
+
+    .socratic-title-line h1 {
+      font: inherit;
+      margin: 0;
     }
     .socratic-header-row {
       display: flex;
@@ -4011,7 +4027,7 @@
       aside.sidebar-panel,
       .lang-segmented-bar,
       .article-header-tools,
-      .socratic-card-supa,
+      .quiz-tab-panel,
       .bottom-feedback-prompt,
       .auth-gate-overlay,
       .modal-backdrop-supa,
@@ -4026,6 +4042,9 @@
         display: block;
         margin: 0;
         padding: 0;
+      }
+      #homeTabPanel[hidden] {
+        display: block;
       }
       .reading-console {
         border: none;
@@ -4057,6 +4076,10 @@
       </div>
 
       <div class="nav-right">
+        <div class="segmented-control" id="studyTabs" role="tablist" aria-label="Nội dung học">
+          <button type="button" class="segmented-btn active" id="tabStudyHome" role="tab" aria-controls="homeTabPanel" aria-selected="true">Trang chủ</button>
+          <button type="button" class="segmented-btn" id="tabReviewQuiz" role="tab" aria-controls="quizTabPanel" aria-selected="false" tabindex="-1">Trắc Nghiệm Ôn Tập</button>
+        </div>
         <div class="segmented-control" style="padding: 2px;" role="group" aria-label="Language Mode">
           <button type="button" class="segmented-btn active" id="btnNavLangVi" style="padding: 5px 10px; font-size: 12px;">Tiếng Việt</button>
           <button type="button" class="segmented-btn" id="btnNavLangEn" style="padding: 5px 10px; font-size: 12px;">English</button>
@@ -4082,11 +4105,6 @@
 
         </div>
 
-        <button type="button" class="btn btn-secondary-outline" id="btnOpenSocraticHeader" title="Trắc nghiệm ôn lại kiến thức hôm nay" style="display: none;">
-          <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
-          <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
-        </button>
-
         <button type="button" class="btn btn-primary-green" id="btnRefreshToday">
           <i class="fa-solid fa-rotate" id="iconRefreshToday"></i>
           <span id="labelRefreshToday">Cập Nhật Hôm Nay</span>
@@ -4107,6 +4125,9 @@
       </div>
     </div>
   </div>
+
+  <main class="study-content">
+  <div id="homeTabPanel" role="tabpanel" aria-labelledby="tabStudyHome" tabindex="0">
 
   <!-- ========================================================================
        HERO STRIP (PURE WHITE CANVAS)
@@ -4166,7 +4187,7 @@
   <!-- ========================================================================
        MAIN CLINICAL WORKSPACE (DUAL-PANE LAYOUT)
        ======================================================================== -->
-  <main class="app-workspace">
+  <div class="app-workspace">
 
     <!-- LEFT SIDEBAR -->
     <aside class="sidebar-panel">
@@ -4325,13 +4346,53 @@
         </div>
       </details>
 
-      <!-- 4.5. SOCRATIC REVIEW LAB ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING") -->
-      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText" style="display: none;">
+      <!-- 5. PRODUCT FEEDBACK BAR (BOTTOM ARTICLE PROMPT) -->
+      <div class="bottom-feedback-prompt" id="bottomFeedbackPrompt">
+        <div class="bottom-feedback-text">
+          <div class="bottom-feedback-title" id="bottomFeedbackTitle">Đánh giá &amp; Góp ý Nhà làm sản phẩm</div>
+          <div class="bottom-feedback-sub" id="bottomFeedbackSub">
+            Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.
+          </div>
+        </div>
+
+        <div class="feedback-icon-bar" data-feedback-bar="bottom">
+          <button type="button" class="btn-feedback-icon" data-fb-type="like" title="Thích nội dung này" aria-label="Thích nội dung này">
+            <i class="fa-regular fa-thumbs-up"></i>
+            <span class="fb-count">0</span>
+          </button>
+          <button type="button" class="btn-feedback-icon" data-fb-type="dislike" title="Không thích / Chưa hữu ích" aria-label="Không thích / Chưa hữu ích">
+            <i class="fa-regular fa-thumbs-down"></i>
+            <span class="fb-count">0</span>
+          </button>
+          <button type="button" class="btn-feedback-icon" data-fb-type="report" title="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm" aria-label="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm">
+            <i class="fa-regular fa-flag"></i>
+            <span class="fb-count">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 6. TRACEABLE SOURCE ANCHORS -->
+      <div class="sources-console-card">
+        <div class="sources-title-row">
+          <i class="fa-solid fa-link"></i>
+          <span id="sourcesSectionTitle">Nguồn trích dẫn (tìm thấy trên NCBI PubMed &amp; DOI)</span>
+        </div>
+        <div class="sources-list-stack" id="sourcesListStack">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </section>
+  </div>
+  </div>
+    <div class="quiz-tab-panel" id="quizTabPanel" role="tabpanel" aria-labelledby="tabReviewQuiz" tabindex="0" hidden>
+      <p id="quizUnavailable">Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.</p>
+      <section class="socratic-card-supa" id="socraticTutorSection" aria-labelledby="socraticTitleText" hidden>
         <div class="socratic-header-row">
           <div class="socratic-title-block">
             <div class="socratic-title-line">
               <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary-deep);"></i>
-              <span id="socraticTitleText">Trắc nghiệm ôn tập</span>
+              <h1 id="socraticTitleText">Trắc Nghiệm Ôn Tập</h1>
               <span class="socratic-target-badge" id="socraticPhaseBadge">Mục tiêu: ≥ 4/5</span>
             </div>
             <div class="socratic-sub-text" id="socraticSubText">
@@ -4376,44 +4437,7 @@
           <div class="socratic-choices-grid" id="socraticChoicesGrid"></div>
         </div>
       </section>
-
-      <!-- 5. PRODUCT FEEDBACK BAR (BOTTOM ARTICLE PROMPT) -->
-      <div class="bottom-feedback-prompt" id="bottomFeedbackPrompt">
-        <div class="bottom-feedback-text">
-          <div class="bottom-feedback-title" id="bottomFeedbackTitle">Đánh giá &amp; Góp ý Nhà làm sản phẩm</div>
-          <div class="bottom-feedback-sub" id="bottomFeedbackSub">
-            Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.
-          </div>
-        </div>
-
-        <div class="feedback-icon-bar" data-feedback-bar="bottom">
-          <button type="button" class="btn-feedback-icon" data-fb-type="like" title="Thích nội dung này" aria-label="Thích nội dung này">
-            <i class="fa-regular fa-thumbs-up"></i>
-            <span class="fb-count">0</span>
-          </button>
-          <button type="button" class="btn-feedback-icon" data-fb-type="dislike" title="Không thích / Chưa hữu ích" aria-label="Không thích / Chưa hữu ích">
-            <i class="fa-regular fa-thumbs-down"></i>
-            <span class="fb-count">0</span>
-          </button>
-          <button type="button" class="btn-feedback-icon" data-fb-type="report" title="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm" aria-label="Báo cáo / Gửi góp ý tới Nhà làm sản phẩm">
-            <i class="fa-regular fa-flag"></i>
-            <span class="fb-count">0</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 6. TRACEABLE SOURCE ANCHORS -->
-      <div class="sources-console-card">
-        <div class="sources-title-row">
-          <i class="fa-solid fa-link"></i>
-          <span id="sourcesSectionTitle">Nguồn trích dẫn (tìm thấy trên NCBI PubMed &amp; DOI)</span>
-        </div>
-        <div class="sources-list-stack" id="sourcesListStack">
-          <!-- Rendered by JS -->
-        </div>
-      </div>
-
-    </section>
+    </div>
   </main>
 
   <!-- ========================================================================
@@ -5778,6 +5802,7 @@
 
     function openProfileBriefing(briefing) {
       closeMyAccountModal();
+      showStudyTab("tabStudyHome");
       App.mode = "history";
       App.savedGlobalMode = false;
       App.historyFilter = "all";
@@ -6042,11 +6067,9 @@
         Dom.btnNavBookmarks.title = isVi ? "Lọc danh sách bản tin đã lưu" : "Filter saved briefings";
       }
       const botName = isVi ? "Soái ca Y khoa" : "Med Bro";
-      const socraticNavBtn = document.getElementById("btnOpenSocraticHeader");
-      if (socraticNavBtn) {
-        socraticNavBtn.title = isVi ? "Trắc nghiệm ôn lại kiến thức hôm nay" : "Daily Review Quiz";
-      }
-      setTxt("#labelSocraticHeaderBtn", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
+      document.getElementById("studyTabs").setAttribute("aria-label", isVi ? "Nội dung học" : "Study views");
+      setTxt("#tabStudyHome", isVi ? "Trang chủ" : "Home");
+      setTxt("#tabReviewQuiz", isVi ? "Trắc Nghiệm Ôn Tập" : "Review Quiz");
       setTxt("#labelFloatingChat", botName);
       if (Dom.btnFloatingChat) {
         Dom.btnFloatingChat.setAttribute("aria-label", isVi ? "Trò chuyện cùng Soái ca Y khoa" : "Chat with Med Bro");
@@ -7396,7 +7419,38 @@
     /* ========================================================================
        EVENT BINDINGS
        ======================================================================== */
+    function showStudyTab(id) {
+      const tabs = document.querySelectorAll("#studyTabs [role='tab']");
+      for (const tab of tabs) {
+        const active = tab.id === id;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+        document.getElementById(tab.getAttribute("aria-controls")).hidden = !active;
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+      if (id === "tabReviewQuiz" && !document.getElementById("socraticTutorSection").hidden) {
+        SocraticTutor.startIfIdle();
+      }
+    }
+
+    function bindStudyTabs() {
+      const tabs = Array.from(document.querySelectorAll("#studyTabs [role='tab']"));
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => showStudyTab(tab.id));
+        tab.addEventListener("keydown", event => {
+          const next = { ArrowLeft: (index + tabs.length - 1) % tabs.length,
+            ArrowRight: (index + 1) % tabs.length, Home: 0, End: tabs.length - 1 }[event.key];
+          if (next === undefined) return;
+          event.preventDefault();
+          showStudyTab(tabs[next].id);
+          tabs[next].focus();
+        });
+      });
+    }
+
     function bindAppEvents() {
+      bindStudyTabs();
       Dom.userProfilePill.addEventListener("click", openMyAccountModal);
       Dom.btnCloseAccountModal.addEventListener("click", closeMyAccountModal);
       Dom.myAccountModal.addEventListener("click", e => {
@@ -7440,6 +7494,7 @@
 
       Dom.btnNavBookmarks.addEventListener("click", () => {
         if (!App.user) return;
+        showStudyTab("tabStudyHome");
         App.savedGlobalMode = !App.savedGlobalMode;
         if (App.savedGlobalMode) {
           App.mode = "history";
@@ -7462,6 +7517,7 @@
 
       document.getElementById("brandHomeLink").addEventListener("click", (e) => {
         e.preventDefault();
+        showStudyTab("tabStudyHome");
         showTodayBriefing();
       });
 
@@ -9230,21 +9286,11 @@
         this.renderUI();
       },
 
-      bindEvents() {
-        const navBtn = document.getElementById("btnOpenSocraticHeader");
-        if (navBtn) {
-          navBtn.addEventListener("click", () => {
-            const sec = document.getElementById("socraticTutorSection");
-            if (sec) {
-              sec.scrollIntoView({ behavior: "smooth", block: "start" });
-              const sess = this.getSession();
-              if (!sess.started && !this.isBusy) {
-                this.startDiagnostic();
-              }
-            }
-          });
-        }
+      startIfIdle() {
+        if (!this.isBusy && !this.getSession().started) this.startDiagnostic();
+      },
 
+      bindEvents() {
         const btnStart = document.getElementById("btnStartSocratic");
         if (btnStart) {
           btnStart.addEventListener("click", () => {
@@ -9430,12 +9476,16 @@
       renderUI() {
         const b = this.quizSets.attach(App.selected || getTodaySingleBriefing());
         const available = ClinicalQuiz.hasSourceItems(b);
-        for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
-          const element = document.getElementById(id);
-          if (element) element.style.display = available ? "" : "none";
+        const isVi = App.currentLang === "vi";
+        const section = document.getElementById("socraticTutorSection");
+        if (section) section.hidden = !available;
+        const unavailable = document.getElementById("quizUnavailable");
+        if (unavailable) {
+          unavailable.hidden = available;
+          unavailable.textContent = isVi ? "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
+            : "No source-supported questions are available for this lesson.";
         }
         if (!available) return;
-        const isVi = App.currentLang === "vi";
         const sess = this.getSession();
         const questionCount = ClinicalQuiz.sourceQuestionCount(b);
         const startLabel = isVi ? `Bắt đầu ôn tập (${questionCount} câu)` : `Start review (${questionCount})`;
@@ -9445,7 +9495,7 @@
           const el = document.getElementById(id);
           if (el) el.textContent = txt;
         };
-        setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
+        setEl("socraticTitleText", isVi ? "Trắc Nghiệm Ôn Tập" : "Review Quiz");
         const sourceLabel = this.quizSourceLabel(b, isVi);
         const aiSet = Boolean(b.generated_quiz) && ClinicalQuiz.sourceQuestionCount(b) > 0 &&
           ClinicalQuiz.reviewQuestion(b, 0, 0, "vi", "normal")?.ai_generated;
