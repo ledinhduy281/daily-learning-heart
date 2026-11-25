@@ -9457,11 +9457,12 @@
           }
           this.quizSets.save(b, items);
           const cases = items.filter(i => i.type === "case").length;
-          status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
+          const sameLesson = (App.selected || getTodaySingleBriefing())?.id === b.id;
+          status(!sameLesson ? "" : isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
             : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
           this.generating = false;
           this.renderUI();
-          if ((App.selected || getTodaySingleBriefing())?.id === b.id) await this.startDiagnostic();
+          if (sameLesson) await this.startDiagnostic();
         } catch (_) {
           status(isVi ? "Không kết nối được AI; lượt này không bị tính." : "Could not reach the AI; this attempt was not counted.");
         } finally {
