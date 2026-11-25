@@ -18,6 +18,10 @@ const tab = (id, panel) => ({
 const home = tab("tabStudyHome", "homeTabPanel");
 const quiz = tab("tabReviewQuiz", "quizTabPanel");
 const nodes = {homeTabPanel: {hidden: false}, quizTabPanel: {hidden: true}, socraticTutorSection: {hidden: true}};
+const transcript = nodes.socraticMessagesList = {
+  scrollTop: 0,
+  get scrollHeight() { return nodes.quizTabPanel.hidden ? 0 : 900; },
+};
 const document = {querySelectorAll: () => [home, quiz], getElementById: id => nodes[id]};
 const session = {started: false, question_index: 0};
 let starts = 0;
@@ -27,9 +31,10 @@ const SocraticTutor = {
 };
 vm.runInNewContext([
   html.slice(html.indexOf("    function showStudyTab"), html.indexOf("    function bindAppEvents")),
-  "SocraticTutor.startIfIdle = ({",
+  "Object.assign(SocraticTutor, {",
   html.match(/      startIfIdle\(\) \{[\s\S]*?\n      \},/)[0],
-  "}).startIfIdle; bindStudyTabs();",
+  html.match(/      scrollTranscriptToLatest\(\) \{[\s\S]*?\n      \},/)[0],
+  "}); bindStudyTabs();",
 ].join("\n"), {document, SocraticTutor, window: {scrollTo() {}}});
 
 quiz.click();
@@ -50,9 +55,12 @@ home.click();
 assert.equal(home["aria-selected"], "true");
 assert.equal(nodes.homeTabPanel.hidden, false);
 assert.equal(nodes.quizTabPanel.hidden, true);
+SocraticTutor.scrollTranscriptToLatest();
+assert.equal(transcript.scrollTop, 0, "a transcript rendered while hidden cannot scroll");
 quiz.click();
 assert.equal(quiz["aria-selected"], "true");
 assert.equal(nodes.quizTabPanel.hidden, false);
 assert.equal(starts, 1, "returning to the quiz must not restart it");
 assert.equal(session.question_index, 1);
+assert.equal(transcript.scrollTop, 900, "showing a saved quiz scrolls its visible transcript to the latest question");
 console.log("Bilingual review tab, keyboard navigation, and in-progress quiz preservation: OK");

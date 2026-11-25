@@ -7431,6 +7431,7 @@
       window.scrollTo({ top: 0, behavior: "instant" });
       if (id === "tabReviewQuiz" && !document.getElementById("socraticTutorSection").hidden) {
         SocraticTutor.startIfIdle();
+        SocraticTutor.scrollTranscriptToLatest();
       }
     }
 
@@ -9290,6 +9291,11 @@
         if (!this.isBusy && !this.getSession().started) this.startDiagnostic();
       },
 
+      scrollTranscriptToLatest() {
+        const transcript = document.getElementById("socraticMessagesList");
+        if (transcript) transcript.scrollTop = transcript.scrollHeight;
+      },
+
       bindEvents() {
         const btnStart = document.getElementById("btnStartSocratic");
         if (btnStart) {
@@ -9635,7 +9641,7 @@
                 <div class="socratic-msg-bubble">${bodyHtml}${sourceHtml}</div>
               </div>`;
             }).join("");
-            box.scrollTop = box.scrollHeight;
+            this.scrollTranscriptToLatest();
           }
         }
 
