@@ -19,6 +19,7 @@ async function check(mode) {
     Dom: {btnSendChat: {}, chatInputField: {focus() {}}, chatMessagesList: {appendChild() {}, scrollHeight: 10}},
     document: {createElement: () => ({remove() { removed = true; }})},
     _SC_MEDICAL_RE: /heart/, isFileOrigin: () => true,
+    AbortSignal,
     AbortController, setTimeout: (fn, ms) => { assert.equal(ms, 20000); timers.push(fn); return 1; },
     clearTimeout: () => { cleared = true; },
     fetch: async (endpoint, options) => {
@@ -61,7 +62,100 @@ async function check(mode) {
     assert.match(request.context, /PUBMED:.*123/);
   }
 }
+
+async function checkCancellation(button, lang, serverAvailable) {
+  const node = () => ({addEventListener(event, handler) {this[event] = handler;}});
+  const visible = [];
+  const messages = {
+    set innerHTML(_) {visible.length = 0;},
+    appendChild(child) {visible.push(child);}
+  };
+  const Dom = {
+    btnCloseChat: node(), btnExpandChat: node(), btnNewChat: node(), btnNewChatFromDrawer: node(),
+    btnClearChat: node(), btnSendChat: {}, chatQuickPrompts: node(), chatInputForm: node(),
+    chatInputField: {focus() {}}, chatMessagesList: messages
+  };
+  const requests = [], toasts = [];
+  let saved;
+  let notifyRequest;
+  const nextRequest = () => new Promise(resolve => {notifyRequest = resolve;});
+  const briefing = {id: 'cardiology', pillar_id: 1};
+  const chat = vm.runInNewContext(`(${object})`, {
+    Dom, App: {currentLang: lang, selected: briefing, briefings: [briefing], serverAvailable},
+    window: {EBM_SYNC_ENDPOINT: 'https://sync.test/exec', crypto: webcrypto},
+    deviceStore: {profile: {device_id: '12345678-1234-4123-8123-123456789abc'}},
+    document: {addEventListener() {}, createElement: () => ({
+      remove() {const index = visible.indexOf(this); if (index >= 0) visible.splice(index, 1);}
+    })},
+    _SC_MEDICAL_RE: /heart/, isFileOrigin: () => false, getAuthHeaders: headers => headers,
+    CHAT_SESSIONS_KEY: 'chat', safeStorageGet: () => saved, safeStorageSet: (_key, value) => {saved = value;},
+    showToast: message => toasts.push(message),
+    t: () => 'Current conversation cleared.', getPillarDisplayName: () => 'Pillar',
+    TextEncoder, AbortController, AbortSignal, setTimeout, clearTimeout,
+    fetch: (url, {signal}) => new Promise(resolve => {
+      const request = {url, signal, resolve};
+      requests.push(request);
+      notifyRequest(request);
+    })
+  });
+  Object.assign(chat, {
+    renderHistoryDrawer() {},
+    renderMessageDom(message) {visible.push(message);},
+    isMedicalOrCardiologyQuery: () => true, scoreBriefing: () => 1,
+    fetchLivePubMedAbstracts: async () => [], fetchOpenFdaDrugNote: async () => null,
+    composeClientDeterministicAnswer: async () => ({markdown: 'Local answer', sources: []})
+  });
+  chat.bindEvents();
+  chat.createNewSession(false);
+  const originalId = chat.currentSessionId;
+  const firstRequest = nextRequest();
+  const firstReply = chat.sendQuestion('heart first');
+  const first = await firstRequest;
+  assert.equal(first.url, serverAvailable ? '/api/chat' : 'https://sync.test/exec');
+  assert.ok(visible.some(message => message.markdownText === 'heart first'));
+  assert.equal(Dom.btnSendChat.disabled, true);
+
+  Dom[button].click();
+  assert.equal(first.signal.aborted, true);
+  assert.notEqual(chat.currentSessionId, originalId);
+  assert.equal(Dom.btnSendChat.disabled, false);
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].role, 'assistant');
+  const cleared = button === 'btnClearChat';
+  assert.match(toasts.at(-1), lang === 'en'
+    ? (cleared ? /Reply canceled.*cleared/ : /Reply canceled.*new conversation/)
+    : (cleared ? /hủy câu trả lời và xóa/ : /hủy câu trả lời và bắt đầu/));
+
+  const followingRequest = nextRequest();
+  const secondReply = chat.sendQuestion('heart second');
+  const second = await followingRequest;
+  const response = answer => ({
+    ok: true, headers: {get: () => 'application/json'}, json: async () => ({ok: true, answer_markdown: answer})
+  });
+  // Simulate a transport that delivers the old response despite being aborted.
+  first.resolve(response('Stale answer'));
+  await firstReply;
+  assert.equal(second.signal.aborted, false);
+  assert.equal(chat.isBusy, true);
+  assert.equal(Dom.btnSendChat.disabled, true);
+  assert.equal(requests.length, 2);
+
+  second.resolve(response('Fresh answer'));
+  await secondReply;
+  assert.equal(chat.isBusy, false);
+  assert.equal(Dom.btnSendChat.disabled, false);
+  assert.equal(visible.at(-1).markdownText, 'Fresh answer');
+  const sessions = JSON.parse(saved);
+  assert.ok(sessions.every(session => session.messages.every(message => message.markdownText !== 'Stale answer')));
+  assert.equal(sessions.some(session => session.id === originalId), !cleared);
+}
+
 (async () => {
   for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'device_cap', 'invalid_device', 'abort', 'no_crypto', 'hash_failure']) await check(mode);
   console.log('Browser chat proxy checks passed (success, unset, HTTP/network/JSON/empty/rejected/timeout fallback).');
+  await checkCancellation('btnNewChat', 'en', true);
+  await checkCancellation('btnNewChatFromDrawer', 'vi', false);
+  await checkCancellation('btnClearChat', 'en', false);
+  await checkCancellation('btnClearChat', 'vi', true);
+  console.log('Chat cancellation: New and Clear abort the active reply, reject stale results, and keep the next reply active (VI/EN).');
 })().catch(error => { console.error(error); process.exitCode = 1; });

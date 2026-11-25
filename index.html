@@ -7692,6 +7692,7 @@
       isExpanded: false,
       isHistoryOpen: false,
       isBusy: false,
+      activeReply: null,
       verbosity: "medium",
       dailyLimit: 500,
       quota: { date: "", used: 0, limit: 500, exhausted: false, stop_reason: "" },
@@ -7825,6 +7826,7 @@
         }
 
         Dom.btnClearChat.addEventListener("click", () => {
+          const cancelled = this.cancelReply();
           const cid = this.currentSessionId;
           if (cid) {
             this.deleteSession(cid);
@@ -7833,7 +7835,9 @@
             Dom.chatMessagesList.innerHTML = "";
             this.pushWelcomeMessage();
           }
-          showToast(t("toastChatCleared"));
+          showToast(cancelled
+            ? (App.currentLang === "en" ? "Reply canceled. Current conversation cleared." : "Đã hủy câu trả lời và xóa cuộc trò chuyện hiện tại.")
+            : t("toastChatCleared"));
         });
 
         Dom.chatQuickPrompts.addEventListener("click", (e) => {
@@ -8002,6 +8006,7 @@
       },
 
       createNewSession(notify = true) {
+        const cancelled = notify && this.cancelReply();
         if (this.isBusy) return;
         const b = App.selected || getTodaySingleBriefing();
         const pid = (b && b.pillar_id) || App.todayPillarId || 1;
@@ -8022,7 +8027,9 @@
         this.toggleHistoryDrawer(false);
         this.pushWelcomeMessage();
         if (notify) {
-          showToast(App.currentLang === "en" ? "Started a new conversation with Med Bro." : "Đã bắt đầu cuộc trò chuyện mới với Soái ca Y khoa.");
+          showToast(App.currentLang === "en"
+            ? (cancelled ? "Reply canceled. Started a new conversation." : "Started a new conversation with Med Bro.")
+            : (cancelled ? "Đã hủy câu trả lời và bắt đầu cuộc trò chuyện mới." : "Đã bắt đầu cuộc trò chuyện mới với Soái ca Y khoa."));
         }
         if (this.isOpen && Dom.chatInputField) {
           setTimeout(() => Dom.chatInputField.focus(), 50);
@@ -8326,11 +8333,11 @@
         return score;
       },
 
-      async translateSnippetToVi(text) {
+      async translateSnippetToVi(text, replySignal) {
         if (!text || text.length < 10) return text;
         try {
           const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 320))}&langpair=en|vi`;
-          const res = await fetch(url, { signal: AbortSignal.timeout(3500) });
+          const res = await fetch(url, {signal: AbortSignal.any([replySignal, AbortSignal.timeout(3500)])});
           if (!res.ok) return text;
           const d = await res.json();
           const tr = d?.responseData?.translatedText || "";
@@ -8341,7 +8348,7 @@
         return text;
       },
 
-      async fetchOpenFdaDrugNote(query) {
+      async fetchOpenFdaDrugNote(query, replySignal) {
         try {
           const qLow = (query || "").toLowerCase();
           let matchedDrug = "";
@@ -8354,7 +8361,7 @@
           if (!matchedDrug) return null;
 
           const url = `https://api.fda.gov/drug/label.json?search=${encodeURIComponent(`openfda.generic_name:"${matchedDrug}"`)}&limit=1`;
-          const res = await fetch(url, {signal: AbortSignal.timeout(5000)});
+          const res = await fetch(url, {signal: AbortSignal.any([replySignal, AbortSignal.timeout(5000)])});
           if (!res.ok) return null;
           const d = await res.json();
           const r = d?.results?.[0];
@@ -8392,7 +8399,7 @@
         }
       },
 
-      async fetchLivePubMedAbstracts(query, primaryBriefing) {
+      async fetchLivePubMedAbstracts(query, primaryBriefing, replySignal) {
         try {
           const qLow = (query || "").toLowerCase();
           const terms = [];
@@ -8410,10 +8417,11 @@
             : `${fallbackQ} AND 2026[dp]`;
 
           const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(pmTerm)}&retmode=json&retmax=3&sort=relevance`;
-          const signal = AbortSignal.timeout(7000);
+          const signal = AbortSignal.any([replySignal, AbortSignal.timeout(7000)]);
           const sRes = await fetch(sUrl, {signal});
           if (!sRes.ok) return [];
           const sData = await sRes.json();
+          if (signal.aborted) return [];
           const ids = sData.esearchresult?.idlist || [];
           if (ids.length === 0) return [];
 
@@ -8540,7 +8548,7 @@
         return /[.!?…]["'\)\]\*`]*$/.test(clean) ? clean : `${clean}.`;
       },
 
-      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang, verbosity = "medium") {
+      async composeClientDeterministicAnswer(query, primary, pubmedHits, fdaNote, lang, verbosity = "medium", replySignal) {
         const isEn = lang === "en";
         const vNorm = ["short", "medium", "detailed"].includes(String(verbosity || "").toLowerCase())
           ? String(verbosity).toLowerCase()
@@ -8662,7 +8670,7 @@
             const tr0 = trials[0];
             shortSegs.push(`**${tr0.name}** (${tr0.value}, ${tr0.p}): ${this.firstCleanSentence(isEn ? tr0.changes_en : tr0.changes_vi, 180)}`);
           } else if (fdaNote && fdaNote.text) {
-            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220)), 200);
+            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 220), replySignal), 200);
             shortSegs.push(`**${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
           }
           return { markdown: this.ensureCompleteSentence(shortSegs.join(" ")), sources };
@@ -8681,7 +8689,7 @@
             sections.push(`- **${tr.name}** (*${tr.journal}*, **${tr.value}**, ${tr.p}): ${this.firstCleanSentence(isEn ? tr.changes_en : tr.changes_vi, 340)} ${this.firstCleanSentence(isEn ? tr.caution_en : tr.caution_vi, 340)}`);
           });
           if (fdaNote && fdaNote.text) {
-            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 360)), 360);
+            const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text.slice(0, 360), replySignal), 360);
             sections.push(`- **${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
           }
           if (pearls.length > 0) {
@@ -8708,13 +8716,23 @@
           if (pt) parts.push(`- **${isEn ? "Pearl" : "Lưu ý đi buồng"}:** ${this.firstCleanSentence(pt, 380)}`);
         });
         if (fdaNote && fdaNote.text) {
-          const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text), 360);
+          const noteTxt = this.firstCleanSentence(isEn ? fdaNote.text : await this.translateSnippetToVi(fdaNote.text, replySignal), 360);
           parts.push(`- **${fdaNote.label} (${fdaNote.drug}):** ${noteTxt}`);
         }
         return { markdown: this.ensureCompleteSentence(parts.join("\n")), sources };
       },
 
+      cancelReply() {
+        if (!this.activeReply) return false;
+        this.activeReply.abort();
+        this.activeReply = null;
+        this.isBusy = false;
+        Dom.btnSendChat.disabled = false;
+        return true;
+      },
+
       async sendQuestion(query) {
+        if (this.isBusy) return;
         this.isBusy = true;
         Dom.btnSendChat.disabled = true;
         Dom.chatInputField.value = "";
@@ -8737,6 +8755,8 @@
           return;
         }
 
+        const reply = this.activeReply = new AbortController();
+        const {signal} = reply;
         const typingEl = document.createElement("div");
         typingEl.className = "chat-msg assistant";
         typingEl.innerHTML = lang === "en"
@@ -8752,7 +8772,7 @@
             try {
               const res = await fetch("/api/chat", {
                 method: "POST",
-                signal: AbortSignal.timeout(20000),
+                signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
                 headers: getAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   query,
@@ -8764,21 +8784,23 @@
                   history: priorHistory
                 })
               });
+              if (signal.aborted) return;
               const ct = res.headers.get("content-type") || "";
               if (res.ok && ct.includes("application/json")) {
                 const data = await res.json();
+                if (signal.aborted) return;
                 if (data.ok && data.answer_markdown) {
                   if (data.quota) {
                     this.quota = data.quota;
                     this.renderQuotaBadge();
                   }
-                  typingEl.remove();
                   this.appendMessage("assistant", data.answer_markdown, data.sources || [], data.engine_used || `${botName} • EBM & PubMed`);
                   return;
                 }
               }
             } catch (_) {}
           }
+          if (signal.aborted) return;
 
           // Client-side engine (GitHub Pages & Mobile PWA — EBM + PubMed + OpenFDA)
           const priorUsers = priorHistory.filter((m) => m.role === "user").map((m) => m.content);
@@ -8795,10 +8817,12 @@
           }
 
           const [pubmedHits, fdaNote] = await Promise.all([
-            this.fetchLivePubMedAbstracts(searchQuery, primary),
-            this.fetchOpenFdaDrugNote(searchQuery)
+            this.fetchLivePubMedAbstracts(searchQuery, primary, signal),
+            this.fetchOpenFdaDrugNote(searchQuery, signal)
           ]);
-          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium");
+          if (signal.aborted) return;
+          const det = await this.composeClientDeterministicAnswer(searchQuery, primary, pubmedHits, fdaNote, lang, this.verbosity || "medium", signal);
+          if (signal.aborted) return;
           let answerMarkdown = det.markdown;
           let engineLabel = fdaNote ? `${botName} • EBM, PubMed & OpenFDA` : `${botName} • EBM & PubMed`;
           const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
@@ -8807,6 +8831,7 @@
             try {
               const chatDigest = await window.crypto.subtle.digest("SHA-256",
                 new TextEncoder().encode("dlh-chat-v1:" + deviceStore.profile.device_id.toLowerCase()));
+              if (signal.aborted) return;
               const chatDeviceId = Array.from(new Uint8Array(chatDigest), b => b.toString(16).padStart(2, "0")).join("");
               const suffix = lang === "en" ? "en" : "vi";
               const context = [
@@ -8822,7 +8847,7 @@
               const controller = new AbortController();
               timer = setTimeout(() => controller.abort(), 20000);
               const response = await fetch(endpoint, {
-                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
+                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: AbortSignal.any([signal, controller.signal]),
                 body: JSON.stringify({action: "chat", device_id: chatDeviceId, question: query,
                   history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
                   context, lang, verbosity: this.verbosity || "medium"})
@@ -8840,16 +8865,18 @@
             }
           }
 
-          typingEl.remove();
-          this.appendMessage("assistant", answerMarkdown, det.sources, engineLabel);
+          if (!signal.aborted) this.appendMessage("assistant", answerMarkdown, det.sources, engineLabel);
         } catch (err) {
-          typingEl.remove();
-          this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
+          if (!signal.aborted) this.appendMessage("assistant", lang === "en" ? `Unable to process your question: ${err.message}` : `Không thể xử lý câu hỏi lúc này: ${err.message}`, [], botName);
         } finally {
-          this.isBusy = false;
-          Dom.btnSendChat.disabled = false;
-          this.loadSessions();
-          Dom.chatInputField.focus();
+          typingEl.remove();
+          if (this.activeReply === reply) {
+            this.activeReply = null;
+            this.isBusy = false;
+            Dom.btnSendChat.disabled = false;
+            this.loadSessions();
+            Dom.chatInputField.focus();
+          }
         }
       }
     };
