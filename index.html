@@ -129,6 +129,7 @@
       --color-primary: #3ecf8e;
       --color-primary-deep: #24b47e;
       --color-primary-soft: #4ade80;
+      --color-accent-ink: #047857;
       --color-on-primary: #171717;
       --color-on-dark: #ffffff;
       --color-dark-control: #171717;
@@ -174,6 +175,7 @@
         --color-ink-mute-2: #9dafaa;
         --color-ink-faint: #91a39b;
         --color-primary-deep: #64d8a7;
+        --color-accent-ink: var(--color-primary-deep);
         --color-dark-control: #21352d;
         --color-message-user: #294538;
         --color-danger: #fca5a5;
@@ -942,7 +944,7 @@
     }
 
     .rotation-slot-card.today .rotation-slot-kicker {
-      color: var(--color-primary-deep);
+      color: var(--color-accent-ink);
       font-weight: 600;
     }
 
@@ -1115,7 +1117,7 @@
     .history-node-card.active .history-node-transition {
       background-color: var(--color-canvas);
       border-color: var(--color-primary);
-      color: var(--color-primary-deep);
+      color: var(--color-accent-ink);
     }
 
     .history-node-arrow {

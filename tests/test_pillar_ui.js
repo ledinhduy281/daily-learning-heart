@@ -5,6 +5,8 @@ const vm = require("node:vm");
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 assert.match(html, /<section\b[^>]*id="pillarHistoryDiagramPanel" aria-labelledby="historySectionTitle">[\s\S]*?id="historyPillarSelect"[\s\S]*?<\/section>/);
 assert.doesNotMatch(html, /tabModeHistory|btnOpenTodayPillarHistory|todaySidebarContext|pillarsTilesDeck|Chu kỳ tiến 1 → 10/);
+assert.match(html, /\.rotation-slot-card\.today \.rotation-slot-kicker \{[^}]*color: var\(--color-accent-ink\);/);
+assert.match(html, /\.history-node-card\.active \.history-node-transition \{[^}]*\bcolor: var\(--color-accent-ink\);/);
 
 function source(start, end) {
   const first = html.indexOf(start);
