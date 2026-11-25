@@ -131,6 +131,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         shutil.copytree(ROOT / "lessons", self.root / "lessons")
         path = data / "briefings.js"
         rotation = data / "rotation_state.json"
+        (data / "quiz_sets.js").write_text('window.EBM_QUIZ_SETS = {"sets": {}};\n')
         dates = [datetime.strptime(d, "%Y-%m-%d").date()
                  for d in (GATE_START_DATE, "2026-11-26", "2026-11-27", "2026-11-28")]
         with patch.object(lesson_generation, "fetch_article", return_value=None):

@@ -38,6 +38,7 @@
 
   <!-- Seeded Briefings Data -->
   <script src="data/briefings.js"></script>
+  <script src="data/quiz_sets.js"></script>
   <script src="clinical_distractors.js"></script>
   <script src="case_quiz.js"></script>
   <script src="clinical_mcq.js"></script>
@@ -9191,37 +9192,49 @@
        ======================================================================== */
     const SocraticTutor = {
       quizSets: {
-        key: "dlh-quiz-sets-v1",
-        pressKey: "dlh-quiz-presses-v1",
-        read(name) {
-          try { return JSON.parse(window.localStorage.getItem(name) || "{}") || {}; } catch (_) { return {}; }
+        key: "dlh-quiz-sets-v2",
+        pressKey: "dlh-quiz-presses-v2",
+        dailyPresses: 2,
+        read(key = this.key) {
+          try { return JSON.parse(window.localStorage.getItem(key) || "{}") || {}; } catch (_) { return {}; }
         },
-        write(name, value) {
-          try { window.localStorage.setItem(name, JSON.stringify(value)); } catch (_) {}
+        write(value, key = this.key) {
+          try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
         },
         today() {
           return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Ho_Chi_Minh"}).format(new Date());
         },
+        pressesLeft() {
+          const used = this.read(this.pressKey);
+          return Math.max(0, this.dailyPresses - (used.date === this.today() ? Number(used.used) || 0 : 0));
+        },
+        available(b) {
+          const sets = b?.id ? globalThis.window?.EBM_QUIZ_SETS?.sets?.[b.id] : null;
+          return Array.isArray(sets) ? sets.filter(s => s && typeof s.set_id === "string" &&
+            ClinicalQuiz.validateSet(b, s.items).length) : [];
+        },
+        opened(b) {
+          const n = Number(b?.id ? this.read()[b.id] : 0);
+          return Number.isInteger(n) && n > 0 ? n : 0;
+        },
         attach(b) {
           if (b?.id && !b.generated_quiz) {
-            const set = this.read(this.key)[b.id];
-            if (set && typeof set.set_id === "string" && Array.isArray(set.items)) b.generated_quiz = set;
+            const set = this.available(b)[this.opened(b) - 1];
+            if (set) b.generated_quiz = set;
           }
           return b;
         },
-        save(b, items) {
-          const all = this.read(this.key);
-          const set = {set_id: Date.now().toString(36), items};
-          const kept = Object.fromEntries(Object.entries(all).filter(([id]) => id !== b.id).slice(-19));
-          this.write(this.key, {...kept, [b.id]: set});
-          b.generated_quiz = set;
+        remaining(b) {
+          return Math.min(this.pressesLeft(), Math.max(0, this.available(b).length - this.opened(b)));
         },
-        remaining() {
-          const used = this.read(this.pressKey);
-          return used.date === this.today() ? Math.max(0, 2 - Number(used.used || 0)) : 2;
-        },
-        record(remaining) {
-          this.write(this.pressKey, {date: this.today(), used: Math.max(0, Math.min(2, 2 - remaining))});
+        openNext(b) {
+          const sets = this.available(b), n = this.opened(b);
+          if (n >= sets.length || this.pressesLeft() <= 0) return null;
+          const kept = Object.fromEntries(Object.entries(this.read()).filter(([id]) => id !== b.id).slice(-29));
+          this.write({...kept, [b.id]: n + 1});
+          this.write({date: this.today(), used: this.dailyPresses - this.pressesLeft() + 1}, this.pressKey);
+          b.generated_quiz = sets[n];
+          return sets[n];
         }
       },
 
@@ -9402,74 +9415,27 @@
         return briefing?.id ? (set ? `${briefing.id}#${set}` : briefing.id) : String(pid);
       },
 
-      async generateNewSet() {
+      async openNextSet() {
         const b = App.selected || getTodaySingleBriefing();
-        if (this.isBusy || this.generating || !b) return;
+        if (this.isBusy || !b) return;
         const isVi = App.currentLang === "vi";
-        const status = msg => {
-          const el = document.getElementById("newQuizStatus");
-          if (el) { el.textContent = msg; el.hidden = !msg; }
-        };
-        const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
-        if (this.quizSets.remaining() <= 0) {
-          status(isVi ? "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới." : "You have used both new question sets for today.");
+        const el = document.getElementById("newQuizStatus");
+        const status = msg => { if (el) { el.textContent = msg; el.hidden = !msg; } };
+        const set = this.quizSets.openNext(b);
+        if (!set) {
+          status(this.quizSets.pressesLeft() <= 0
+            ? (isVi ? "Hôm nay thiết bị này đã dùng hết 2 lượt tạo câu hỏi mới." : "This device has used both new-question presses for today.")
+            : (isVi ? "Đã mở hết các bộ câu hỏi AI soạn sẵn cho bài này." : "You have opened every pre-generated AI set for this lesson."));
+          this.renderUI();
           return;
         }
-        if (!endpoint || navigator.onLine === false) {
-          status(isVi ? "Cần kết nối mạng để AI soạn câu hỏi mới; bạn vẫn làm được bộ câu trích nguyên văn."
-            : "AI needs a connection to write new questions; the verbatim quiz still works.");
-          return;
-        }
-        const ground = ClinicalQuiz.grounding(this.quizSets.attach(b));
-        this.generating = true;
-        status(isVi ? "AI (Groq) đang soạn và tự kiểm tra bộ câu hỏi mới…" : "AI (Groq) is writing and checking a new set…");
+        const items = ClinicalQuiz.validateSet(b, set.items);
+        const cases = items.filter(i => i.type === "case").length;
+        const done = this.quizSets.pressesLeft() <= 0;
+        status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.${done ? " Hôm nay thiết bị này đã dùng hết 2 lượt tạo câu hỏi mới." : ""}`
+          : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.${done ? " This device has used both new-question presses for today." : ""}`);
         this.renderUI();
-        let timer;
-        try {
-          const digest = await window.crypto.subtle.digest("SHA-256",
-            new TextEncoder().encode("dlh-chat-v1:" + deviceStore.profile.device_id.toLowerCase()));
-          const device_id = Array.from(new Uint8Array(digest), x => x.toString(16).padStart(2, "0")).join("");
-          const controller = new AbortController();
-          timer = setTimeout(() => controller.abort(), 90000);
-          const response = await fetch(endpoint, {
-            method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
-            body: JSON.stringify({action: "quiz", device_id, lang: isVi ? "vi" : "en", lesson: {pmid: ground.pmid,
-              kind: ground.kind, title: String(ground.title).slice(0, 400), excerpts: ground.excerpts.slice(0, 8)}})
-          });
-          const data = response.ok ? await response.json() : {};
-          if (Number.isInteger(data.remaining)) this.quizSets.record(data.remaining);
-          const items = data.ok === true ? ClinicalQuiz.validateSet(b, data.items) : [];
-          if (!items.length) {
-            const left = this.quizSets.remaining();
-            const messages = isVi ? {
-              device_daily_cap: "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới.",
-              daily_cap: "Hệ thống đã hết lượt AI hôm nay; thử lại vào ngày mai.",
-              not_configured: "Máy chủ chưa bật AI; bạn vẫn làm được bộ câu trích nguyên văn.",
-              invalid_output: `Câu AI soạn không khớp trích đoạn nguồn nên đã bị loại. Còn ${left}/2 lượt hôm nay.`
-            } : {
-              device_daily_cap: "You have used both new question sets for today.",
-              daily_cap: "The app has used today's AI quota; try again tomorrow.",
-              not_configured: "AI is not enabled on the server; the verbatim quiz still works.",
-              invalid_output: `The AI questions did not match the source excerpts and were discarded. ${left}/2 left today.`
-            };
-            status(messages[data.ok === true ? "invalid_output" : data.error] || (isVi ? "AI tạm thời không phản hồi; lượt này không bị tính." : "AI is not responding right now; this attempt was not counted."));
-            return;
-          }
-          this.quizSets.save(b, items);
-          const cases = items.filter(i => i.type === "case").length;
-          const sameLesson = (App.selected || getTodaySingleBriefing())?.id === b.id;
-          status(!sameLesson ? "" : isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
-            : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
-          this.generating = false;
-          this.renderUI();
-          if (sameLesson) await this.startDiagnostic();
-        } catch (_) {
-          status(isVi ? "Không kết nối được AI; lượt này không bị tính." : "Could not reach the AI; this attempt was not counted.");
-        } finally {
-          clearTimeout(timer);
-          this.generating = false;
-          this.renderUI();
-        }
+        await this.startDiagnostic();
       },
 
       prepareLegacySession(legacy, briefing) {
@@ -9671,7 +9637,7 @@
         }
 
         const btnNewSet = document.getElementById("btnNewQuizSet");
-        if (btnNewSet) btnNewSet.addEventListener("click", () => this.generateNewSet());
+        if (btnNewSet) btnNewSet.addEventListener("click", () => this.openNextSet());
 
         const btnReset = document.getElementById("btnResetSocratic");
         if (btnReset) {
@@ -9895,13 +9861,12 @@
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
         const btnNewSet = document.getElementById("btnNewQuizSet");
         if (btnNewSet) {
-          const left = this.quizSets.remaining();
-          btnNewSet.style.display = ClinicalQuiz.grounding(b).excerpts.length ? "inline-flex" : "none";
-          btnNewSet.disabled = Boolean(this.generating || this.isBusy) || left <= 0;
-          btnNewSet.title = isVi ? "AI soạn bộ mới gồm câu lý thuyết và tình huống lâm sàng (tối đa 2 lần/ngày)"
-            : "AI writes a new set with theory and clinical-case questions (up to 2 per day)";
-          setEl("labelNewQuizSet", this.generating ? (isVi ? "Đang tạo…" : "Generating…")
-            : isVi ? `Tạo câu hỏi mới (còn ${left}/2)` : `New questions (${left}/2 left)`);
+          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b), cap = this.quizSets.dailyPresses;
+          btnNewSet.style.display = total ? "inline-flex" : "none";
+          btnNewSet.disabled = Boolean(this.isBusy) || left <= 0;
+          btnNewSet.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
+            : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
+          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới (còn ${left}/${cap})` : `New questions (${left}/${cap} left)`);
         }
 
         setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");

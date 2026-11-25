@@ -4,8 +4,6 @@ const vm = require("node:vm");
 const CaseQuiz = require("../case_quiz.js");
 const quiz = require("../clinical_mcq.js");
 
-assert.equal(fs.readFileSync(require.resolve("../backend/apps_script/CaseQuiz.gs"), "utf8"),
-  fs.readFileSync(require.resolve("../case_quiz.js"), "utf8"), "CaseQuiz.gs must be a copy of case_quiz.js");
 
 const scope = {window: {}};
 vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), scope);
@@ -36,6 +34,25 @@ for (const broken of [
   {stem_vi: "Ngắn"},
 ]) assert.equal(CaseQuiz.validItem({...theory, ...broken}, CaseQuiz.grounding(lesson)), false, JSON.stringify(broken));
 assert.equal(CaseQuiz.validItem({...kase, stem_en: "Short case?"}, CaseQuiz.grounding(lesson)), false);
+const rateQuote = "Amiodarone was infused at 1 mg/min for six hours in every participant of the trial.";
+const rateGround = {...CaseQuiz.grounding(lesson), excerpts: [rateQuote]};
+const rateCase = {...kase, quote: rateQuote, explanation_vi: "Abstract cho biết tốc độ truyền amiodarone trong thử nghiệm.",
+  explanation_en: "The abstract gives the amiodarone infusion rate used in the trial."};
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received amiodarone 1 mg/min."}, rateGround), "");
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received amiodarone 1 mg/min.",
+  stem_vi: kase.stem_vi + " Bà được truyền amiodarone 1 mg/phút."}, rateGround), "", "a translated rate unit is the same rate");
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received a 1 mg bolus of amiodarone."}, rateGround),
+  "dose", "a bolus is not the quoted infusion rate");
+assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},
+  CaseQuiz.grounding(lesson)), "", "clinical stage letters are not option references");
+for (const e of ["A and C give unsupported estimates.", "Options B, C and D are not supported.", "B and C are wrong here.", "B is correct because the abstract says so.", "Đáp án A sai vì abstract không nói vậy."])
+  assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: e}, CaseQuiz.grounding(lesson)), "letters", e);
+assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "A 74-year-old woman fits the population; the hazard ratio was 0.70."},
+  CaseQuiz.grounding(lesson)), "");
+const labCase = {...kase, stem_en: kase.stem_en + " LDL 3.2 mmol/L, creatinine 1.1 mg/dL, eGFR 58 mL/min/1.73 m2."};
+assert.equal(CaseQuiz.rejectReason(labCase, CaseQuiz.grounding(lesson)), "", "lab values are not doses");
+assert.equal(CaseQuiz.rejectReason({...kase, stem_en: kase.stem_en + " She receives amiodarone 1 mg/min."},
+  CaseQuiz.grounding(lesson)), "dose", "an infusion rate missing from the quote is a dose");
 assert.equal(CaseQuiz.validItem({...theory, quote: quote.replace(/ /g, "\u00a0")}, CaseQuiz.grounding(lesson)), true);
 
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};

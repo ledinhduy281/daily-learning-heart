@@ -13,9 +13,10 @@
 | Feature | Without a model | Optional model use in the current code |
 | --- | --- | --- |
 | Archive search | Browser-side ranking of bundled briefings (bilingual normalization and BM25) | None |
-| PubMed source lookup and scheduled daily refresh | Direct NCBI E-utilities lookups; the refresh combines curated content with publication metadata | The scheduled workflow does not call a model. There are separate opt-in model-based refresh and generation paths. |
+| PubMed source lookup and scheduled daily refresh | Direct NCBI E-utilities lookups; the refresh combines curated content with publication metadata | The lesson refresh does not call a model (only the quiz-set step above does). There are separate opt-in model-based refresh and generation paths. |
 | Educational Q&A (Med Bro / Soái ca Y khoa) | Retrieves relevant briefings and may look up PubMed or openFDA; assembles a rule-based answer | The current implementation can attempt model synthesis. Evidence retrieval itself does not require the model. |
 | Review tutor | Rule-based question and feedback fallback | The current implementation can attempt model-generated questions or feedback. Model calls must not be required to practice. |
+| "Tạo câu hỏi mới" quiz sets | Verbatim-excerpt quiz; the button is hidden | With the `GROQ_API_KEY` repo secret, the daily refresh runs `generate_quiz_sets.js`, which asks Groq for theory and clinical-case items, checks them against the excerpts, re-solves them and publishes up to 3 sets in `data/quiz_sets.js`. The browser makes no model call. |
 | Separate briefing generation and English translation | The scheduled path uses curated bilingual content | The bare CLI and generation endpoints are optional authoring tools. The model can draft Vietnamese and then translate it to English. |
 
 **Run without AI:** Use archive search, PubMed verification, and the scheduled refresh command in the README. Static archive search needs no network lookup once the bundle is loaded. PubMed lookups need internet access and can be rate-limited. Do not run the bare generation CLI or pass a model and key to the refresh command.

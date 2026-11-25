@@ -116,7 +116,6 @@ function doPost(event) {
     if (Utilities.newBlob(body).getBytes().length > SYNC_LIMITS.bytes + 4096) throw new Error('Request too large');
     request = JSON.parse(body);
     if (request && request.action === 'chat' && typeof chatHandle_ === 'function') return chatHandle_(request);
-    if (request && request.action === 'quiz' && typeof quizHandle_ === 'function') return quizHandle_(request);
     lock = LockService.getScriptLock();
     if (!lock.tryLock(5000)) throw new Error('Busy');
     var props = PropertiesService.getScriptProperties(), pepper = props.getProperty('PEPPER');
