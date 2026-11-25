@@ -7813,15 +7813,19 @@
         if (Dom.chatHistoryList) {
           Dom.chatHistoryList.addEventListener("click", (e) => {
             const delBtn = e.target.closest("[data-del-sid]");
+            const sessionId = delBtn ? delBtn.dataset.delSid : e.target.closest(".chat-history-item[data-sid]")?.dataset.sid;
+            if (!this.sessions.some(session => session.id === sessionId)) return;
+            const cancelled = this.cancelReply();
             if (delBtn) {
               e.stopPropagation();
-              this.deleteSession(delBtn.dataset.delSid);
-              return;
+              this.deleteSession(sessionId);
+            } else {
+              this.switchSession(sessionId);
             }
-            const item = e.target.closest(".chat-history-item[data-sid]");
-            if (item) {
-              this.switchSession(item.dataset.sid);
-            }
+            const isEn = App.currentLang === "en";
+            const notice = delBtn ? (isEn ? "Conversation deleted." : "Đã xóa cuộc trò chuyện.")
+              : (isEn ? "Conversation opened." : "Đã mở cuộc trò chuyện.");
+            showToast((cancelled ? (isEn ? "Reply canceled. " : "Đã hủy câu trả lời. ") : "") + notice);
           });
         }
 
@@ -8762,6 +8766,7 @@
         typingEl.innerHTML = lang === "en"
           ? `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Med Bro is searching Guidelines, PubMed &amp; OpenFDA...</div>`
           : `<div class="chat-bubble" style="color: var(--color-ink-mute);"><i class="fa-solid fa-spinner fa-spin"></i> Soái ca Y khoa đang tra cứu Guideline, PubMed &amp; OpenFDA...</div>`;
+        signal.addEventListener("abort", () => typingEl.remove(), {once: true});
         Dom.chatMessagesList.appendChild(typingEl);
         Dom.chatMessagesList.scrollTop = Dom.chatMessagesList.scrollHeight;
 

@@ -73,7 +73,7 @@ async function checkCancellation(button, lang, serverAvailable) {
   const Dom = {
     btnCloseChat: node(), btnExpandChat: node(), btnNewChat: node(), btnNewChatFromDrawer: node(),
     btnClearChat: node(), btnSendChat: {}, chatQuickPrompts: node(), chatInputForm: node(),
-    chatInputField: {focus() {}}, chatMessagesList: messages
+    chatInputField: {focus() {}}, chatMessagesList: messages, chatHistoryList: node()
   };
   const requests = [], toasts = [];
   let saved;
@@ -107,6 +107,12 @@ async function checkCancellation(button, lang, serverAvailable) {
   });
   chat.bindEvents();
   chat.createNewSession(false);
+  let historyId;
+  if (button.startsWith('history-')) {
+    historyId = chat.currentSessionId;
+    chat.appendMessage('user', 'heart from history');
+    chat.createNewSession(false);
+  }
   const originalId = chat.currentSessionId;
   const firstRequest = nextRequest();
   const firstReply = chat.sendQuestion('heart first');
@@ -115,16 +121,45 @@ async function checkCancellation(button, lang, serverAvailable) {
   assert.ok(visible.some(message => message.markdownText === 'heart first'));
   assert.equal(Dom.btnSendChat.disabled, true);
 
-  Dom[button].click();
+  const opened = button === 'history-open';
+  const deleted = button.startsWith('history-delete');
+  const targetId = button === 'history-delete-active' ? originalId : historyId;
+  if (opened || deleted) {
+    let stopped = false;
+    Dom.chatHistoryList.click({
+      target: {closest: selector => selector === '[data-del-sid]'
+        ? (deleted ? {dataset: {delSid: targetId}} : null)
+        : {dataset: {sid: targetId}}},
+      stopPropagation() {stopped = true;}
+    });
+    assert.equal(stopped, deleted);
+  } else {
+    Dom[button].click();
+  }
   assert.equal(first.signal.aborted, true);
-  assert.notEqual(chat.currentSessionId, originalId);
+  if (opened || button === 'history-delete-active') {
+    assert.equal(chat.currentSessionId, historyId);
+    assert.equal(visible.at(-1).markdownText, 'heart from history');
+  } else if (deleted) {
+    assert.equal(chat.currentSessionId, originalId);
+    assert.equal(visible.at(-1).markdownText, 'heart first');
+  } else {
+    assert.notEqual(chat.currentSessionId, originalId);
+    assert.equal(visible.length, 1);
+    assert.equal(visible[0].role, 'assistant');
+  }
   assert.equal(Dom.btnSendChat.disabled, false);
-  assert.equal(visible.length, 1);
-  assert.equal(visible[0].role, 'assistant');
+  assert.ok(visible.every(message => !message.className));
   const cleared = button === 'btnClearChat';
-  assert.match(toasts.at(-1), lang === 'en'
-    ? (cleared ? /Reply canceled.*cleared/ : /Reply canceled.*new conversation/)
-    : (cleared ? /hủy câu trả lời và xóa/ : /hủy câu trả lời và bắt đầu/));
+  if (opened || deleted) {
+    assert.match(toasts.at(-1), lang === 'en'
+      ? (deleted ? /Reply canceled.*Conversation deleted/ : /Reply canceled.*Conversation opened/)
+      : (deleted ? /hủy câu trả lời.*xóa cuộc trò chuyện/ : /hủy câu trả lời.*mở cuộc trò chuyện/));
+  } else {
+    assert.match(toasts.at(-1), lang === 'en'
+      ? (cleared ? /Reply canceled.*cleared/ : /Reply canceled.*new conversation/)
+      : (cleared ? /hủy câu trả lời và xóa/ : /hủy câu trả lời và bắt đầu/));
+  }
 
   const followingRequest = nextRequest();
   const secondReply = chat.sendQuestion('heart second');
@@ -147,7 +182,8 @@ async function checkCancellation(button, lang, serverAvailable) {
   assert.equal(visible.at(-1).markdownText, 'Fresh answer');
   const sessions = JSON.parse(saved);
   assert.ok(sessions.every(session => session.messages.every(message => message.markdownText !== 'Stale answer')));
-  assert.equal(sessions.some(session => session.id === originalId), !cleared);
+  assert.equal(sessions.some(session => session.id === originalId), !cleared && button !== 'history-delete-active');
+  if (deleted) assert.ok(sessions.every(session => session.id !== targetId));
 }
 
 (async () => {
@@ -158,4 +194,9 @@ async function checkCancellation(button, lang, serverAvailable) {
   await checkCancellation('btnClearChat', 'en', false);
   await checkCancellation('btnClearChat', 'vi', true);
   console.log('Chat cancellation: New and Clear abort the active reply, reject stale results, and keep the next reply active (VI/EN).');
+  await checkCancellation('history-open', 'en', true);
+  await checkCancellation('history-open', 'vi', false);
+  await checkCancellation('history-delete', 'en', false);
+  await checkCancellation('history-delete-active', 'vi', true);
+  console.log('Chat history cancellation: opening saved conversations and deleting active or inactive entries cancels replies and shows the correct VI/EN notice.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
