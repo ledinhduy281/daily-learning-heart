@@ -9193,11 +9193,20 @@
     const SocraticTutor = {
       quizSets: {
         key: "dlh-quiz-sets-v2",
-        read() {
-          try { return JSON.parse(window.localStorage.getItem(this.key) || "{}") || {}; } catch (_) { return {}; }
+        pressKey: "dlh-quiz-presses-v2",
+        dailyPresses: 2,
+        read(key = this.key) {
+          try { return JSON.parse(window.localStorage.getItem(key) || "{}") || {}; } catch (_) { return {}; }
         },
-        write(value) {
-          try { window.localStorage.setItem(this.key, JSON.stringify(value)); } catch (_) {}
+        write(value, key = this.key) {
+          try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+        },
+        today() {
+          return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Ho_Chi_Minh"}).format(new Date());
+        },
+        pressesLeft() {
+          const used = this.read(this.pressKey);
+          return Math.max(0, this.dailyPresses - (used.date === this.today() ? Number(used.used) || 0 : 0));
         },
         available(b) {
           const sets = b?.id ? globalThis.window?.EBM_QUIZ_SETS?.sets?.[b.id] : null;
@@ -9216,13 +9225,14 @@
           return b;
         },
         remaining(b) {
-          return Math.max(0, this.available(b).length - this.opened(b));
+          return Math.min(this.pressesLeft(), Math.max(0, this.available(b).length - this.opened(b)));
         },
         openNext(b) {
           const sets = this.available(b), n = this.opened(b);
-          if (n >= sets.length) return null;
+          if (n >= sets.length || this.pressesLeft() <= 0) return null;
           const kept = Object.fromEntries(Object.entries(this.read()).filter(([id]) => id !== b.id).slice(-29));
           this.write({...kept, [b.id]: n + 1});
+          this.write({date: this.today(), used: this.dailyPresses - this.pressesLeft() + 1}, this.pressKey);
           b.generated_quiz = sets[n];
           return sets[n];
         }
@@ -9413,7 +9423,9 @@
         const status = msg => { if (el) { el.textContent = msg; el.hidden = !msg; } };
         const set = this.quizSets.openNext(b);
         if (!set) {
-          status(isVi ? "Đã mở hết các bộ câu hỏi AI soạn sẵn cho bài này." : "You have opened every pre-generated AI set for this lesson.");
+          status(this.quizSets.pressesLeft() <= 0
+            ? (isVi ? "Hôm nay thiết bị này đã dùng hết 2 lượt tạo câu hỏi mới." : "This device has used both new-question presses for today.")
+            : (isVi ? "Đã mở hết các bộ câu hỏi AI soạn sẵn cho bài này." : "You have opened every pre-generated AI set for this lesson."));
           this.renderUI();
           return;
         }
@@ -9848,12 +9860,12 @@
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
         const btnNewSet = document.getElementById("btnNewQuizSet");
         if (btnNewSet) {
-          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
+          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b), cap = this.quizSets.dailyPresses;
           btnNewSet.style.display = total ? "inline-flex" : "none";
           btnNewSet.disabled = Boolean(this.isBusy) || left <= 0;
           btnNewSet.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
             : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
-          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới (còn ${left}/${total})` : `New questions (${left}/${total} left)`);
+          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới (còn ${left}/${cap})` : `New questions (${left}/${cap} left)`);
         }
 
         setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");
