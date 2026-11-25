@@ -28,8 +28,8 @@ assert.equal(I18N.vi.citationFound, "Đã tìm thấy trích dẫn");
 assert.equal(I18N.en.citationFound, "Citation found");
 assert.match(I18N.vi.citationFoundHint, /không phải thẩm định lâm sàng/);
 assert.match(I18N.en.citationFoundHint, /not clinical verification/);
-assert.match(I18N.vi.heroLead, /giáo trình xoay vòng/);
-assert.match(I18N.en.heroLead, /rotating curriculum/);
+assert.equal(I18N.vi.heroLead, "Nội dung được cập nhật 06:00 sáng (giờ Việt Nam) mỗi ngày");
+assert.equal(I18N.en.heroLead, "Content updates daily at 06:00 (Vietnam time)");
 assert.equal(I18N.vi.verifiedPubMed, undefined);
 assert.equal(I18N.en.verifiedPubMed, undefined);
 
