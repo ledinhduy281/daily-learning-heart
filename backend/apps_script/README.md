@@ -6,13 +6,15 @@ Google can change quotas or availability; this is best-effort sync, not a guaran
 backup service. Local progress and JSON export/import always work without it.
 
 1. Open https://script.google.com and create a **New project** under your own account.
-2. Copy both `Code.gs` and `Chat.gs` into the same Apps Script project as separate
-   script files (or use `clasp push` to upload both).
+2. Copy `Code.gs`, `Chat.gs`, `Quiz.gs` and `CaseQuiz.gs` into the same Apps Script
+   project as separate script files (or use `clasp push` to upload them).
 3. In **Project Settings → Script Properties**, set **PEPPER** to a long random string
    (keep it private and stable). Optionally set **SITE_URL** to your Pages URL; the
    default is `https://ledinhduy281.github.io/daily-learning-heart/`. Also set
    **GROQ_API_KEY**, never in browser code. Optional chat properties:
    **CHAT_DAILY_CAP** (default `100`) and **GROQ_MODEL** (default `openai/gpt-oss-120b`).
+   Optional quiz property: **QUIZ_DAILY_CAP** (default `40`, at most `100`), the total
+   number of "Tạo câu hỏi mới" sets per Vietnam calendar day. Each device gets 2.
 4. Choose **Deploy → New deployment → Web app**, **Execute as: Me**,
    **Who has access: Anyone**. Authorize Sheets and sending mail from your account.
    If your Workspace administrator forbids anonymous web apps, this setup cannot

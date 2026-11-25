@@ -38,16 +38,54 @@ async function main() {
   const elements = new Map();
   const navigator = { onLine: true };
   const App = { evidenceFeed: { payload, fromCache: false }, currentLang: "en" };
+  const node = () => ({
+    children: [], attrs: {}, listeners: {},
+    append(...c) { this.children.push(...c); }, replaceChildren(...c) { this.children = c; },
+    setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, f) { this.listeners[k] = f; },
+  });
   const render = runInNewContext(`(${renderer})`, {
     App, navigator, EvidenceFeed: { sourceLink },
+    formatFullDdMmYyyy: iso => iso.split("-").reverse().join("/"),
     document: {
-      createElement: () => ({ append() {} }),
+      createElement: node,
       getElementById(id) {
-        if (!elements.has(id)) elements.set(id, { replaceChildren() {} });
+        if (!elements.has(id)) elements.set(id, node());
         return elements.get(id);
       },
     },
   });
+  const many = { ...payload, items: [
+    ...Array.from({ length: 7 }, (_, i) => ({ source: "pubmed", source_id: String(10000000 + i), title: `PubMed ${i}`, source_date: "2026-01-19" })),
+    ...Array.from({ length: 3 }, (_, i) => ({ source: "clinicaltrials", source_id: `NCT0000000${i}`, title: `Trial ${i}` })),
+  ] };
+  App.evidenceFeed = { payload: many, fromCache: false };
+  render();
+  const filters = () => elements.get("dailyEvidenceFilters").children;
+  const rows = () => elements.get("dailyEvidenceList").children;
+  assert.deepEqual(filters().map(b => b.children[0]), ["All", "PubMed", "ClinicalTrials.gov"], "filters list only sources with items");
+  assert.deepEqual(filters().map(b => b.children[1].textContent), [10, 7, 3], "filters show counts");
+  assert.equal(filters()[0].attrs["aria-pressed"], "true");
+  assert.equal(rows().length, 5, "five items by default");
+  assert.equal(elements.get("dailyEvidenceMore").hidden, false);
+  assert.equal(elements.get("dailyEvidenceMore").textContent, "Show more (5)");
+  const meta = rows()[0].children[0].children[0];
+  assert.equal(meta.children[0].textContent, "PubMed");
+  assert.equal(meta.children[1].textContent, "19/01/2026", "source date shown as dd/mm/yyyy");
+  elements.get("dailyEvidenceMore").onclick();
+  assert.equal(rows().length, 10);
+  assert.equal(elements.get("dailyEvidenceMore").hidden, true);
+  filters()[2].listeners.click();
+  assert.equal(rows().length, 3, "source filter narrows the list");
+  assert.equal(rows()[0].children[0].children[0].children.length, 1, "missing date is omitted");
+  App.currentLang = "vi";
+  App.evidenceView = { source: "openfda", limit: 5 };
+  render();
+  assert.equal(App.evidenceView.source, "all", "empty filter falls back to all");
+  assert.equal(elements.get("dailyEvidenceMore").textContent, "Xem thêm (5)");
+  assert.equal(elements.get("dailyEvidenceDownloadLabel").textContent, "Tải Parquet");
+  App.currentLang = "en";
+  App.evidenceView = null;
+  App.evidenceFeed = { payload, fromCache: false };
   const downloadHidden = () => {
     render();
     return elements.get("dailyEvidenceDownload").hidden;
@@ -58,7 +96,7 @@ async function main() {
   navigator.onLine = true;
   App.evidenceFeed.fromCache = true;
   assert.equal(downloadHidden(), true, "cached fallback hides the download even when online");
-  console.log("Evidence feed checks passed.");
+  console.log("Evidence feed checks passed (filters, counts, five items, show more, dates, VI/EN, download).");
 }
 
 main().catch(error => {

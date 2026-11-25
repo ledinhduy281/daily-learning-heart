@@ -2881,7 +2881,7 @@ class EBMRequestHandler(SimpleHTTPRequestHandler):
         is_home = urllib.parse.urlparse(self.path).path in ('/', '/index.html')
         target = (BASE_DIR / 'index.html' if is_home else Path(self.translate_path(self.path))).resolve()
         public_assets = {'index.html', 'device_profile.js', 'sync_config.js', 'cloud_sync.js', 'search_ranking.js',
-                         'clinical_distractors.js', 'clinical_mcq.js',
+                         'clinical_distractors.js', 'case_quiz.js', 'clinical_mcq.js',
                          'manifest.json', 'icon.svg', 'data/briefings.js',
                          'offline.js', 'evidence_feed.js', 'data/pipeline/briefing.json',
                          'data/pipeline/evidence.parquet'}
