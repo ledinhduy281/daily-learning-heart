@@ -18,7 +18,7 @@ Gồm phân tích gộp so sánh trực tiếp và hỗn hợp, phân tích tu�
 
 28 thử nghiệm, 24.634 bệnh nhân (tuổi trung bình 64,8; 75,9% nam), theo dõi trung bình 22 tháng. So với chụp mạch, hướng dẫn hình ảnh nội mạch giảm thất bại tổn thương đích (RR 0,72; KTC 95% 0,61–0,85), tử vong tim (RR 0,73), nhồi máu cơ tim (RR 0,86), tái thông mạch đích (RR 0,69), huyết khối stent (RR 0,55) và tử vong do mọi nguyên nhân (RR 0,82; KTC 95% 0,70–0,96).
 
-Phân tích tuần tự xác nhận mức giảm ít nhất 20% ở mọi kết cục; chỉ số mong manh từ 9 đến 50, và xác suất hậu nghiệm có lợi >99%. Khác biệt địa lý và đặc điểm tổn thương giải thích phần lớn dị biệt giữa các thử nghiệm.
+Theo tác giả, phân tích tuần tự thử nghiệm xác nhận bằng chứng cho mức giảm ít nhất 20% ở mọi kết cục, dù ước tính gộp cho nhồi máu cơ tim (RR 0,86) và tử vong do mọi nguyên nhân (RR 0,82) nhỏ hơn mức đó; chỉ số mong manh từ 9 đến 50, và xác suất hậu nghiệm có lợi >99%. Khác biệt địa lý và đặc điểm tổn thương giải thích phần lớn dị biệt giữa các thử nghiệm.
 
 ## limits
 
@@ -50,7 +50,7 @@ Analyses included direct and mixed treatment comparison meta-analyses, trial seq
 
 28 RCTs, 24 634 patients (mean age 64.8 years; 75.9% male), mean follow-up 22 months. Compared with angiography, imaging guidance reduced target lesion failure (RR 0.72; 95% CI 0.61–0.85), cardiac mortality (RR 0.73), myocardial infarction (RR 0.86), target vessel revascularization (RR 0.69), stent thrombosis (RR 0.55) and all-cause mortality (RR 0.82; 95% CI 0.70–0.96).
 
-Trial sequential analysis confirmed at least a 20% reduction in all outcomes; the fragility index ranged from 9 to 50, and the posterior probability of benefit was >99%. Geography and lesion characteristics explained most between-trial variance.
+The authors report that trial sequential analysis confirmed evidence for at least a 20% reduction in all outcomes, although the pooled estimates for myocardial infarction (RR 0.86) and all-cause mortality (RR 0.82) were smaller; the fragility index ranged from 9 to 50, and the posterior probability of benefit was >99%. Geography and lesion characteristics explained most between-trial variance.
 
 ## limits
 
