@@ -673,6 +673,7 @@ async function checkStreams() {
       const tutor=vm.runInNewContext(`${tutorCode};SocraticTutor`,{
         App:app,SOCRATIC_STATE_KEY:'ebm_socratic_state_v1',getPillarDisplayName:()=> 'Pillar',
         ClinicalQuiz:{...quiz,translate:(b,q)=>({...q,question:'Translated second question',explanation:'Translated rationale'})},
+        AbortSignal,
         safeStorageGet:()=>stored,safeStorageSet:(key,value)=>{stored=value;},isFileOrigin:()=>false,getAuthHeaders:x=>x,
         document:{getElementById:()=>null,querySelectorAll:()=>[],createElement:()=>({remove(){}})},
         fetch:async()=>{entered();await gate;return {ok:true,headers:{get:()=> 'application/json'},json:async()=>({
@@ -716,6 +717,7 @@ async function checkStreams() {
     let requests = 0, failure = false, notice = '';
     const body = html.match(/async function syncDeviceActivity\(\) \{([\s\S]*?)\n    \}/)[1];
     const sync = vm.runInNewContext(`(async function() {${body}})`, {
+      AbortSignal,
       App: app, deviceStore: profile, getAuthHeaders: value => value,
       tt: key => key, showToast: text => {notice = text;},
       fetch: async () => {requests++; if (failure === 'network') throw Error('offline'); return {ok: !failure};}
@@ -748,6 +750,7 @@ async function checkStreams() {
     const emptyBackup = create(new Storage(), crypto).exportJSON();
     let serverCopy, fail = false, requests = 0;
     const runSync = deviceStore => vm.runInNewContext(`(async function() {${body}})`, {
+      AbortSignal,
       App: {serverAvailable: true, user: {}}, deviceStore, getAuthHeaders: value => value,
       tt: key => key, showToast() {},
       fetch: async (_path, {body}) => {
@@ -786,6 +789,7 @@ async function checkStreams() {
     let sent;
     const body = html.match(/async function syncDeviceActivity\(\) \{([\s\S]*?)\n    \}/)[1];
     const sync = vm.runInNewContext(`(async function() {${body}})`, {
+      AbortSignal,
       App: app, deviceStore: stale, getAuthHeaders: value => value,
       fetch: async (url, options) => {sent = JSON.parse(options.body); return {ok: true};}
     });
@@ -861,6 +865,7 @@ async function checkStreams() {
   const bootstrapCode = html.match(/async function bootstrapSessionAndStatus\(\) \{([\s\S]*?)\n    \}/)[1];
   const requests = [];
   const bootstrap = vm.runInNewContext(`(async function() {${bootstrapCode}})`, {
+    AbortSignal,
     App:{}, window:{EBM_SERVER:true,localStorage:legacyStorage},
     safeStorageGet:key=>replacement.get(key), safeStorageSet:(key,value)=>replacement.set(key,value),
     setAuthenticatedUser() {}, loadOfflineFeedbackStore() {}, renderAllViewsAfterAuth() {},
@@ -882,6 +887,7 @@ async function checkStreams() {
   assert.equal(reloads,0); assert.match(toast,/browser storage/); assert.equal(importFile.value,'');
   let source, requestHeaders;
   const consume = vm.runInNewContext(`(async function(path, onMessage) {${streamCode}})`, {
+    AbortSignal,
     TextDecoder, getAuthHeaders: headers,
     fetch: async (path, options) => {requestHeaders = options.headers; return source;}
   });
