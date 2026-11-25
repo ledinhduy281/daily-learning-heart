@@ -62,7 +62,7 @@ class RecentLessonTests(unittest.TestCase):
         pillar = PILLARS[4]
         line = {"text": "Example recommendation for [[2]] groups.", "class": "I", "level": "A", "locator": "Table 4"}
         with patch.dict(recent_lessons.PHYSICIAN_LINES, {SOURCES[5]["id"]: (line,)}), \
-                patch.dict(SOURCES, {5: {**SOURCES[5], "physician_lines": (line,)}}):
+                patch.dict(SOURCES, {5: {**SOURCES[5], "kind": "guideline", "quiz": (), "physician_lines": (line,)}}):
             lesson = build_recent_lesson(pillar, "2026-11-26")
             self.assertEqual(lesson["source_excerpts"][0]["class"], "I")
             self.assertEqual(lesson["quiz_items"][0]["answer"], "2")
@@ -92,7 +92,8 @@ class RecentLessonTests(unittest.TestCase):
             answer, _ = app._compose_deterministic_ebm_answer(query, [lesson], [], lang)
             self.assertIn(notice, answer)
             self.assertNotRegex(answer, r"(?i)\b(correct answer|đáp án đúng)\b")
-        guideline = build_recent_lesson(PILLARS[2], "2026-11-26")
+        with patch.dict(SOURCES, {3: {**SOURCES[3], "kind": "guideline", "quiz": ()}}):
+            guideline = build_recent_lesson(PILLARS[2], "2026-11-26")
         answer, _ = app._compose_deterministic_ebm_answer(query, [guideline], [], "en")
         self.assertIn("no quiz until a physician", answer)
         self.assertNotIn("Use the lesson quiz", answer)

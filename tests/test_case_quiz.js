@@ -58,6 +58,6 @@ const invalidSet = {...lesson, generated_quiz: {set_id: "s2", items: [theory]}};
 assert.equal(quiz.sourceQuestionCount(invalidSet), quiz.sourceQuestionCount(lesson), "an invalid set falls back to the verbatim quiz");
 const daily = {...lesson, case_quiz_items: [kase, {...kase, quote: "invented"}]};
 assert.equal(quiz.sourceQuestionCount(daily), quiz.sourceQuestionCount(lesson) + 1, "valid daily case items follow the verbatim quiz");
-const guideline = scope.window.EBM_BRIEFINGS_DATA.focused_lessons["1"];
+const guideline = {...scope.window.EBM_BRIEFINGS_DATA.focused_lessons["1"], quiz_items: [], quiz_status: "awaiting_physician_excerpts"};
 assert.equal(quiz.hasSourceItems({...guideline, generated_quiz: {set_id: "s3", items: [theory, kase]}}), false);
 console.log("Case quiz checks passed (grounding, fallback, mixed set, bilingual, AI label).");
