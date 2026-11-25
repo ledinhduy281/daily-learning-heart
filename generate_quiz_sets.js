@@ -82,7 +82,8 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
       if (item && Array.isArray(item.options)) item.options.forEach(o => ['vi', 'en'].forEach(l => {
         if (o && typeof o[l] === 'string') o[l] = o[l].replace(/^\s*[A-D][.):]\s+/, '');
       }));
-      const reason = CaseQuiz.rejectReason(item, ground) || (seen.has(String(item.stem_en).toLowerCase()) ? 'duplicate' : '');
+      const reason = CaseQuiz.rejectReason(item, ground) ||
+        (item && Array.isArray(item.options) && CaseQuiz.rejectReason(CaseQuiz.clean(item), ground)) || (seen.has(String(item.stem_en).toLowerCase()) ? 'duplicate' : '');
       if (reason && !reasons[reason]) samples.push(reason === 'numbers'
         ? `numbers ${JSON.stringify(CaseQuiz.unsupportedNumbers(item, ground))}: ${String(item.explanation_en).slice(0, 300)}`
         : `${reason}: ${JSON.stringify(item).slice(0, 400)}`);
@@ -106,7 +107,7 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
       const cases = pool.filter(i => i.type === 'case').slice(0, CASES);
       if (theory.length < THEORY || cases.length < CASES) break;
       const items = CaseQuiz.validateSet(lesson, [...theory, ...cases]);
-      if (items.length !== THEORY + CASES || CaseQuiz.validateSet(lesson, items).length !== THEORY + CASES) break;
+      if (items.length !== THEORY + CASES) break;
       [...theory, ...cases].forEach(i => pool.splice(pool.indexOf(i), 1));
       sets.push({set_id: `${lesson.date}-${Date.now().toString(36)}-${sets.length + 1}`, model, items});
     }

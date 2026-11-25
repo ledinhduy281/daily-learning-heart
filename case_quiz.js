@@ -98,6 +98,6 @@ const CaseQuiz = (() => {
     };
   }
 
-  return {grounding, rejectReason, unsupportedNumbers, validItem, validateSet, question, subskill, AI_NOTE, LIMITS};
+  return {grounding, clean, rejectReason, unsupportedNumbers, validItem, validateSet, question, subskill, AI_NOTE, LIMITS};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;
