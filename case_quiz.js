@@ -20,6 +20,15 @@ const CaseQuiz = (() => {
     return {pmid, kind: source.kind || '', title: source.title || source.name || '', excerpts};
   }
 
+  // Numbers in the correct option and explanations must come from the source or the stem; "excerpt 2" / "[2]" are references.
+  function unsupportedNumbers(item, ground) {
+    const allowed = new Set(numbers([ground.title, ...ground.excerpts, item.stem_vi, item.stem_en].join(' ')));
+    const correct = item.options[KEYS.indexOf(item.answer)];
+    const refs = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
+    return [correct.vi, correct.en, item.explanation_vi, item.explanation_en]
+      .flatMap(c => numbers(String(c).replace(refs, ' '))).filter(n => !allowed.has(n));
+  }
+
   function rejectReason(item, ground) {
     if (!item || typeof item !== 'object' || !['theory', 'case'].includes(item.type)) return 'shape';
     if (item.pmid !== ground.pmid || !/^[1-9][0-9]{0,8}$/.test(ground.pmid)) return 'pmid';
@@ -31,10 +40,7 @@ const CaseQuiz = (() => {
     if (!Array.isArray(item.options) || item.options.length !== 4 || !KEYS.includes(item.answer)) return 'options';
     if (!item.options.every(o => o && text(o.vi, LIMITS.option) && text(o.en, LIMITS.option))) return 'options';
     for (const l of ['vi', 'en']) if (new Set(item.options.map(o => squash(o[l]).toLowerCase())).size !== 4) return 'options';
-    const correct = item.options[KEYS.indexOf(item.answer)];
-    const allowed = new Set(numbers([...ground.excerpts, item.stem_vi, item.stem_en].join(' ')));
-    const claims = [correct.vi, correct.en, item.explanation_vi, item.explanation_en];
-    if (!claims.every(c => numbers(c).every(n => allowed.has(n)))) return 'numbers';
+    if (unsupportedNumbers(item, ground).length) return 'numbers';
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
     const quotedDoses = new Set((quote.match(DOSE) || []).map(d => squash(d).toLowerCase().replace(/\s/g, '')));
@@ -78,6 +84,6 @@ const CaseQuiz = (() => {
     };
   }
 
-  return {grounding, rejectReason, validItem, validateSet, question, subskill, AI_NOTE, LIMITS};
+  return {grounding, rejectReason, unsupportedNumbers, validItem, validateSet, question, subskill, AI_NOTE, LIMITS};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;
