@@ -7815,6 +7815,10 @@
             const delBtn = e.target.closest("[data-del-sid]");
             const sessionId = delBtn ? delBtn.dataset.delSid : e.target.closest(".chat-history-item[data-sid]")?.dataset.sid;
             if (!this.sessions.some(session => session.id === sessionId)) return;
+            if (!delBtn && sessionId === this.currentSessionId) {
+              this.toggleHistoryDrawer(false);
+              return;
+            }
             const cancelled = this.cancelReply();
             if (delBtn) {
               e.stopPropagation();

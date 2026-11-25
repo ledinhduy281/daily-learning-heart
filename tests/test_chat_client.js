@@ -121,10 +121,15 @@ async function checkCancellation(button, lang, serverAvailable) {
   assert.ok(visible.some(message => message.markdownText === 'heart first'));
   assert.equal(Dom.btnSendChat.disabled, true);
 
+  const reopened = button === 'history-open-active';
   const opened = button === 'history-open';
   const deleted = button.startsWith('history-delete');
-  const targetId = button === 'history-delete-active' ? originalId : historyId;
-  if (opened || deleted) {
+  const targetId = reopened || button === 'history-delete-active' ? originalId : historyId;
+  const response = answer => ({
+    ok: true, headers: {get: () => 'application/json'}, json: async () => ({ok: true, answer_markdown: answer})
+  });
+  if (reopened) chat.toggleHistoryDrawer(true);
+  if (opened || reopened || deleted) {
     let stopped = false;
     Dom.chatHistoryList.click({
       target: {closest: selector => selector === '[data-del-sid]'
@@ -135,6 +140,26 @@ async function checkCancellation(button, lang, serverAvailable) {
     assert.equal(stopped, deleted);
   } else {
     Dom[button].click();
+  }
+  if (reopened) {
+    assert.equal(chat.isHistoryOpen, false);
+    assert.equal(chat.currentSessionId, originalId);
+    assert.equal(first.signal.aborted, false);
+    assert.equal(chat.isBusy, true);
+    assert.equal(Dom.btnSendChat.disabled, true);
+    assert.ok(visible.some(message => message.markdownText === 'heart first'));
+    assert.ok(visible.some(message => message.className === 'chat-msg assistant'));
+    assert.deepEqual(toasts, []);
+
+    first.resolve(response('Continued answer'));
+    await firstReply;
+    assert.equal(chat.isBusy, false);
+    assert.equal(Dom.btnSendChat.disabled, false);
+    assert.equal(visible.at(-1).markdownText, 'Continued answer');
+    const original = JSON.parse(saved).find(session => session.id === originalId);
+    assert.equal(original.messages.at(-1).markdownText, 'Continued answer');
+    assert.equal(requests.length, 1);
+    return;
   }
   assert.equal(first.signal.aborted, true);
   if (opened || button === 'history-delete-active') {
@@ -164,9 +189,6 @@ async function checkCancellation(button, lang, serverAvailable) {
   const followingRequest = nextRequest();
   const secondReply = chat.sendQuestion('heart second');
   const second = await followingRequest;
-  const response = answer => ({
-    ok: true, headers: {get: () => 'application/json'}, json: async () => ({ok: true, answer_markdown: answer})
-  });
   // Simulate a transport that delivers the old response despite being aborted.
   first.resolve(response('Stale answer'));
   await firstReply;
@@ -228,6 +250,9 @@ async function checkWithoutAbortSignalAny() {
   await checkCancellation('history-delete', 'en', false);
   await checkCancellation('history-delete-active', 'vi', true);
   console.log('Chat history cancellation: opening saved conversations and deleting active or inactive entries cancels replies and shows the correct VI/EN notice.');
+  await checkCancellation('history-open-active', 'en', true);
+  await checkCancellation('history-open-active', 'vi', false);
+  console.log('Selecting active chat history closes the drawer without interrupting the pending reply (VI/EN).');
   await checkWithoutAbortSignalAny();
   console.log('Without AbortSignal.any: PubMed requests run, and cancellation and proxy timeouts still work.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
