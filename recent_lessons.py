@@ -71,7 +71,7 @@ SOURCES = {s["pillar_id"]: s for s in (
             ("PCI hướng dẫn bằng hình ảnh nội mạch vành: phân tích gộp cập nhật", "Intracoronary imaging-guided PCI: updated meta-analysis of randomized trials"),
             quiz=(
                 "A total of [[28]] RCTs met the inclusion criteria, comprising 24,634 patients (mean age 64.8 years; 75.9% male) with a mean follow-up of 22 months.",
-                "Trial sequential analysis confirmed evidence for at least a [[20%]] reduction in all outcomes with ICI-guided PCI.",
+                "ICI-guided PCI reduced target lesion failure (relative risk [RR]: [[0.72]]; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
                 "The fragility index was robust, ranging from 9 to [[50]].",
             ), copyright="Copyright © 2026 American College of Cardiology Foundation. Published by Elsevier Inc. All rights reserved."),
     _source(4, "af-pci-antithrombotic-ipd-nma", "systematic_review_meta_analysis", "42669062", "10.1093/eurheartj/ehag740",
