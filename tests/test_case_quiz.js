@@ -39,6 +39,8 @@ const rateGround = {...CaseQuiz.grounding(lesson), excerpts: [rateQuote]};
 const rateCase = {...kase, quote: rateQuote, explanation_vi: "Abstract cho biết tốc độ truyền amiodarone trong thử nghiệm.",
   explanation_en: "The abstract gives the amiodarone infusion rate used in the trial."};
 assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received amiodarone 1 mg/min."}, rateGround), "");
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received amiodarone 1 mg/min.",
+  stem_vi: kase.stem_vi + " Bà được truyền amiodarone 1 mg/phút."}, rateGround), "", "a translated rate unit is the same rate");
 assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received a 1 mg bolus of amiodarone."}, rateGround),
   "dose", "a bolus is not the quoted infusion rate");
 assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},

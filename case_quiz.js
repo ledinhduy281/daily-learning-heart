@@ -15,6 +15,10 @@ const CaseQuiz = (() => {
   // The app shuffles options, so explanations must not name them by letter.
   const LETTERS = [/(?:[Oo]ptions?|[Cc]hoices?|[Aa]nswers?|[Đđ]áp án|[Pp]hương án|[Ll]ựa chọn|[Cc]họn)\s*\(?[A-D]\)?(?![\p{L}\p{N}])/u,
     /(?:^|[^\p{L}\p{N}])[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])*\s+(?:(?:is|are|là)\s+)?(?:correct|incorrect|wrong|right|đúng|sai)(?![\p{L}])/u];
+  const UNIT_ALIASES = {'phút': 'min', 'giờ': 'h', hr: 'h', 'ngày': 'day', d: 'day', 'm²': 'm2', 'μg': 'mcg', 'µg': 'mcg', ui: 'iu',
+    unit: 'units', 'đơn vị': 'units'};
+  const doseKey = d => squash(d).toLowerCase().replace(/,/g, '.').replace(/\s*\/\s*/g, '/').replace(/(\d)\s+/, '$1')
+    .replace(/[\p{L}²]+(?: vị)?/gu, u => UNIT_ALIASES[u] || u);
   const doses = s => String(s).replace(LAB, ' ').match(DOSE) || [];
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
 
@@ -50,8 +54,8 @@ const CaseQuiz = (() => {
     if ([item.explanation_vi, item.explanation_en].some(e => LETTERS.some(r => r.test(e)))) return 'letters';
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
-    const quotedDoses = new Set(doses(quote).map(d => squash(d).toLowerCase().replace(/\s/g, '')));
-    return doses(everything).every(d => quotedDoses.has(squash(d).toLowerCase().replace(/\s/g, ''))) ? '' : 'dose';
+    const quotedDoses = new Set(doses(quote).map(doseKey));
+    return doses(everything).every(d => quotedDoses.has(doseKey(d))) ? '' : 'dose';
   }
 
   const validItem = (item, ground) => !rejectReason(item, ground);
