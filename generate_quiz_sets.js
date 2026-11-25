@@ -30,8 +30,8 @@ function systemPrompt(pmid, avoid) {
     `Return JSON {"questions": [...]} with exactly ${THEORY} items of type "theory" and ${CASES} of type "case". ` +
     '"theory" tests a fact the excerpt states. "case" is a short fictional patient vignette (age, sex, the clinical features ' +
     'the excerpt is about) whose correct answer follows directly from the excerpt; never test anything the excerpt does not ' +
-    `state. Fields per item: type, pmid ("${pmid}"), quote (one complete sentence copied character for character ` +
-    'from one excerpt, including its numbers and punctuation, never paraphrased or shortened), stem_vi, stem_en, ' +
+    `state. Fields per item: type, pmid ("${pmid}"), excerpt (the number of the one excerpt the question is based on), ` +
+    'stem_vi, stem_en, ' +
     'options (exactly 4 objects {"vi": ..., "en": ...}), answer ("A"-"D"), explanation_vi, explanation_en. Rules: ' +
     'Vietnamese uses standard medical terminology. Every number in the correct option and in both explanations must appear ' +
     'in the excerpts or the stem, written the same way (no thousands separators). Explanations say why the correct answer ' +
@@ -70,13 +70,16 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
   const ground = CaseQuiz.grounding(lesson);
   const header = `SOURCE (PMID ${ground.pmid}, ${ground.kind}): ${ground.title}\nEXCERPTS:\n` +
     ground.excerpts.slice(0, 8).map((e, i) => `[${i + 1}] ${e}`).join('\n');
-  const sets = existing.slice(), reasons = {}, pool = [];
+  const sets = existing.slice(), reasons = {}, pool = [], samples = [];
   const seen = new Set(sets.flatMap(s => s.items.map(i => i.stem_en.toLowerCase())));
   for (let round = 0; round < MAX_ROUNDS && sets.length < SETS_PER_LESSON; round++) {
     const generated = await groq(key, model, systemPrompt(ground.pmid, [...seen].slice(-15)), header, fetchImpl);
     if (!generated) { reasons.upstream = (reasons.upstream || 0) + 1; continue; }
     const items = (Array.isArray(generated.questions) ? generated.questions : []).slice(0, CaseQuiz.LIMITS.items).filter(item => {
+      const n = Number(item && item.excerpt);
+      if (Number.isInteger(n) && ground.excerpts[n - 1] && !item.quote) item.quote = ground.excerpts[n - 1];
       const reason = CaseQuiz.rejectReason(item, ground) || (seen.has(String(item.stem_en).toLowerCase()) ? 'duplicate' : '');
+      if (reason && !reasons[reason]) samples.push(`${reason}: ${JSON.stringify(item).slice(0, 300)}`);
       if (reason) reasons[reason] = (reasons[reason] || 0) + 1;
       return !reason;
     });
@@ -102,7 +105,7 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
     }
   }
   log(`quiz sets for ${lesson.id}: ${sets.length}/${SETS_PER_LESSON} (${sets.length - existing.length} new); ` +
-    `rejected: ${JSON.stringify(reasons)}`);
+    `rejected: ${JSON.stringify(reasons)}` + samples.map(s => `\n  first ${s}`).join(''));
   return sets;
 }
 

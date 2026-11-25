@@ -55,7 +55,7 @@ const quiet = () => {};
     {questions: [theory(1), kase(1), {...kase(9), quote: "paraphrased text that is not in the source"}], answers: ["B", "A"]},
     {questions: [theory(2), kase(2), {...theory(8), explanation_en: "Not 1.10: the abstract reports 0.70."}], answers: ["B", "C", "B"]},
     {questions: [theory(3), kase(3), {...kase(7), stem_en: kase(7).stem_en + " She takes atorvastatin 80 mg."}], answers: ["B", "A"]},
-    {questions: [theory(4), kase(4)], answers: ["B", "A"]},
+    {questions: [{...theory(4), quote: undefined, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}, kase(4)], answers: ["B", "A"]},
   ]);
   const logs = [];
   assert.equal(await main({root, env, date, fetchImpl: g.fetchImpl, log: m => logs.push(m)}), 3);
