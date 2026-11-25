@@ -6078,7 +6078,7 @@
       const pid = Number(App.todayPillarId);
       const template = window.EBM_BRIEFINGS_DATA?.focused_lessons?.[pid];
       const exactToday = App.briefings.find(
-        b => b.date === App.todayDate && Number(b.pillar_id) === pid && b.lesson_format === "single_guideline"
+        b => b.date === App.todayDate && Number(b.pillar_id) === pid && isFocusedLesson(b)
           && (!template || b.lesson_version === template.lesson_version)
       );
       if (exactToday) return exactToday;
@@ -6710,11 +6710,16 @@
       if (!b) return;
 
       const isVi = App.currentLang === "vi";
-      const focused = b.lesson_format === "single_guideline";
-      document.getElementById("guidelinePipelineTitle").textContent = focused
+      const focused = isFocusedLesson(b);
+      const singleSource = b.lesson_format === "single_source";
+      document.getElementById("guidelinePipelineTitle").textContent = singleSource
+        ? (isVi ? "Block A — Nguồn chính" : "Block A — Primary source")
+        : focused
         ? (isVi ? "Block A — Một khuyến cáo trọng tâm" : "Block A — One focused guideline recommendation")
         : t("guidelinePipelineTitle");
-      document.getElementById("trialsSectionTitle").textContent = focused
+      document.getElementById("trialsSectionTitle").textContent = singleSource
+        ? (isVi ? "Block B — Đọc kỹ cùng nguồn" : "Block B — Close reading of the same source")
+        : focused
         ? (isVi ? "Block B — Bằng chứng bổ trợ" : "Block B — Supporting evidence")
         : t("trialsSectionTitle");
       document.getElementById("briefingPearlsCard").style.display = focused && !b.teaching ? "none" : "";
@@ -6812,6 +6817,17 @@
     }
 
     function renderEvolutionPipeline(b, isVi) {
+      if (b.lesson_format === "single_source") {
+        const source = b.primary_source || {};
+        Dom.evolutionPipelineRow.className = "focused-recommendation";
+        Dom.guidelinePipelineSociety.textContent = source.label || source.journal || "";
+        Dom.guidelineComparisonBanner.style.display = "block";
+        Dom.guidelineComparisonBanner.innerHTML = renderPrimarySourceRefBox(b, isVi);
+        Dom.evolutionPipelineRow.innerHTML = `<div class="focused-lesson-notes">
+          <p><small>${curatedSourceLabel(isVi)}</small></p>
+          ${renderTeachingSections(b, isVi, "source_summary")}</div>`;
+        return;
+      }
       const ge = b.guideline_evolution;
       const focused = b.lesson_format === "single_guideline";
       Dom.evolutionPipelineRow.className = focused ? "focused-recommendation" : "evolution-pipeline";
@@ -6922,6 +6938,45 @@
         .replace(/^\*Curated, human-reviewed content\*$/gm, `*${curatedSourceLabel(false)}*`);
     }
 
+    function isFocusedLesson(b) {
+      return b?.lesson_format === "single_guideline" || b?.lesson_format === "single_source";
+    }
+
+    const SOURCE_KIND_LABELS = {
+      guideline: ["Guideline", "Guideline"],
+      systematic_review_meta_analysis: ["Tổng quan hệ thống & phân tích gộp", "Systematic review & meta-analysis"],
+      landmark_rct: ["Thử nghiệm ngẫu nhiên có đối chứng", "Randomized controlled trial"],
+      real_world_cohort_registry: ["Nghiên cứu đoàn hệ / registry", "Cohort / registry study"],
+      expert_consensus: ["Đồng thuận chuyên gia", "Expert consensus"],
+    };
+
+    function renderPrimarySourceRefBox(b, isVi) {
+      const source = b.primary_source || {};
+      const kind = (SOURCE_KIND_LABELS[source.kind] || ["", ""])[isVi ? 0 : 1];
+      const role = [isVi ? "Nguồn chính" : "Primary source", kind].filter(Boolean).join(" · ");
+      const online = source.online_date
+        ? `${isVi ? "Đăng trực tuyến" : "Published online"} ${formatFullDdMmYyyy(source.online_date)}` : "";
+      return renderGuidelineRefBox({
+        name: source.name, pmid: source.pmid, doi: source.doi,
+        society: [source.label, source.journal].filter(Boolean).join(" · "), year: online,
+      }, role, true);
+    }
+
+    function renderSourceExcerpt(excerpt, isVi) {
+      if (!excerpt || typeof excerpt.text !== "string" || !excerpt.text.trim()
+          || !/^https:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/[1-9][0-9]*\/$/.test(excerpt.url)) return "";
+      const physician = excerpt.kind === "physician_entered";
+      const label = physician
+        ? (isVi ? "Dòng khuyến cáo do bác sĩ nhập (nguyên văn tiếng Anh)" : "Recommendation line entered by a physician")
+        : (isVi ? "Trích nguyên văn từ abstract PubMed (tiếng Anh)" : "Verbatim excerpt from the PubMed abstract");
+      const meta = physician
+        ? [`Class ${excerpt.class}`, `Level ${excerpt.level}`, excerpt.locator].filter(Boolean)
+        : [excerpt.copyright].filter(Boolean);
+      return `<blockquote><strong>${label}</strong><p lang="en">${escapeHtml(excerpt.text)}</p>
+        <small>${meta.map(escapeHtml).join(" · ")}${meta.length ? " · " : ""}<a href="${escapeHtml(excerpt.url)}" target="_blank" rel="noopener noreferrer">PubMed (${escapeHtml(excerpt.pmid)})</a></small>
+      </blockquote>`;
+    }
+
     function hasFocusedProvenance(b) {
       return Boolean(b.lesson_provenance || /-focused$/.test(String(b.id || "")));
     }
@@ -6940,7 +6995,13 @@
     function renderTeachingSections(briefing, isVi, block) {
       const notes = briefing.teaching?.[isVi ? "vi" : "en"];
       if (!notes) return "";
-      const sections = block === "guideline" ? [
+      const sections = block === "source_summary" ? [
+        ["summary", "Nguồn này nói gì", "What this source says"],
+      ] : block === "source_reading" ? [
+        ["design", "Thiết kế và phạm vi", "Design and scope"],
+        ["findings", "Kết quả và số liệu", "Findings and numbers"],
+        ["limits", "Giới hạn áp dụng", "Limits and what not to extrapolate"],
+      ] : block === "guideline" ? [
         ["context", "Vì sao câu hỏi này quan trọng", "Why this question matters"],
         ["evolution", "Khuyến cáo đã thay đổi thế nào", "How the recommendation evolved"],
         ["application", "Áp dụng và theo dõi", "Application and monitoring"],
@@ -6954,7 +7015,25 @@
       ).join("");
     }
 
+    function renderFocusedBlockB(refHtml, notesHtml) {
+      return `<div class="summary-card-feature focused-block-b">
+        <div class="guideline-comparison-banner" style="display:block">${refHtml}</div>
+        <div class="focused-recommendation"><div class="focused-lesson-notes">${notesHtml}</div></div>
+      </div>`;
+    }
+
     function renderTrialsMatrix(b, isVi) {
+      if (b.lesson_format === "single_source") {
+        const awaiting = b.quiz_status === "awaiting_physician_excerpts";
+        Dom.trialsGridDeck.innerHTML = renderFocusedBlockB(renderPrimarySourceRefBox(b, isVi), `
+          <p><small>${curatedSourceLabel(isVi)}</small></p>
+          ${renderTeachingSections(b, isVi, "source_reading")}
+          ${(b.source_excerpts || []).map(excerpt => renderSourceExcerpt(excerpt, isVi)).join("")}
+          ${awaiting ? `<p><em>${isVi
+            ? "Chưa có quiz: bác sĩ chưa nhập dòng khuyến cáo nguyên văn (Class, Level, trang/bảng) cho guideline này."
+            : "No quiz yet: a physician has not entered verbatim recommendation lines (Class, Level, page/table) for this guideline."}</em></p>` : ""}`);
+        return;
+      }
       if (b.lesson_format === "single_guideline") {
         const evidence = b.supporting_evidence;
         const ge = b.guideline_evolution;
@@ -6965,24 +7044,20 @@
         }
         const lang = isVi ? "vi" : "en";
         const pmid = String(evidence.pmid || "").trim();
-        const sourceUrl = pmid ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(pmid)}/` : formatDoiUrl(evidence.doi);
-        const sourceTitle = escapeHtml(evidence.name);
         const items = [
           ["supports", isVi ? "Liên hệ với khuyến cáo" : "How it supports the recommendation"],
           ["population", isVi ? "Quần thể nghiên cứu" : "Study population"],
           ["limits", isVi ? "Giới hạn áp dụng" : "Limits and non-extrapolation"],
         ];
-        Dom.trialsGridDeck.innerHTML = `<div class="trial-box-card">
-          <div class="trial-box-header">
-            <h3 class="trial-title-h3">${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${sourceTitle}</a>` : sourceTitle}</h3>
-            <span class="trial-journal-tag">${escapeHtml(evidence.journal)}</span>
-          </div>
+        const evidenceRef = renderGuidelineRefBox({
+          name: evidence.name, pmid, doi: evidence.doi, society: evidence.journal, year: evidence.year,
+        }, isVi ? "Nghiên cứu bổ trợ" : "Supporting study", true);
+        Dom.trialsGridDeck.innerHTML = renderFocusedBlockB(evidenceRef, `
           ${hasFocusedProvenance(b) ? `<p><small>${curatedSourceLabel(isVi)}</small></p>` : ""}
-          ${b.teaching ? `<div class="focused-lesson-notes">${renderTeachingSections(b, isVi, "evidence")}</div>` : `
+          ${b.teaching ? renderTeachingSections(b, isVi, "evidence") : `
             <p><strong>${escapeHtml(evidence.result)}</strong></p>
             ${items.map(([field, label]) => `<p><strong>${label}:</strong> ${escapeHtml(evidence[field + "_" + lang])}</p>`).join("")}`}
-          ${Object.values(evidence.licensed_excerpts || {}).map(excerpt => renderLicensedExcerpt(excerpt, isVi)).join("")}
-        </div>`;
+          ${Object.values(evidence.licensed_excerpts || {}).map(excerpt => renderLicensedExcerpt(excerpt, isVi)).join("")}`);
         return;
       }
       let cards = [];
@@ -7064,7 +7139,9 @@
       let pearls = [];
 
       const notes = b.teaching?.[isVi ? "vi" : "en"];
-      if (notes) {
+      if (notes && b.lesson_format === "single_source") {
+        pearls = (notes.pearls || []).map(text => ({ type: "guideline", text }));
+      } else if (notes) {
         pearls = [
           ...notes.guideline_pearls.map(text => ({ type: "guideline", text })),
           ...notes.evidence_pearls.map(text => ({ type: "trial", text }))
@@ -8335,7 +8412,7 @@
         const b = App.selected || getTodaySingleBriefing();
         const pid = b ? b.pillar_id : App.todayPillarId;
         const pName = getPillarDisplayName(pid, isVi);
-        const curYr = b?.guideline_evolution?.current_guideline?.year || "08–11/2026";
+        const curYr = b?.primary_source?.online_date || b?.guideline_evolution?.current_guideline?.year || "08–11/2026";
         Dom.chatActiveContextBar.textContent = isVi
           ? `Bám sát: Trụ cột #${pid} (${pName}) • ${curYr}`
           : `Context: Pillar #${pid} (${pName}) • ${curYr}`;
@@ -9147,7 +9224,7 @@
       getSubskillDefs(b) {
         const isEn = App.currentLang === "en";
         const pid = Number(b?.pillar_id || App.todayPillarId || 1);
-        const curName = String(b?.guideline_evolution?.current_guideline?.name || "2026 Guidelines");
+        const curName = String(b?.primary_source?.name || b?.guideline_evolution?.current_guideline?.name || "2026 Guidelines");
         const trials = b?.supporting_evidence?.name || (b?.landmark_trials || []).slice(0, 2).map((t) => t.name).filter(Boolean).join(", ") || getPillarDisplayName(pid, !isEn);
         if (isEn) {
           return [
@@ -9540,6 +9617,9 @@
       },
 
       quizSourceLabel(b, isVi) {
+        if (b.lesson_provenance?.excerpts === "pubmed_abstract") {
+          return isVi ? "Câu hỏi lấy từ trích đoạn nguyên văn abstract PubMed (tiếng Anh)." : "Questions use verbatim excerpts from the PubMed abstract.";
+        }
         const mode = b.lesson_provenance?.quiz?.mode || (/-focused$/.test(String(b.id || "")) ? "curated" : "");
         if (mode === "licensed_excerpt") {
           return isVi ? "Trích từ nguồn có giấy phép (nguyên văn tiếng Anh)." : "Extracted from a licensed source.";

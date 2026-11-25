@@ -21,8 +21,8 @@ const ClinicalQuiz = (() => {
     if (primary?.quiz_mode!=='source_excerpt'||!Array.isArray(primary.quiz_items)) return [];
     const guideline=primary.guideline_evolution?.current_guideline?.pmid;
     const recommendation=primary.guideline_evolution?.recommendation_id, evidence=primary.supporting_evidence;
-    const allowed=new Set([guideline]);
-    if (guideline&&recommendation&&evidence?.guideline_pmid===guideline&&evidence.recommendation_id===recommendation) allowed.add(evidence.pmid);
+    const allowed=new Set([primary.lesson_format==='single_source'?primary.primary_source?.pmid:guideline]);
+    if (primary.lesson_format!=='single_source'&&guideline&&recommendation&&evidence?.guideline_pmid===guideline&&evidence.recommendation_id===recommendation) allowed.add(evidence.pmid);
     return primary.quiz_items.map((item,i)=>[i,item]).filter(([,item])=>{
       if (!item) return false;
       const {pmid,quote,answer,start,distractors}=item;
@@ -78,7 +78,9 @@ const ClinicalQuiz = (() => {
     const order=keys.map((_,j)=>(j-offset+4)%4), en=lang==='en', correct=keys[offset];
     const prompt=en?'Complete the verbatim source excerpt':'Điền vào chỗ trống trong trích đoạn nguyên văn';
     const explanation=en?'Correct answer':'Đáp án đúng';
-    const guideline=primary.guideline_evolution.current_guideline.pmid, kind=pmid===guideline?'guideline':'trial';
+    const guideline=primary.lesson_format==='single_source'
+      ?(primary.primary_source?.kind==='guideline'?primary.primary_source.pmid:null)
+      :primary.guideline_evolution.current_guideline.pmid, kind=pmid===guideline?'guideline':'trial';
     return {
       question:`${prompt} (PMID ${pmid}): ${chars.slice(0,start).join('')}____${chars.slice(end).join('')}`,
       options:keys.map((key,j)=>({key,text:texts[order[j]]})), correct_key:correct,

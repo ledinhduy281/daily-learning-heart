@@ -45,7 +45,8 @@ class HonestMetadataTests(unittest.TestCase):
     def test_published_bundle_has_no_false_model_metadata(self):
         payload = read_bundle(ROOT / "data" / "briefings.js")
         assert_truthful_bundle(self, payload)
-        self.assertTrue(all(b["content_source"] == "curated_library_rotation" for b in payload["briefings"]))
+        self.assertTrue(all(b["content_source"] in {"curated_library_rotation", "recent_source_rotation"}
+                            for b in payload["briefings"]))
         redated = [b for b in payload["briefings"] if b["curated_edition_date"] != b["date"]]
         self.assertTrue(redated, "re-dated curriculum editions must keep their original edition date")
 

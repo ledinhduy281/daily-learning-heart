@@ -7,6 +7,7 @@ from xml.etree.ElementTree import ParseError
 
 from clinical_mcq import validated_source_items
 from focused_lessons import build_focused_lesson, select_guideline
+from recent_lessons import RECENT_START_DATE, build_recent_lesson
 from focused_quiz import build_source_quiz
 from focused_teaching import TEACHING_LABELS
 from pipeline.ingest import TRANSIENT_READ_ERRORS
@@ -135,6 +136,8 @@ def _append_markdown(lesson, language, recommendation, evidence_excerpts):
 
 
 def build_open_lesson(pillar, date_str):
+    if date_str >= RECENT_START_DATE:
+        return build_recent_lesson(pillar, date_str)
     lesson = build_focused_lesson(pillar, date_str)
     evolution = lesson["guideline_evolution"]
     guideline = _matching_article(evolution["current_guideline"])

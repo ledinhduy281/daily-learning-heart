@@ -34,7 +34,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
-from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson, build_focused_templates
+from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
+from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1455,8 +1456,9 @@ def refresh_today_briefing(
             today_for_target = [
                 b for b in daily_records
                 if b.get("pillar_id") == pid
-                and b.get("lesson_format") == "single_guideline"
-                and b.get("lesson_version") == FOCUSED_EDITION_VERSION
+                and (b.get("lesson_format"), b.get("lesson_version")) == (
+                    ("single_source", RECENT_LESSON_VERSION) if today_str >= RECENT_START_DATE
+                    else ("single_guideline", FOCUSED_EDITION_VERSION))
                 and b.get("lesson_provenance")
             ]
             if (len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records)
@@ -1534,7 +1536,7 @@ def save_briefings_js(briefings: list, rotation_state: dict) -> None:
         "rotation_state": rotation_state,
         "lesson_gate_start": GATE_START_DATE,
         "pillars": PILLARS,
-        "focused_lessons": build_focused_templates(PILLARS),
+        "focused_lessons": build_recent_templates(PILLARS),
         "briefings": [with_truthful_provenance(b) for b in briefings],
     }
     js_content = (
@@ -1940,8 +1942,11 @@ def _focused_question_excerpt(question, primary, lang, level):
     passages = []
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
-        sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
-        sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
+        if primary.get("lesson_format") == "single_source":
+            sections = [notes[key] for key in RECENT_SECTIONS]
+        else:
+            sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
+            sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
             for paragraph in section:
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
@@ -2022,13 +2027,20 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        if primary.get("lesson_format") == "single_guideline" and primary.get("teaching"):
+        if primary.get("lesson_format") in {"single_guideline", "single_source"} and primary.get("teaching"):
             excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
-            notice = (
-                "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
-                if is_en else
-                "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
-            )
+            if primary.get("quiz_status") == "awaiting_physician_excerpts":
+                notice = (
+                    "Local chat does not grade pasted questions. This guideline lesson has no quiz until a physician enters its recommendation lines."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
+                )
+            else:
+                notice = (
+                    "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+                )
             return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([
             cur_g.get("name", ""),
@@ -2817,9 +2829,10 @@ def handle_socratic_turn(req_data: dict, *, source_only: bool = False) -> dict:
     briefing_id = req_data.get("briefing_id")
     primary = next((b for b in briefings if b.get("id") == briefing_id), None)
     if source_only:
-        if primary is None or primary.get("lesson_version") != FOCUSED_EDITION_VERSION:
+        if primary is None or primary.get("lesson_version") not in (FOCUSED_EDITION_VERSION, RECENT_LESSON_VERSION):
             day = _today_vn()
-            fallback = build_focused_lesson(get_pillar_for_date(day), day.isoformat())
+            build = build_recent_lesson if day.isoformat() >= RECENT_START_DATE else build_focused_lesson
+            fallback = build(get_pillar_for_date(day), day.isoformat())
             if fallback["id"] == briefing_id:
                 primary = fallback
         if not primary or not validated_source_items(primary):
