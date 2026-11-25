@@ -80,6 +80,17 @@ assert.deepEqual(s.request(), {ok: false, error: "upstream"});
 assert.equal(s.request().ok, false);
 assert.equal(Number(Object.entries(s.properties).find(([k]) => k.startsWith("quiz_device_"))[1]), 0, "upstream failures refund the press");
 
+s = setup();
+s.replies = [{status: 200, body: reply({questions: [theory, kase]})}, {status: 429, body: ""}];
+assert.deepEqual(s.request(), {ok: false, error: "upstream"}, "a failed re-solve call is an upstream failure");
+assert.equal(Number(Object.entries(s.properties).find(([k]) => k.startsWith("quiz_device_"))[1]), 0, "a failed re-solve refunds the press");
+assert.equal(Number(Object.entries(s.properties).find(([k]) => k.startsWith("quiz_daily_"))[1]), 0);
+
+s = setup();
+s.replies = [{status: 200, body: "not json"}];
+assert.deepEqual(s.request(), {ok: false, error: "upstream"});
+assert.equal(Number(Object.entries(s.properties).find(([k]) => k.startsWith("quiz_device_"))[1]), 0, "a thrown upstream error refunds the press");
+
 s = setup({GROQ_API_KEY: "test-only-placeholder", PEPPER: "pep", QUIZ_DAILY_CAP: "1"});
 assert.equal(s.request().ok, true);
 assert.equal(s.request({device_id: "2".repeat(64)}).error, "daily_cap");
