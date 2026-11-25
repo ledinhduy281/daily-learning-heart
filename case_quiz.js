@@ -9,7 +9,10 @@ const CaseQuiz = (() => {
   const squash = s => String(s).replace(/\s+/g, ' ').trim();
   const numbers = s => (String(s).replace(/\b(\d{1,3})(?:[ \u00a0\u202f]\d{3})+(?!\d)/g, m => m.replace(/\s/g, ''))
     .match(/\d+(?:[.,]\d+)*/g) || []).map(n => n.replace(/,/g, '.')).map(n => /^[1-9]\d{0,2}(?:\.\d{3})+$/.test(n) ? n.replace(/\./g, '') : n);
-  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?!\s*\/\s*(?:d?l|min)(?![\p{L}]))/giu;
+  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])/giu;
+  // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
+  const LAB = /\d+(?:[.,]\d+)?\s?(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
+  const doses = s => String(s).replace(LAB, ' ').match(DOSE) || [];
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
 
   function grounding(lesson) {
@@ -43,8 +46,8 @@ const CaseQuiz = (() => {
     if (unsupportedNumbers(item, ground).length) return 'numbers';
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
-    const quotedDoses = new Set((quote.match(DOSE) || []).map(d => squash(d).toLowerCase().replace(/\s/g, '')));
-    return (everything.match(DOSE) || []).every(d => quotedDoses.has(squash(d).toLowerCase().replace(/\s/g, ''))) ? '' : 'dose';
+    const quotedDoses = new Set(doses(quote).map(d => squash(d).toLowerCase().replace(/\s/g, '')));
+    return doses(everything).every(d => quotedDoses.has(squash(d).toLowerCase().replace(/\s/g, ''))) ? '' : 'dose';
   }
 
   const validItem = (item, ground) => !rejectReason(item, ground);
