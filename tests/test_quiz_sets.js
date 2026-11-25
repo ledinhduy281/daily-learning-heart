@@ -55,7 +55,7 @@ const quiet = () => {};
     {questions: [theory(1), kase(1), {...kase(9), quote: "paraphrased text that is not in the source"}], answers: ["B", "A"]},
     {questions: [theory(2), kase(2), {...theory(8), explanation_en: "Not 1.10: the abstract reports 0.70."}], answers: ["B", "C", "B"]},
     {questions: [theory(3), kase(3), {...kase(7), stem_en: kase(7).stem_en + " She takes atorvastatin 80 mg."}], answers: ["B", "A"]},
-    {questions: [{...theory(4), quote: undefined, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}, kase(4)], answers: ["B", "A"]},
+    {questions: [{...theory(4), quote: undefined, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}, {...kase(4), options: opts(["A. Fewer primary events", "B. No effect", "C. More events", "D. Not tested"]), explanation_vi: "Trích dẫn 1 cho thấy hazard ratio 0.70, nên chọn A."}], answers: ["B", "A"]},
   ]);
   const logs = [];
   assert.equal(await main({root, env, date, fetchImpl: g.fetchImpl, log: m => logs.push(m)}), 3);
@@ -63,6 +63,7 @@ const quiet = () => {};
   assert.equal(sets.length, 3);
   for (const set of sets) {
     assert.deepEqual(new Set(set.items.map(i => i.type)), new Set(["theory", "case"]));
+    assert.ok(set.items.every(i => !/^[A-D]\. /.test(i.choices?.[0] || i.options?.[0]?.en || "")));
     assert.ok(set.items.every(i => i.ai_generated && i.pmid === pmid && quote.includes(i.quote)));
   }
   assert.equal(new Set(sets.flatMap(s => s.items.map(i => i.stem_en))).size, sets.flatMap(s => s.items).length, "no repeats");

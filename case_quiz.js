@@ -24,7 +24,7 @@ const CaseQuiz = (() => {
   function unsupportedNumbers(item, ground) {
     const allowed = new Set(numbers([ground.title, ...ground.excerpts, item.stem_vi, item.stem_en].join(' ')));
     const correct = item.options[KEYS.indexOf(item.answer)];
-    const refs = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
+    const refs = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|trích dẫn|câu trích|phần trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
     return [correct.vi, correct.en, item.explanation_vi, item.explanation_en]
       .flatMap(c => numbers(String(c).replace(refs, ' '))).filter(n => !allowed.has(n));
   }

@@ -78,6 +78,9 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
     const items = (Array.isArray(generated.questions) ? generated.questions : []).slice(0, CaseQuiz.LIMITS.items).filter(item => {
       const n = Number(item && item.excerpt);
       if (Number.isInteger(n) && ground.excerpts[n - 1] && !item.quote) item.quote = ground.excerpts[n - 1];
+      if (item && Array.isArray(item.options)) item.options.forEach(o => ['vi', 'en'].forEach(l => {
+        if (o && typeof o[l] === 'string') o[l] = o[l].replace(/^\s*[A-D][.):]\s+/, '');
+      }));
       const reason = CaseQuiz.rejectReason(item, ground) || (seen.has(String(item.stem_en).toLowerCase()) ? 'duplicate' : '');
       if (reason && !reasons[reason]) samples.push(reason === 'numbers'
         ? `numbers ${JSON.stringify(CaseQuiz.unsupportedNumbers(item, ground))}: ${String(item.explanation_en).slice(0, 300)}`
