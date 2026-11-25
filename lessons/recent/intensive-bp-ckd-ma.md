@@ -28,7 +28,7 @@ Bản tóm tắt dựa trên abstract PubMed, chưa được bác sĩ đối chi
 
 ## pearls
 
-Mỗi 10 mm Hg huyết áp tâm thu thấp hơn giảm khoảng 15% biến cố tim mạch (RR 0,85), như nhau ở người có và không có CKD.
+Mỗi 10 mm Hg huyết áp tâm thu thấp hơn giảm khoảng 15% biến cố tim mạch (RR 0,85) trong phân tích gộp, không có dị biệt có ý nghĩa theo tình trạng CKD.
 Hạ huyết áp tích cực làm tăng giảm eGFR từ 30–40% trở lên nhưng không tăng suy thận.
 Khi bệnh nhân CKD có eGFR giảm sau khi hạ áp, nhớ rằng lợi ích tim mạch tuyệt đối ở nhóm này ít nhất cũng lớn bằng người không CKD.
 
@@ -60,6 +60,6 @@ This summary is based on the PubMed abstract and has not been checked against th
 
 ## pearls
 
-Each 10-mm Hg lower systolic blood pressure reduced cardiovascular events by about 15% (RR 0.85), equally with and without CKD.
+Each 10-mm Hg lower systolic blood pressure reduced cardiovascular events by about 15% (RR 0.85) overall, with no significant heterogeneity by CKD status.
 Intensive lowering increased 30–40% or greater eGFR declines but not kidney failure.
 When eGFR falls after blood pressure lowering in CKD, remember that the absolute cardiovascular benefit in this group is at least as large as without CKD.
