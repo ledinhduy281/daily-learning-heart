@@ -74,11 +74,15 @@ class RecentLessonTests(unittest.TestCase):
 
     def test_archived_lessons_survive_a_catalog_version_bump(self):
         lesson = build_recent_lesson(PILLARS[1], "2026-11-26")
-        with patch("pipeline.validate_lesson.RECENT_LESSON_VERSION", lesson["lesson_version"] + 1), \
-                patch("pipeline.validate_lesson.SOURCE_WINDOW_DAYS", 60):
+        with patch("pipeline.validate_lesson.RECENT_LESSON_VERSION", 6), \
+                patch.dict("pipeline.validate_lesson.WINDOW_DAYS_BY_VERSION", {6: 60}):
             validate_lesson(lesson, PILLARS[1], "2026-11-26", recorded=True)
             with self.assertRaises(ValueError):
                 validate_lesson(lesson, PILLARS[1], "2026-11-26")
+        widened = copy.deepcopy(lesson)
+        widened["primary_source"]["window_days"] = 100
+        with self.assertRaises(ValueError):
+            validate_lesson(widened, PILLARS[1], "2026-11-26", recorded=True)
 
     def test_local_chat_does_not_grade_pasted_questions_on_recent_lessons(self):
         import fetch_daily_ebm as app
@@ -88,6 +92,10 @@ class RecentLessonTests(unittest.TestCase):
             answer, _ = app._compose_deterministic_ebm_answer(query, [lesson], [], lang)
             self.assertIn(notice, answer)
             self.assertNotRegex(answer, r"(?i)\b(correct answer|đáp án đúng)\b")
+        guideline = build_recent_lesson(PILLARS[2], "2026-11-26")
+        answer, _ = app._compose_deterministic_ebm_answer(query, [guideline], [], "en")
+        self.assertIn("no quiz until a physician", answer)
+        self.assertNotIn("Use the lesson quiz", answer)
 
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]

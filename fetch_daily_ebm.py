@@ -2029,11 +2029,18 @@ def _compose_deterministic_ebm_answer(
     if mcq_opts:
         if primary.get("lesson_format") in {"single_guideline", "single_source"} and primary.get("teaching"):
             excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
-            notice = (
-                "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
-                if is_en else
-                "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
-            )
+            if primary.get("quiz_status") == "awaiting_physician_excerpts":
+                notice = (
+                    "Local chat does not grade pasted questions. This guideline lesson has no quiz until a physician enters its recommendation lines."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
+                )
+            else:
+                notice = (
+                    "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+                )
             return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([
             cur_g.get("name", ""),
