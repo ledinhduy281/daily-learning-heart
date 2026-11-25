@@ -276,6 +276,7 @@ const ClinicalQuiz = (() => {
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
   return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
-    hasSourceItems:primary=>sourceItems(primary).length>0||aiItems(primary).length>0};
+    hasSourceItems:primary=>sourceItems(primary).length>0||aiItems(primary).length>0,
+    grounding:cases.grounding,validateSet:cases.validateSet};
 })();
 if (typeof module !== 'undefined') module.exports=ClinicalQuiz;

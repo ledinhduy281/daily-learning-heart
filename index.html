@@ -9098,42 +9098,42 @@
        SOCRATIC TUTOR ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING")
        Implements /skill/self_learning_socratic.md per-Pillar mastery loop
        ======================================================================== */
-    const QuizSets = {
-      key: "dlh-quiz-sets-v1",
-      pressKey: "dlh-quiz-presses-v1",
-      read(name) {
-        try { return JSON.parse(window.localStorage.getItem(name) || "{}") || {}; } catch (_) { return {}; }
-      },
-      write(name, value) {
-        try { window.localStorage.setItem(name, JSON.stringify(value)); } catch (_) {}
-      },
-      today() {
-        return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Ho_Chi_Minh"}).format(new Date());
-      },
-      attach(b) {
-        if (b?.id && !b.generated_quiz) {
-          const set = this.read(this.key)[b.id];
-          if (set && typeof set.set_id === "string" && Array.isArray(set.items)) b.generated_quiz = set;
-        }
-        return b;
-      },
-      save(b, items) {
-        const all = this.read(this.key);
-        const set = {set_id: Date.now().toString(36), items};
-        const kept = Object.fromEntries(Object.entries(all).filter(([id]) => id !== b.id).slice(-19));
-        this.write(this.key, {...kept, [b.id]: set});
-        b.generated_quiz = set;
-      },
-      remaining() {
-        const used = this.read(this.pressKey);
-        return used.date === this.today() ? Math.max(0, 2 - Number(used.used || 0)) : 2;
-      },
-      record(remaining) {
-        this.write(this.pressKey, {date: this.today(), used: Math.max(0, Math.min(2, 2 - remaining))});
-      }
-    };
-
     const SocraticTutor = {
+      quizSets: {
+        key: "dlh-quiz-sets-v1",
+        pressKey: "dlh-quiz-presses-v1",
+        read(name) {
+          try { return JSON.parse(window.localStorage.getItem(name) || "{}") || {}; } catch (_) { return {}; }
+        },
+        write(name, value) {
+          try { window.localStorage.setItem(name, JSON.stringify(value)); } catch (_) {}
+        },
+        today() {
+          return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Ho_Chi_Minh"}).format(new Date());
+        },
+        attach(b) {
+          if (b?.id && !b.generated_quiz) {
+            const set = this.read(this.key)[b.id];
+            if (set && typeof set.set_id === "string" && Array.isArray(set.items)) b.generated_quiz = set;
+          }
+          return b;
+        },
+        save(b, items) {
+          const all = this.read(this.key);
+          const set = {set_id: Date.now().toString(36), items};
+          const kept = Object.fromEntries(Object.entries(all).filter(([id]) => id !== b.id).slice(-19));
+          this.write(this.key, {...kept, [b.id]: set});
+          b.generated_quiz = set;
+        },
+        remaining() {
+          const used = this.read(this.pressKey);
+          return used.date === this.today() ? Math.max(0, 2 - Number(used.used || 0)) : 2;
+        },
+        record(remaining) {
+          this.write(this.pressKey, {date: this.today(), used: Math.max(0, Math.min(2, 2 - remaining))});
+        }
+      },
+
       isBusy: false,
       store: {},
       curPillarId: 1,
@@ -9320,7 +9320,7 @@
           if (el) { el.textContent = msg; el.hidden = !msg; }
         };
         const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
-        if (QuizSets.remaining() <= 0) {
+        if (this.quizSets.remaining() <= 0) {
           status(isVi ? "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới." : "You have used both new question sets for today.");
           return;
         }
@@ -9329,7 +9329,7 @@
             : "AI needs a connection to write new questions; the verbatim quiz still works.");
           return;
         }
-        const ground = CaseQuiz.grounding(QuizSets.attach(b));
+        const ground = ClinicalQuiz.grounding(this.quizSets.attach(b));
         this.generating = true;
         status(isVi ? "AI (Groq) đang soạn và tự kiểm tra bộ câu hỏi mới…" : "AI (Groq) is writing and checking a new set…");
         this.renderUI();
@@ -9346,10 +9346,10 @@
               kind: ground.kind, title: String(ground.title).slice(0, 400), excerpts: ground.excerpts.slice(0, 8)}})
           });
           const data = response.ok ? await response.json() : {};
-          if (Number.isInteger(data.remaining)) QuizSets.record(data.remaining);
-          const items = data.ok === true ? CaseQuiz.validateSet(b, data.items) : [];
+          if (Number.isInteger(data.remaining)) this.quizSets.record(data.remaining);
+          const items = data.ok === true ? ClinicalQuiz.validateSet(b, data.items) : [];
           if (!items.length) {
-            const left = QuizSets.remaining();
+            const left = this.quizSets.remaining();
             const messages = isVi ? {
               device_daily_cap: "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới.",
               daily_cap: "Hệ thống đã hết lượt AI hôm nay; thử lại vào ngày mai.",
@@ -9364,7 +9364,7 @@
             status(messages[data.error] || (isVi ? "AI tạm thời không phản hồi; lượt này không bị tính." : "AI is not responding right now; this attempt was not counted."));
             return;
           }
-          QuizSets.save(b, items);
+          this.quizSets.save(b, items);
           const cases = items.filter(i => i.type === "case").length;
           status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
             : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
@@ -9400,7 +9400,7 @@
       },
 
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
-        QuizSets.attach(briefing);
+        this.quizSets.attach(briefing);
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
         const markerKey = `legacy-migrated:${pillarKey}`;
@@ -9747,7 +9747,7 @@
       },
 
       renderUI() {
-        const b = QuizSets.attach(App.selected || getTodaySingleBriefing());
+        const b = this.quizSets.attach(App.selected || getTodaySingleBriefing());
         const available = ClinicalQuiz.hasSourceItems(b);
         for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
           const element = document.getElementById(id);
@@ -9803,8 +9803,8 @@
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
         const btnNewSet = document.getElementById("btnNewQuizSet");
         if (btnNewSet) {
-          const left = QuizSets.remaining();
-          btnNewSet.style.display = CaseQuiz.grounding(b).excerpts.length ? "inline-flex" : "none";
+          const left = this.quizSets.remaining();
+          btnNewSet.style.display = ClinicalQuiz.grounding(b).excerpts.length ? "inline-flex" : "none";
           btnNewSet.disabled = Boolean(this.generating || this.isBusy) || left <= 0;
           btnNewSet.title = isVi ? "AI soạn bộ mới gồm câu lý thuyết và tình huống lâm sàng (tối đa 2 lần/ngày)"
             : "AI writes a new set with theory and clinical-case questions (up to 2 per day)";
