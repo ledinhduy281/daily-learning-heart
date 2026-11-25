@@ -196,6 +196,10 @@
       transform: translateY(0);
     }
 
+    .btn[hidden] {
+      display: none;
+    }
+
     .btn-secondary-outline {
       background-color: var(--color-canvas);
       color: var(--color-ink);
@@ -9448,7 +9452,7 @@
               not_configured: "AI is not enabled on the server; the verbatim quiz still works.",
               invalid_output: `The AI questions did not match the source excerpts and were discarded. ${left}/2 left today.`
             };
-            status(messages[data.error] || (isVi ? "AI tạm thời không phản hồi; lượt này không bị tính." : "AI is not responding right now; this attempt was not counted."));
+            status(messages[data.ok === true ? "invalid_output" : data.error] || (isVi ? "AI tạm thời không phản hồi; lượt này không bị tính." : "AI is not responding right now; this attempt was not counted."));
             return;
           }
           this.quizSets.save(b, items);
@@ -9457,7 +9461,7 @@
             : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
           this.generating = false;
           this.renderUI();
-          await this.startDiagnostic();
+          if ((App.selected || getTodaySingleBriefing())?.id === b.id) await this.startDiagnostic();
         } catch (_) {
           status(isVi ? "Không kết nối được AI; lượt này không bị tính." : "Could not reach the AI; this attempt was not counted.");
         } finally {
@@ -10124,7 +10128,7 @@
         }
 
         try {
-          if (App.serverAvailable && !isFileOrigin()) {
+          if (App.serverAvailable && !isFileOrigin() && !b?.generated_quiz) {
             try {
               const res = await fetch("/api/socratic", {
                 method: "POST",
