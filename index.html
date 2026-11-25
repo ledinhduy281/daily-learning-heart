@@ -9431,8 +9431,9 @@
         }
         const items = ClinicalQuiz.validateSet(b, set.items);
         const cases = items.filter(i => i.type === "case").length;
-        status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
-          : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
+        const done = this.quizSets.pressesLeft() <= 0;
+        status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.${done ? " Hôm nay thiết bị này đã dùng hết 2 lượt tạo câu hỏi mới." : ""}`
+          : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.${done ? " This device has used both new-question presses for today." : ""}`);
         this.renderUI();
         await this.startDiagnostic();
       },
