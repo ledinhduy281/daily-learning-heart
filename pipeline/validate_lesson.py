@@ -18,7 +18,7 @@ from focused_teaching import PEARL_SECTIONS, SECTION_KEYS
 from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 from recent_lessons import (
-    RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, SOURCE_KINDS, SOURCE_WINDOW_DAYS,
+    RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, SOURCE_KINDS, SOURCE_WINDOW_DAYS, WINDOW_DAYS_BY_VERSION,
     build_recent_lesson, citation_url, is_recent, recent_markdown,
 )
 
@@ -124,15 +124,13 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
     _require(lesson.get("id") == f"ebm-{lesson_date}-p{pid}-focused"
              and lesson.get("date") == lesson_date and lesson.get("pillar_id") == pid
              and (lesson.get("lesson_version") == RECENT_LESSON_VERSION
-                  or recorded and type(lesson.get("lesson_version")) is int
-                  and 5 <= lesson["lesson_version"] < RECENT_LESSON_VERSION)
+                  or recorded and lesson.get("lesson_version") in WINDOW_DAYS_BY_VERSION)
              and lesson.get("content_source") == "recent_source_rotation" and lesson.get("model_used") == "none",
              "Lesson does not match the scheduled pillar and date")
     source = lesson.get("primary_source") or {}
     _require(set(source) == {"id", "kind", "label", "name", "journal", "online_date", "pmid", "doi", "url", "window_days"}
              and source["kind"] in SOURCE_KINDS
-             and (source["window_days"] == SOURCE_WINDOW_DAYS
-                  or recorded and type(source["window_days"]) is int and 0 < source["window_days"] <= 100)
+             and source["window_days"] == WINDOW_DAYS_BY_VERSION[lesson["lesson_version"]]
              and isinstance(source["pmid"], str) and re.fullmatch(r"[1-9][0-9]{0,8}", source["pmid"])
              and isinstance(source["doi"], str) and source["doi"].startswith("10.")
              and source["url"] == citation_url(source),

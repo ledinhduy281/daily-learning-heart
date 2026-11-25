@@ -9,7 +9,9 @@ from focused_quiz import build_source_quiz
 RECENT_EDITION_DATE = "2026-11-25"
 RECENT_START_DATE = "2026-11-25"
 RECENT_LESSON_VERSION = 5
-SOURCE_WINDOW_DAYS = 92
+# Freshness window of every recent lesson version, so archived lessons are checked against their own edition.
+WINDOW_DAYS_BY_VERSION = {5: 92}
+SOURCE_WINDOW_DAYS = WINDOW_DAYS_BY_VERSION[RECENT_LESSON_VERSION]
 SOURCE_KINDS = ("guideline", "systematic_review_meta_analysis", "landmark_rct",
                 "real_world_cohort_registry", "expert_consensus")
 SECTIONS = ("summary", "design", "findings", "limits", "pearls")
