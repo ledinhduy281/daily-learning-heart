@@ -106,7 +106,7 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
       const cases = pool.filter(i => i.type === 'case').slice(0, CASES);
       if (theory.length < THEORY || cases.length < CASES) break;
       const items = CaseQuiz.validateSet(lesson, [...theory, ...cases]);
-      if (items.length !== THEORY + CASES) break;
+      if (items.length !== THEORY + CASES || CaseQuiz.validateSet(lesson, items).length !== THEORY + CASES) break;
       [...theory, ...cases].forEach(i => pool.splice(pool.indexOf(i), 1));
       sets.push({set_id: `${lesson.date}-${sets.length + 1}`, model, items});
     }
