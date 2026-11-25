@@ -3843,7 +3843,7 @@
       border-color: var(--color-ink);
     }
     .socratic-dialogue-box {
-      max-height: 360px;
+      max-height: 520px;
       overflow-y: auto;
       padding: 12px;
       background: var(--color-canvas-soft);
@@ -3890,6 +3890,50 @@
     }
     .socratic-msg-bubble p:last-child {
       margin-bottom: 0;
+    }
+    .socratic-transcript-text {
+      white-space: pre-line;
+    }
+    .socratic-transcript-card {
+      flex: none;
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
+      border-inline-start: 3px solid var(--color-hairline-strong);
+      border-radius: var(--rounded-md);
+      padding: 12px 14px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+    .socratic-question-card {
+      border-inline-start-color: var(--color-accent-ink);
+    }
+    .socratic-transcript-card h2 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+    .socratic-question-card h2 {
+      color: var(--color-accent-ink);
+    }
+    .socratic-transcript-card p,
+    .socratic-transcript-card blockquote {
+      margin: 0 0 8px;
+    }
+    .socratic-transcript-card > :last-child {
+      margin-bottom: 0;
+    }
+    .socratic-transcript-card blockquote {
+      padding-inline-start: 10px;
+      border-inline-start: 2px solid var(--color-hairline-strong);
+      color: var(--color-ink-secondary);
+    }
+    .socratic-transcript-meta,
+    .socratic-transcript-meta a {
+      color: var(--color-ink-mute);
+      font-size: 12px;
+    }
+    .socratic-transcript-meta a {
+      text-decoration: underline;
     }
     .socratic-choices-wrap {
       display: flex;
@@ -4410,7 +4454,7 @@
             </button>
             <button type="button" class="btn btn-secondary-outline" id="btnNewQuizSet" style="display: none;">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
-              <span id="labelNewQuizSet">Tạo câu hỏi mới</span>
+              <span id="labelNewQuizSet">Tạo câu hỏi mới bằng AI</span>
             </button>
           </div>
         </div>
@@ -9479,6 +9523,55 @@
         return "";
       },
 
+      renderTranscriptMessage(message, sess, questionCount, isVi) {
+        const text = String(message.text || "");
+        const assistant = message.role === "assistant";
+        const source = assistant && /^[1-9][0-9]{0,8}$/.test(message.source_pmid || "") ? message.source_pmid : "";
+        const sourceLink = source
+          ? `<a href="https://pubmed.ncbi.nlm.nih.gov/${source}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${source}</a>` : "";
+        const questionParts = value => value.match(/^(Theory|Clinical case|Lý thuyết|Tình huống lâm sàng|Complete the verbatim source excerpt|Điền vào chỗ trống trong trích đoạn nguyên văn) \((PMID [0-9]+)\): ([\s\S]+)$/);
+        const questionCard = (value, parts) => {
+          const [, type, pmid, stem] = parts;
+          const step = !this.isFinished(sess) && value === sess.last_question
+            ? `${isVi ? "Câu" : "Question"} ${(sess.question_index || 0) + 1}/${questionCount} · ` : "";
+          return `<div class="socratic-transcript-card socratic-question-card">
+            <h2>${step}${escapeHtml(type)}</h2>
+            <p>${escapeHtml(stem)}</p>
+            <p class="socratic-transcript-meta">${escapeHtml(pmid)}</p>
+          </div>`;
+        };
+        const bubble = (value, link = "") => `<div class="socratic-msg ${message.role === "user" ? "user" : "assistant"}">
+          <div class="socratic-msg-bubble"><span class="socratic-transcript-text">${escapeHtml(value)}</span>${link ? `<br>${link}` : ""}</div>
+        </div>`;
+        if (!assistant) return bubble(text);
+
+        const firstQuestion = questionParts(text);
+        if (firstQuestion) return questionCard(text, firstQuestion);
+
+        const feedback = text.match(/^(?:(Review the same question\.|Ôn lại chính câu hỏi này\.)\s+)?((?:Correct answer|Đáp án đúng): [A-D])\.\s*([\s\S]*)$/);
+        if (!feedback) return bubble(text, sourceLink);
+        const [, retry, heading, body] = feedback;
+        const boundary = body.indexOf("\n\n");
+        const next = boundary < 0 ? "" : body.slice(boundary + 2);
+        const nextQuestion = questionParts(next);
+        const complete = /^(Review complete\.|Hoàn tất ôn tập\.)$/.test(next);
+        const details = nextQuestion || complete ? body.slice(0, boundary) : body;
+        const aiNote = Object.values(CaseQuiz.AI_NOTE).find(note => details.endsWith(note));
+        const evidence = aiNote ? details.slice(0, -aiNote.length).trimEnd() : details;
+        const quote = evidence.match(/^(?:([\s\S]+?)\s+)?(“[\s\S]+”) \((PMID [0-9]+)\)\.?$/);
+        const explanation = quote ? quote[1] : evidence;
+        const citation = sourceLink || (quote ? escapeHtml(quote[3]) : "");
+        const card = `<div class="socratic-transcript-card socratic-feedback-card">
+          <h2>${escapeHtml(heading)}.</h2>
+          ${retry ? `<p>${escapeHtml(retry)}</p>` : ""}
+          ${explanation ? `<p class="socratic-transcript-text">${escapeHtml(explanation)}</p>` : ""}
+          ${quote ? `<blockquote>${escapeHtml(quote[2])}</blockquote>` : ""}
+          ${citation ? `<p class="socratic-transcript-meta">${citation}</p>` : ""}
+          ${aiNote ? `<p class="socratic-transcript-meta">${escapeHtml(aiNote)}</p>` : ""}
+        </div>`;
+        return card + (nextQuestion ? questionCard(next, nextQuestion) : complete ? bubble(next) : "");
+      },
+
       renderUI() {
         const b = this.quizSets.attach(App.selected || getTodaySingleBriefing());
         const available = ClinicalQuiz.hasSourceItems(b);
@@ -9540,12 +9633,12 @@
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
         const btnNewSet = document.getElementById("btnNewQuizSet");
         if (btnNewSet) {
-          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b), cap = this.quizSets.dailyPresses;
+          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
           btnNewSet.style.display = total ? "inline-flex" : "none";
           btnNewSet.disabled = Boolean(this.isBusy) || left <= 0;
           btnNewSet.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
             : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
-          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới (còn ${left}/${cap})` : `New questions (${left}/${cap} left)`);
+          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới bằng AI (còn ${left} lượt)` : `New AI questions (${left} left)`);
         }
 
         setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");
@@ -9632,15 +9725,7 @@
                 : `Click <strong>${startLabel}</strong> to review the <strong>Pillar #${this.curPillarId}</strong> lesson.`
             }</div></div>`;
           } else {
-            box.innerHTML = msgs.map((m) => {
-              const bodyHtml = escapeHtml(m.text || "");
-              const sourceHtml = m.role === "assistant" && /^[1-9][0-9]{0,8}$/.test(m.source_pmid || "")
-                ? `<br><a href="https://pubmed.ncbi.nlm.nih.gov/${m.source_pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${m.source_pmid}</a>`
-                : "";
-              return `<div class="socratic-msg ${m.role === "user" ? "user" : "assistant"}">
-                <div class="socratic-msg-bubble">${bodyHtml}${sourceHtml}</div>
-              </div>`;
-            }).join("");
+            box.innerHTML = msgs.map(m => this.renderTranscriptMessage(m, sess, questionCount, isVi)).join("");
             this.scrollTranscriptToLatest();
           }
         }
