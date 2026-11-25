@@ -12,7 +12,7 @@ Kết luận của tác giả: ARNI đi kèm nguy cơ kết cục thận bất l
 
 Tổng quan hệ thống và phân tích gộp các thử nghiệm ngẫu nhiên so sánh ARNI với RAASi đơn thuần ở bệnh nhân suy tim; tìm trên MEDLINE, Embase và PubMed; đánh giá nguy cơ sai lệch bằng ROB 2.0.
 
-Kết cục gồm suy giảm chức năng thận, tăng kali máu, hạ huyết áp, eGFR giảm >50%, bệnh thận giai đoạn cuối, creatinine tăng >2,5 mg/dl và tổn thương thận cấp.
+Kết cục gồm suy giảm chức năng thận, tăng kali máu, hạ huyết áp, eGFR giảm >50%, bệnh thận giai đoạn cuối, creatinine huyết thanh >2,5 mg/dl và tổn thương thận cấp.
 
 ## findings
 
@@ -29,7 +29,7 @@ Bản tóm tắt dựa trên abstract PubMed, chưa được bác sĩ đối chi
 ## pearls
 
 So với RAASi, ARNI giảm suy giảm chức năng thận (RR 0,83; ít hơn 13 biến cố/1000 bệnh nhân) và tổn thương thận cấp.
-Tăng kali máu không khác biệt, nhưng hạ huyết áp có triệu chứng tăng (RR 1,54).
+Tăng kali máu >5,5 mmol/L không khác biệt có ý nghĩa, nhưng hạ huyết áp có triệu chứng tăng (RR 1,54).
 Khi chuyển sang ARNI, theo dõi huyết áp có triệu chứng; lo ngại về thận không phải lý do để tránh ARNI theo dữ liệu này.
 
 # en
@@ -44,7 +44,7 @@ The authors' conclusion: ARNI are associated with a lower risk of adverse kidney
 
 Systematic review and meta-analysis of randomized trials comparing ARNI with RAASi alone in heart failure; MEDLINE, Embase and PubMed were searched, and risk of bias was assessed with ROB 2.0.
 
-Outcomes included worsening renal function, hyperkalaemia, hypotension, >50% decrease in eGFR, end-stage renal disease, serum creatinine rise >2.5 mg/dl and acute kidney injury.
+Outcomes included worsening renal function, hyperkalaemia, hypotension, >50% decrease in eGFR, end-stage renal disease, serum creatinine >2.5 mg/dl and acute kidney injury.
 
 ## findings
 
@@ -61,5 +61,5 @@ This summary is based on the PubMed abstract and has not been checked against th
 ## pearls
 
 Compared with RAASi, ARNI reduced worsening renal function (RR 0.83; 13 fewer events per 1000 patients) and acute kidney injury.
-Hyperkalaemia did not differ, but symptomatic hypotension increased (RR 1.54).
+Hyperkalaemia >5.5 mmol/L did not differ significantly, but symptomatic hypotension increased (RR 1.54).
 When switching to ARNI, watch for symptomatic hypotension; on these data, kidney concerns are not a reason to avoid ARNI.
