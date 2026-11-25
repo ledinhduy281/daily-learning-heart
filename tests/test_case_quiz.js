@@ -34,7 +34,16 @@ for (const broken of [
   {stem_vi: "Ngắn"},
 ]) assert.equal(CaseQuiz.validItem({...theory, ...broken}, CaseQuiz.grounding(lesson)), false, JSON.stringify(broken));
 assert.equal(CaseQuiz.validItem({...kase, stem_en: "Short case?"}, CaseQuiz.grounding(lesson)), false);
-for (const e of ["Options B, C and D are not supported.", "B is correct because the abstract says so.", "Đáp án A sai vì abstract không nói vậy."])
+const rateQuote = "Amiodarone was infused at 1 mg/min for six hours in every participant of the trial.";
+const rateGround = {...CaseQuiz.grounding(lesson), excerpts: [rateQuote]};
+const rateCase = {...kase, quote: rateQuote, explanation_vi: "Abstract cho biết tốc độ truyền amiodarone trong thử nghiệm.",
+  explanation_en: "The abstract gives the amiodarone infusion rate used in the trial."};
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received amiodarone 1 mg/min."}, rateGround), "");
+assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She received a 1 mg bolus of amiodarone."}, rateGround),
+  "dose", "a bolus is not the quoted infusion rate");
+assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},
+  CaseQuiz.grounding(lesson)), "", "clinical stage letters are not option references");
+for (const e of ["Options B, C and D are not supported.", "B and C are wrong here.", "B is correct because the abstract says so.", "Đáp án A sai vì abstract không nói vậy."])
   assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: e}, CaseQuiz.grounding(lesson)), "letters", e);
 assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "A 74-year-old woman fits the population; the hazard ratio was 0.70."},
   CaseQuiz.grounding(lesson)), "");

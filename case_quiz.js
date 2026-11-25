@@ -9,7 +9,7 @@ const CaseQuiz = (() => {
   const squash = s => String(s).replace(/\s+/g, ' ').trim();
   const numbers = s => (String(s).replace(/\b(\d{1,3})(?:[ \u00a0\u202f]\d{3})+(?!\d)/g, m => m.replace(/\s/g, ''))
     .match(/\d+(?:[.,]\d+)*/g) || []).map(n => n.replace(/,/g, '.')).map(n => /^[1-9]\d{0,2}(?:\.\d{3})+$/.test(n) ? n.replace(/\./g, '') : n);
-  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])/giu;
+  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?:\s*\/\s*(?:kg|m2|m²|min|phút|h|hr|giờ|day|ngày|d)(?![\p{L}\p{N}]))*/giu;
   // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
   const LAB = /\d+(?:[.,]\d+)?\s?(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
   // The app shuffles options, so explanations must not name them by letter.
