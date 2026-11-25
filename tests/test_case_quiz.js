@@ -45,7 +45,7 @@ assert.equal(CaseQuiz.rejectReason({...rateCase, stem_en: kase.stem_en + " She r
   "dose", "a bolus is not the quoted infusion rate");
 assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},
   CaseQuiz.grounding(lesson)), "", "clinical stage letters are not option references");
-for (const e of ["Options B, C and D are not supported.", "B and C are wrong here.", "B is correct because the abstract says so.", "Đáp án A sai vì abstract không nói vậy."])
+for (const e of ["A and C give unsupported estimates.", "Options B, C and D are not supported.", "B and C are wrong here.", "B is correct because the abstract says so.", "Đáp án A sai vì abstract không nói vậy."])
   assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: e}, CaseQuiz.grounding(lesson)), "letters", e);
 assert.equal(CaseQuiz.rejectReason({...kase, explanation_en: "A 74-year-old woman fits the population; the hazard ratio was 0.70."},
   CaseQuiz.grounding(lesson)), "");

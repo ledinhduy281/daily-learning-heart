@@ -19,6 +19,9 @@ const CaseQuiz = (() => {
     unit: 'units', 'đơn vị': 'units'};
   const doseKey = d => squash(d).toLowerCase().replace(/,/g, '.').replace(/\s*\/\s*/g, '/').replace(/(\d)\s+/, '$1')
     .replace(/[\p{L}²]+(?: vị)?/gu, u => UNIT_ALIASES[u] || u);
+  // "A and C give…" names options; "stages B and C" or "class A or B" names a clinical grade.
+  const LETTER_LIST = /(?:^|[^\p{L}\p{N}])((?:[Ss]tages?|[Cc]lass(?:es)?|[Tt]ypes?|[Gg]rades?|[Gg]iai đoạn|[Nn]hóm|[Pp]hân độ|[Ll]oại|[Mm]ức)\s+)?[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])+(?![\p{L}\p{N}])/gu;
+  const namesOptions = e => LETTERS.some(r => r.test(e)) || [...String(e).matchAll(LETTER_LIST)].some(m => !m[1]);
   const doses = s => String(s).replace(LAB, ' ').match(DOSE) || [];
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
 
@@ -51,7 +54,7 @@ const CaseQuiz = (() => {
     if (!item.options.every(o => o && text(o.vi, LIMITS.option) && text(o.en, LIMITS.option))) return 'options';
     for (const l of ['vi', 'en']) if (new Set(item.options.map(o => squash(o[l]).toLowerCase())).size !== 4) return 'options';
     if (unsupportedNumbers(item, ground).length) return 'numbers';
-    if ([item.explanation_vi, item.explanation_en].some(e => LETTERS.some(r => r.test(e)))) return 'letters';
+    if ([item.explanation_vi, item.explanation_en].some(namesOptions)) return 'letters';
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
     const quotedDoses = new Set(doses(quote).map(doseKey));
