@@ -163,7 +163,7 @@ assert.equal(opened.id, saved.id);
 const published = {...saved, title_en: "Published edition"};
 App.briefings = [published, ...App.briefings];
 assert.equal(context.findArchiveBriefing(saved.id), published);
-const quizNodes = Object.fromEntries(["btnOpenSocraticHeader", "socraticTutorSection"].map(id => [id, {style: {}}]));
+const quizNodes = {socraticTutorSection: {}, quizUnavailable: {}};
 const quizCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
 App.selected = {...fallback, quiz_mode: undefined};
 context.ClinicalQuiz = require("../clinical_mcq.js");
@@ -176,6 +176,7 @@ assert.match(tutor.quizSourceLabel(licensedQuiz, true), /Trích từ nguồn có
 assert.match(tutor.quizSourceLabel(licensedQuiz, false), /Extracted from a licensed source/);
 tutor.getSession = () => { assert.fail("A focused lesson without excerpts should not start a generic quiz"); };
 tutor.renderUI();
-assert.equal(quizNodes.btnOpenSocraticHeader.style.display, "none");
-assert.equal(quizNodes.socraticTutorSection.style.display, "none");
+assert.equal(quizNodes.socraticTutorSection.hidden, true);
+assert.equal(quizNodes.quizUnavailable.hidden, false);
+assert.match(quizNodes.quizUnavailable.textContent, /nguồn gốc|source-supported/);
 console.log("Focused guideline selection and browser rendering passed");
