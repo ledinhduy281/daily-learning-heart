@@ -73,6 +73,7 @@ const quiet = () => {};
     assert.ok(set.items.every(i => !/^[A-D]\. /.test(i.choices?.[0] || i.options?.[0]?.en || "")));
     assert.ok(set.items.every(i => i.ai_generated && i.pmid === pmid && quote.includes(i.quote)));
   }
+  assert.equal(new Set(sets.map(s => s.set_id)).size, 3, "set ids are unique");
   assert.equal(new Set(sets.flatMap(s => s.items.map(i => i.stem_en))).size, sets.flatMap(s => s.items).length, "no repeats");
   assert.equal(sets.flatMap(s => s.items).filter(i => i.stem_en.startsWith("Item 8")).length, 0,
     "an explanation that repeats a wrong option's number is rejected");

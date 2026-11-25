@@ -108,7 +108,7 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log}) {
       const items = CaseQuiz.validateSet(lesson, [...theory, ...cases]);
       if (items.length !== THEORY + CASES || CaseQuiz.validateSet(lesson, items).length !== THEORY + CASES) break;
       [...theory, ...cases].forEach(i => pool.splice(pool.indexOf(i), 1));
-      sets.push({set_id: `${lesson.date}-${sets.length + 1}`, model, items});
+      sets.push({set_id: `${lesson.date}-${Date.now().toString(36)}-${sets.length + 1}`, model, items});
     }
   }
   log(`quiz sets for ${lesson.id}: ${sets.length}/${SETS_PER_LESSON} (${sets.length - existing.length} new); ` +
