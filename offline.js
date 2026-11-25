@@ -1,8 +1,8 @@
-const CACHE = "daily-learning-heart-shell-v2";
+const CACHE = "daily-learning-heart-shell-v3";
 const root = self.registration.scope;
 const shell = new Map([
   "", "index.html", "data/briefings.js", "device_profile.js", "sync_config.js", "cloud_sync.js", "search_ranking.js",
-  "clinical_distractors.js", "clinical_mcq.js", "evidence_feed.js", "manifest.json", "icon.svg",
+  "clinical_distractors.js", "case_quiz.js", "clinical_mcq.js", "evidence_feed.js", "manifest.json", "icon.svg",
 ].map(path => {
   const url = new URL(path, root);
   return [url.pathname, url.href];

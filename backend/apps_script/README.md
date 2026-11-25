@@ -12,7 +12,7 @@ backup service. Local progress and JSON export/import always work without it.
    (keep it private and stable). Optionally set **SITE_URL** to your Pages URL; the
    default is `https://ledinhduy281.github.io/daily-learning-heart/`. Also set
    **GROQ_API_KEY**, never in browser code. Optional chat properties:
-   **CHAT_DAILY_CAP** (default `300`) and **GROQ_MODEL** (default `openai/gpt-oss-120b`).
+   **CHAT_DAILY_CAP** (default `100`) and **GROQ_MODEL** (default `openai/gpt-oss-120b`).
 4. Choose **Deploy → New deployment → Web app**, **Execute as: Me**,
    **Who has access: Anyone**. Authorize Sheets and sending mail from your account.
    If your Workspace administrator forbids anonymous web apps, this setup cannot

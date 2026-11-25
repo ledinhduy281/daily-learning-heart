@@ -21,7 +21,7 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertTrue(is_recent(source))
                 self.assertGreaterEqual(source["online_date"], "2026-08-24")
         self.assertFalse(is_recent({**SOURCES[2], "online_date": "2022-08-27"}))
-        self.assertEqual(source_age_days(SOURCES[10]), 58)
+        self.assertEqual(source_age_days(SOURCES[10]), 13)
 
     def test_lessons_and_templates_pass_the_gate_in_both_languages(self):
         for pillar in PILLARS:

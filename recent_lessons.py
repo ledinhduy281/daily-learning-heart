@@ -110,11 +110,15 @@ SOURCES = {s["pillar_id"]: s for s in (
             quiz=(
                 "This scientific statement is intended to approach the patient undergoing aortic surgery from [[3]] different viewpoints: that of the surgeon, the anesthesiologist, and the perfusionist.",
             ), label="AHA"),
-    _source(10, "aha-acc-2026-perioperative", "guideline", "42804570", "10.1161/CIR.0000000000001472",
-            "2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery",
-            "Circulation", "2026-09-28",
-            ("Guideline AHA/ACC 2026: xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim", "2026 AHA/ACC guideline: perioperative cardiovascular management for noncardiac surgery"),
-            label="AHA/ACC"),
+    _source(10, "bproad-intensive-bp-cognition", "landmark_rct", "43020520", "10.1136/bmj-2026-101209",
+            "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
+            "BMJ", "2026-11-12",
+            ("Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)", "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)"),
+            quiz=(
+                "Participants were randomly assigned to receive intensive treatment targeting SBP <[[120]] mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+                "After one year, mean SBP was [[121.6]] mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+                "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio [[0.96]], 95% confidence interval (CI) 0.86 to 1.06; P=0.38).",
+            ), copyright="© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."),
 )}
 
 

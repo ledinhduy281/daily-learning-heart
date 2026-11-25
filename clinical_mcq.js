@@ -1,6 +1,7 @@
 /* Offline mirror of clinical_mcq.py and socratic_quiz.py. No AI answer keys. */
 const ClinicalQuiz = (() => {
   const distractors = typeof module !== 'undefined' ? require('./clinical_distractors.js') : ClinicalDistractors;
+  const cases = typeof module !== 'undefined' ? require('./case_quiz.js') : CaseQuiz;
   const normalized = s => String(s).toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   function alternatives(text,numericOnly=false,target=null) {
     target=target||distractors.numericTargets(text).find(t=>t.numeric||!numericOnly);
@@ -37,12 +38,31 @@ const ClinicalQuiz = (() => {
         new Set([answer,...distractors].map(c=>Number(c.replace(/[,%]/g,'')))).size===4;
     });
   }
+  function aiItems(primary) {
+    if (primary?.quiz_mode!=='source_excerpt') return [];
+    const set=primary.generated_quiz;
+    const generated=set&&typeof set.set_id==='string'?cases.validateSet(primary,set.items):[];
+    if (generated.length) return generated.map((item,i)=>[`gen:${set.set_id}:${i}`,item]);
+    const ground=cases.grounding(primary);
+    return (Array.isArray(primary.case_quiz_items)?primary.case_quiz_items:[]).map((item,i)=>[`case:${i}`,item])
+      .filter(([,item])=>cases.validItem(item,ground));
+  }
   function sourceReviewIds(primary) {
+    const ai = aiItems(primary);
+    if (ai.length && ai[0][0].startsWith('gen:')) return ai.map(([id])=>id);
     const ids = new Map();
     for (const [i, item] of sourceItems(primary)) {
       if (!ids.has(item.quote)) ids.set(item.quote, `source:${i}`);
     }
-    return [...ids.values()];
+    return [...ids.values(), ...ai.map(([id])=>id)];
+  }
+  function aiQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId) {
+    const ai=aiItems(primary), found=ai.find(([id])=>id===sourceId);
+    if (!found) return null;
+    const kind=primary.primary_source?.kind;
+    const required=[...new Set([...ai.map(([,item])=>cases.subskill(item,kind)),
+      ...(sourceId.startsWith('gen:')?[]:sourceItems(primary).map(()=>kind==='guideline'?0:1))])].sort();
+    return cases.question(found[1],lang,slotIdx,variantIdx,sourceId,difficulty,kind,required);
   }
   function reviewQuestion(primary,slotIdx,questionIndex,lang,difficulty) {
     const id = sourceReviewIds(primary)[questionIndex];
@@ -70,6 +90,7 @@ const ClinicalQuiz = (() => {
     return {index,question,keep:false,revealed:state.question_revealed===true && question?.source_quote===current.source_quote};
   }
   function sourceQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId) {
+    if (/^(gen|case):/.test(sourceId||'')) return aiQuestion(primary,slotIdx,variantIdx,lang,difficulty,sourceId);
     const items=sourceItems(primary), available=sourceId?items.filter(([i])=>sourceId===`source:${i}`):items;
     if (!available.length) return null;
     const [i,{pmid,quote,answer,start,distractors}]=available[variantIdx%available.length];
@@ -255,6 +276,6 @@ const ClinicalQuiz = (() => {
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
   return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
-    hasSourceItems:primary=>sourceItems(primary).length>0};
+    hasSourceItems:primary=>sourceItems(primary).length>0||aiItems(primary).length>0};
 })();
 if (typeof module !== 'undefined') module.exports=ClinicalQuiz;

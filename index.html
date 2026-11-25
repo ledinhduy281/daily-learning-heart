@@ -39,6 +39,7 @@
   <!-- Seeded Briefings Data -->
   <script src="data/briefings.js"></script>
   <script src="clinical_distractors.js"></script>
+  <script src="case_quiz.js"></script>
   <script src="clinical_mcq.js"></script>
   <script src="device_profile.js"></script>
   <script src="sync_config.js"></script>
@@ -4527,8 +4528,14 @@
               <i class="fa-solid fa-rotate-left"></i>
               <span id="labelResetSocratic">Học lại</span>
             </button>
+            <button type="button" class="btn btn-secondary-outline" id="btnNewQuizSet" style="display: none;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span id="labelNewQuizSet">Tạo câu hỏi mới</span>
+            </button>
           </div>
         </div>
+
+        <p class="socratic-sub-text new-quiz-status" id="newQuizStatus" role="status" hidden></p>
 
         <div class="socratic-progress-dash" id="socraticProgressDashboard"></div>
 
@@ -9091,6 +9098,41 @@
        SOCRATIC TUTOR ("HỌC THEO KIỂU SOCRACT" / "SOCRATIC LEARNING")
        Implements /skill/self_learning_socratic.md per-Pillar mastery loop
        ======================================================================== */
+    const QuizSets = {
+      key: "dlh-quiz-sets-v1",
+      pressKey: "dlh-quiz-presses-v1",
+      read(name) {
+        try { return JSON.parse(window.localStorage.getItem(name) || "{}") || {}; } catch (_) { return {}; }
+      },
+      write(name, value) {
+        try { window.localStorage.setItem(name, JSON.stringify(value)); } catch (_) {}
+      },
+      today() {
+        return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Ho_Chi_Minh"}).format(new Date());
+      },
+      attach(b) {
+        if (b?.id && !b.generated_quiz) {
+          const set = this.read(this.key)[b.id];
+          if (set && typeof set.set_id === "string" && Array.isArray(set.items)) b.generated_quiz = set;
+        }
+        return b;
+      },
+      save(b, items) {
+        const all = this.read(this.key);
+        const set = {set_id: Date.now().toString(36), items};
+        const kept = Object.fromEntries(Object.entries(all).filter(([id]) => id !== b.id).slice(-19));
+        this.write(this.key, {...kept, [b.id]: set});
+        b.generated_quiz = set;
+      },
+      remaining() {
+        const used = this.read(this.pressKey);
+        return used.date === this.today() ? Math.max(0, 2 - Number(used.used || 0)) : 2;
+      },
+      record(remaining) {
+        this.write(this.pressKey, {date: this.today(), used: Math.max(0, Math.min(2, 2 - remaining))});
+      }
+    };
+
     const SocraticTutor = {
       isBusy: false,
       store: {},
@@ -9265,7 +9307,77 @@
       },
 
       sessionKey(pid, briefing) {
-        return briefing?.id || String(pid);
+        const set = briefing?.generated_quiz?.set_id;
+        return briefing?.id ? (set ? `${briefing.id}#${set}` : briefing.id) : String(pid);
+      },
+
+      async generateNewSet() {
+        const b = App.selected || getTodaySingleBriefing();
+        if (this.isBusy || this.generating || !b) return;
+        const isVi = App.currentLang === "vi";
+        const status = msg => {
+          const el = document.getElementById("newQuizStatus");
+          if (el) { el.textContent = msg; el.hidden = !msg; }
+        };
+        const endpoint = (window.EBM_SYNC_ENDPOINT || "").trim();
+        if (QuizSets.remaining() <= 0) {
+          status(isVi ? "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới." : "You have used both new question sets for today.");
+          return;
+        }
+        if (!endpoint || navigator.onLine === false) {
+          status(isVi ? "Cần kết nối mạng để AI soạn câu hỏi mới; bạn vẫn làm được bộ câu trích nguyên văn."
+            : "AI needs a connection to write new questions; the verbatim quiz still works.");
+          return;
+        }
+        const ground = CaseQuiz.grounding(QuizSets.attach(b));
+        this.generating = true;
+        status(isVi ? "AI (Groq) đang soạn và tự kiểm tra bộ câu hỏi mới…" : "AI (Groq) is writing and checking a new set…");
+        this.renderUI();
+        let timer;
+        try {
+          const digest = await window.crypto.subtle.digest("SHA-256",
+            new TextEncoder().encode("dlh-chat-v1:" + deviceStore.profile.device_id.toLowerCase()));
+          const device_id = Array.from(new Uint8Array(digest), x => x.toString(16).padStart(2, "0")).join("");
+          const controller = new AbortController();
+          timer = setTimeout(() => controller.abort(), 90000);
+          const response = await fetch(endpoint, {
+            method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: controller.signal,
+            body: JSON.stringify({action: "quiz", device_id, lang: isVi ? "vi" : "en", lesson: {pmid: ground.pmid,
+              kind: ground.kind, title: String(ground.title).slice(0, 400), excerpts: ground.excerpts.slice(0, 8)}})
+          });
+          const data = response.ok ? await response.json() : {};
+          if (Number.isInteger(data.remaining)) QuizSets.record(data.remaining);
+          const items = data.ok === true ? CaseQuiz.validateSet(b, data.items) : [];
+          if (!items.length) {
+            const left = QuizSets.remaining();
+            const messages = isVi ? {
+              device_daily_cap: "Hôm nay đã dùng hết 2 lượt tạo câu hỏi mới.",
+              daily_cap: "Hệ thống đã hết lượt AI hôm nay; thử lại vào ngày mai.",
+              not_configured: "Máy chủ chưa bật AI; bạn vẫn làm được bộ câu trích nguyên văn.",
+              invalid_output: `Câu AI soạn không khớp trích đoạn nguồn nên đã bị loại. Còn ${left}/2 lượt hôm nay.`
+            } : {
+              device_daily_cap: "You have used both new question sets for today.",
+              daily_cap: "The app has used today's AI quota; try again tomorrow.",
+              not_configured: "AI is not enabled on the server; the verbatim quiz still works.",
+              invalid_output: `The AI questions did not match the source excerpts and were discarded. ${left}/2 left today.`
+            };
+            status(messages[data.error] || (isVi ? "AI tạm thời không phản hồi; lượt này không bị tính." : "AI is not responding right now; this attempt was not counted."));
+            return;
+          }
+          QuizSets.save(b, items);
+          const cases = items.filter(i => i.type === "case").length;
+          status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.`
+            : `New set: ${items.length - cases} theory and ${cases} clinical-case questions.`);
+          this.generating = false;
+          this.renderUI();
+          await this.startDiagnostic();
+        } catch (_) {
+          status(isVi ? "Không kết nối được AI; lượt này không bị tính." : "Could not reach the AI; this attempt was not counted.");
+        } finally {
+          clearTimeout(timer);
+          this.generating = false;
+          this.renderUI();
+        }
       },
 
       prepareLegacySession(legacy, briefing) {
@@ -9288,6 +9400,7 @@
       },
 
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
+        QuizSets.attach(briefing);
         const key = this.sessionKey(pid, briefing);
         const pillarKey = String(pid);
         const markerKey = `legacy-migrated:${pillarKey}`;
@@ -9465,6 +9578,9 @@
           });
         }
 
+        const btnNewSet = document.getElementById("btnNewQuizSet");
+        if (btnNewSet) btnNewSet.addEventListener("click", () => this.generateNewSet());
+
         const btnReset = document.getElementById("btnResetSocratic");
         if (btnReset) {
           btnReset.addEventListener("click", () => {
@@ -9631,7 +9747,7 @@
       },
 
       renderUI() {
-        const b = App.selected || getTodaySingleBriefing();
+        const b = QuizSets.attach(App.selected || getTodaySingleBriefing());
         const available = ClinicalQuiz.hasSourceItems(b);
         for (const id of ["btnOpenSocraticHeader", "socraticTutorSection"]) {
           const element = document.getElementById(id);
@@ -9650,7 +9766,12 @@
         };
         setEl("socraticTitleText", isVi ? "Trắc nghiệm ôn tập" : "Daily Review Quiz");
         const sourceLabel = this.quizSourceLabel(b, isVi);
-        const instructions = isVi
+        const aiSet = Boolean(b.generated_quiz) && ClinicalQuiz.sourceQuestionCount(b) > 0 &&
+          ClinicalQuiz.reviewQuestion(b, 0, 0, "vi", "normal")?.ai_generated;
+        const instructions = aiSet
+          ? (isVi ? "Bộ câu hỏi do AI (Groq) soạn từ trích đoạn nguồn, gồm câu lý thuyết và tình huống lâm sàng, chưa được bác sĩ duyệt. Sau khi trả lời, xem câu trích nguyên văn để đối chiếu."
+            : "AI (Groq)-written set from the source excerpts, with theory and clinical-case questions; not physician-reviewed. After answering, check the verbatim quote.")
+          : isVi
           ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
           : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.";
         setEl("socraticSubText", [sourceLabel, instructions].filter(Boolean).join(" "));
@@ -9680,6 +9801,16 @@
         const btnReset = document.getElementById("btnResetSocratic");
         if (btnReset) btnReset.style.display = sess.started ? "inline-flex" : "none";
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
+        const btnNewSet = document.getElementById("btnNewQuizSet");
+        if (btnNewSet) {
+          const left = QuizSets.remaining();
+          btnNewSet.style.display = CaseQuiz.grounding(b).excerpts.length ? "inline-flex" : "none";
+          btnNewSet.disabled = Boolean(this.generating || this.isBusy) || left <= 0;
+          btnNewSet.title = isVi ? "AI soạn bộ mới gồm câu lý thuyết và tình huống lâm sàng (tối đa 2 lần/ngày)"
+            : "AI writes a new set with theory and clinical-case questions (up to 2 per day)";
+          setEl("labelNewQuizSet", this.generating ? (isVi ? "Đang tạo…" : "Generating…")
+            : isVi ? `Tạo câu hỏi mới (còn ${left}/2)` : `New questions (${left}/2 left)`);
+        }
 
         setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");
         setEl("btnSocCmdHarder", isVi ? "Khó hơn" : "Harder");
