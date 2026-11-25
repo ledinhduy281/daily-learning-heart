@@ -8337,11 +8337,26 @@
         return score;
       },
 
+      chatRequestSignal(replySignal, requestSignal) {
+        const signals = [replySignal, requestSignal];
+        if (typeof AbortSignal.any === "function") return AbortSignal.any(signals);
+        const controller = new AbortController();
+        const aborted = signals.find(signal => signal.aborted);
+        if (aborted) {
+          controller.abort(aborted.reason);
+        } else {
+          for (const signal of signals) {
+            signal.addEventListener("abort", () => controller.abort(signal.reason), {once: true, signal: controller.signal});
+          }
+        }
+        return controller.signal;
+      },
+
       async translateSnippetToVi(text, replySignal) {
         if (!text || text.length < 10) return text;
         try {
           const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 320))}&langpair=en|vi`;
-          const res = await fetch(url, {signal: AbortSignal.any([replySignal, AbortSignal.timeout(3500)])});
+          const res = await fetch(url, {signal: this.chatRequestSignal(replySignal, AbortSignal.timeout(3500))});
           if (!res.ok) return text;
           const d = await res.json();
           const tr = d?.responseData?.translatedText || "";
@@ -8365,7 +8380,7 @@
           if (!matchedDrug) return null;
 
           const url = `https://api.fda.gov/drug/label.json?search=${encodeURIComponent(`openfda.generic_name:"${matchedDrug}"`)}&limit=1`;
-          const res = await fetch(url, {signal: AbortSignal.any([replySignal, AbortSignal.timeout(5000)])});
+          const res = await fetch(url, {signal: this.chatRequestSignal(replySignal, AbortSignal.timeout(5000))});
           if (!res.ok) return null;
           const d = await res.json();
           const r = d?.results?.[0];
@@ -8421,7 +8436,7 @@
             : `${fallbackQ} AND 2026[dp]`;
 
           const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(pmTerm)}&retmode=json&retmax=3&sort=relevance`;
-          const signal = AbortSignal.any([replySignal, AbortSignal.timeout(7000)]);
+          const signal = this.chatRequestSignal(replySignal, AbortSignal.timeout(7000));
           const sRes = await fetch(sUrl, {signal});
           if (!sRes.ok) return [];
           const sData = await sRes.json();
@@ -8777,7 +8792,7 @@
             try {
               const res = await fetch("/api/chat", {
                 method: "POST",
-                signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+                signal: this.chatRequestSignal(signal, AbortSignal.timeout(20000)),
                 headers: getAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   query,
@@ -8852,7 +8867,7 @@
               const controller = new AbortController();
               timer = setTimeout(() => controller.abort(), 20000);
               const response = await fetch(endpoint, {
-                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: AbortSignal.any([signal, controller.signal]),
+                method: "POST", headers: {"Content-Type": "text/plain"}, redirect: "follow", signal: this.chatRequestSignal(signal, controller.signal),
                 body: JSON.stringify({action: "chat", device_id: chatDeviceId, question: query,
                   history: priorHistory.filter(m => ["user", "assistant"].includes(m.role)).slice(-4).map(m => ({role: m.role, content: String(m.content || "").slice(0, 500)})),
                   context, lang, verbosity: this.verbosity || "medium"})

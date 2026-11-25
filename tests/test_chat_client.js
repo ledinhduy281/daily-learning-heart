@@ -186,6 +186,35 @@ async function checkCancellation(button, lang, serverAvailable) {
   if (deleted) assert.ok(sessions.every(session => session.id !== targetId));
 }
 
+async function checkWithoutAbortSignalAny() {
+  const nativeAny = AbortSignal.any;
+  delete AbortSignal.any;
+  try {
+    assert.equal(AbortSignal.any, undefined);
+    await check('ok');
+    await check('abort');
+    await checkCancellation('history-open', 'en', true);
+    await checkCancellation('history-delete', 'vi', false);
+
+    const reply = new AbortController();
+    const calls = [];
+    const chat = vm.runInNewContext(`(${object})`, {
+      AbortController, AbortSignal, CHAT_SYNONYMS: {}, CLIENT_GUIDELINE_QUERIES: {},
+      fetch: async (url, {signal}) => {
+        calls.push({path: new URL(url).pathname, signal});
+        if (calls.length === 1) return {ok: true, json: async () => ({esearchresult: {idlist: ['123']}})};
+        reply.abort();
+        return {ok: false};
+      }
+    });
+    await chat.fetchLivePubMedAbstracts('heart failure', {pillar_id: 1}, reply.signal);
+    assert.deepEqual(calls.map(call => call.path), ['/entrez/eutils/esearch.fcgi', '/entrez/eutils/efetch.fcgi']);
+    assert.ok(calls.every(call => call.signal.aborted));
+  } finally {
+    AbortSignal.any = nativeAny;
+  }
+}
+
 (async () => {
   for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'device_cap', 'invalid_device', 'abort', 'no_crypto', 'hash_failure']) await check(mode);
   console.log('Browser chat proxy checks passed (success, unset, HTTP/network/JSON/empty/rejected/timeout fallback).');
@@ -199,4 +228,6 @@ async function checkCancellation(button, lang, serverAvailable) {
   await checkCancellation('history-delete', 'en', false);
   await checkCancellation('history-delete-active', 'vi', true);
   console.log('Chat history cancellation: opening saved conversations and deleting active or inactive entries cancels replies and shows the correct VI/EN notice.');
+  await checkWithoutAbortSignalAny();
+  console.log('Without AbortSignal.any: PubMed requests run, and cancellation and proxy timeouts still work.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
