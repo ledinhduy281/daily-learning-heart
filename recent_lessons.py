@@ -120,8 +120,8 @@ def source_age_days(source, edition_date=RECENT_EDITION_DATE):
     return (datetime.date.fromisoformat(edition_date) - datetime.date.fromisoformat(source["online_date"])).days
 
 
-def is_recent(source, edition_date=RECENT_EDITION_DATE):
-    return 0 <= source_age_days(source, edition_date) <= SOURCE_WINDOW_DAYS
+def is_recent(source, edition_date=RECENT_EDITION_DATE, window_days=SOURCE_WINDOW_DAYS):
+    return 0 <= source_age_days(source, edition_date) <= window_days
 
 
 def load_recent_teaching(slug):

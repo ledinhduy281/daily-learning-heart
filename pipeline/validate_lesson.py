@@ -123,12 +123,16 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
     pid = pillar["id"]
     _require(lesson.get("id") == f"ebm-{lesson_date}-p{pid}-focused"
              and lesson.get("date") == lesson_date and lesson.get("pillar_id") == pid
-             and lesson.get("lesson_version") == RECENT_LESSON_VERSION
+             and (lesson.get("lesson_version") == RECENT_LESSON_VERSION
+                  or recorded and type(lesson.get("lesson_version")) is int
+                  and 5 <= lesson["lesson_version"] < RECENT_LESSON_VERSION)
              and lesson.get("content_source") == "recent_source_rotation" and lesson.get("model_used") == "none",
              "Lesson does not match the scheduled pillar and date")
     source = lesson.get("primary_source") or {}
     _require(set(source) == {"id", "kind", "label", "name", "journal", "online_date", "pmid", "doi", "url", "window_days"}
-             and source["kind"] in SOURCE_KINDS and source["window_days"] == SOURCE_WINDOW_DAYS
+             and source["kind"] in SOURCE_KINDS
+             and (source["window_days"] == SOURCE_WINDOW_DAYS
+                  or recorded and type(source["window_days"]) is int and 0 < source["window_days"] <= 100)
              and isinstance(source["pmid"], str) and re.fullmatch(r"[1-9][0-9]{0,8}", source["pmid"])
              and isinstance(source["doi"], str) and source["doi"].startswith("10.")
              and source["url"] == citation_url(source),
@@ -136,7 +140,7 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
     _recorded_wording(source, ("name", "journal"))
     edition = lesson.get("curated_edition_date")
     _require(isinstance(edition, str) and RECENT_START_DATE <= edition <= lesson_date
-             and is_recent(source, edition),
+             and is_recent(source, edition, source["window_days"]),
              f"Primary source must be published within {SOURCE_WINDOW_DAYS} days before the catalog edition")
     _require(lesson.get("pubmed_anchors") == [{"title": source["name"], "pmid": source["pmid"],
                                                "doi": source["doi"], "url": source["url"]}],
