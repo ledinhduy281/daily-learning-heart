@@ -25,6 +25,15 @@ def article(pmid, doi, passages):
                    tuple(Passage(f"fixture/{i}", role, text) for i, (role, text) in enumerate(passages)))
 
 
+def setUpModule():
+    """These cases cover the legacy guideline-plus-trial edition, which ends before the recent-source edition."""
+    import pipeline.validate_lesson as gate
+    for module in (lesson_generation, gate):
+        patcher = patch.object(module, "RECENT_START_DATE", "2099-01-01")
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
+
+
 class LessonGenerationTests(unittest.TestCase):
     @patch.object(lesson_generation, "fetch_article")
     def test_generation_uses_exact_reviewed_guideline_and_matched_trial(self, fetch):

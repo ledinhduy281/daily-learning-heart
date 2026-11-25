@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from fetch_daily_ebm import PILLARS, get_pillar_for_date
 from focused_lessons import build_focused_templates
+from recent_lessons import build_recent_lesson, build_recent_templates
 from pipeline import lesson_generation
 from pipeline.validate_lesson import validate_bundle
 from test_lesson_generation import GUIDELINE, GUIDELINE_PMID, PILLAR, RESULT, TRIAL, TRIAL_PMID, article
@@ -17,6 +18,15 @@ from test_lesson_generation import GUIDELINE, GUIDELINE_PMID, PILLAR, RESULT, TR
 
 REPO = Path(__file__).resolve().parents[1]
 DATE = "2026-11-26"
+
+
+def setUpModule():
+    """These cases cover the legacy guideline-plus-trial edition, which ends before the recent-source edition."""
+    import pipeline.validate_lesson as gate
+    for module in (lesson_generation, gate):
+        patcher = patch.object(module, "RECENT_START_DATE", "2099-01-01")
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
 
 
 class LessonGateTests(unittest.TestCase):
@@ -173,14 +183,17 @@ class LessonGateTests(unittest.TestCase):
         self.assertEqual(bundle, previous)
 
     def test_cli_exits_nonzero_for_invalid_publish_candidate(self):
-        bundle = self.bundle(self.curated)
+        day = "2026-11-25"
+        lesson = build_recent_lesson(get_pillar_for_date(date.fromisoformat(day)), day)
+        bundle = {"rotation_state": {"last_updated": day}, "briefings": [lesson],
+                  "focused_lessons": build_recent_templates(PILLARS)}
         with TemporaryDirectory() as directory:
             path = Path(directory) / "briefings.js"
 
             def run():
                 path.write_text(f"window.EBM_BRIEFINGS_DATA = {json.dumps(bundle)};")
                 return subprocess.run(
-                    [sys.executable, "-m", "pipeline.validate_lesson", "--bundle", str(path), "--date", DATE],
+                    [sys.executable, "-m", "pipeline.validate_lesson", "--bundle", str(path), "--date", day],
                     capture_output=True, text=True, cwd=REPO,
                 )
 
@@ -190,5 +203,5 @@ class LessonGateTests(unittest.TestCase):
             bundle["briefings"][0]["pubmed_anchors"] = []
             result = run()
             self.assertEqual(result.returncode, 1)
-            self.assertIn(f"Daily lesson publication blocked: {self.curated['id']}: Missing, extra, or mismatched lesson citation",
+            self.assertIn(f"Daily lesson publication blocked: {lesson['id']}: Missing, extra, or mismatched lesson citation",
                           result.stderr)

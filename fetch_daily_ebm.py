@@ -34,7 +34,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServe
 from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
-from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson, build_focused_templates
+from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
+from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1455,8 +1456,9 @@ def refresh_today_briefing(
             today_for_target = [
                 b for b in daily_records
                 if b.get("pillar_id") == pid
-                and b.get("lesson_format") == "single_guideline"
-                and b.get("lesson_version") == FOCUSED_EDITION_VERSION
+                and (b.get("lesson_format"), b.get("lesson_version")) == (
+                    ("single_source", RECENT_LESSON_VERSION) if today_str >= RECENT_START_DATE
+                    else ("single_guideline", FOCUSED_EDITION_VERSION))
                 and b.get("lesson_provenance")
             ]
             if (len(today_for_target) == 1 and all(b.get("pillar_id") == pid for b in daily_records)
@@ -1534,7 +1536,7 @@ def save_briefings_js(briefings: list, rotation_state: dict) -> None:
         "rotation_state": rotation_state,
         "lesson_gate_start": GATE_START_DATE,
         "pillars": PILLARS,
-        "focused_lessons": build_focused_templates(PILLARS),
+        "focused_lessons": build_recent_templates(PILLARS),
         "briefings": [with_truthful_provenance(b) for b in briefings],
     }
     js_content = (
@@ -2817,9 +2819,10 @@ def handle_socratic_turn(req_data: dict, *, source_only: bool = False) -> dict:
     briefing_id = req_data.get("briefing_id")
     primary = next((b for b in briefings if b.get("id") == briefing_id), None)
     if source_only:
-        if primary is None or primary.get("lesson_version") != FOCUSED_EDITION_VERSION:
+        if primary is None or primary.get("lesson_version") not in (FOCUSED_EDITION_VERSION, RECENT_LESSON_VERSION):
             day = _today_vn()
-            fallback = build_focused_lesson(get_pillar_for_date(day), day.isoformat())
+            build = build_recent_lesson if day.isoformat() >= RECENT_START_DATE else build_focused_lesson
+            fallback = build(get_pillar_for_date(day), day.isoformat())
             if fallback["id"] == briefing_id:
                 primary = fallback
         if not primary or not validated_source_items(primary):

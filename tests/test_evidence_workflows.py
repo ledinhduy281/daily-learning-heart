@@ -11,7 +11,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fetch_daily_ebm import PILLARS, get_pillar_for_date, refresh_today_briefing
-from focused_lessons import GATE_START_DATE, build_focused_templates
+from focused_lessons import GATE_START_DATE
+from recent_lessons import build_recent_templates
 from pipeline import lesson_generation
 from pipeline.validate_lesson import _read_bundle
 
@@ -127,10 +128,11 @@ class EvidenceWorkflowTests(unittest.TestCase):
             shutil.copy(ROOT / "pipeline" / module, pipeline)
         for module in ROOT.glob("*.py"):
             shutil.copy(module, self.root)
+        shutil.copytree(ROOT / "lessons", self.root / "lessons")
         path = data / "briefings.js"
         rotation = data / "rotation_state.json"
         dates = [datetime.strptime(d, "%Y-%m-%d").date()
-                 for d in (GATE_START_DATE, "2026-11-25", "2026-11-26", "2026-11-27")]
+                 for d in (GATE_START_DATE, "2026-11-26", "2026-11-27", "2026-11-28")]
         with patch.object(lesson_generation, "fetch_article", return_value=None):
             rollout, prior, first, second = [lesson_generation.build_open_lesson(get_pillar_for_date(d), d.isoformat())
                                              for d in dates]
@@ -138,7 +140,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         bad = copy.deepcopy(first)
         bad["quiz_items"][0]["answer"] = "0.94"
 
-        templates = build_focused_templates(PILLARS)
+        templates = build_recent_templates(PILLARS)
         key = str(first["pillar_id"])
 
         def write(latest, *rows, fallbacks=templates, last_updated=None):

@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from fetch_daily_ebm import BUNDLE_GENERATOR, NO_MODEL, with_truthful_provenance
-from focused_lessons import build_focused_templates
+from recent_lessons import build_recent_templates
 from pillar_library import (
     HISTORICAL_PILLAR_SERIES,
     PILLARS,
@@ -47,7 +47,7 @@ def main() -> None:
         "generator": BUNDLE_GENERATOR,
         "rotation_state": rotation_state,
         "pillars": PILLARS,
-        "focused_lessons": build_focused_templates(PILLARS),
+        "focused_lessons": build_recent_templates(PILLARS),
         "briefings": [with_truthful_provenance(b) for b in briefings_list],
     }
 

@@ -17,6 +17,10 @@ from focused_lessons import (
 from focused_teaching import PEARL_SECTIONS, SECTION_KEYS
 from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
+from recent_lessons import (
+    RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, SOURCE_KINDS, SOURCE_WINDOW_DAYS,
+    build_recent_lesson, citation_url, is_recent, recent_markdown,
+)
 
 LEGACY_CURATED_LABELS = {
     "vi": "Nội dung tuyển chọn, đã được người biên tập rà soát",
@@ -115,8 +119,86 @@ def _recorded_sources(lesson, evolution, evidence):
     return None
 
 
+def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
+    pid = pillar["id"]
+    _require(lesson.get("id") == f"ebm-{lesson_date}-p{pid}-focused"
+             and lesson.get("date") == lesson_date and lesson.get("pillar_id") == pid
+             and lesson.get("lesson_version") == RECENT_LESSON_VERSION
+             and lesson.get("content_source") == "recent_source_rotation" and lesson.get("model_used") == "none",
+             "Lesson does not match the scheduled pillar and date")
+    source = lesson.get("primary_source") or {}
+    _require(set(source) == {"id", "kind", "label", "name", "journal", "online_date", "pmid", "doi", "url", "window_days"}
+             and source["kind"] in SOURCE_KINDS and source["window_days"] == SOURCE_WINDOW_DAYS
+             and isinstance(source["pmid"], str) and re.fullmatch(r"[1-9][0-9]{0,8}", source["pmid"])
+             and isinstance(source["doi"], str) and source["doi"].startswith("10.")
+             and source["url"] == citation_url(source),
+             "Block A and Block B must cite exactly one primary source")
+    _recorded_wording(source, ("name", "journal"))
+    edition = lesson.get("curated_edition_date")
+    _require(isinstance(edition, str) and RECENT_START_DATE <= edition <= lesson_date
+             and is_recent(source, edition),
+             f"Primary source must be published within {SOURCE_WINDOW_DAYS} days before the catalog edition")
+    _require(lesson.get("pubmed_anchors") == [{"title": source["name"], "pmid": source["pmid"],
+                                               "doi": source["doi"], "url": source["url"]}],
+             "Missing, extra, or mismatched lesson citation")
+    _require(not any(lesson.get(key) for key in ("guideline_evolution", "supporting_evidence", "landmark_trials",
+                                                  "live_crawled_guidelines")),
+             "A single-source lesson must not mix in another guideline or study")
+    notes = lesson.get("teaching") or {}
+    _require(set(notes) == {"pmid", "vi", "en"} and notes["pmid"] == source["pmid"],
+             "The walkthrough must match the primary source")
+    for lang in ("vi", "en"):
+        sections = notes[lang]
+        _require(isinstance(sections, dict) and set(sections) == set(RECENT_SECTIONS)
+                 and all(isinstance(sections[key], list) and sections[key]
+                         and all(isinstance(p, str) and p.strip() and "\n" not in p for p in sections[key])
+                         for key in RECENT_SECTIONS) and 2 <= len(sections["pearls"]) <= 5,
+                 f"Incomplete {lang} walkthrough")
+    excerpts = lesson.get("source_excerpts")
+    _require(isinstance(excerpts, list), "Invalid source excerpts")
+    for excerpt in excerpts:
+        _require(isinstance(excerpt, dict) and excerpt.get("pmid") == source["pmid"] and excerpt.get("url") == source["url"]
+                 and isinstance(excerpt.get("text"), str) and excerpt["text"].strip(), "Excerpt is linked to the wrong source")
+        if excerpt.get("kind") == "physician_entered":
+            _require(set(excerpt) == {"kind", "pmid", "url", "text", "class", "level", "locator"}
+                     and all(isinstance(excerpt[key], str) and excerpt[key].strip() for key in ("class", "level", "locator")),
+                     "Physician-entered guideline lines need Class, Level, and page or table")
+        else:
+            _require(excerpt.get("kind") == "pubmed_abstract" and source["kind"] != "guideline"
+                     and set(excerpt) == {"kind", "pmid", "url", "text", "copyright"} and isinstance(excerpt["copyright"], str),
+                     "Guideline lessons may quote only physician-entered recommendation lines")
+    kinds = {excerpt["kind"] for excerpt in excerpts}
+    _require(len(kinds) <= 1 and lesson.get("lesson_provenance") == {
+        "primary_source": "pubmed_metadata", "teaching": "curated_unreviewed", "excerpts": next(iter(kinds), None),
+    }, "Lesson provenance does not match its content")
+    items = lesson.get("quiz_items")
+    texts = [excerpt["text"] for excerpt in excerpts]
+    if items:
+        _require(lesson.get("quiz_mode") == "source_excerpt" and "quiz_status" not in lesson
+                 and lesson.get("quiz_source_texts") == {source["pmid"]: texts}
+                 and len(validated_source_items(lesson)) == len(items),
+                 "Every quiz key must occur at its marked offset in a quoted source excerpt")
+    else:
+        _require(items == [] and source["kind"] == "guideline" and not excerpts
+                 and lesson.get("quiz_status") == "awaiting_physician_excerpts"
+                 and "quiz_mode" not in lesson and "quiz_source_texts" not in lesson,
+                 "Only a guideline without physician-entered lines may omit its quiz")
+    for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
+        _recorded_wording(lesson, (f"disclaimer_{lang}", f"title_{lang}"))
+        _require(lesson.get(field) == recent_markdown(lesson, lang), f"{lang} Markdown does not match the cited lesson")
+    if not recorded or fallback:
+        canonical = build_recent_lesson(pillar, lesson_date)
+        if fallback:
+            canonical = {**canonical, "id": lesson["id"], "date": lesson["date"]}
+        _require(lesson == canonical, "Lesson does not match the approved recent-source catalog")
+
+
 def validate_lesson(lesson, pillar, lesson_date, *, recorded=False, fallback=False):
     pid = pillar["id"]
+    if lesson_date >= RECENT_START_DATE or lesson.get("lesson_format") == "single_source":
+        _require(lesson.get("lesson_format") == "single_source",
+                 "Lessons from the recent-source edition must cite one recent primary source")
+        return _validate_recent_lesson(lesson, pillar, lesson_date, recorded=recorded, fallback=fallback)
     _require(lesson.get("id") == f"ebm-{lesson_date}-p{pid}-focused"
              and lesson.get("date") == lesson_date and lesson.get("pillar_id") == pid
              and lesson.get("lesson_format") == "single_guideline",

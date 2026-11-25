@@ -30,6 +30,13 @@ def alternatives(text, numeric_only=False, target=None):
     return [(text, original)] + [(text[:start] + r + text[end:], r) for r in replacements]
 
 
+def _guideline_pmid(primary):
+    if primary.get('lesson_format') == 'single_source':
+        source = primary.get('primary_source') or {}
+        return source.get('pmid') if source.get('kind') == 'guideline' else None
+    return primary['guideline_evolution']['current_guideline']['pmid']
+
+
 def validated_source_items(primary):
     sources, rows = primary.get('quiz_source_texts'), primary.get('quiz_items')
     if primary.get('quiz_mode') != 'source_excerpt' or not isinstance(sources, dict) or not isinstance(rows, list):
@@ -38,7 +45,9 @@ def validated_source_items(primary):
     guideline = (evolution.get('current_guideline') or {}).get('pmid')
     evidence = primary.get('supporting_evidence') or {}
     allowed = {guideline}
-    if (guideline and evolution.get('recommendation_id') and evidence.get('guideline_pmid') == guideline
+    if primary.get('lesson_format') == 'single_source':
+        allowed = {(primary.get('primary_source') or {}).get('pmid')}
+    elif (guideline and evolution.get('recommendation_id') and evidence.get('guideline_pmid') == guideline
             and evidence.get('recommendation_id') == evolution['recommendation_id']):
         allowed.add(evidence.get('pmid'))
     items = []
@@ -120,7 +129,7 @@ def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):
     correct = 'ABCD'[offset]
     prompt = 'Complete the verbatim source excerpt' if en else 'Điền vào chỗ trống trong trích đoạn nguyên văn'
     explanation = 'Correct answer' if en else 'Đáp án đúng'
-    kind = 'guideline' if pmid == primary['guideline_evolution']['current_guideline']['pmid'] else 'trial'
+    kind = 'guideline' if pmid == _guideline_pmid(primary) else 'trial'
     idx = 0 if kind == 'guideline' else 1
     return {
         'question': f'{prompt} (PMID {pmid}): {quote[:start]}____{quote[start + len(answer):]}',
@@ -131,7 +140,7 @@ def _source_mcq(primary, slot_idx, variant_idx, lang, difficulty, source_id):
         'option_ids': {'ABCD'[i]: str(n) for i, n in enumerate(order)},
         'generation': {'slot_idx': slot_idx, 'variant_idx': variant_idx, 'source_id': key, 'difficulty': difficulty},
         'question_kind': kind, 'difficulty': difficulty, 'subskill_idx': idx,
-        'required_subskills': sorted({0 if row['pmid'] == primary['guideline_evolution']['current_guideline']['pmid'] else 1
+        'required_subskills': sorted({0 if row['pmid'] == _guideline_pmid(primary) else 1
                                       for _, row in items}),
         'option_kinds': {c: kind for c in 'ABCD'},
         'distractor_types': {c: 'numeric' for c in 'ABCD' if c != correct},
