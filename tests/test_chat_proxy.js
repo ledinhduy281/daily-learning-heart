@@ -70,7 +70,7 @@ const busy=setup();busy.canLock=false;
 assert.equal(busy.request().error,'busy');assert.equal(busy.calls.length,0);
 const defaults = setup();
 defaults.properties.chat_daily_2026_ignored='keep';
-defaults.properties['chat_daily_2026-11-22']='300';
+defaults.properties['chat_daily_2026-11-22']='100';
 assert.equal(defaults.request().error, 'daily_cap');
 assert.equal(defaults.locked,false);assert.equal(defaults.properties.chat_daily_2026_ignored,'keep');
 for (const mode of ['http', 'empty', 'invalid', 'throw']) {
@@ -144,7 +144,7 @@ assert.equal(devices.properties[oldDeviceKey], undefined);
 assert.equal(devices.properties['chat_daily_2026-11-22'], undefined);
 assert.equal(devices.properties['chat_daily_2026-11-23'], '1');
 const global = setup({GROQ_API_KEY: 'test-only-placeholder', CHAT_DAILY_CAP: '999'});
-for (let i = 0; i < 300; i++) assert.equal(global.request({device_id: i.toString(16).padStart(64, '0')}).ok, true);
+for (let i = 0; i < 100; i++) assert.equal(global.request({device_id: i.toString(16).padStart(64, '0')}).ok, true);
 assert.equal(global.request().error, 'daily_cap');
-assert.equal(global.calls.length, 300);
+assert.equal(global.calls.length, 100);
 console.log('Apps Script chat proxy checks passed (validation, device/global caps, daily reset, privacy, upstream, prompts, testChat).');

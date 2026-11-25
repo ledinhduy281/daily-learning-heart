@@ -1,5 +1,5 @@
 /* Owner setup: Project Settings > Script Properties > GROQ_API_KEY.
- * Optional: CHAT_DAILY_CAP (300), GROQ_MODEL. Deploy a new version.
+ * Optional: CHAT_DAILY_CAP (100), GROQ_MODEL. Deploy a new version.
  * Run testChat() once in the editor to check configuration without logging the key.
  */
 var CHAT_DEVICE_DAILY_CAP = 30;
@@ -26,8 +26,8 @@ function chatHandle_(req) {
     var props = PropertiesService.getScriptProperties();
     var key = props.getProperty('GROQ_API_KEY');
     if (!key) return output({ok: false, error: 'not_configured'});
-    var capValue = Number(props.getProperty('CHAT_DAILY_CAP') || 300);
-    var cap = isFinite(capValue) && capValue >= 0 ? Math.min(300, Math.floor(capValue)) : 300;
+    var capValue = Number(props.getProperty('CHAT_DAILY_CAP') || 100);
+    var cap = isFinite(capValue) && capValue >= 0 ? Math.min(100, Math.floor(capValue)) : 100;
     var deviceHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
       (props.getProperty('PEPPER') || '') + ':' + req.device_id.toLowerCase(), Utilities.Charset.UTF_8)
       .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');

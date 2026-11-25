@@ -113,7 +113,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
         assets, gate = [step["run"] for step in steps if "run" in step]
         self.assertNotIn("continue-on-error", next(step for step in steps if "pipeline.validate_lesson" in step.get("run", "")))
-        for asset in ("index.html", "icon.svg", "manifest.json", "clinical_distractors.js",
+        for asset in ("index.html", "icon.svg", "manifest.json", "clinical_distractors.js", "case_quiz.js",
                       "clinical_mcq.js", "device_profile.js", "sync_config.js", "cloud_sync.js",
                       "search_ranking.js", "evidence_feed.js", "offline.js"):
             (self.root / asset).touch()

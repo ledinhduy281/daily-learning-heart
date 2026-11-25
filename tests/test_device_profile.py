@@ -59,7 +59,7 @@ class DeviceProfileTests(unittest.TestCase):
         self.assertEqual(len(checked), 2)
         for path in ('/.env', '/fetch_daily_ebm.py', '/data/', '/data/users.json.1.2.tmp', '/data/feedback.json', '/data/%75sers.json'):
             self.assertEqual(self.request(path)[0], 403)
-        for asset in ('device_profile.js', 'sync_config.js', 'cloud_sync.js', 'clinical_distractors.js', 'clinical_mcq.js'):
+        for asset in ('device_profile.js', 'sync_config.js', 'cloud_sync.js', 'clinical_distractors.js', 'case_quiz.js', 'clinical_mcq.js'):
             with urllib.request.urlopen(self.base + '/' + asset) as response:
                 self.assertEqual(response.status, 200)
 

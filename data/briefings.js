@@ -1398,89 +1398,154 @@ window.EBM_BRIEFINGS_DATA = {
       "lesson_format": "single_source",
       "lesson_version": 5,
       "primary_source": {
-        "id": "aha-acc-2026-perioperative",
-        "kind": "guideline",
-        "label": "AHA/ACC",
-        "name": "2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery",
-        "journal": "Circulation",
-        "online_date": "2026-09-28",
-        "pmid": "42804570",
-        "doi": "10.1161/CIR.0000000000001472",
-        "url": "https://pubmed.ncbi.nlm.nih.gov/42804570/",
+        "id": "bproad-intensive-bp-cognition",
+        "kind": "landmark_rct",
+        "label": "",
+        "name": "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
+        "journal": "BMJ",
+        "online_date": "2026-11-12",
+        "pmid": "43020520",
+        "doi": "10.1136/bmj-2026-101209",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
         "window_days": 92
       },
       "teaching": {
-        "pmid": "42804570",
+        "pmid": "43020520",
         "vi": {
           "summary": [
-            "Bài hôm nay dựa trên guideline AHA/ACC 2026 về xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim, đăng trực tuyến trên Circulation ngày 28/9/2026. Theo abstract, guideline đưa ra khuyến cáo để hướng dẫn đánh giá và xử trí tim mạch chu phẫu ở người lớn được phẫu thuật ngoài tim.",
-            "Abstract nêu guideline này cập nhật các khuyến cáo của guideline ACC/AHA 2014 bằng bằng chứng mới và thay thế guideline 2014. Ngoài ra, guideline xây dựng các chiến lược xử trí dựa trên bằng chứng, gồm điều trị thuốc, theo dõi chu phẫu và thiết bị, cho bệnh tim mạch và các bệnh nội khoa liên quan."
+            "Câu hỏi của phân tích BPROAD này: ở người đái tháo đường type 2 có huyết áp tâm thu tăng và nguy cơ tim mạch cao, hạ huyết áp tâm thu tích cực (mục tiêu <120 mm Hg) so với chuẩn (<140 mm Hg) có giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, và có thay đổi cấu trúc não trên MRI hay không.",
+            "Kết luận của tác giả: sau trung vị khoảng 4 năm, không thấy khác biệt có ý nghĩa thống kê về kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, nhưng nhóm điều trị tích cực tích lũy ít tổn thương chất trắng não hơn. Bài học liên chuyên khoa (tim mạch, nội tiết, thần kinh): mục tiêu huyết áp thấp hơn chưa được chứng minh bảo vệ nhận thức ở người đái tháo đường."
           ],
           "design": [
-            "Theo abstract, nhóm soạn thảo tìm y văn từ 8/2022 đến 3/2023 trên MEDLINE (qua PubMed), EMBASE, Cochrane Library, AHRQ và các cơ sở dữ liệu liên quan khác, chỉ gồm các nghiên cứu trên người, đăng bằng tiếng Anh.",
-            "Guideline AHA/ACC xếp từng khuyến cáo theo Class (COR) và Level (LOE). Mở guideline qua liên kết DOI ở đầu bài và đọc các bảng khuyến cáo gốc."
+            "Thử nghiệm ngẫu nhiên đa trung tâm, nhãn mở, người đánh giá kết cục được làm mù, thực hiện tại 145 trung tâm ở bảy vùng địa lý của Trung Quốc. BPROAD tuyển 12 821 người từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; 12 434 người không có sa sút trí tuệ khả dĩ lúc ban đầu được đưa vào nghiên cứu phụ về nhận thức.",
+            "Người tham gia được phân ngẫu nhiên vào điều trị tích cực (mục tiêu huyết áp tâm thu <120 mm Hg) hoặc chuẩn (<140 mm Hg) trong tối đa 5 năm. Kết cục nhận thức chính là gộp sa sút trí tuệ mọi nguyên nhân hoặc suy giảm nhận thức nhẹ; một nhóm nhỏ được chụp MRI não lúc ban đầu (n=862) và cuối nghiên cứu (n=605)."
           ],
           "findings": [
-            "Chưa có dòng khuyến cáo nào được bác sĩ nhập cho bài này, nên bài không có quiz.",
-            "Khi bác sĩ dán các dòng khuyến cáo nguyên văn (Class, Level, trang/bảng), chúng sẽ hiện ở đây và quiz sẽ được tạo từ chính các dòng đó."
+            "Có 6219 người ở nhóm tích cực và 6215 người ở nhóm chuẩn; tuổi trung bình 63,7 và 44,8% là nữ. Sau 1 năm, huyết áp tâm thu trung bình là 121,6 mm Hg ở nhóm tích cực so với 133,2 mm Hg ở nhóm chuẩn.",
+            "Sau trung vị 3,8 năm, kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ xảy ra ở 747 người nhóm tích cực (3,69 biến cố/100 người-năm) và 783 người nhóm chuẩn (3,89 biến cố/100 người-năm); HR 0,96, KTC 95% 0,86–1,06, P=0,38. Trong nhóm MRI (428 so với 434 người), thể tích tổn thương chất trắng tăng ít hơn ở nhóm tích cực (chênh lệch −0,09 cm³ sau biến đổi asinh; KTC 95% −0,15 đến −0,02; P=0,01)."
           ],
           "limits": [
-            "Không áp dụng khuyến cáo của guideline 2014 cũ khi đã có bản 2026 thay thế. Không suy ra nội dung khuyến cáo từ abstract. Bài này chưa được bác sĩ duyệt."
+            "Kết quả áp dụng cho người Trung Quốc từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; đây là phân tích kết cục phụ được định trước, không phải kết cục chính của BPROAD. Thử nghiệm nhãn mở, chỉ người đánh giá kết cục được làm mù.",
+            "Khác biệt trên MRI là kết cục hình ảnh ở một nhóm nhỏ, chưa phải lợi ích lâm sàng về nhận thức. Bản tóm tắt này dựa trên abstract PubMed, chưa được bác sĩ đối chiếu với toàn văn."
           ],
           "pearls": [
-            "Guideline chu phẫu AHA/ACC 2026 thay thế guideline ACC/AHA 2014.",
-            "Phạm vi: người lớn được phẫu thuật ngoài tim.",
-            "Luôn đọc Class và Level của từng khuyến cáo trong bảng gốc."
+            "BPROAD: hạ huyết áp tâm thu về <120 so với <140 mm Hg không giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ ở người đái tháo đường type 2 (HR 0,96; P=0,38).",
+            "Nhóm tích cực tích lũy ít tổn thương chất trắng não hơn trên MRI (P=0,01).",
+            "Khi tư vấn mục tiêu huyết áp cho người đái tháo đường, không hứa hẹn lợi ích bảo vệ trí nhớ dựa trên nghiên cứu này."
           ]
         },
         "en": {
           "summary": [
-            "Today's lesson is based on the 2026 AHA/ACC guideline for perioperative cardiovascular management for noncardiac surgery, published online in Circulation on September 28, 2026. According to its abstract, it provides recommendations to guide perioperative cardiovascular evaluation and management of adults undergoing noncardiac surgery.",
-            "The abstract states that it updates the 2014 ACC/AHA guideline with new evidence and supersedes it. It also develops evidence-based management strategies, including pharmacological therapies, perioperative monitoring, and devices, for cardiovascular disease and associated medical conditions."
+            "The question in this BPROAD analysis: in adults with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk, does intensive systolic blood pressure treatment (target <120 mm Hg) compared with standard treatment (<140 mm Hg) reduce dementia or mild cognitive impairment, and does it change brain structure on MRI?",
+            "The authors' conclusion: over a median of about four years, there was no statistically significant difference in the composite of dementia or mild cognitive impairment, but intensive treatment was associated with less accrual of cerebral white matter lesion volume. The interdisciplinary lesson (cardiology, endocrinology, neurology): a lower blood pressure target has not been shown to protect cognition in people with diabetes."
           ],
           "design": [
-            "According to the abstract, the writing committee searched the literature from August 2022 to March 2023 in MEDLINE (through PubMed), EMBASE, the Cochrane Library, AHRQ, and other relevant databases, limited to English-language human studies.",
-            "AHA/ACC guidelines grade each recommendation by Class (COR) and Level (LOE). Open the guideline through the DOI link at the top of the lesson and read the original recommendation tables."
+            "Multicentre, open-label, outcome assessor-masked randomised trial at 145 clinical centres across seven geographical regions in China. BPROAD enrolled 12 821 adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; the 12 434 without probable dementia at baseline were included in this cognitive ancillary study.",
+            "Participants were randomly assigned to intensive treatment (systolic target <120 mm Hg) or standard treatment (<140 mm Hg) for up to five years. The primary cognitive outcome was a composite of all-cause dementia or mild cognitive impairment; a subset had brain MRI at baseline (n=862) and at the end of the study (n=605)."
           ],
           "findings": [
-            "No recommendation lines have been entered by a physician for this lesson yet, so it has no quiz.",
-            "Once a physician pastes verbatim recommendation lines (Class, Level, page/table), they will appear here and the quiz will be built from those lines."
+            "There were 6219 participants in the intensive group and 6215 in the standard group; mean age was 63.7 years and 44.8% were women. After one year, mean systolic blood pressure was 121.6 mm Hg with intensive treatment and 133.2 mm Hg with standard treatment.",
+            "Over a median follow-up of 3.8 years, dementia or mild cognitive impairment occurred in 747 intensive-group participants (3.69 events per 100 person-years) and 783 standard-group participants (3.89 events per 100 person-years); hazard ratio 0.96, 95% CI 0.86 to 1.06, P=0.38. In the MRI substudy (428 v 434 participants), white matter lesion volume increased less with intensive treatment (between-group difference −0.09 asinh-transformed cm³; 95% CI −0.15 to −0.02; P=0.01)."
           ],
           "limits": [
-            "Do not apply the superseded 2014 guideline now that the 2026 version exists. Do not infer recommendations from the abstract. This lesson has not been physician-reviewed."
+            "The results apply to Chinese adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; this is a prespecified analysis of secondary outcomes, not the main BPROAD outcome. The trial was open label, with only outcome assessors masked.",
+            "The MRI difference is an imaging outcome in a small subset, not a demonstrated cognitive benefit. This summary is based on the PubMed abstract and has not been checked against the full text by a physician."
           ],
           "pearls": [
-            "The 2026 AHA/ACC perioperative guideline supersedes the 2014 ACC/AHA guideline.",
-            "Scope: adults undergoing noncardiac surgery.",
-            "Always read the Class and Level of each recommendation in the original table."
+            "BPROAD: lowering systolic blood pressure to <120 rather than <140 mm Hg did not reduce dementia or mild cognitive impairment in type 2 diabetes (HR 0.96; P=0.38).",
+            "Intensive treatment was associated with less white matter lesion accrual on MRI (P=0.01).",
+            "When counselling people with diabetes on blood pressure targets, do not promise cognitive protection on the basis of this trial."
           ]
         }
       },
-      "source_excerpts": [],
+      "source_excerpts": [
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        },
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        },
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        }
+      ],
       "pubmed_anchors": [
         {
-          "title": "2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery",
-          "pmid": "42804570",
-          "doi": "10.1161/CIR.0000000000001472",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42804570/"
+          "title": "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
+          "pmid": "43020520",
+          "doi": "10.1136/bmj-2026-101209",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/"
         }
       ],
       "lesson_provenance": {
         "primary_source": "pubmed_metadata",
         "teaching": "curated_unreviewed",
-        "excerpts": null
+        "excerpts": "pubmed_abstract"
       },
-      "quiz_status": "awaiting_physician_excerpts",
-      "quiz_items": [],
-      "title_vi": "Guideline AHA/ACC 2026: xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim",
-      "topic_focus_vi": "Guideline AHA/ACC 2026: xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim",
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "43020520": [
+          "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "43020520",
+          "quote": "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "answer": "120",
+          "start": 82,
+          "distractors": [
+            "108",
+            "132",
+            "144"
+          ]
+        },
+        {
+          "pmid": "43020520",
+          "quote": "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "answer": "121.6",
+          "start": 29,
+          "distractors": [
+            "109.4",
+            "133.8",
+            "146.0"
+          ]
+        },
+        {
+          "pmid": "43020520",
+          "quote": "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).",
+          "answer": "0.96",
+          "start": 320,
+          "distractors": [
+            "0.86",
+            "1.06",
+            "1.16"
+          ]
+        }
+      ],
+      "title_vi": "Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)",
+      "topic_focus_vi": "Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)",
       "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
-      "title_en": "2026 AHA/ACC guideline: perioperative cardiovascular management for noncardiac surgery",
-      "topic_focus_en": "2026 AHA/ACC guideline: perioperative cardiovascular management for noncardiac surgery",
+      "title_en": "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)",
+      "topic_focus_en": "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)",
       "disclaimer_en": "For education only. Consult the original source before applying.",
-      "part1_vi_markdown": "## Block A — Nguồn chính\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Đăng trực tuyến 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Nguồn này hỏi gì và kết luận gì\n\nBài hôm nay dựa trên guideline AHA/ACC 2026 về xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim, đăng trực tuyến trên Circulation ngày 28/9/2026. Theo abstract, guideline đưa ra khuyến cáo để hướng dẫn đánh giá và xử trí tim mạch chu phẫu ở người lớn được phẫu thuật ngoài tim.\n\nAbstract nêu guideline này cập nhật các khuyến cáo của guideline ACC/AHA 2014 bằng bằng chứng mới và thay thế guideline 2014. Ngoài ra, guideline xây dựng các chiến lược xử trí dựa trên bằng chứng, gồm điều trị thuốc, theo dõi chu phẫu và thiết bị, cho bệnh tim mạch và các bệnh nội khoa liên quan.\n\n## Block B — Đọc kỹ cùng nguồn\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Đăng trực tuyến 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Thiết kế và cách đọc\n\nTheo abstract, nhóm soạn thảo tìm y văn từ 8/2022 đến 3/2023 trên MEDLINE (qua PubMed), EMBASE, Cochrane Library, AHRQ và các cơ sở dữ liệu liên quan khác, chỉ gồm các nghiên cứu trên người, đăng bằng tiếng Anh.\n\nGuideline AHA/ACC xếp từng khuyến cáo theo Class (COR) và Level (LOE). Mở guideline qua liên kết DOI ở đầu bài và đọc các bảng khuyến cáo gốc.\n\n### Kết quả chính\n\nChưa có dòng khuyến cáo nào được bác sĩ nhập cho bài này, nên bài không có quiz.\n\nKhi bác sĩ dán các dòng khuyến cáo nguyên văn (Class, Level, trang/bảng), chúng sẽ hiện ở đây và quiz sẽ được tạo từ chính các dòng đó.\n\n### Giới hạn áp dụng\n\nKhông áp dụng khuyến cáo của guideline 2014 cũ khi đã có bản 2026 thay thế. Không suy ra nội dung khuyến cáo từ abstract. Bài này chưa được bác sĩ duyệt.\n\n## Điểm cần nhớ khi đi buồng\n\n- Guideline chu phẫu AHA/ACC 2026 thay thế guideline ACC/AHA 2014.\n- Phạm vi: người lớn được phẫu thuật ngoài tim.\n- Luôn đọc Class và Level của từng khuyến cáo trong bảng gốc.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
-      "part2_en_markdown": "## Block A — Primary source\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Published online 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### What this source asks and concludes\n\nToday's lesson is based on the 2026 AHA/ACC guideline for perioperative cardiovascular management for noncardiac surgery, published online in Circulation on September 28, 2026. According to its abstract, it provides recommendations to guide perioperative cardiovascular evaluation and management of adults undergoing noncardiac surgery.\n\nThe abstract states that it updates the 2014 ACC/AHA guideline with new evidence and supersedes it. It also develops evidence-based management strategies, including pharmacological therapies, perioperative monitoring, and devices, for cardiovascular disease and associated medical conditions.\n\n## Block B — Close reading of the same source\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Published online 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### Design and how to read it\n\nAccording to the abstract, the writing committee searched the literature from August 2022 to March 2023 in MEDLINE (through PubMed), EMBASE, the Cochrane Library, AHRQ, and other relevant databases, limited to English-language human studies.\n\nAHA/ACC guidelines grade each recommendation by Class (COR) and Level (LOE). Open the guideline through the DOI link at the top of the lesson and read the original recommendation tables.\n\n### Main results\n\nNo recommendation lines have been entered by a physician for this lesson yet, so it has no quiz.\n\nOnce a physician pastes verbatim recommendation lines (Class, Level, page/table), they will appear here and the quiz will be built from those lines.\n\n### Limits of application\n\nDo not apply the superseded 2014 guideline now that the 2026 version exists. Do not infer recommendations from the abstract. This lesson has not been physician-reviewed.\n\n## Take-home points for rounds\n\n- The 2026 AHA/ACC perioperative guideline supersedes the 2014 ACC/AHA guideline.\n- Scope: adults undergoing noncardiac surgery.\n- Always read the Class and Level of each recommendation in the original table.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 419
+      "part1_vi_markdown": "## Block A — Nguồn chính\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nThử nghiệm ngẫu nhiên có đối chứng · BMJ · Đăng trực tuyến 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Nguồn này hỏi gì và kết luận gì\n\nCâu hỏi của phân tích BPROAD này: ở người đái tháo đường type 2 có huyết áp tâm thu tăng và nguy cơ tim mạch cao, hạ huyết áp tâm thu tích cực (mục tiêu <120 mm Hg) so với chuẩn (<140 mm Hg) có giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, và có thay đổi cấu trúc não trên MRI hay không.\n\nKết luận của tác giả: sau trung vị khoảng 4 năm, không thấy khác biệt có ý nghĩa thống kê về kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, nhưng nhóm điều trị tích cực tích lũy ít tổn thương chất trắng não hơn. Bài học liên chuyên khoa (tim mạch, nội tiết, thần kinh): mục tiêu huyết áp thấp hơn chưa được chứng minh bảo vệ nhận thức ở người đái tháo đường.\n\n## Block B — Đọc kỹ cùng nguồn\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nThử nghiệm ngẫu nhiên có đối chứng · BMJ · Đăng trực tuyến 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Thiết kế và cách đọc\n\nThử nghiệm ngẫu nhiên đa trung tâm, nhãn mở, người đánh giá kết cục được làm mù, thực hiện tại 145 trung tâm ở bảy vùng địa lý của Trung Quốc. BPROAD tuyển 12 821 người từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; 12 434 người không có sa sút trí tuệ khả dĩ lúc ban đầu được đưa vào nghiên cứu phụ về nhận thức.\n\nNgười tham gia được phân ngẫu nhiên vào điều trị tích cực (mục tiêu huyết áp tâm thu <120 mm Hg) hoặc chuẩn (<140 mm Hg) trong tối đa 5 năm. Kết cục nhận thức chính là gộp sa sút trí tuệ mọi nguyên nhân hoặc suy giảm nhận thức nhẹ; một nhóm nhỏ được chụp MRI não lúc ban đầu (n=862) và cuối nghiên cứu (n=605).\n\n### Kết quả chính\n\nCó 6219 người ở nhóm tích cực và 6215 người ở nhóm chuẩn; tuổi trung bình 63,7 và 44,8% là nữ. Sau 1 năm, huyết áp tâm thu trung bình là 121,6 mm Hg ở nhóm tích cực so với 133,2 mm Hg ở nhóm chuẩn.\n\nSau trung vị 3,8 năm, kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ xảy ra ở 747 người nhóm tích cực (3,69 biến cố/100 người-năm) và 783 người nhóm chuẩn (3,89 biến cố/100 người-năm); HR 0,96, KTC 95% 0,86–1,06, P=0,38. Trong nhóm MRI (428 so với 434 người), thể tích tổn thương chất trắng tăng ít hơn ở nhóm tích cực (chênh lệch −0,09 cm³ sau biến đổi asinh; KTC 95% −0,15 đến −0,02; P=0,01).\n\n### Giới hạn áp dụng\n\nKết quả áp dụng cho người Trung Quốc từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; đây là phân tích kết cục phụ được định trước, không phải kết cục chính của BPROAD. Thử nghiệm nhãn mở, chỉ người đánh giá kết cục được làm mù.\n\nKhác biệt trên MRI là kết cục hình ảnh ở một nhóm nhỏ, chưa phải lợi ích lâm sàng về nhận thức. Bản tóm tắt này dựa trên abstract PubMed, chưa được bác sĩ đối chiếu với toàn văn.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> Participants were randomly assigned to receive intensive treatment targeting SBP \\<120 mm Hg or standard treatment targeting SBP \\<140 mm Hg for up to five years.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n## Điểm cần nhớ khi đi buồng\n\n- BPROAD: hạ huyết áp tâm thu về <120 so với <140 mm Hg không giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ ở người đái tháo đường type 2 (HR 0,96; P=0,38).\n- Nhóm tích cực tích lũy ít tổn thương chất trắng não hơn trên MRI (P=0,01).\n- Khi tư vấn mục tiêu huyết áp cho người đái tháo đường, không hứa hẹn lợi ích bảo vệ trí nhớ dựa trên nghiên cứu này.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part2_en_markdown": "## Block A — Primary source\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nRandomized controlled trial · BMJ · Published online 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### What this source asks and concludes\n\nThe question in this BPROAD analysis: in adults with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk, does intensive systolic blood pressure treatment (target <120 mm Hg) compared with standard treatment (<140 mm Hg) reduce dementia or mild cognitive impairment, and does it change brain structure on MRI?\n\nThe authors' conclusion: over a median of about four years, there was no statistically significant difference in the composite of dementia or mild cognitive impairment, but intensive treatment was associated with less accrual of cerebral white matter lesion volume. The interdisciplinary lesson (cardiology, endocrinology, neurology): a lower blood pressure target has not been shown to protect cognition in people with diabetes.\n\n## Block B — Close reading of the same source\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nRandomized controlled trial · BMJ · Published online 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### Design and how to read it\n\nMulticentre, open-label, outcome assessor-masked randomised trial at 145 clinical centres across seven geographical regions in China. BPROAD enrolled 12 821 adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; the 12 434 without probable dementia at baseline were included in this cognitive ancillary study.\n\nParticipants were randomly assigned to intensive treatment (systolic target <120 mm Hg) or standard treatment (<140 mm Hg) for up to five years. The primary cognitive outcome was a composite of all-cause dementia or mild cognitive impairment; a subset had brain MRI at baseline (n=862) and at the end of the study (n=605).\n\n### Main results\n\nThere were 6219 participants in the intensive group and 6215 in the standard group; mean age was 63.7 years and 44.8% were women. After one year, mean systolic blood pressure was 121.6 mm Hg with intensive treatment and 133.2 mm Hg with standard treatment.\n\nOver a median follow-up of 3.8 years, dementia or mild cognitive impairment occurred in 747 intensive-group participants (3.69 events per 100 person-years) and 783 standard-group participants (3.89 events per 100 person-years); hazard ratio 0.96, 95% CI 0.86 to 1.06, P=0.38. In the MRI substudy (428 v 434 participants), white matter lesion volume increased less with intensive treatment (between-group difference −0.09 asinh-transformed cm³; 95% CI −0.15 to −0.02; P=0.01).\n\n### Limits of application\n\nThe results apply to Chinese adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; this is a prespecified analysis of secondary outcomes, not the main BPROAD outcome. The trial was open label, with only outcome assessors masked.\n\nThe MRI difference is an imaging outcome in a small subset, not a demonstrated cognitive benefit. This summary is based on the PubMed abstract and has not been checked against the full text by a physician.\n\n**Verbatim from the PubMed abstract**\n\n> Participants were randomly assigned to receive intensive treatment targeting SBP \\<120 mm Hg or standard treatment targeting SBP \\<140 mm Hg for up to five years.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Verbatim from the PubMed abstract**\n\n> After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Verbatim from the PubMed abstract**\n\n> During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n## Take-home points for rounds\n\n- BPROAD: lowering systolic blood pressure to <120 rather than <140 mm Hg did not reduce dementia or mild cognitive impairment in type 2 diabetes (HR 0.96; P=0.38).\n- Intensive treatment was associated with less white matter lesion accrual on MRI (P=0.01).\n- When counselling people with diabetes on blood pressure targets, do not promise cognitive protection on the basis of this trial.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 976
     }
   },
   "briefings": [
@@ -1498,89 +1563,154 @@ window.EBM_BRIEFINGS_DATA = {
       "lesson_format": "single_source",
       "lesson_version": 5,
       "primary_source": {
-        "id": "aha-acc-2026-perioperative",
-        "kind": "guideline",
-        "label": "AHA/ACC",
-        "name": "2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery",
-        "journal": "Circulation",
-        "online_date": "2026-09-28",
-        "pmid": "42804570",
-        "doi": "10.1161/CIR.0000000000001472",
-        "url": "https://pubmed.ncbi.nlm.nih.gov/42804570/",
+        "id": "bproad-intensive-bp-cognition",
+        "kind": "landmark_rct",
+        "label": "",
+        "name": "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
+        "journal": "BMJ",
+        "online_date": "2026-11-12",
+        "pmid": "43020520",
+        "doi": "10.1136/bmj-2026-101209",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
         "window_days": 92
       },
       "teaching": {
-        "pmid": "42804570",
+        "pmid": "43020520",
         "vi": {
           "summary": [
-            "Bài hôm nay dựa trên guideline AHA/ACC 2026 về xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim, đăng trực tuyến trên Circulation ngày 28/9/2026. Theo abstract, guideline đưa ra khuyến cáo để hướng dẫn đánh giá và xử trí tim mạch chu phẫu ở người lớn được phẫu thuật ngoài tim.",
-            "Abstract nêu guideline này cập nhật các khuyến cáo của guideline ACC/AHA 2014 bằng bằng chứng mới và thay thế guideline 2014. Ngoài ra, guideline xây dựng các chiến lược xử trí dựa trên bằng chứng, gồm điều trị thuốc, theo dõi chu phẫu và thiết bị, cho bệnh tim mạch và các bệnh nội khoa liên quan."
+            "Câu hỏi của phân tích BPROAD này: ở người đái tháo đường type 2 có huyết áp tâm thu tăng và nguy cơ tim mạch cao, hạ huyết áp tâm thu tích cực (mục tiêu <120 mm Hg) so với chuẩn (<140 mm Hg) có giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, và có thay đổi cấu trúc não trên MRI hay không.",
+            "Kết luận của tác giả: sau trung vị khoảng 4 năm, không thấy khác biệt có ý nghĩa thống kê về kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, nhưng nhóm điều trị tích cực tích lũy ít tổn thương chất trắng não hơn. Bài học liên chuyên khoa (tim mạch, nội tiết, thần kinh): mục tiêu huyết áp thấp hơn chưa được chứng minh bảo vệ nhận thức ở người đái tháo đường."
           ],
           "design": [
-            "Theo abstract, nhóm soạn thảo tìm y văn từ 8/2022 đến 3/2023 trên MEDLINE (qua PubMed), EMBASE, Cochrane Library, AHRQ và các cơ sở dữ liệu liên quan khác, chỉ gồm các nghiên cứu trên người, đăng bằng tiếng Anh.",
-            "Guideline AHA/ACC xếp từng khuyến cáo theo Class (COR) và Level (LOE). Mở guideline qua liên kết DOI ở đầu bài và đọc các bảng khuyến cáo gốc."
+            "Thử nghiệm ngẫu nhiên đa trung tâm, nhãn mở, người đánh giá kết cục được làm mù, thực hiện tại 145 trung tâm ở bảy vùng địa lý của Trung Quốc. BPROAD tuyển 12 821 người từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; 12 434 người không có sa sút trí tuệ khả dĩ lúc ban đầu được đưa vào nghiên cứu phụ về nhận thức.",
+            "Người tham gia được phân ngẫu nhiên vào điều trị tích cực (mục tiêu huyết áp tâm thu <120 mm Hg) hoặc chuẩn (<140 mm Hg) trong tối đa 5 năm. Kết cục nhận thức chính là gộp sa sút trí tuệ mọi nguyên nhân hoặc suy giảm nhận thức nhẹ; một nhóm nhỏ được chụp MRI não lúc ban đầu (n=862) và cuối nghiên cứu (n=605)."
           ],
           "findings": [
-            "Chưa có dòng khuyến cáo nào được bác sĩ nhập cho bài này, nên bài không có quiz.",
-            "Khi bác sĩ dán các dòng khuyến cáo nguyên văn (Class, Level, trang/bảng), chúng sẽ hiện ở đây và quiz sẽ được tạo từ chính các dòng đó."
+            "Có 6219 người ở nhóm tích cực và 6215 người ở nhóm chuẩn; tuổi trung bình 63,7 và 44,8% là nữ. Sau 1 năm, huyết áp tâm thu trung bình là 121,6 mm Hg ở nhóm tích cực so với 133,2 mm Hg ở nhóm chuẩn.",
+            "Sau trung vị 3,8 năm, kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ xảy ra ở 747 người nhóm tích cực (3,69 biến cố/100 người-năm) và 783 người nhóm chuẩn (3,89 biến cố/100 người-năm); HR 0,96, KTC 95% 0,86–1,06, P=0,38. Trong nhóm MRI (428 so với 434 người), thể tích tổn thương chất trắng tăng ít hơn ở nhóm tích cực (chênh lệch −0,09 cm³ sau biến đổi asinh; KTC 95% −0,15 đến −0,02; P=0,01)."
           ],
           "limits": [
-            "Không áp dụng khuyến cáo của guideline 2014 cũ khi đã có bản 2026 thay thế. Không suy ra nội dung khuyến cáo từ abstract. Bài này chưa được bác sĩ duyệt."
+            "Kết quả áp dụng cho người Trung Quốc từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; đây là phân tích kết cục phụ được định trước, không phải kết cục chính của BPROAD. Thử nghiệm nhãn mở, chỉ người đánh giá kết cục được làm mù.",
+            "Khác biệt trên MRI là kết cục hình ảnh ở một nhóm nhỏ, chưa phải lợi ích lâm sàng về nhận thức. Bản tóm tắt này dựa trên abstract PubMed, chưa được bác sĩ đối chiếu với toàn văn."
           ],
           "pearls": [
-            "Guideline chu phẫu AHA/ACC 2026 thay thế guideline ACC/AHA 2014.",
-            "Phạm vi: người lớn được phẫu thuật ngoài tim.",
-            "Luôn đọc Class và Level của từng khuyến cáo trong bảng gốc."
+            "BPROAD: hạ huyết áp tâm thu về <120 so với <140 mm Hg không giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ ở người đái tháo đường type 2 (HR 0,96; P=0,38).",
+            "Nhóm tích cực tích lũy ít tổn thương chất trắng não hơn trên MRI (P=0,01).",
+            "Khi tư vấn mục tiêu huyết áp cho người đái tháo đường, không hứa hẹn lợi ích bảo vệ trí nhớ dựa trên nghiên cứu này."
           ]
         },
         "en": {
           "summary": [
-            "Today's lesson is based on the 2026 AHA/ACC guideline for perioperative cardiovascular management for noncardiac surgery, published online in Circulation on September 28, 2026. According to its abstract, it provides recommendations to guide perioperative cardiovascular evaluation and management of adults undergoing noncardiac surgery.",
-            "The abstract states that it updates the 2014 ACC/AHA guideline with new evidence and supersedes it. It also develops evidence-based management strategies, including pharmacological therapies, perioperative monitoring, and devices, for cardiovascular disease and associated medical conditions."
+            "The question in this BPROAD analysis: in adults with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk, does intensive systolic blood pressure treatment (target <120 mm Hg) compared with standard treatment (<140 mm Hg) reduce dementia or mild cognitive impairment, and does it change brain structure on MRI?",
+            "The authors' conclusion: over a median of about four years, there was no statistically significant difference in the composite of dementia or mild cognitive impairment, but intensive treatment was associated with less accrual of cerebral white matter lesion volume. The interdisciplinary lesson (cardiology, endocrinology, neurology): a lower blood pressure target has not been shown to protect cognition in people with diabetes."
           ],
           "design": [
-            "According to the abstract, the writing committee searched the literature from August 2022 to March 2023 in MEDLINE (through PubMed), EMBASE, the Cochrane Library, AHRQ, and other relevant databases, limited to English-language human studies.",
-            "AHA/ACC guidelines grade each recommendation by Class (COR) and Level (LOE). Open the guideline through the DOI link at the top of the lesson and read the original recommendation tables."
+            "Multicentre, open-label, outcome assessor-masked randomised trial at 145 clinical centres across seven geographical regions in China. BPROAD enrolled 12 821 adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; the 12 434 without probable dementia at baseline were included in this cognitive ancillary study.",
+            "Participants were randomly assigned to intensive treatment (systolic target <120 mm Hg) or standard treatment (<140 mm Hg) for up to five years. The primary cognitive outcome was a composite of all-cause dementia or mild cognitive impairment; a subset had brain MRI at baseline (n=862) and at the end of the study (n=605)."
           ],
           "findings": [
-            "No recommendation lines have been entered by a physician for this lesson yet, so it has no quiz.",
-            "Once a physician pastes verbatim recommendation lines (Class, Level, page/table), they will appear here and the quiz will be built from those lines."
+            "There were 6219 participants in the intensive group and 6215 in the standard group; mean age was 63.7 years and 44.8% were women. After one year, mean systolic blood pressure was 121.6 mm Hg with intensive treatment and 133.2 mm Hg with standard treatment.",
+            "Over a median follow-up of 3.8 years, dementia or mild cognitive impairment occurred in 747 intensive-group participants (3.69 events per 100 person-years) and 783 standard-group participants (3.89 events per 100 person-years); hazard ratio 0.96, 95% CI 0.86 to 1.06, P=0.38. In the MRI substudy (428 v 434 participants), white matter lesion volume increased less with intensive treatment (between-group difference −0.09 asinh-transformed cm³; 95% CI −0.15 to −0.02; P=0.01)."
           ],
           "limits": [
-            "Do not apply the superseded 2014 guideline now that the 2026 version exists. Do not infer recommendations from the abstract. This lesson has not been physician-reviewed."
+            "The results apply to Chinese adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; this is a prespecified analysis of secondary outcomes, not the main BPROAD outcome. The trial was open label, with only outcome assessors masked.",
+            "The MRI difference is an imaging outcome in a small subset, not a demonstrated cognitive benefit. This summary is based on the PubMed abstract and has not been checked against the full text by a physician."
           ],
           "pearls": [
-            "The 2026 AHA/ACC perioperative guideline supersedes the 2014 ACC/AHA guideline.",
-            "Scope: adults undergoing noncardiac surgery.",
-            "Always read the Class and Level of each recommendation in the original table."
+            "BPROAD: lowering systolic blood pressure to <120 rather than <140 mm Hg did not reduce dementia or mild cognitive impairment in type 2 diabetes (HR 0.96; P=0.38).",
+            "Intensive treatment was associated with less white matter lesion accrual on MRI (P=0.01).",
+            "When counselling people with diabetes on blood pressure targets, do not promise cognitive protection on the basis of this trial."
           ]
         }
       },
-      "source_excerpts": [],
+      "source_excerpts": [
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        },
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        },
+        {
+          "kind": "pubmed_abstract",
+          "pmid": "43020520",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/",
+          "text": "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).",
+          "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ."
+        }
+      ],
       "pubmed_anchors": [
         {
-          "title": "2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery",
-          "pmid": "42804570",
-          "doi": "10.1161/CIR.0000000000001472",
-          "url": "https://pubmed.ncbi.nlm.nih.gov/42804570/"
+          "title": "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
+          "pmid": "43020520",
+          "doi": "10.1136/bmj-2026-101209",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/43020520/"
         }
       ],
       "lesson_provenance": {
         "primary_source": "pubmed_metadata",
         "teaching": "curated_unreviewed",
-        "excerpts": null
+        "excerpts": "pubmed_abstract"
       },
-      "quiz_status": "awaiting_physician_excerpts",
-      "quiz_items": [],
-      "title_vi": "Guideline AHA/ACC 2026: xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim",
-      "topic_focus_vi": "Guideline AHA/ACC 2026: xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim",
+      "quiz_mode": "source_excerpt",
+      "quiz_source_texts": {
+        "43020520": [
+          "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38)."
+        ]
+      },
+      "quiz_items": [
+        {
+          "pmid": "43020520",
+          "quote": "Participants were randomly assigned to receive intensive treatment targeting SBP <120 mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
+          "answer": "120",
+          "start": 82,
+          "distractors": [
+            "108",
+            "132",
+            "144"
+          ]
+        },
+        {
+          "pmid": "43020520",
+          "quote": "After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
+          "answer": "121.6",
+          "start": 29,
+          "distractors": [
+            "109.4",
+            "133.8",
+            "146.0"
+          ]
+        },
+        {
+          "pmid": "43020520",
+          "quote": "During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).",
+          "answer": "0.96",
+          "start": 320,
+          "distractors": [
+            "0.86",
+            "1.06",
+            "1.16"
+          ]
+        }
+      ],
+      "title_vi": "Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)",
+      "topic_focus_vi": "Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)",
       "disclaimer_vi": "Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.",
-      "title_en": "2026 AHA/ACC guideline: perioperative cardiovascular management for noncardiac surgery",
-      "topic_focus_en": "2026 AHA/ACC guideline: perioperative cardiovascular management for noncardiac surgery",
+      "title_en": "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)",
+      "topic_focus_en": "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)",
       "disclaimer_en": "For education only. Consult the original source before applying.",
-      "part1_vi_markdown": "## Block A — Nguồn chính\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Đăng trực tuyến 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Nguồn này hỏi gì và kết luận gì\n\nBài hôm nay dựa trên guideline AHA/ACC 2026 về xử trí tim mạch chu phẫu cho phẫu thuật ngoài tim, đăng trực tuyến trên Circulation ngày 28/9/2026. Theo abstract, guideline đưa ra khuyến cáo để hướng dẫn đánh giá và xử trí tim mạch chu phẫu ở người lớn được phẫu thuật ngoài tim.\n\nAbstract nêu guideline này cập nhật các khuyến cáo của guideline ACC/AHA 2014 bằng bằng chứng mới và thay thế guideline 2014. Ngoài ra, guideline xây dựng các chiến lược xử trí dựa trên bằng chứng, gồm điều trị thuốc, theo dõi chu phẫu và thiết bị, cho bệnh tim mạch và các bệnh nội khoa liên quan.\n\n## Block B — Đọc kỹ cùng nguồn\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Đăng trực tuyến 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Thiết kế và cách đọc\n\nTheo abstract, nhóm soạn thảo tìm y văn từ 8/2022 đến 3/2023 trên MEDLINE (qua PubMed), EMBASE, Cochrane Library, AHRQ và các cơ sở dữ liệu liên quan khác, chỉ gồm các nghiên cứu trên người, đăng bằng tiếng Anh.\n\nGuideline AHA/ACC xếp từng khuyến cáo theo Class (COR) và Level (LOE). Mở guideline qua liên kết DOI ở đầu bài và đọc các bảng khuyến cáo gốc.\n\n### Kết quả chính\n\nChưa có dòng khuyến cáo nào được bác sĩ nhập cho bài này, nên bài không có quiz.\n\nKhi bác sĩ dán các dòng khuyến cáo nguyên văn (Class, Level, trang/bảng), chúng sẽ hiện ở đây và quiz sẽ được tạo từ chính các dòng đó.\n\n### Giới hạn áp dụng\n\nKhông áp dụng khuyến cáo của guideline 2014 cũ khi đã có bản 2026 thay thế. Không suy ra nội dung khuyến cáo từ abstract. Bài này chưa được bác sĩ duyệt.\n\n## Điểm cần nhớ khi đi buồng\n\n- Guideline chu phẫu AHA/ACC 2026 thay thế guideline ACC/AHA 2014.\n- Phạm vi: người lớn được phẫu thuật ngoài tim.\n- Luôn đọc Class và Level của từng khuyến cáo trong bảng gốc.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
-      "part2_en_markdown": "## Block A — Primary source\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Published online 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### What this source asks and concludes\n\nToday's lesson is based on the 2026 AHA/ACC guideline for perioperative cardiovascular management for noncardiac surgery, published online in Circulation on September 28, 2026. According to its abstract, it provides recommendations to guide perioperative cardiovascular evaluation and management of adults undergoing noncardiac surgery.\n\nThe abstract states that it updates the 2014 ACC/AHA guideline with new evidence and supersedes it. It also develops evidence-based management strategies, including pharmacological therapies, perioperative monitoring, and devices, for cardiovascular disease and associated medical conditions.\n\n## Block B — Close reading of the same source\n\n**[2026 AHA/ACC/ACS/ASNC/HRS/SCA/SCCT/SCMR/SVM Guideline for Perioperative Cardiovascular Management for Noncardiac Surgery](https://doi.org/10.1161/CIR.0000000000001472)**\n\nGuideline · Circulation · Published online 2026-09-28 · [PubMed 42804570](https://pubmed.ncbi.nlm.nih.gov/42804570/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### Design and how to read it\n\nAccording to the abstract, the writing committee searched the literature from August 2022 to March 2023 in MEDLINE (through PubMed), EMBASE, the Cochrane Library, AHRQ, and other relevant databases, limited to English-language human studies.\n\nAHA/ACC guidelines grade each recommendation by Class (COR) and Level (LOE). Open the guideline through the DOI link at the top of the lesson and read the original recommendation tables.\n\n### Main results\n\nNo recommendation lines have been entered by a physician for this lesson yet, so it has no quiz.\n\nOnce a physician pastes verbatim recommendation lines (Class, Level, page/table), they will appear here and the quiz will be built from those lines.\n\n### Limits of application\n\nDo not apply the superseded 2014 guideline now that the 2026 version exists. Do not infer recommendations from the abstract. This lesson has not been physician-reviewed.\n\n## Take-home points for rounds\n\n- The 2026 AHA/ACC perioperative guideline supersedes the 2014 ACC/AHA guideline.\n- Scope: adults undergoing noncardiac surgery.\n- Always read the Class and Level of each recommendation in the original table.\n\n*For education only. Consult the original source before applying.*",
-      "word_count_vi": 419
+      "part1_vi_markdown": "## Block A — Nguồn chính\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nThử nghiệm ngẫu nhiên có đối chứng · BMJ · Đăng trực tuyến 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Nguồn này hỏi gì và kết luận gì\n\nCâu hỏi của phân tích BPROAD này: ở người đái tháo đường type 2 có huyết áp tâm thu tăng và nguy cơ tim mạch cao, hạ huyết áp tâm thu tích cực (mục tiêu <120 mm Hg) so với chuẩn (<140 mm Hg) có giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, và có thay đổi cấu trúc não trên MRI hay không.\n\nKết luận của tác giả: sau trung vị khoảng 4 năm, không thấy khác biệt có ý nghĩa thống kê về kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ, nhưng nhóm điều trị tích cực tích lũy ít tổn thương chất trắng não hơn. Bài học liên chuyên khoa (tim mạch, nội tiết, thần kinh): mục tiêu huyết áp thấp hơn chưa được chứng minh bảo vệ nhận thức ở người đái tháo đường.\n\n## Block B — Đọc kỹ cùng nguồn\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nThử nghiệm ngẫu nhiên có đối chứng · BMJ · Đăng trực tuyến 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt*\n\n### Thiết kế và cách đọc\n\nThử nghiệm ngẫu nhiên đa trung tâm, nhãn mở, người đánh giá kết cục được làm mù, thực hiện tại 145 trung tâm ở bảy vùng địa lý của Trung Quốc. BPROAD tuyển 12 821 người từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; 12 434 người không có sa sút trí tuệ khả dĩ lúc ban đầu được đưa vào nghiên cứu phụ về nhận thức.\n\nNgười tham gia được phân ngẫu nhiên vào điều trị tích cực (mục tiêu huyết áp tâm thu <120 mm Hg) hoặc chuẩn (<140 mm Hg) trong tối đa 5 năm. Kết cục nhận thức chính là gộp sa sút trí tuệ mọi nguyên nhân hoặc suy giảm nhận thức nhẹ; một nhóm nhỏ được chụp MRI não lúc ban đầu (n=862) và cuối nghiên cứu (n=605).\n\n### Kết quả chính\n\nCó 6219 người ở nhóm tích cực và 6215 người ở nhóm chuẩn; tuổi trung bình 63,7 và 44,8% là nữ. Sau 1 năm, huyết áp tâm thu trung bình là 121,6 mm Hg ở nhóm tích cực so với 133,2 mm Hg ở nhóm chuẩn.\n\nSau trung vị 3,8 năm, kết cục gộp sa sút trí tuệ hoặc suy giảm nhận thức nhẹ xảy ra ở 747 người nhóm tích cực (3,69 biến cố/100 người-năm) và 783 người nhóm chuẩn (3,89 biến cố/100 người-năm); HR 0,96, KTC 95% 0,86–1,06, P=0,38. Trong nhóm MRI (428 so với 434 người), thể tích tổn thương chất trắng tăng ít hơn ở nhóm tích cực (chênh lệch −0,09 cm³ sau biến đổi asinh; KTC 95% −0,15 đến −0,02; P=0,01).\n\n### Giới hạn áp dụng\n\nKết quả áp dụng cho người Trung Quốc từ 50 tuổi bị đái tháo đường type 2, huyết áp tâm thu tăng và nguy cơ tim mạch cao; đây là phân tích kết cục phụ được định trước, không phải kết cục chính của BPROAD. Thử nghiệm nhãn mở, chỉ người đánh giá kết cục được làm mù.\n\nKhác biệt trên MRI là kết cục hình ảnh ở một nhóm nhỏ, chưa phải lợi ích lâm sàng về nhận thức. Bản tóm tắt này dựa trên abstract PubMed, chưa được bác sĩ đối chiếu với toàn văn.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> Participants were randomly assigned to receive intensive treatment targeting SBP \\<120 mm Hg or standard treatment targeting SBP \\<140 mm Hg for up to five years.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Trích nguyên văn từ abstract PubMed (tiếng Anh)**\n\n> During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n## Điểm cần nhớ khi đi buồng\n\n- BPROAD: hạ huyết áp tâm thu về <120 so với <140 mm Hg không giảm sa sút trí tuệ hoặc suy giảm nhận thức nhẹ ở người đái tháo đường type 2 (HR 0,96; P=0,38).\n- Nhóm tích cực tích lũy ít tổn thương chất trắng não hơn trên MRI (P=0,01).\n- Khi tư vấn mục tiêu huyết áp cho người đái tháo đường, không hứa hẹn lợi ích bảo vệ trí nhớ dựa trên nghiên cứu này.\n\n*Chỉ dùng cho mục đích học tập. Đối chiếu tài liệu gốc trước khi áp dụng.*",
+      "part2_en_markdown": "## Block A — Primary source\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nRandomized controlled trial · BMJ · Published online 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### What this source asks and concludes\n\nThe question in this BPROAD analysis: in adults with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk, does intensive systolic blood pressure treatment (target <120 mm Hg) compared with standard treatment (<140 mm Hg) reduce dementia or mild cognitive impairment, and does it change brain structure on MRI?\n\nThe authors' conclusion: over a median of about four years, there was no statistically significant difference in the composite of dementia or mild cognitive impairment, but intensive treatment was associated with less accrual of cerebral white matter lesion volume. The interdisciplinary lesson (cardiology, endocrinology, neurology): a lower blood pressure target has not been shown to protect cognition in people with diabetes.\n\n## Block B — Close reading of the same source\n\n**[Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial](https://doi.org/10.1136/bmj-2026-101209)**\n\nRandomized controlled trial · BMJ · Published online 2026-11-12 · [PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/)\n\n*Curated from the cited source — not yet physician-reviewed*\n\n### Design and how to read it\n\nMulticentre, open-label, outcome assessor-masked randomised trial at 145 clinical centres across seven geographical regions in China. BPROAD enrolled 12 821 adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; the 12 434 without probable dementia at baseline were included in this cognitive ancillary study.\n\nParticipants were randomly assigned to intensive treatment (systolic target <120 mm Hg) or standard treatment (<140 mm Hg) for up to five years. The primary cognitive outcome was a composite of all-cause dementia or mild cognitive impairment; a subset had brain MRI at baseline (n=862) and at the end of the study (n=605).\n\n### Main results\n\nThere were 6219 participants in the intensive group and 6215 in the standard group; mean age was 63.7 years and 44.8% were women. After one year, mean systolic blood pressure was 121.6 mm Hg with intensive treatment and 133.2 mm Hg with standard treatment.\n\nOver a median follow-up of 3.8 years, dementia or mild cognitive impairment occurred in 747 intensive-group participants (3.69 events per 100 person-years) and 783 standard-group participants (3.89 events per 100 person-years); hazard ratio 0.96, 95% CI 0.86 to 1.06, P=0.38. In the MRI substudy (428 v 434 participants), white matter lesion volume increased less with intensive treatment (between-group difference −0.09 asinh-transformed cm³; 95% CI −0.15 to −0.02; P=0.01).\n\n### Limits of application\n\nThe results apply to Chinese adults aged 50 or older with type 2 diabetes, raised systolic blood pressure and increased cardiovascular risk; this is a prespecified analysis of secondary outcomes, not the main BPROAD outcome. The trial was open label, with only outcome assessors masked.\n\nThe MRI difference is an imaging outcome in a small subset, not a demonstrated cognitive benefit. This summary is based on the PubMed abstract and has not been checked against the full text by a physician.\n\n**Verbatim from the PubMed abstract**\n\n> Participants were randomly assigned to receive intensive treatment targeting SBP \\<120 mm Hg or standard treatment targeting SBP \\<140 mm Hg for up to five years.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Verbatim from the PubMed abstract**\n\n> After one year, mean SBP was 121.6 mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n**Verbatim from the PubMed abstract**\n\n> During a median follow-up of 3.8 years, the primary cognitive outcome of all cause dementia or mild cognitive impairment occurred in 747 participants (3.69 events per 100 person years) in the intensive treatment group and 783 participants (3.89 events per 100 person years) in the standard treatment group (hazard ratio 0.96, 95% confidence interval (CI) 0.86 to 1.06; P=0.38).\n\n[PubMed 43020520](https://pubmed.ncbi.nlm.nih.gov/43020520/) · © Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY-NC. No commercial re-use. See rights and permissions. Published by BMJ.\n\n## Take-home points for rounds\n\n- BPROAD: lowering systolic blood pressure to <120 rather than <140 mm Hg did not reduce dementia or mild cognitive impairment in type 2 diabetes (HR 0.96; P=0.38).\n- Intensive treatment was associated with less white matter lesion accrual on MRI (P=0.01).\n- When counselling people with diabetes on blood pressure targets, do not promise cognitive protection on the basis of this trial.\n\n*For education only. Consult the original source before applying.*",
+      "word_count_vi": 976
     },
     {
       "id": "ebm-2026-11-24-p9-focused",
