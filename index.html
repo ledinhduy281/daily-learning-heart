@@ -16,6 +16,51 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <meta name="theme-color" content="#ffffff">
+  <script>
+    (() => {
+      const key = "ebm_color_theme";
+      const system = window.matchMedia("(prefers-color-scheme: dark)");
+      const root = document.documentElement;
+      const themeColor = document.querySelector('meta[name="theme-color"]');
+      let preference;
+      let toggle;
+
+      function readPreference() {
+        try {
+          const value = localStorage.getItem(key);
+          return value === "light" || value === "dark" ? value : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function renderTheme() {
+        const dark = preference ? preference === "dark" : system.matches;
+        root.dataset.theme = dark ? "dark" : "light";
+        themeColor.content = dark ? "#151a19" : "#ffffff";
+        if (toggle) toggle.setAttribute("aria-pressed", String(dark));
+      }
+
+      preference = readPreference();
+      renderTheme();
+      system.addEventListener("change", renderTheme);
+      window.addEventListener("storage", event => {
+        if (event.key === key || event.key === null) {
+          preference = readPreference();
+          renderTheme();
+        }
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        toggle = document.getElementById("btnNightMode");
+        toggle.addEventListener("click", () => {
+          preference = root.dataset.theme === "dark" ? "light" : "dark";
+          try { localStorage.setItem(key, preference); } catch (_) {}
+          renderTheme();
+        });
+        renderTheme();
+      });
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Xem Tim Mỗi Ngày">
@@ -64,6 +109,7 @@
        ========================================================================== */
 
     :root {
+      color-scheme: light;
       --color-canvas: #ffffff;
       --color-canvas-soft: #fafafa;
       --color-canvas-night: #1c1c1c;
@@ -85,6 +131,8 @@
       --color-primary-soft: #4ade80;
       --color-on-primary: #171717;
       --color-on-dark: #ffffff;
+      --color-dark-control: #171717;
+      --color-message-user: #171717;
 
       --color-danger: #ef4444;
       --color-danger-soft: #fef2f2;
@@ -107,6 +155,44 @@
       --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
 
       --content-scale: 1;
+    }
+
+    @media screen {
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --color-canvas: #151a19;
+        --color-canvas-soft: #202826;
+        --color-canvas-night: #101513;
+        --color-canvas-night-soft: #19211f;
+        --color-hairline: #384641;
+        --color-hairline-strong: #73827d;
+        --color-hairline-cool: #2d3935;
+        --color-hairline-cool-2: #33403b;
+        --color-ink: #eef4f2;
+        --color-ink-secondary: #d8e5df;
+        --color-ink-mute: #b1c1ba;
+        --color-ink-mute-2: #9dafaa;
+        --color-ink-faint: #91a39b;
+        --color-primary-deep: #64d8a7;
+        --color-dark-control: #21352d;
+        --color-message-user: #294538;
+        --color-danger: #fca5a5;
+        --color-danger-soft: #371f23;
+        --color-danger-border: #80494d;
+        --color-danger-ink: #fecaca;
+        --color-warning: #f7bd68;
+        --color-warning-surface: #35291b;
+        --color-warning-ink: #ffd99c;
+        --color-warning-border: #8a6735;
+        --color-success-surface: #1c352a;
+        --color-success-ink: #b5f4d4;
+        --color-success-border: #4b8269;
+        --color-auth-overlay: rgba(16, 21, 19, 0.94);
+        --color-code-surface: #121715;
+        --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.25);
+        --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.3);
+        --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.45);
+      }
     }
 
     * {
@@ -215,6 +301,12 @@
       background-color: var(--color-canvas-soft);
       border-color: var(--color-primary-deep);
       color: var(--color-ink);
+    }
+
+    #btnNightMode[aria-pressed="true"] {
+      background-color: var(--color-canvas-soft);
+      color: var(--color-primary-deep);
+      border-color: var(--color-primary-deep);
     }
 
     .btn-icon-only {
@@ -718,7 +810,7 @@
     }
 
     /* ==========================================================================
-       HERO STRIP & MODE SWITCHER + DAILY ASCENDING ROTATION BANNER
+       HERO STRIP & DAILY ROTATION BANNER
        ========================================================================== */
     .hero-strip {
       padding: 28px 28px 16px;
@@ -779,69 +871,9 @@
       }
     }
 
-    .mode-switcher-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      background-color: var(--color-canvas-soft);
-      border: 1px solid var(--color-hairline);
-      border-radius: var(--rounded-md);
-      padding: 6px 8px;
-    }
-
-    .mode-tabs-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .mode-tab-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      border-radius: var(--rounded-sm);
-      border: 1px solid transparent;
-      background-color: transparent;
-      color: var(--color-ink-mute);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      font-family: inherit;
-      min-height: 36px;
-    }
-
-    .mode-tab-btn:hover {
-      color: var(--color-ink);
-    }
-
-    .mode-tab-btn.active {
-      background-color: var(--color-canvas);
-      color: var(--color-ink);
-      border-color: var(--color-hairline-strong);
-      box-shadow: var(--shadow-1);
-    }
-
-    .mode-tab-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: var(--rounded-full);
-      background-color: var(--color-hairline-strong);
-    }
-
-    .mode-tab-btn.active .mode-tab-dot {
-      background-color: var(--color-primary);
-    }
-
-    .mode-meta-caption {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--color-ink-mute);
-      padding-right: 6px;
+    .today-pillar-heading {
+      font-size: 15px;
+      font-weight: 600;
     }
 
     /* Daily Ascending Rotation Banner */
@@ -927,171 +959,6 @@
     }
 
     /* ==========================================================================
-       10 CORE PILLARS MAP (ONLY TODAY'S PILLAR LIT IN DAILY MODE)
-       ========================================================================== */
-    .pillars-strip {
-      max-width: 1440px;
-      margin: 0 auto 20px;
-      padding: 0 28px;
-      width: 100%;
-    }
-
-    @media (max-width: 768px) {
-      .pillars-strip {
-        padding: 0 16px;
-      }
-    }
-
-    .pillars-grid-container {
-      background-color: var(--color-canvas);
-      border: 1px solid var(--color-hairline);
-      border-radius: var(--rounded-lg);
-      padding: 16px;
-      box-shadow: var(--shadow-1);
-    }
-
-    .pillars-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--color-hairline-cool);
-    }
-
-    .pillars-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--color-ink);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .pillars-indicator-text {
-      font-size: 12px;
-      color: var(--color-ink-mute);
-    }
-
-    .pillars-tiles-track {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 8px;
-      overflow-x: auto;
-    }
-
-    @media (max-width: 1200px) {
-      .pillars-tiles-track {
-        grid-template-columns: repeat(5, 1fr);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .pillars-tiles-track {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .pillar-tile-btn {
-      background-color: var(--color-canvas);
-      border: 1px solid var(--color-hairline);
-      border-radius: var(--rounded-md);
-      padding: 10px 11px;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-family: inherit;
-      min-width: 0;
-    }
-
-    .pillar-tile-btn.muted-scheduled {
-      background-color: var(--color-canvas-soft);
-      color: var(--color-ink-mute);
-    }
-
-    .pillar-tile-btn:hover {
-      border-color: var(--color-ink);
-      background-color: var(--color-canvas);
-    }
-
-    .pillar-tile-btn.active {
-      border-color: var(--color-ink);
-      background-color: var(--color-canvas);
-      box-shadow: var(--shadow-1);
-    }
-
-    .pillar-tile-btn.is-today {
-      border-top: 3px solid var(--color-primary);
-      background-color: var(--color-canvas);
-    }
-
-    .tile-num-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--color-ink-mute);
-    }
-
-    .tile-badge-today {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--color-on-primary);
-      background-color: var(--color-primary);
-      padding: 1px 6px;
-      border-radius: var(--rounded-full);
-      white-space: nowrap;
-    }
-
-    .tile-badge-scheduled {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--color-ink-mute-2);
-      white-space: nowrap;
-    }
-
-    .tile-dot-active {
-      width: 6px;
-      height: 6px;
-      border-radius: var(--rounded-full);
-      background-color: var(--color-ink);
-    }
-
-    .tile-title-main {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--color-ink);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .pillar-tile-btn.muted-scheduled .tile-title-main {
-      color: var(--color-ink-mute);
-    }
-
-    .tile-sub-status {
-      font-size: 11px;
-      color: var(--color-ink-mute-2);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* ==========================================================================
        PER-PILLAR HISTORY DIAGRAM (STRICTLY SCOPED TO ONE SELECTED PILLAR)
        ========================================================================== */
     .history-diagram-strip {
@@ -1129,6 +996,7 @@
     }
 
     .history-diagram-title {
+      margin: 0;
       font-size: 15px;
       font-weight: 500;
       color: var(--color-ink);
@@ -1136,6 +1004,11 @@
       align-items: center;
       gap: 8px;
       letter-spacing: -0.2px;
+    }
+
+    .history-pillar-field {
+      max-width: 100%;
+      align-self: flex-start;
     }
 
     .history-scope-badge {
@@ -1153,6 +1026,7 @@
     }
 
     .history-diagram-track {
+      position: relative;
       display: flex;
       align-items: stretch;
       gap: 10px;
@@ -1295,34 +1169,6 @@
       flex-direction: column;
       gap: 12px;
       min-width: 0;
-    }
-
-    .sidebar-mode-box {
-      background-color: var(--color-canvas-soft);
-      border: 1px solid var(--color-hairline);
-      border-radius: var(--rounded-md);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .sidebar-mode-title {
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--color-ink);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .sidebar-mode-desc {
-      font-size: 12px;
-      color: var(--color-ink-mute);
-      line-height: 1.45;
     }
 
     .supa-select-input {
@@ -1497,9 +1343,9 @@
     .article-rotation-notice {
       margin: 10px 0 0;
       padding: 8px 12px;
-      border-left: 3px solid #d97706;
-      background: #fffbeb;
-      color: #78350f;
+      border-left: 3px solid var(--color-warning-ink, #d97706);
+      background: var(--color-warning-surface, #fffbeb);
+      color: var(--color-warning-ink, #78350f);
       font-size: 0.85rem;
       line-height: 1.45;
       border-radius: 6px;
@@ -1659,8 +1505,8 @@
 
     .btn-feedback-icon.active-like {
       border-color: var(--color-primary);
-      background-color: #ecfdf5;
-      color: #065f46;
+      background-color: var(--color-success-surface, #ecfdf5);
+      color: var(--color-success-ink, #065f46);
     }
     .btn-feedback-icon.active-like i {
       color: var(--color-primary-deep);
@@ -1668,17 +1514,17 @@
 
     .btn-feedback-icon.active-dislike {
       border-color: #f59e0b;
-      background-color: #fffbeb;
-      color: #92400e;
+      background-color: var(--color-warning-surface, #fffbeb);
+      color: var(--color-warning-ink, #92400e);
     }
     .btn-feedback-icon.active-dislike i {
-      color: #d97706;
+      color: var(--color-warning-ink, #d97706);
     }
 
     .btn-feedback-icon.active-report {
       border-color: var(--color-danger-border);
       background-color: var(--color-danger-soft);
-      color: #991b1b;
+      color: var(--color-danger-ink, #991b1b);
     }
     .btn-feedback-icon.active-report i {
       color: var(--color-danger);
@@ -2160,15 +2006,15 @@
     }
 
     .impact-cell.change {
-      background-color: #f0fdf4;
-      border: 1px solid #bbf7d0;
+      background-color: var(--color-success-surface, #f0fdf4);
+      border: 1px solid var(--color-success-border, #bbf7d0);
     }
     .impact-cell.change .cell-label {
-      color: #166534;
+      color: var(--color-success-ink, #166534);
       font-weight: 500;
     }
     .impact-cell.change .cell-text {
-      color: #14532d;
+      color: var(--color-success-ink, #14532d);
     }
 
     .impact-cell.caution {
@@ -2176,11 +2022,11 @@
       border: 1px solid var(--color-danger-border);
     }
     .impact-cell.caution .cell-label {
-      color: #991b1b;
+      color: var(--color-danger-ink, #991b1b);
       font-weight: 500;
     }
     .impact-cell.caution .cell-text {
-      color: #7f1d1d;
+      color: var(--color-danger-ink, #7f1d1d);
     }
 
     /* ==========================================================================
@@ -2242,9 +2088,9 @@
     }
 
     .pearl-type-tag.trial {
-      background-color: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      color: #065f46;
+      background-color: var(--color-success-surface, #ecfdf5);
+      border: 1px solid var(--color-success-border, #a7f3d0);
+      color: var(--color-success-ink, #065f46);
     }
 
     /* ==========================================================================
@@ -2462,7 +2308,7 @@
     .auth-gate-overlay {
       position: fixed;
       inset: 0;
-      background-color: rgba(250, 250, 250, 0.94);
+      background-color: var(--color-auth-overlay, rgba(250, 250, 250, 0.94));
       backdrop-filter: blur(6px);
       display: none;
       align-items: center;
@@ -2580,7 +2426,7 @@
       display: none;
       background-color: var(--color-danger-soft);
       border: 1px solid var(--color-danger-border);
-      color: #991b1b;
+      color: var(--color-danger-ink, #991b1b);
       border-radius: var(--rounded-sm);
       padding: 10px 12px;
       font-size: 13px;
@@ -2770,8 +2616,8 @@
 
     .report-reason-btn.active {
       border-color: var(--color-primary-deep);
-      background-color: #ecfdf5;
-      color: #065f46;
+      background-color: var(--color-success-surface, #ecfdf5);
+      color: var(--color-success-ink, #065f46);
     }
 
     .supa-textarea {
@@ -2882,34 +2728,6 @@
         white-space: normal;
         line-height: 1.25;
         text-align: center;
-      }
-      .mode-switcher-bar {
-        padding: 8px;
-        gap: 8px;
-      }
-      .mode-tabs-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
-        gap: 6px;
-      }
-      .mode-tab-btn {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-        padding: 8px 6px;
-        font-size: 12px;
-        white-space: normal;
-        line-height: 1.25;
-      }
-      .mode-meta-caption {
-        width: 100%;
-        text-align: center;
-        padding: 2px 0 0;
-        font-size: 11px;
-      }
-      .pillars-grid-container {
-        padding: 14px;
       }
       .history-diagram-card {
         padding: 14px;
@@ -3034,7 +2852,7 @@
       gap: 9px;
       padding: 11px 16px;
       border-radius: 9999px;
-      background: var(--color-ink);
+      background: var(--color-dark-control);
       color: var(--color-on-dark);
       border: 1px solid rgba(62, 207, 142, 0.45);
       box-shadow: var(--shadow-2);
@@ -3087,7 +2905,7 @@
     }
     .chat-fab-btn:hover {
       transform: translateY(-2px);
-      background: #000000;
+      background: var(--color-dark-control);
       box-shadow: var(--shadow-3);
     }
     .chat-fab-dot {
@@ -3150,8 +2968,8 @@
     }
     .chat-verbosity-bar {
       padding: 6px 14px;
-      background: #fbfcfd;
-      border-bottom: 1px solid var(--color-border);
+      background: var(--color-canvas-soft);
+      border-bottom: 1px solid var(--color-hairline);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -3170,8 +2988,8 @@
       gap: 3px;
       padding: 2px;
       border-radius: 8px;
-      background: var(--color-bg-subtle);
-      border: 1px solid var(--color-border);
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline);
     }
     .chat-verbosity-btn {
       border: 1px solid transparent;
@@ -3189,7 +3007,7 @@
       color: var(--color-ink);
     }
     .chat-verbosity-btn.active {
-      background: #ffffff;
+      background: var(--color-canvas);
       color: var(--color-primary-deep);
       border-color: rgba(36, 180, 126, 0.35);
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -3198,7 +3016,7 @@
     .chat-hdr-btn.active-btn {
       background: rgba(62, 207, 142, 0.28);
       border-color: var(--color-primary);
-      color: #ffffff;
+      color: var(--color-on-dark);
     }
     .chat-history-drawer {
       display: none;
@@ -3289,7 +3107,7 @@
     }
     .chat-history-del-btn:hover {
       background: var(--color-danger-soft);
-      color: #b91c1c;
+      color: var(--color-danger-ink, #b91c1c);
     }
 
     .ebm-chat-header {
@@ -3315,7 +3133,7 @@
       gap: 7px;
       font-size: 13.5px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--color-on-dark);
     }
     .ebm-chat-subtitle {
       font-size: 11px;
@@ -3346,7 +3164,7 @@
     }
     .chat-hdr-btn:hover {
       background: rgba(62, 207, 142, 0.22);
-      color: #ffffff;
+      color: var(--color-on-dark);
     }
 
     .chat-settings-drawer {
@@ -3401,8 +3219,8 @@
     .chat-free-pill {
       padding: 2px 7px;
       border-radius: var(--rounded-xs);
-      background: rgba(36, 180, 126, 0.16);
-      color: #065f46;
+      background: var(--color-success-surface, rgba(36, 180, 126, 0.16));
+      color: var(--color-success-ink, #065f46);
       font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 700;
@@ -3478,8 +3296,8 @@
       overflow-wrap: anywhere;
     }
     .chat-msg.user .chat-bubble {
-      background: var(--color-ink);
-      color: #ffffff;
+      background: var(--color-message-user);
+      color: var(--color-on-dark);
       border-bottom-right-radius: 3px;
     }
     .chat-msg.assistant .chat-bubble {
@@ -3513,7 +3331,7 @@
     .chat-bubble code {
       font-family: var(--font-mono);
       font-size: 11.5px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--color-code-surface, rgba(0, 0, 0, 0.06));
       padding: 1px 4px;
       border-radius: 3px;
       word-break: break-word;
@@ -3525,7 +3343,7 @@
       word-break: break-word;
       padding: 8px 10px;
       border-radius: 6px;
-      background: rgba(0, 0, 0, 0.05);
+      background: var(--color-code-surface, rgba(0, 0, 0, 0.05));
       margin: 6px 0;
     }
     .chat-bubble .chat-table-scroll {
@@ -3663,7 +3481,7 @@
       border-radius: 9999px;
       background: rgba(62, 207, 142, 0.14);
       border: 1px solid rgba(36, 180, 126, 0.3);
-      color: #065f46;
+      color: var(--color-success-ink, #065f46);
       font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 600;
@@ -3771,14 +3589,14 @@
       color: var(--color-ink-mute);
     }
     .socratic-eval-pill.is-correct {
-      background: #ecfdf5;
-      border-color: #a7f3d0;
-      color: #065f46;
+      background: var(--color-success-surface, #ecfdf5);
+      border-color: var(--color-success-border, #a7f3d0);
+      color: var(--color-success-ink, #065f46);
     }
     .socratic-eval-pill.is-wrong {
-      background: #fff7ed;
-      border-color: #fed7aa;
-      color: #9a3412;
+      background: var(--color-warning-surface, #fff7ed);
+      border-color: var(--color-warning-border, #fed7aa);
+      color: var(--color-warning-ink, #9a3412);
     }
     .socratic-stage-stepper {
       display: grid;
@@ -3802,15 +3620,15 @@
       text-overflow: ellipsis;
     }
     .socratic-stage-step.done {
-      border-color: #a7f3d0;
-      background: #ecfdf5;
-      color: #065f46;
+      border-color: var(--color-success-border, #a7f3d0);
+      background: var(--color-success-surface, #ecfdf5);
+      color: var(--color-success-ink, #065f46);
       font-weight: 600;
     }
     .socratic-stage-step.active {
       border-color: var(--color-primary-deep);
       background: rgba(62, 207, 142, 0.12);
-      color: #065f46;
+      color: var(--color-success-ink, #065f46);
       font-weight: 700;
     }
     .socratic-stat-chips {
@@ -3859,7 +3677,7 @@
     }
     .socratic-subskill-item.mastered {
       border-color: #10b981;
-      background: #ecfdf5;
+      background: var(--color-success-surface, #ecfdf5);
     }
     .socratic-subskill-item.just-updated-up {
       box-shadow: 0 0 0 2px rgba(36, 180, 126, 0.28);
@@ -3909,12 +3727,12 @@
       border-radius: 999px;
     }
     .socratic-delta-tag.up {
-      background: #dcfce7;
-      color: #166534;
+      background: var(--color-success-surface, #dcfce7);
+      color: var(--color-success-ink, #166534);
     }
     .socratic-delta-tag.down {
-      background: #ffedd5;
-      color: #9a3412;
+      background: var(--color-warning-surface, #ffedd5);
+      color: var(--color-warning-ink, #9a3412);
     }
     .socratic-lvl-pill {
       font-family: var(--font-mono);
@@ -3998,7 +3816,7 @@
     }
     .socratic-cmd-btn.active {
       background: var(--color-ink);
-      color: #ffffff;
+      color: var(--color-canvas);
       border-color: var(--color-ink);
     }
     .socratic-dialogue-box {
@@ -4034,8 +3852,8 @@
       overflow-wrap: anywhere;
     }
     .socratic-msg.user .socratic-msg-bubble {
-      background: var(--color-ink);
-      color: #ffffff;
+      background: var(--color-message-user);
+      color: var(--color-on-dark);
       border-bottom-right-radius: 3px;
     }
     .socratic-msg.assistant .socratic-msg-bubble {
@@ -4093,7 +3911,7 @@
     }
     .socratic-choice-btn.is-revealed-correct .socratic-choice-badge {
       background: var(--color-primary-deep);
-      color: #ffffff;
+      color: var(--color-on-primary);
       border-color: var(--color-primary-deep);
     }
     .socratic-choice-btn:disabled {
@@ -4182,7 +4000,6 @@
     @media print {
       header.nav-bar-light,
       .mode-rotation-section,
-      .pillars-strip,
       .history-diagram-strip,
       aside.sidebar-panel,
       .lang-segmented-bar,
@@ -4237,6 +4054,10 @@
           <button type="button" class="segmented-btn active" id="btnNavLangVi" style="padding: 5px 10px; font-size: 12px;">Tiếng Việt</button>
           <button type="button" class="segmented-btn" id="btnNavLangEn" style="padding: 5px 10px; font-size: 12px;">English</button>
         </div>
+        <button type="button" class="btn btn-secondary-outline" id="btnNightMode" aria-pressed="false">
+          <i class="fa-solid fa-moon" aria-hidden="true"></i>
+          <span id="labelNightMode">Chế độ tối</span>
+        </button>
 
         <!-- Authenticated User Workspace Controls -->
         <div class="user-workspace-controls" id="userWorkspaceControls">
@@ -4259,9 +4080,9 @@
           <span id="labelSocraticHeaderBtn">Trắc nghiệm ôn tập</span>
         </button>
 
-        <button type="button" class="btn btn-primary-green" id="btnRefreshToday" title="Cập nhật Trụ cột hôm nay và tra cứu trích dẫn trên NCBI PubMed">
+        <button type="button" class="btn btn-primary-green" id="btnRefreshToday">
           <i class="fa-solid fa-rotate" id="iconRefreshToday"></i>
-          <span id="labelRefreshToday">Cập nhật Trụ cột hôm nay</span>
+          <span id="labelRefreshToday">Cập Nhật Hôm Nay</span>
         </button>
       </div>
     </div>
@@ -4288,31 +4109,17 @@
       <div>
         <h1 class="hero-headline" id="heroHeadlineText">Xem Tim Mỗi Ngày</h1>
         <p class="hero-lead" id="heroLeadText">
-          Cập nhật lúc 06:00 AM (giờ Việt Nam) theo chu kỳ 1 Trụ cột mỗi ngày theo số tiến. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.
+          Nội dung được cập nhật 06:00 sáng (giờ Việt Nam) mỗi ngày
         </p>
       </div>
     </div>
   </section>
 
   <!-- ========================================================================
-       MODE SWITCHER & DAILY ASCENDING ROTATION BANNER
+       DAILY ROTATION BANNER
        ======================================================================== -->
   <section class="mode-rotation-section">
-    <div class="mode-switcher-bar">
-      <div class="mode-tabs-group" role="tablist">
-        <button type="button" class="mode-tab-btn active" id="tabModeToday" role="tab" aria-selected="true">
-          <span class="mode-tab-dot"></span>
-          <span id="labelModeToday">Bản tin Hôm nay (1 Trụ cột)</span>
-        </button>
-        <button type="button" class="mode-tab-btn" id="tabModeHistory" role="tab" aria-selected="false">
-          <span class="mode-tab-dot"></span>
-          <span id="labelModeHistory">Lịch sử &amp; Sơ đồ Trụ cột</span>
-        </button>
-      </div>
-      <div class="mode-meta-caption" id="modeMetaCaption">
-        Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu
-      </div>
-    </div>
+    <h2 class="today-pillar-heading" id="todayPillarHeading"></h2>
 
     <div class="daily-rotation-banner" id="dailyRotationBanner">
       <!-- Rendered by JS: Yesterday -> Today -> Tomorrow -->
@@ -4320,31 +4127,17 @@
   </section>
 
   <!-- ========================================================================
-       10 CORE PILLARS MAP
-       ======================================================================== -->
-  <section class="pillars-strip">
-    <div class="pillars-grid-container">
-      <div class="pillars-header-row">
-        <div class="pillars-label">
-          <i class="fa-solid fa-diagram-project"></i>
-          <span id="pillarsSectionTitle">Lịch Luân Phiên 10 Trụ Cột Nội Khoa Tim Mạch</span>
-        </div>
-        <div class="pillars-indicator-text" id="pillarsSummaryText">
-          Hôm nay chỉ xuất bản 1 Trụ cột theo lịch; bấm các trụ cột khác để mở Lịch sử &amp; Sơ đồ riêng
-        </div>
-      </div>
-
-      <div class="pillars-tiles-track" id="pillarsTilesDeck">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================================================
        PER-PILLAR HISTORY DIAGRAM (STRICTLY SCOPED TO ONE SELECTED PILLAR)
        ======================================================================== -->
-  <section class="history-diagram-strip" id="pillarHistoryDiagramPanel" style="display: none;">
+  <section class="history-diagram-strip" id="pillarHistoryDiagramPanel" aria-labelledby="historySectionTitle">
     <div class="history-diagram-card">
+      <h2 class="history-diagram-title" id="historySectionTitle">Lịch sử &amp; Sơ đồ Trụ cột</h2>
+      <div class="form-field-group history-pillar-field">
+        <label class="form-field-label" for="historyPillarSelect" id="labelHistoryPillarSelect">Chọn Trụ cột xem Lịch sử</label>
+        <select id="historyPillarSelect" class="supa-select-input">
+          <!-- Populated by JS -->
+        </select>
+      </div>
       <div class="history-diagram-header">
         <div class="history-diagram-title" id="historyDiagramTitle">
           <i class="fa-solid fa-code-branch" style="color: var(--color-primary-deep);"></i>
@@ -4371,45 +4164,20 @@
     <!-- LEFT SIDEBAR -->
     <aside class="sidebar-panel">
       <div class="search-filter-card">
-        <!-- Today Mode Sidebar Context -->
-        <div class="sidebar-mode-box" id="todaySidebarContext">
-          <div class="sidebar-mode-title">
-            <span id="todaySidebarHeading">Trọng tâm Hôm nay (1 Trụ cột)</span>
-            <span class="badge-verified-tiny" id="todaySidebarDateChip">16/11</span>
-          </div>
-          <p class="sidebar-mode-desc" id="todaySidebarDesc">
-            Chế độ Hôm nay chỉ hiển thị đúng 1 bản tin Trụ cột được phân bổ theo lịch số tiến.
-          </p>
-          <button type="button" class="btn btn-secondary-outline" id="btnOpenTodayPillarHistory" style="width: 100%; font-size: 13px;">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span id="labelOpenTodayPillarHistory">Xem Lịch sử &amp; Sơ đồ Trụ cột #1</span>
-          </button>
+        <div class="search-input-shell">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="text"
+            id="searchBriefingInput"
+            class="search-text-input"
+            placeholder="Tìm theo thử nghiệm, khuyến cáo..."
+          >
         </div>
 
-        <!-- History Mode Controls -->
-        <div id="historySidebarControls" style="display: none; flex-direction: column; gap: 10px;">
-          <div class="form-field-group">
-            <label class="form-field-label" for="historyPillarSelect" id="labelHistoryPillarSelect" style="font-size: 12px; color: var(--color-ink-mute);">Chọn Trụ cột xem Lịch sử</label>
-            <select id="historyPillarSelect" class="supa-select-input">
-              <!-- Populated by JS -->
-            </select>
-          </div>
-
-          <div class="search-input-shell">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input
-              type="text"
-              id="searchBriefingInput"
-              class="search-text-input"
-              placeholder="Tìm theo thử nghiệm, khuyến cáo..."
-            >
-          </div>
-
-          <div class="filter-tags-strip" id="historyFilterStrip">
-            <button type="button" class="filter-tag-chip active" data-hfilter="all">Tất cả kỳ</button>
-            <button type="button" class="filter-tag-chip" data-hfilter="saved">Đã lưu</button>
-            <button type="button" class="filter-tag-chip" data-hfilter="read">Đã đọc</button>
-          </div>
+        <div class="filter-tags-strip" id="historyFilterStrip">
+          <button type="button" class="filter-tag-chip active" data-hfilter="all">Tất cả kỳ</button>
+          <button type="button" class="filter-tag-chip" data-hfilter="saved">Đã lưu</button>
+          <button type="button" class="filter-tag-chip" data-hfilter="read">Đã đọc</button>
         </div>
       </div>
 
@@ -4956,15 +4724,8 @@
     const I18N = {
       vi: {
         heroHeadline: "Xem Tim Mỗi Ngày",
-        heroLead: "Mỗi ngày lúc 06:00 AM (giờ Việt Nam) hiển thị 1 trong 10 Trụ cột theo giáo trình xoay vòng soạn sẵn; khi đến lượt, bài của Trụ cột đó được hiển thị lại với ngày mới. Đối chiếu sự tiến hóa khuyến cáo ESC/ACC qua các thế hệ Guideline, các thử nghiệm RCT bản lề và thực hành tại giường bệnh.",
-        modeToday: "Bản tin Hôm nay (1 Trụ cột)",
-        modeHistory: "Lịch sử & Sơ đồ Trụ cột",
-        modeMeta: "Chu kỳ tiến 1 → 10 • Mỗi ngày 1 Trụ cột chuyên sâu",
-        pillarsSectionTitle: "Lịch Luân Phiên 10 Trụ Cột Nội Khoa Tim Mạch",
-        pillarsSummaryToday: "Hôm nay chỉ xuất bản 1 Trụ cột theo lịch; bấm các trụ cột khác để mở Lịch sử & Sơ đồ riêng",
-        pillarsSummaryHistory: "Đang ở chế độ Lịch sử: chọn bất kỳ Trụ cột nào để xem chuỗi phát triển theo tuần",
-        todayBadge: "HÔM NAY",
-        scheduledBadge: "Theo lịch",
+        heroLead: "Nội dung được cập nhật 06:00 sáng (giờ Việt Nam) mỗi ngày",
+        historySectionTitle: "Lịch sử & Sơ đồ Trụ cột",
         yesterdayLabel: "Hôm qua",
         todayLabel: "Hôm nay",
         tomorrowLabel: "Ngày mai",
@@ -4986,10 +4747,8 @@
         viewSource: "Xem Nguồn",
         bottomFeedbackTitle: "Đánh giá & Góp ý Nhà làm sản phẩm",
         bottomFeedbackSub: "Phản hồi của bác sĩ giúp hiệu chỉnh độ chính xác khuyến cáo và trải nghiệm đọc hàng ngày.",
-        refreshBtn: "Cập nhật Trụ cột hôm nay",
+        refreshBtn: "Cập Nhật Hôm Nay",
         updatingLabel: "Đang cập nhật",
-        todaySidebarHeading: "Trọng tâm Hôm nay (1 Trụ cột)",
-        todaySidebarDesc: "Chế độ Hôm nay chỉ hiển thị đúng 1 bản tin Trụ cột được phân bổ theo lịch số tiến.",
         historySelectLabel: "Chọn Trụ cột xem Lịch sử",
         searchPlaceholder: "Tìm theo thử nghiệm, khuyến cáo...",
         filterAll: "Tất cả kỳ",
@@ -5005,7 +4764,6 @@
         diagramTitlePrefix: "Sơ đồ Lịch sử Phát triển",
         noAnchors: "Chưa có dữ liệu nguồn tham chiếu.",
         noBriefingsMatch: "Chưa có bản tin phù hợp trong phạm vi lọc hiện tại.",
-        savedGlobalHeading: "Danh sách Bản tin Đã lưu (Tất cả Trụ cột)",
         weekWord: "Tuần",
         toastWorkspaceRo: "Đã vào workspace Bác sĩ Đặng Quốc Tình (chế độ chỉ đọc ngoại tuyến).",
         toastWelcome: "Chào mừng {name}!",
@@ -5047,15 +4805,8 @@
       },
       en: {
         heroHeadline: "Daily Learning Heart",
-        heroLead: "Every day at 06:00 AM (Vietnam time) the app shows 1 of 10 pillars from a pre-written rotating curriculum; when a pillar comes round again, its edition is shown again under the new date. Compares ESC/ACC guideline evolution across generations, landmark RCT evidence, and bedside clinical pitfalls.",
-        modeToday: "Today's Briefing (1 Pillar)",
-        modeHistory: "History & Pillar Roadmap",
-        modeMeta: "Ascending Cycle 1 → 10 • Strictly 1 Pillar / Day",
-        pillarsSectionTitle: "10 Core Cardiology Pillars Rotation",
-        pillarsSummaryToday: "Only today's scheduled pillar is published today; click any other pillar to inspect its history roadmap",
-        pillarsSummaryHistory: "History mode active: click any pillar to explore its weekly evolution timeline",
-        todayBadge: "TODAY",
-        scheduledBadge: "Scheduled",
+        heroLead: "Content updates daily at 06:00 (Vietnam time)",
+        historySectionTitle: "History & Pillar Roadmap",
         yesterdayLabel: "Yesterday",
         todayLabel: "Today",
         tomorrowLabel: "Tomorrow",
@@ -5077,10 +4828,8 @@
         viewSource: "View Source",
         bottomFeedbackTitle: "Rate Briefing Quality & Send Product Feedback",
         bottomFeedbackSub: "Your clinical feedback helps refine guideline precision and daily reading experience.",
-        refreshBtn: "Refresh Today's Pillar",
+        refreshBtn: "Update Today",
         updatingLabel: "Updating",
-        todaySidebarHeading: "Today's Focus (1 Pillar)",
-        todaySidebarDesc: "Today mode focuses strictly on the single scheduled pillar in the ascending rotation.",
         historySelectLabel: "Select Pillar History",
         searchPlaceholder: "Search trials, guidelines, drug classes...",
         filterAll: "All editions",
@@ -5096,7 +4845,6 @@
         diagramTitlePrefix: "Historical Evolution Diagram",
         noAnchors: "No PubMed anchor metadata recorded.",
         noBriefingsMatch: "No briefings match the current filter.",
-        savedGlobalHeading: "Saved Bookmarks (All Pillars)",
         weekWord: "Week",
         toastWorkspaceRo: "Entered Dr. Đặng Quốc Tình's workspace (offline read-only mode).",
         toastWelcome: "Welcome {name}!",
@@ -5174,21 +4922,13 @@
       btnNavBookmarks: document.getElementById("btnNavBookmarks"),
       labelNavBookmarks: document.getElementById("labelNavBookmarks"),
 
-      tabModeToday: document.getElementById("tabModeToday"),
-      tabModeHistory: document.getElementById("tabModeHistory"),
+      todayPillarHeading: document.getElementById("todayPillarHeading"),
       dailyRotationBanner: document.getElementById("dailyRotationBanner"),
 
-      pillarsTilesDeck: document.getElementById("pillarsTilesDeck"),
-      pillarsSummaryText: document.getElementById("pillarsSummaryText"),
-
-      pillarHistoryDiagramPanel: document.getElementById("pillarHistoryDiagramPanel"),
       historyDiagramTitle: document.getElementById("historyDiagramTitle"),
       historyDiagramScopeBadge: document.getElementById("historyDiagramScopeBadge"),
       historyDiagramTrack: document.getElementById("historyDiagramTrack"),
 
-      todaySidebarContext: document.getElementById("todaySidebarContext"),
-      btnOpenTodayPillarHistory: document.getElementById("btnOpenTodayPillarHistory"),
-      historySidebarControls: document.getElementById("historySidebarControls"),
       historyPillarSelect: document.getElementById("historyPillarSelect"),
       searchBriefingInput: document.getElementById("searchBriefingInput"),
       historyFilterStrip: document.getElementById("historyFilterStrip"),
@@ -6032,7 +5772,6 @@
     function openProfileBriefing(briefing) {
       closeMyAccountModal();
       App.mode = "history";
-      App.historyPillarId = Number(briefing.pillar_id);
       App.savedGlobalMode = false;
       App.historyFilter = "all";
       App.searchQuery = "";
@@ -6040,8 +5779,6 @@
       Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
         chip.classList.toggle("active", chip.dataset.hfilter === "all");
       });
-      applyLocalizationChrome();
-      renderModeSpecificPanels();
       selectBriefing(briefing);
       renderUserWorkspace();
     }
@@ -6135,14 +5872,13 @@
     function renderShellViews() {
       applyLocalizationChrome();
       renderDailyRotationBanner();
-      renderPillarsTiles();
-      renderModeSpecificPanels();
       const target = getTodaySingleBriefing();
       if (target) {
         App.selected = target;
         renderBriefingsList();
         displayCurrentBriefing();
       }
+      renderPillarHistory();
     }
 
     function renderAllViewsAfterAuth(preserveSelection = false) {
@@ -6150,8 +5886,6 @@
       applyLocalizationChrome();
       renderUserWorkspace();
       renderDailyRotationBanner();
-      renderPillarsTiles();
-      renderModeSpecificPanels();
 
       const archivedSelection = preserveSelection && selected && findArchiveBriefing(selected.id);
       if (archivedSelection) {
@@ -6161,6 +5895,7 @@
         if (b) {
           selectBriefing(b, {markRead: false});
         } else {
+          renderPillarHistory();
           renderBriefingsList();
         }
       } else {
@@ -6168,6 +5903,7 @@
         if (list.length > 0) {
           selectBriefing(list[0], {markRead: false});
         } else {
+          renderPillarHistory();
           renderBriefingsList();
         }
       }
@@ -6259,8 +5995,7 @@
         return;
       }
       renderDailyRotationBanner();
-      renderPillarsTiles();
-      if (App.mode === "history") renderPerPillarHistoryDiagram();
+      renderPillarHistory();
       renderBriefingsList();
       if (App.selected) displayCurrentBriefing();
       if (window.EbmChat && typeof window.EbmChat.onLanguageChanged === "function") {
@@ -6287,12 +6022,8 @@
       // Main Workspace & Navbar Chrome
       document.getElementById("heroHeadlineText").textContent = t("heroHeadline");
       document.getElementById("heroLeadText").textContent = t("heroLead");
-      document.getElementById("labelModeToday").textContent = t("modeToday");
-      document.getElementById("labelModeHistory").textContent = t("modeHistory");
-      document.getElementById("modeMetaCaption").textContent = t("modeMeta");
-      document.getElementById("pillarsSectionTitle").textContent = t("pillarsSectionTitle");
-      document.getElementById("pillarsSummaryText").textContent =
-        App.mode === "today" ? t("pillarsSummaryToday") : t("pillarsSummaryHistory");
+      document.getElementById("historySectionTitle").textContent = t("historySectionTitle");
+      setTxt("#labelNightMode", isVi ? "Chế độ tối" : "Night mode");
 
       document.getElementById("guidelinePipelineTitle").textContent = t("guidelinePipelineTitle");
       document.getElementById("trialsSectionTitle").textContent = t("trialsSectionTitle");
@@ -6366,16 +6097,7 @@
       setTxt("#labelImportReplace", isVi ? "Thay thế tiến độ hiện tại" : "Replace current progress");
       renderCloudSync();
 
-      document.getElementById("todaySidebarHeading").textContent = t("todaySidebarHeading");
-      document.getElementById("todaySidebarDesc").textContent = t("todaySidebarDesc");
-      document.getElementById("labelOpenTodayPillarHistory").textContent =
-        isVi
-          ? `Xem Lịch sử & Sơ đồ Trụ cột #${App.todayPillarId}`
-          : `Open Pillar #${App.todayPillarId} History & Diagram`;
-
-      document.getElementById("labelHistoryPillarSelect").textContent = App.savedGlobalMode
-        ? t("savedGlobalHeading")
-        : t("historySelectLabel");
+      document.getElementById("labelHistoryPillarSelect").textContent = t("historySelectLabel");
       Dom.searchBriefingInput.placeholder = t("searchPlaceholder");
 
       const chips = Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip");
@@ -6428,7 +6150,6 @@
       ];
       reasonMap.forEach((r) => setTxt(`#feedbackReasonGroup ${r.sel}`, isVi ? r.vi : r.en));
 
-      populatePillarSelect();
       renderUserWorkspace();
     }
 
@@ -6442,21 +6163,10 @@
       }).join("");
     }
 
-    function renderModeSpecificPanels() {
-      const isToday = App.mode === "today";
-      Dom.tabModeToday.classList.toggle("active", isToday);
-      Dom.tabModeToday.setAttribute("aria-selected", String(isToday));
-      Dom.tabModeHistory.classList.toggle("active", !isToday);
-      Dom.tabModeHistory.setAttribute("aria-selected", String(!isToday));
-
-      Dom.dailyRotationBanner.style.display = isToday ? "grid" : "none";
-      Dom.todaySidebarContext.style.display = isToday ? "flex" : "none";
-      Dom.historySidebarControls.style.display = isToday ? "none" : "flex";
-      Dom.pillarHistoryDiagramPanel.style.display = isToday ? "none" : "block";
-
-      if (!isToday) {
-        renderPerPillarHistoryDiagram();
-      }
+    function renderPillarHistory() {
+      if (App.mode === "today") App.historyPillarId = App.todayPillarId;
+      populatePillarSelect();
+      renderPerPillarHistoryDiagram();
     }
 
     function renderDailyRotationBanner() {
@@ -6469,6 +6179,8 @@
       const tdName = getPillarDisplayName(td.id, isVi);
       const ydName = getPillarDisplayName(yd.id, isVi);
       const tmName = getPillarDisplayName(tm.id, isVi);
+
+      Dom.todayPillarHeading.textContent = `${t("pillarWord")} ${td.id}: ${tdName}`;
 
       Dom.navRotationStatus.innerHTML = `
         <span class="status-dot-emerald"></span>
@@ -6486,7 +6198,7 @@
 
         <div class="rotation-banner-arrow"><i class="fa-solid fa-arrow-right"></i></div>
 
-        <button type="button" class="rotation-slot-card today" onclick="switchMode('today')">
+        <button type="button" class="rotation-slot-card today" onclick="showTodayBriefing()">
           <div class="rotation-slot-kicker">
             <span><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 4px;"></i>${t("todayLabel")} (${formatShortDdMm(App.todayDate)})</span>
             <span>#${td.id} / 10</span>
@@ -6504,74 +6216,24 @@
           <div class="rotation-slot-label">${t("pillarWord")} #${tm.id}: ${escapeHtml(tmName)}</div>
         </button>
       `;
-
-      document.getElementById("todaySidebarDateChip").textContent = formatShortDdMm(App.todayDate);
     }
 
-    function renderPillarsTiles() {
-      const isVi = App.currentLang === "vi";
-      const isTodayMode = App.mode === "today";
-
-      Dom.pillarsTilesDeck.innerHTML = App.pillars.map(p => {
-        const isTodayPillar = Number(p.id) === Number(App.todayPillarId);
-        const isActiveTile = isTodayMode
-          ? isTodayPillar
-          : Number(p.id) === Number(App.historyPillarId);
-
-        let cls = "pillar-tile-btn";
-        if (isTodayPillar) cls += " is-today";
-        if (isActiveTile) cls += " active";
-        if (isTodayMode && !isTodayPillar) cls += " muted-scheduled";
-
-        const titleText = isVi ? p.vi_name : p.name;
-        const statusSub = isTodayPillar
-          ? (isVi ? "Xuất bản hôm nay" : "Published today")
-          : (isVi ? "Bấm xem lịch sử" : "View history");
-
-        return `
-          <button type="button" class="${cls}" onclick="onPillarTileClick(${p.id})">
-            <div class="tile-num-row">
-              <span>#${p.id}</span>
-              ${isTodayPillar
-                ? `<span class="tile-badge-today">${t("todayBadge")}</span>`
-                : `<span class="tile-badge-scheduled">${t("scheduledBadge")}</span>`
-              }
-            </div>
-            <div class="tile-title-main" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</div>
-            <div class="tile-sub-status">${escapeHtml(statusSub)}</div>
-          </button>
-        `;
-      }).join("");
-    }
-
-    window.switchMode = function(mode) {
-      App.mode = mode === "history" ? "history" : "today";
-      if (App.mode === "today") {
-        App.savedGlobalMode = false;
-      } else if (App.selected) {
-        App.historyPillarId = Number(App.selected.pillar_id) || App.todayPillarId;
+    window.showTodayBriefing = function() {
+      App.mode = "today";
+      App.savedGlobalMode = false;
+      App.historyFilter = "all";
+      App.searchQuery = "";
+      Dom.searchBriefingInput.value = "";
+      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
+        chip.classList.toggle("active", chip.dataset.hfilter === "all");
+      });
+      const briefing = getTodaySingleBriefing();
+      if (briefing) selectBriefing(briefing);
+      else {
+        renderPillarHistory();
+        renderBriefingsList();
       }
-      applyLocalizationChrome();
-      renderPillarsTiles();
-      renderModeSpecificPanels();
-
-      if (App.mode === "today") {
-        const b = getTodaySingleBriefing();
-        if (b) selectBriefing(b);
-      } else {
-        const list = getHistoryScopeBriefings();
-        if (list.length > 0) {
-          if (!App.selected || (!App.savedGlobalMode && Number(App.selected.pillar_id) !== Number(App.historyPillarId))) {
-            selectBriefing(list[0]);
-          } else {
-            renderBriefingsList();
-            renderPerPillarHistoryDiagram();
-          }
-        } else {
-          renderBriefingsList();
-          renderPerPillarHistoryDiagram();
-        }
-      }
+      renderUserWorkspace();
     };
 
     window.openPillarHistory = function(pillarId) {
@@ -6582,27 +6244,15 @@
       Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.hfilter === "all");
       });
-      applyLocalizationChrome();
-      renderPillarsTiles();
-      renderModeSpecificPanels();
-
       const list = getHistoryScopeBriefings();
       if (list.length > 0) {
         selectBriefing(list[0]);
       } else {
         renderBriefingsList();
-        renderPerPillarHistoryDiagram();
+        renderPillarHistory();
         showToast(tt("toastNoPillarHistory", { pid: pillarId }));
       }
-    };
-
-    window.onPillarTileClick = function(pillarId) {
-      if (App.mode === "today" && Number(pillarId) === Number(App.todayPillarId)) {
-        const b = getTodaySingleBriefing();
-        if (b) selectBriefing(b);
-        return;
-      }
-      openPillarHistory(pillarId);
+      renderUserWorkspace();
     };
 
     /* ========================================================================
@@ -6702,15 +6352,16 @@
       Dom.historyDiagramTrack.innerHTML = htmlParts.join("");
 
       const activeNode = Dom.historyDiagramTrack.querySelector(".history-node-card.active");
-      if (activeNode && typeof activeNode.scrollIntoView === "function") {
-        activeNode.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      if (activeNode) {
+        const track = Dom.historyDiagramTrack;
+        track.scrollLeft = activeNode.offsetLeft - (track.clientWidth - activeNode.offsetWidth) / 2;
       }
     }
 
     window.onSelectHistoryNode = function(id) {
       const match = App.briefings.find(b => b.id === id);
       if (match) {
-        App.historyPillarId = Number(match.pillar_id);
+        App.mode = "history";
         selectBriefing(match);
       }
     };
@@ -6770,9 +6421,6 @@
     window.onSelectBriefingItem = function(id) {
       const match = findArchiveBriefing(id);
       if (match) {
-        if (App.mode === "history" && App.savedGlobalMode) {
-          App.historyPillarId = Number(match.pillar_id);
-        }
         selectBriefing(match);
       }
     };
@@ -6782,11 +6430,9 @@
       App.selected = briefing;
       if (App.mode === "history") {
         App.historyPillarId = Number(briefing.pillar_id);
-        populatePillarSelect();
-        renderPerPillarHistoryDiagram();
       }
+      renderPillarHistory();
       renderBriefingsList();
-      renderPillarsTiles();
       displayCurrentBriefing();
 
       if (markRead && App.user) {
@@ -6899,7 +6545,7 @@
           }).join("")}</div>`
         : "";
       const livePill = isCurrent && g.crawled_live
-        ? ` <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.14);color:#047857;border:1px solid rgba(16,185,129,0.3);vertical-align:middle;"><i class="fa-solid fa-satellite-dish"></i> Live Crawl</span>`
+        ? ` <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.14);color:var(--color-success-ink, #047857);border:1px solid rgba(16,185,129,0.3);vertical-align:middle;"><i class="fa-solid fa-satellite-dish"></i> Live Crawl</span>`
         : "";
       const titleText = escapeHtml(g.name || g.title || "");
       const titleHtml = primaryUrl
@@ -7212,7 +6858,7 @@
             <div class="stat-metric-secondary">
               ${c.ci ? `<div>${escapeHtml(c.ci)}</div>` : ""}
               ${c.p ? `<div style="color: var(--color-primary);">${escapeHtml(c.p)}</div>` : ""}
-              ${c.nnt ? `<div style="color: #9a9a9a;">${escapeHtml(c.nnt)}</div>` : ""}
+              ${c.nnt ? `<div style="color: var(--color-ink-mute-2);">${escapeHtml(c.nnt)}</div>` : ""}
             </div>
           </div>
 
@@ -7569,8 +7215,7 @@
                 );
                 if (nowHasToday && (prevIso !== App.todayDate || beforeSelId !== (getTodaySingleBriefing() || {}).id)) {
                   renderDailyRotationBanner();
-                  renderPillarsTiles();
-                  renderModeSpecificPanels();
+                  renderPillarHistory();
                   if (App.mode === "today") {
                     const target = getTodaySingleBriefing();
                     if (target) selectBriefing(target);
@@ -7602,8 +7247,7 @@
         );
         if (exactAfterReload) {
           renderDailyRotationBanner();
-          renderPillarsTiles();
-          renderModeSpecificPanels();
+          renderPillarHistory();
           if (App.mode === "today") {
             const target = getTodaySingleBriefing();
             if (target) selectBriefing(target);
@@ -7664,8 +7308,7 @@
           App.todayDate = getScheduledCycleDate();
           computeRotationPillarsFromDate(App.todayDate);
           renderDailyRotationBanner();
-          renderPillarsTiles();
-          renderModeSpecificPanels();
+          renderPillarHistory();
           const target = getTodaySingleBriefing();
           if (target && App.mode === "today") selectBriefing(target);
           setProgress(100, "Đã đồng bộ bản tin theo khuyến cáo tuyển chọn.");
@@ -7697,8 +7340,7 @@
               } catch (_) {}
 
               renderDailyRotationBanner();
-              renderPillarsTiles();
-              renderModeSpecificPanels();
+              renderPillarHistory();
 
               if (App.mode === "today") {
                 const target = data.briefing || getTodaySingleBriefing();
@@ -7737,8 +7379,7 @@
         if (data.rotation_state) App.rotation = data.rotation_state;
         setProgress(100, "Hoàn tất!");
         renderDailyRotationBanner();
-        renderPillarsTiles();
-        renderModeSpecificPanels();
+        renderPillarHistory();
         if (data.briefing) selectBriefing(data.briefing);
         showToast(t("toastTodayDone"));
       } catch (err) {
@@ -7802,12 +7443,8 @@
           Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
             chip.classList.toggle("active", chip.dataset.hfilter === "saved");
           });
-          applyLocalizationChrome();
-          renderPillarsTiles();
-          renderModeSpecificPanels();
           const list = getHistoryScopeBriefings();
           if (list.length > 0) {
-            App.historyPillarId = Number(list[0].pillar_id);
             selectBriefing(list[0]);
           } else {
             renderBriefingsList();
@@ -7818,8 +7455,6 @@
           Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
             chip.classList.toggle("active", chip.dataset.hfilter === "all");
           });
-          applyLocalizationChrome();
-          renderModeSpecificPanels();
           const list = getHistoryScopeBriefings();
           if (list.length > 0) selectBriefing(list[0]);
           else renderBriefingsList();
@@ -7827,19 +7462,9 @@
         renderUserWorkspace();
       });
 
-      // Brand click returns to Today's single pillar mode
       document.getElementById("brandHomeLink").addEventListener("click", (e) => {
         e.preventDefault();
-        switchMode("today");
-      });
-
-      // Mode Switcher Tabs
-      Dom.tabModeToday.addEventListener("click", () => switchMode("today"));
-      Dom.tabModeHistory.addEventListener("click", () => switchMode("history"));
-
-      // Quick open today's pillar history from sidebar
-      Dom.btnOpenTodayPillarHistory.addEventListener("click", () => {
-        openPillarHistory(App.todayPillarId);
+        showTodayBriefing();
       });
 
       // History Pillar Dropdown
@@ -7851,6 +7476,7 @@
       Dom.historyFilterStrip.addEventListener("click", (e) => {
         const chip = e.target.closest(".filter-tag-chip");
         if (!chip) return;
+        App.mode = "history";
         Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(b => b.classList.remove("active"));
         chip.classList.add("active");
         App.historyFilter = chip.dataset.hfilter || "all";
@@ -7863,6 +7489,7 @@
 
       // Search Input
       Dom.searchBriefingInput.addEventListener("input", (e) => {
+        App.mode = "history";
         App.searchQuery = e.target.value;
         renderBriefingsList();
       });
@@ -8093,7 +7720,7 @@
         if (this.quota.exhausted || rem <= 0) {
           Dom.chatModeBadge.textContent = isVi ? "Đã ngắt AI hôm nay" : "AI paused today";
           Dom.chatModeBadge.style.background = "var(--color-danger-soft)";
-          Dom.chatModeBadge.style.color = "#b91c1c";
+          Dom.chatModeBadge.style.color = "var(--color-danger-ink, #b91c1c)";
         } else {
           Dom.chatModeBadge.textContent = isVi ? `Còn ${rem}/${this.quota.limit} lượt` : `${rem}/${this.quota.limit} left`;
           Dom.chatModeBadge.style.background = "";
