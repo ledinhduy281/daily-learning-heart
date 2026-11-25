@@ -4182,9 +4182,9 @@
         </div>
 
         <div class="filter-tags-strip" id="historyFilterStrip">
-          <button type="button" class="filter-tag-chip active" data-hfilter="all">Tất cả kỳ</button>
-          <button type="button" class="filter-tag-chip" data-hfilter="saved">Đã lưu</button>
-          <button type="button" class="filter-tag-chip" data-hfilter="read">Đã đọc</button>
+          <button type="button" class="filter-tag-chip" data-hfilter="all" aria-pressed="false">Tất cả kỳ</button>
+          <button type="button" class="filter-tag-chip" data-hfilter="saved" aria-pressed="false">Đã lưu</button>
+          <button type="button" class="filter-tag-chip" data-hfilter="read" aria-pressed="false">Đã đọc</button>
         </div>
       </div>
 
@@ -5783,9 +5783,6 @@
       App.historyFilter = "all";
       App.searchQuery = "";
       Dom.searchBriefingInput.value = "";
-      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
-        chip.classList.toggle("active", chip.dataset.hfilter === "all");
-      });
       selectBriefing(briefing);
       renderUserWorkspace();
     }
@@ -6231,9 +6228,6 @@
       App.historyFilter = "all";
       App.searchQuery = "";
       Dom.searchBriefingInput.value = "";
-      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
-        chip.classList.toggle("active", chip.dataset.hfilter === "all");
-      });
       const briefing = getTodaySingleBriefing();
       if (briefing) selectBriefing(briefing);
       else {
@@ -6248,9 +6242,6 @@
       App.savedGlobalMode = false;
       App.historyFilter = "all";
       App.historyPillarId = Number(pillarId);
-      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.hfilter === "all");
-      });
       const list = getHistoryScopeBriefings();
       if (list.length > 0) {
         selectBriefing(list[0]);
@@ -6378,9 +6369,15 @@
        ======================================================================== */
     function renderBriefingsList() {
       const isVi = App.currentLang === "vi";
+      const isToday = App.mode === "today";
+      Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
+        const active = !isToday && chip.dataset.hfilter === App.historyFilter;
+        chip.classList.toggle("active", active);
+        chip.setAttribute("aria-pressed", String(active));
+      });
       let list = [];
 
-      if (App.mode === "today") {
+      if (isToday) {
         const single = getTodaySingleBriefing();
         if (single) list = [single];
       } else {
@@ -7447,9 +7444,6 @@
         if (App.savedGlobalMode) {
           App.mode = "history";
           App.historyFilter = "saved";
-          Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
-            chip.classList.toggle("active", chip.dataset.hfilter === "saved");
-          });
           const list = getHistoryScopeBriefings();
           if (list.length > 0) {
             selectBriefing(list[0]);
@@ -7459,9 +7453,6 @@
           }
         } else {
           App.historyFilter = "all";
-          Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(chip => {
-            chip.classList.toggle("active", chip.dataset.hfilter === "all");
-          });
           const list = getHistoryScopeBriefings();
           if (list.length > 0) selectBriefing(list[0]);
           else renderBriefingsList();
@@ -7484,8 +7475,6 @@
         const chip = e.target.closest(".filter-tag-chip");
         if (!chip) return;
         App.mode = "history";
-        Dom.historyFilterStrip.querySelectorAll(".filter-tag-chip").forEach(b => b.classList.remove("active"));
-        chip.classList.add("active");
         App.historyFilter = chip.dataset.hfilter || "all";
         if (App.historyFilter !== "saved") {
           App.savedGlobalMode = false;
