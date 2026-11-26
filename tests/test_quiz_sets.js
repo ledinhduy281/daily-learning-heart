@@ -63,6 +63,11 @@ function fakeGroq(faults = []) {
       assert.match(system, /at least one theory question and one clinical case for this skill/);
       questions = questions.filter(q => q.skill === target);
       assert.equal(body.max_tokens, 2550);
+      const fault = faults[candidateBatch];
+      if (target === 1 && (fault === "theory-only" || fault === "case-only" ||
+          (fault === "mix-once" && !system.includes("previous practice batch")))) {
+        questions.forEach(q => {q.type = fault === "case-only" ? "case" : "theory";});
+      }
     }
     const prior = JSON.parse(user.split("PRIOR STEMS (do not repeat): ").at(-1));
     assert.ok(prior.length <= 24 && prior.every(s => s.length <= 100));
@@ -78,6 +83,10 @@ function fakeGroq(faults = []) {
     return reply({skills: candidate.skills, questions});
   }};
 }
+const practiceTargets = calls => calls.flatMap(body => {
+  const target = body.messages[1].content.match(/REQUESTED SKILL INDEX: (\d+)/)?.[1];
+  return target == null ? [] : [Number(target)];
+});
 const env = {GROQ_API_KEY: "test-only-placeholder"};
 const read = () => {
   const s = {window: {}};
@@ -90,7 +99,7 @@ const quiet = () => {};
   assert.equal(await main({root, env: {}, date, log: quiet}), 0, "no key: nothing to do");
   assert.ok(!fs.existsSync(setPath));
 
-  const g = fakeGroq(["quote", "numbers", "resolve"]);
+  const g = fakeGroq(["quote", "numbers", "resolve", "mix-once"]);
   const logs = [];
   assert.equal(await main({root, env, date, fetchImpl: g.fetchImpl, log: m => logs.push(m)}), 3);
   const sets = read()[id];
@@ -114,12 +123,20 @@ const quiet = () => {};
   const solverStarts = g.calls.filter(b => b.messages[0].content.startsWith("Answer each"))
     .map(b => Number(b.messages[1].content.match(/^Q(\d+): /m)[1]));
   assert.deepEqual(solverStarts, [1, 8, 15, 1, 8, 15, 1, 8, 15, 1, 8, 15]);
+  assert.deepEqual(practiceTargets(g.calls), [0, 1, 2, 3, 0, 1, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]);
 
   const never = async () => assert.fail("the generator must not call the model");
   assert.equal(await main({root, env, date, fetchImpl: never, log: quiet}), 0, "three valid sets are left alone");
   assert.equal(await main({root, env, date: nextDate, fetchImpl: never, log: quiet}), 0, "no lesson for that date");
 
   publishLessons([lesson, {...lesson, id: nextId, date: nextDate}]);
+  const unmixed = fakeGroq(["theory-only", "case-only", "theory-only", "case-only", "theory-only", "case-only"]);
+  assert.equal(await main({root, env, date: nextDate, fetchImpl: unmixed.fetchImpl, log: m => logs.push(m)}), 0);
+  assert.deepEqual(practiceTargets(unmixed.calls), Array.from({length: 6}, () => [0, 1, 1]).flat());
+  assert.equal(unmixed.calls.length, 24, "nothing beyond the failed skill is requested in each rejected round");
+  assert.ok(logs.some(m => /"practice_mix":6/.test(m)));
+  assert.equal(read()[nextId], undefined, "a course with a persistently unmixed skill is not published");
+
   const broken = fakeGroq(["dose", "length", "count", "count", "count", "count"]);
   assert.equal(await main({root, env, date: nextDate, fetchImpl: broken.fetchImpl, log: m => logs.push(m)}), 0);
   assert.ok(logs.some(m => /"dose":1/.test(m) && /"count":5/.test(m)), logs.join("\n"));

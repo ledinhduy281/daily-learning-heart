@@ -131,11 +131,18 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log, philosop
     let skills, problem;
     for (const [phase, count, target] of phases) {
       const prior = [...seen, ...items.map(i => i.stem_en)].slice(-PRIOR_STEM_LIMIT).map(s => s.slice(0, PRIOR_STEM_CHARS));
-      const generation = await groq(key, model, systemPrompt(ground.pmid, philosophy, phase),
+      const system = systemPrompt(ground.pmid, philosophy, phase);
+      const request = (retry = false) => groq(key, model, system + (retry ?
+        '\nThe previous practice batch lacked the required mix. Regenerate this skill with both kinds.' : ''),
         `${header}\n\nSKILLS (by array index): ${JSON.stringify(skills || [])}\n` +
         (target == null ? '' : `REQUESTED SKILL INDEX: ${target}\n`) +
         `PRIOR STEMS (do not repeat): ${JSON.stringify(prior)}`,
         fetchImpl, count * TOKENS_PER_QUESTION, log, phase);
+      const missingMix = result => target != null && Array.isArray(result?.questions) &&
+        result.questions.length === count && !CaseQuiz.hasMixedTypes(result.questions);
+      let generation = await request();
+      if (missingMix(generation)) generation = await request(true);
+      if (missingMix(generation)) { problem = 'practice_mix'; break; }
       if (!generation) { problem = 'upstream'; break; }
       if (!Array.isArray(generation.questions) || generation.questions.length !== count ||
           (phase === 'diagnostic' && (!Array.isArray(generation.skills) || generation.skills.length !== 4))) {
