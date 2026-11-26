@@ -35,6 +35,7 @@ function fakeGroq(faults = []) {
       assert.deepEqual(stems, candidate.items.map(item => item.stem_en));
       assert.deepEqual([...user.matchAll(/^Cited excerpt: \[(\d+)\]$/gm)].map(m => Number(m[1])),
         candidate.items.map(item => item.excerpt));
+      assert.ok(!user.match(/^[A-D]\. (?:\([A-D]\)|[A-D][.)])/m), "the solver sees only one option letter");
       const answers = candidate.items.map(item => item.answer);
       if (faults[batch] === "resolve") answers[0] = "D";
       return reply({answers});
@@ -42,7 +43,10 @@ function fakeGroq(faults = []) {
     assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
     const phase = system.match(/phase \("(diagnostic|practice|final)"\)/)[1];
     if (phase === "diagnostic") candidate = structuredClone(course(++batch + 1));
-    let questions = candidate.items.filter(i => i.phase === phase).map(i => ({...i, quote: undefined}));
+    const prefixes = ["A. ", "(B) ", "C) ", "D: "];
+    let questions = candidate.items.filter(i => i.phase === phase).map(i => ({...i, quote: undefined,
+      options: i.options.map((o, j) => ({vi: prefixes[j] + o.vi, en: prefixes[j] + o.en})),
+    }));
     if (phase === "practice") {
       const target = user.match(/REQUESTED SKILL INDICES: ([0-9]), ([0-9])/).slice(1).map(Number);
       questions = questions.filter(q => target.includes(q.skill));
@@ -79,6 +83,9 @@ const quiet = () => {};
     assert.ok(set.items.some(i => i.type === "case") && set.items.some(i => i.type === "theory"));
     assert.ok(set.items.every(i => i.ai_generated && i.pmid === lesson.primary_source.pmid &&
       lesson.quiz_source_texts[i.pmid].includes(i.quote)));
+    for (const item of set.items) {
+      for (const option of item.options) assert.doesNotMatch(option.vi + "\n" + option.en, /^(?:\([A-D]\)|[A-D][.):])/m);
+    }
   }
   assert.equal(new Set(sets.map(s => s.set_id)).size, 3, "set ids are unique");
   const allItems = sets.flatMap(s => s.items);

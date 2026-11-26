@@ -106,6 +106,13 @@ async function buildSets(lesson, existing, {key, model, fetchImpl, log, philosop
         }
         if (item.phase !== phase || (target && !target.includes(item.skill))) { problem = 'shape'; break; }
         const candidate = {...item, quote: excerpts[n - 1]};
+        if (Array.isArray(candidate.options)) {
+          candidate.options = candidate.options.map(option => {
+            if (!option || typeof option !== 'object') return option;
+            const clean = value => typeof value === 'string' ? value.replace(/^\s*(?:\([A-D]\)|[A-D][.):])\s*/, '') : value;
+            return {vi: clean(option.vi), en: clean(option.en)};
+          });
+        }
         problem = CaseQuiz.rejectReason(candidate, ground) ||
           (seen.has(CaseQuiz.clean(candidate).stem_en.toLowerCase()) ? 'duplicate' : '');
         if (problem) break;
