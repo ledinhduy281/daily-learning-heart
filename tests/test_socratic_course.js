@@ -90,12 +90,33 @@ assert.equal(remediated.skills[bank.items[failed.index].skill].checks.length, or
 failed = turn(remediated, "next");
 assert.equal(failed.stage, "final", "renewed proficiency unlocks a fresh attempt");
 assert.deepEqual(failed.final, []);
-assert.notEqual(failed.index, unlocked.index, "retake substitutes a question whose answer was not revealed");
-assert.equal(bank.items[failed.index].skill, bank.items[unlocked.index].skill);
-assert.ok(!(failed.index in failed.revealed));
-const retakeStart = failed;
+const missedSkill = bank.items[unlocked.index].skill;
+const lowerTier = bank.items.findIndex(q => q.phase === "practice" && q.skill === missedSkill && q.tier === "medium");
+const hardAlternative = bank.items.findIndex((q, i) => q.phase === "practice" && q.skill === missedSkill &&
+  q.tier === "hard" && i !== remediated.index);
+const retakeState = {...remediated, revealed: {...remediated.revealed}};
+delete retakeState.revealed[lowerTier];
+assert.equal(turn(retakeState, "next").index, failed.index, "an unrevealed easier item cannot replace a hard final");
+delete retakeState.revealed[hardAlternative];
+const retakeStart = turn(retakeState, "next");
+assert.equal(retakeStart.index, hardAlternative, "an unrevealed hard practice item replaces the revealed hard final");
+assert.equal(bank.items[failed.index].tier, "hard", "with no unrevealed equivalent, use a spaced hard item");
+assert.ok(failed.index in failed.revealed);
 while (failed.stage === "final") failed = advance(failed);
 assert.equal(failed.stage, "mastered", "only the new attempt determines the retake result");
+
+const hardDiagnostic = bank.items.findIndex(q => q.phase === "diagnostic" && q.tier === "hard");
+const diagnosticSkill = bank.items[hardDiagnostic].skill;
+let diagnosticRetake = unlocked;
+const diagnosticSkillFinal = bank.items.findIndex(q => q.phase === "final" && q.skill === diagnosticSkill);
+while (diagnosticRetake.stage === "final") {
+  diagnosticRetake = advance(diagnosticRetake, diagnosticRetake.index !== diagnosticSkillFinal);
+}
+diagnosticRetake = turn(diagnosticRetake, "next");
+while (diagnosticRetake.stage === "practice") diagnosticRetake = advance(diagnosticRetake);
+for (let i = 0; i < diagnosticSkill; i++) diagnosticRetake = advance(diagnosticRetake);
+assert.ok(!(hardDiagnostic in diagnosticRetake.revealed));
+assert.equal(diagnosticRetake.index, diagnosticSkillFinal, "even a hard unrevealed diagnostic cannot replace a hard final");
 
 let integrationMiss = unlocked;
 while (bank.items[integrationMiss.index].skill !== null) integrationMiss = advance(integrationMiss);

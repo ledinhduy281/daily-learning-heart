@@ -192,9 +192,10 @@ const CaseQuiz = (() => {
     const slots = course.items.flatMap((q, i) => q.phase === 'final' ? [i] : []);
     if (state.final.length === slots.length) return false;
     const slot = slots[state.final.length];
-    const skill = course.items[slot].skill;
+    const {skill, tier} = course.items[slot];
     const alternatives = skill === null ? [] : course.items.flatMap((q, i) =>
-      i !== slot && q.skill === skill ? [i] : [])
+      i !== slot && q.phase !== 'diagnostic' && q.skill === skill &&
+      TIERS.indexOf(q.tier) >= TIERS.indexOf(tier) ? [i] : [])
       .sort((a, b) => Number(state.used.includes(a)) - Number(state.used.includes(b)));
     const index = state.finalFailed ? selectRecall(state, [slot, ...alternatives]) : slot;
     Object.assign(state, {stage: index == null ? 'exhausted' : 'final', index: index ?? -1});
