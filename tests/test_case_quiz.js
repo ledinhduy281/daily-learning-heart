@@ -89,17 +89,15 @@ const ckdComparison = {...grounded,
   explanation_vi: "Trích đoạn 2 chỉ ra rằng giảm huyết áp mạnh hơn giảm nguy cơ sự kiện tim mạch 15% và không có sự khác biệt về độ đồng nhất (heterogeneity) theo tình trạng CKD, nghĩa là lợi ích tương tự ở cả hai nhóm. Vì vậy đáp án đúng là không có sự khác biệt.",
 };
 assert.equal(CaseQuiz.rejectReason(ckdComparison, eventGround), "", "CKD status supports both groups in the published comparison");
-const contrast = {...grounded,
-  explanation_en: "The excerpt reports cardiovascular events, not cardiovascular mortality.",
-  explanation_vi: "Trích đoạn nói về biến cố tim mạch, không phải tử vong do tim mạch.",
-};
-assert.equal(CaseQuiz.rejectReason(contrast, eventGround), "", "explicit contrasts do not claim a mortality endpoint");
-assert.equal(CaseQuiz.rejectReason({...contrast, options: liveCase.options}, eventGround), "claims",
-  "excluding mortality in the explanation does not ground it in the correct option");
-assert.equal(CaseQuiz.rejectReason({...contrast, explanation_en: contrast.explanation_en + " Cardiovascular mortality fell."},
-  eventGround), "claims", "an explicit contrast does not hide a separate positive mention");
-assert.equal(CaseQuiz.rejectReason({...contrast, explanation_en: "There was no cardiovascular mortality benefit."},
-  eventGround), "claims", "a null effect is still a claim about the outcome");
+for (const [field, explanation] of [
+  ["explanation_en", "The treatment reduced cardiovascular events but not cardiovascular mortality."],
+  ["explanation_en", "The excerpt reports cardiovascular events, not cardiovascular mortality."],
+  ["explanation_vi", "Trích đoạn nói về biến cố tim mạch, không phải tử vong do tim mạch."],
+  ["explanation_en", "There was no cardiovascular mortality benefit."],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...grounded, [field]: explanation}, eventGround), "claims",
+    "negation does not ground an outcome absent from the excerpt");
+}
 for (const [lang, value, claim] of [
   ["vi", liveCase.options[0].vi, "mortality"], ["en", liveCase.options[0].en, "cardiovascular_mortality"],
   ["en", "Risk of myocardial infarction was reduced.", "myocardial_infarction"],

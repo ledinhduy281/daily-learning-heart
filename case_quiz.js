@@ -30,7 +30,7 @@ const CaseQuiz = (() => {
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
   const claimText = s => squash(s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd')
     .replace(/[^a-z0-9]+/g, ' ').replace(/\bnon fatal\b/g, 'nonfatal').trim();
-  const OUTCOMES = {
+  const CLAIMS = Object.entries({
     mortality: 'deaths?|died|mortality|fatal|tu vong|chet',
     cardiovascular_mortality: '(?:cardiovascular|cardiac|cv) (?:deaths?|mortality)|deaths? (?:from|due to) cardiovascular causes?|tu vong (?:do )?tim mach',
     all_cause_mortality: 'all cause (?:deaths?|mortality)|death from any cause|tu vong (?:do )?(?:moi|tat ca cac) nguyen nhan',
@@ -51,9 +51,6 @@ const CaseQuiz = (() => {
     bleeding: 'bleeding|h[ae]emorrhage|hemorrhage|xuat huyet|chay mau',
     major_bleeding: 'major bleeding|major h[ae]emorrhage|xuat huyet (?:nang|chinh)|chay mau (?:nang|chinh)',
     atrial_fibrillation: 'atrial fibrillation|af|rung nhi',
-  };
-  const CLAIMS = Object.entries({
-    ...OUTCOMES,
     diabetes: 'diabetes|diabetic|dai thao duong|tieu duong',
     type_2_diabetes: 'type 2 diabetes|t2d|t2dm|(?:dai thao duong|tieu duong) (?:type|typ|tuyp|loai) 2',
     chronic_kidney_disease: 'chronic kidney disease|ckd|benh than man(?: tinh)?|suy than man(?: tinh)?',
@@ -79,27 +76,19 @@ const CaseQuiz = (() => {
     relative_risk_reduction: 'relative risk reduction|relative reduction in risk|giam nguy co tuong doi|giam tuong doi nguy co',
     only: 'only in (?:patients|participants|adults|women|men|children)|exclusively in|chi o (?:benh nhan|nguoi|phu nu|nam gioi|tre em)',
   }).map(([kind, terms]) => [kind, new RegExp(`(?:^| )(${terms})(?= |$)`)]);
-  const EXCLUDED_OUTCOME = new RegExp(
-    `\\b(?:not|rather than|instead of|khong phai|thay vi) (?:${Object.values(OUTCOMES).join('|')})` +
-    '(?: risk| benefit| reduction)?(?= (?:but|ma) |$)', 'g');
   const CKD_STATUS = /\b(?:ckd|chronic kidney disease) status\b/;
   const QUALIFIERS = [
     ['stage', /(?:^| )(?:stage|giai doan) ([1-5][ab]?|i{1,3}|iv|v)(?= |$)/g],
     ['nyha', /(?:^| )nyha (?:class |do )?(iv|i{1,3}|[1-4])(?= |$)/g],
   ];
 
-  function assertedClaimText(field) {
-    return squash(field).split(/[,;.!?–—:()]/).map(clause =>
-      claimText(clause).replace(EXCLUDED_OUTCOME, ' ')).join(' ');
-  }
-
   function unsupportedClaims(item) {
     const correct = item.options[KEYS.indexOf(item.answer)];
-    const quote = assertedClaimText(item.quote);
+    const quote = claimText(item.quote);
     const found = new Set();
     const cited = new Set(QUALIFIERS.flatMap(([kind, re]) => [...quote.matchAll(re)].map(([, value]) => `${kind} ${value}`)));
     for (const field of [correct.vi, correct.en, item.explanation_vi, item.explanation_en]) {
-      const claim = assertedClaimText(field);
+      const claim = claimText(field);
       for (const [kind, re] of CLAIMS) {
         if (!re.test(claim) || re.test(quote)) continue;
         if ((kind === 'with_ckd' || kind === 'without_ckd') && CKD_STATUS.test(quote)) continue;
