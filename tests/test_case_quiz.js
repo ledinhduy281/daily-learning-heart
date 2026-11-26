@@ -136,6 +136,75 @@ assert.equal(CaseQuiz.validateCaseSet(eventLesson, {...eventSet, items: [liveCas
   "the browser cannot attach the already published pack with the bad case");
 console.log("Bilingual clinical claims: exact live mortality mismatch, unsupported populations and qualifiers rejected: OK");
 
+const withdrawnRenalCase = {
+  "type": "case",
+  "pmid": "42842238",
+  "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+  "answer": "A",
+  "stem_vi": "Một bệnh nhân 55 tuổi không có bệnh thận mạn đang được điều trị hạ huyết áp mạnh (giảm SBP 12 mmHg). Bác sĩ lo ngại về nguy cơ suy giảm chức năng thận. Theo phân tích, nguy cơ suy giảm eGFR ≥30 % so với tiêu chuẩn tăng bao nhiêu phần trăm?",
+  "stem_en": "A 55‑year‑old patient without chronic kidney disease is undergoing intensive blood pressure lowering (12 mmHg SBP reduction). The physician worries about kidney function decline. According to the meta‑analysis, the risk of a ≥30% eGFR decline compared with standard treatment increases by how many percent?",
+  "explanation_vi": "Trích đoạn 3 cho biết hạ huyết áp mạnh làm tăng nguy cơ suy giảm eGFR ≥30 % lên 42 % (RR 1.42).",
+  "explanation_en": "Excerpt 3 reports that intensive BP lowering raises the risk of a ≥30% eGFR decline by 42% (RR 1.42).",
+  "options": [
+    {
+      "vi": "42 %",
+      "en": "42%"
+    },
+    {
+      "vi": "15 %",
+      "en": "15%"
+    },
+    {
+      "vi": "0 % (không thay đổi)",
+      "en": "0% (no change)"
+    },
+    {
+      "vi": "-15 % (giảm)",
+      "en": "-15% (decrease)"
+    }
+  ]
+};
+const renalGround = {pmid: withdrawnRenalCase.pmid, title: "", excerpts: [withdrawnRenalCase.quote]};
+assert.equal(CaseQuiz.rejectReason(withdrawnRenalCase, renalGround), "claims", "the withdrawn case adds an unnamed eGFR endpoint");
+assert.ok(CaseQuiz.unsupportedClaims(withdrawnRenalCase).includes("egfr"));
+const unresolved = CaseQuiz.unsupportedCaseEffects(withdrawnRenalCase);
+assert.ok(unresolved.includes("without_ckd not covered by the citation"));
+assert.ok(unresolved.includes("eGFR endpoint not cited"));
+assert.ok(unresolved.includes("absolute risk level 42%"));
+const scopedQuote = "Among patients with CKD, intensive BP lowering increased risk of an eGFR decline of at least 30% by 42% (RR, 1.42).";
+const scopedGround = {...renalGround, excerpts: [scopedQuote]};
+const scopedCase = {...withdrawnRenalCase, quote: scopedQuote,
+  explanation_vi: "Hạ huyết áp tích cực làm tăng 42% nguy cơ suy giảm eGFR ≥30% (RR 1.42).",
+};
+assert.equal(CaseQuiz.rejectReason(scopedCase, scopedGround), "effects", "a CKD-only result cannot answer a non-CKD vignette");
+assert.equal(CaseQuiz.rejectReason({...scopedCase,
+  stem_en: scopedCase.stem_en.replace(" without chronic kidney disease", ""),
+  stem_vi: scopedCase.stem_vi.replace(" không có bệnh thận mạn", ""),
+}, scopedGround), "effects", "a CKD-only result requires the vignette to establish CKD");
+const applicable = {...scopedCase,
+  stem_en: scopedCase.stem_en.replace("without chronic kidney disease", "with chronic kidney disease"),
+  stem_vi: scopedCase.stem_vi.replace("không có bệnh thận mạn", "có bệnh thận mạn"),
+};
+assert.equal(CaseQuiz.rejectReason(applicable, scopedGround), "", "the endpoint, subgroup, and relative effect are all cited");
+for (const [field, explanation] of [
+  ["explanation_vi", withdrawnRenalCase.explanation_vi],
+  ["explanation_en", "The excerpt says that the risk increased to 42%."],
+  ["explanation_en", "The excerpt reports HR 1.42 for the decline."],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...applicable, [field]: explanation}, scopedGround), "effects",
+    "an absolute risk or different ratio is not a relative risk increase");
+}
+assert.equal(CaseQuiz.rejectReason({...applicable, stem_en: applicable.stem_en + " The trial reported a 17% increase."},
+  scopedGround), "effects", "an effect in the vignette does not support itself");
+assert.equal(CaseQuiz.rejectReason({...applicable, stem_en: applicable.stem_en + " The trial reported 17 deaths."},
+  scopedGround), "effects", "an absolute trial count in the stem must come from the excerpt");
+const mismatchedThreshold = {...withdrawnRenalCase,
+  options: [{en: "47%", vi: "47%"}, {en: "42%", vi: "42%"}, ...withdrawnRenalCase.options.slice(2)],
+};
+assert.ok(CaseQuiz.unsupportedCaseEffects(mismatchedThreshold).includes("47% belongs to a different decline threshold"),
+  "the 47% estimate cannot answer the 30% threshold even though both values appear in the same excerpt");
+console.log("Clinical effects: withdrawn eGFR case, unsupported populations, absolute risk wording, and wrong measures rejected: OK");
+
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};
 assert.equal(quiz.sourceQuestionCount(generated), 2, "a generated set replaces the default questions");
 for (const lang of ["vi", "en"]) {
