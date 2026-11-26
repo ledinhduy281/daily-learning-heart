@@ -7,8 +7,12 @@ const CaseQuiz = (() => {
     en: 'Written by AI (Groq) from the source excerpt; not physician-reviewed.'
   };
   const squash = s => String(s).replace(/\s+/g, ' ').trim();
-  const numbers = s => (String(s).replace(/\b(\d{1,3})(?:[ \u00a0\u202f]\d{3})+(?!\d)/g, m => m.replace(/\s/g, ''))
-    .match(/\d+(?:[.,]\d+)*/g) || []).map(n => n.replace(/,/g, '.')).map(n => /^[1-9]\d{0,2}(?:\.\d{3})+$/.test(n) ? n.replace(/\./g, '') : n);
+  const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const DURATION_WORDS = new RegExp(`(?<![\\w-])(${NUMBER_WORDS.join('|')})(?=[ \\-–‑]+(?:years?|months?|weeks?|days?|hours?|minutes?|seconds?)\\b)`, 'gi');
+  const numbers = s => (String(s).replace(DURATION_WORDS, word => NUMBER_WORDS.indexOf(word.toLowerCase()))
+    .replace(/\b(\d{1,3})(?:[ \u00a0\u202f]\d{3})+(?!\d)/g, m => m.replace(/\s/g, ''))
+    .match(/\d+(?:[.,]\d+)*/g) || []).map(n => n.replace(/,/g, '.')).map(n =>
+    /^[1-9]\d{0,2}(?:\.\d{3})+$/.test(n) ? n.replace(/\./g, '') : n.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, ''));
   const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?:\s*\/\s*(?:kg|m2|m²|min|phút|h|hr|giờ|day|ngày|d)(?![\p{L}\p{N}]))*/giu;
   // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
   const LAB = /\d+(?:[.,]\d+)?\s?(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
@@ -55,10 +59,14 @@ const CaseQuiz = (() => {
     for (const l of ['vi', 'en']) if (new Set(item.options.map(o => squash(o[l]).toLowerCase())).size !== 4) return 'options';
     if (unsupportedNumbers(item, ground).length) return 'numbers';
     if ([item.explanation_vi, item.explanation_en].some(namesOptions)) return 'letters';
+    return unsupportedDoses(item).length ? 'dose' : '';
+  }
+
+  function unsupportedDoses(item) {
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
-    const quotedDoses = new Set(doses(quote).map(doseKey));
-    return doses(everything).every(d => quotedDoses.has(doseKey(d))) ? '' : 'dose';
+    const quoted = new Set(doses(squash(item.quote)).map(doseKey));
+    return doses(everything).filter(d => !quoted.has(doseKey(d)));
   }
 
   const validItem = (item, ground) => !rejectReason(item, ground);
@@ -68,7 +76,7 @@ const CaseQuiz = (() => {
     return {type: item.type, pmid: item.pmid, quote: squash(item.quote), answer: item.answer,
       stem_vi: squash(item.stem_vi), stem_en: squash(item.stem_en),
       explanation_vi: squash(item.explanation_vi), explanation_en: squash(item.explanation_en),
-      options: item.options.map(o => ({vi: pick(o, 'vi'), en: pick(o, 'en')})), ai_generated: true};
+      options: item.options.map(o => ({vi: pick(o, 'vi'), en: pick(o, 'en')})), ai_generated: item.ai_generated !== false};
   }
 
   function validateSet(lesson, items) {
@@ -79,11 +87,47 @@ const CaseQuiz = (() => {
   }
 
   const COURSE_VERSION = 2;
+  const CASE_SET_VERSION = 3, CASES_PER_SET = 3;
   const FORMATS = ['predict', 'explain', 'critique', 'apply', 'connect'];
   const TIERS = ['easy', 'medium', 'hard'];
   const LANGS = ['vi', 'en'];
   const PRACTICE_PER_SKILL = 3;
   const hasMixedTypes = items => ['theory', 'case'].every(type => items.some(item => item?.type === type));
+
+  function validateCaseSet(lesson, set) {
+    if (lesson?.quiz_mode !== 'source_excerpt' || set?.version !== CASE_SET_VERSION ||
+        typeof set.set_id !== 'string' || !set.set_id.trim() || !Array.isArray(set.items) || set.items.length !== CASES_PER_SET) return null;
+    const ground = grounding(lesson);
+    const seen = {vi: new Set(), en: new Set()};
+    const items = [];
+    for (const item of set.items) {
+      if (item?.type !== 'case' || !ground.excerpts.includes(item.quote)) return null;
+      const cited = {...ground, title: '', excerpts: [item.quote]};
+      if (rejectReason(item, cited)) return null;
+      const parsed = {...clean(item), quote: item.quote, ai_generated: true};
+      for (const lang of ['vi', 'en']) {
+        const key = parsed['stem_' + lang].toLowerCase();
+        if (seen[lang].has(key)) return null;
+        seen[lang].add(key);
+      }
+      items.push(parsed);
+    }
+    return {version: CASE_SET_VERSION, set_id: set.set_id, model: set.model, items};
+  }
+
+  function courseItemReason(item, ground) {
+    const reason = rejectReason(item, {...ground, title: '', excerpts: [item?.quote]});
+    if (reason) return reason;
+    if (!FORMATS.includes(item.format) || !TIERS.includes(item.tier)) return 'shape';
+    if (item.phase === 'practice' && LANGS.some(l => {
+      const hint = item['hint_' + l];
+      const answer = squash(item.options[KEYS.indexOf(item.answer)][l]).toLowerCase();
+      return !text(hint, [12, 300]) || !hint.trim().endsWith('?') || namesOptions(hint) ||
+        squash(hint).toLowerCase().includes(answer) || squash(hint).toLowerCase() === squash(item['stem_' + l]).toLowerCase() ||
+        doses(hint).some(d => !doses(item.quote).map(doseKey).includes(doseKey(d)));
+    })) return 'hint';
+    return '';
+  }
 
   function validateCourse(lesson, set) {
     if (lesson?.quiz_mode !== 'source_excerpt' || set?.version !== COURSE_VERSION || typeof set.set_id !== 'string' || !set.set_id.trim() ||
@@ -100,10 +144,8 @@ const CaseQuiz = (() => {
     const cleaned = [];
     let tier = -1, phase = 0, integration = 0;
     for (const item of items) {
-      const cited = {...ground, title: '', excerpts: [item?.quote]};
       if (!item || typeof item.quote !== 'string' || !ground.excerpts.some(e => e.includes(item.quote)) ||
-          rejectReason(item, cited) ||
-          !FORMATS.includes(item.format) || !TIERS.includes(item.tier)) return null;
+          courseItemReason(item, ground)) return null;
       const p = ['diagnostic', 'practice', 'final'].indexOf(item.phase);
       const t = TIERS.indexOf(item.tier);
       if (p < phase) return null;
@@ -125,16 +167,11 @@ const CaseQuiz = (() => {
       }
       for (const l of LANGS) {
         const stem = squash(item['stem_' + l]).toLowerCase();
-        const hint = item['hint_' + l];
-        const answer = squash(item.options[KEYS.indexOf(item.answer)][l]).toLowerCase();
-        if (seen[l].has(stem) || (p === 1 &&
-            (!text(hint, [12, 300]) || !hint.trim().endsWith('?') || namesOptions(hint) ||
-             squash(hint).toLowerCase().includes(answer) || squash(hint).toLowerCase() === stem ||
-             doses(hint).some(d => !doses(item.quote).map(doseKey).includes(doseKey(d)))))) return null;
+        if (seen[l].has(stem)) return null;
         seen[l].add(stem);
       }
       const base = clean(item);
-      if (rejectReason(base, cited)) return null;
+      if (rejectReason(base, {...ground, title: '', excerpts: [item.quote]})) return null;
       cleaned.push({...base, quote: item.quote, phase: item.phase, skill: idx, format: item.format, tier: item.tier,
         ...(p === 1 ? {hint_vi: squash(item.hint_vi), hint_en: squash(item.hint_en)} : {})});
     }
@@ -155,11 +192,13 @@ const CaseQuiz = (() => {
     const order = KEYS.map((_, j) => (j - offset + correctIdx + 4) % 4);
     const correct = KEYS[order.indexOf(correctIdx)];
     const label = item.type === 'case' ? (en ? 'Clinical case' : 'Tình huống lâm sàng') : (en ? 'Theory' : 'Lý thuyết');
+    const ai = item.ai_generated !== false;
     return {
       question: `${label} (PMID ${item.pmid}): ${item['stem_' + l]}`,
       options: KEYS.map((key, j) => ({key, text: item.options[order[j]][l]})), correct_key: correct,
-      explanation: `${en ? 'Correct answer' : 'Đáp án đúng'}: ${correct}. ${item['explanation_' + l]} “${item.quote}” (PMID ${item.pmid}). ${AI_NOTE[l]}`,
-      source_quote: item.quote, source_pmid: item.pmid, ai_generated: true, case_type: item.type,
+      explanation: `${en ? 'Correct answer' : 'Đáp án đúng'}: ${correct}. ${item['explanation_' + l]} “${item.quote}” (PMID ${item.pmid}).` +
+        (ai ? ` ${AI_NOTE[l]}` : ''),
+      source_quote: item.quote, source_pmid: item.pmid, ai_generated: ai, case_type: item.type,
       option_ids: Object.fromEntries(KEYS.map((key, j) => [key, String(order[j])])),
       generation: {slot_idx: slotIdx, variant_idx: variantIdx, source_id: sourceId, difficulty},
       question_kind: item.type === 'case' ? 'case' : 'theory', difficulty, subskill_idx: subskill(item, sourceKind),
@@ -168,7 +207,8 @@ const CaseQuiz = (() => {
   }
 
   function startCourse(course) {
-    return {stage: 'diagnostic', index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
+    return {stage: course.compact ? 'practice' : 'diagnostic', ...(course.compact ? {compact: true} : {}),
+      index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
       skills: course.skills.map(() => ({level: 0, checks: [], last: -1})), final: []};
   }
 
@@ -245,7 +285,58 @@ const CaseQuiz = (() => {
     delete state.prefer;
   }
 
+  function compactTurn(course, previous, action, value, lang) {
+    if (!previous?.compact || action === 'restart') return startCourse(course);
+    const state = JSON.parse(JSON.stringify(previous));
+    const item = course.items[state.index];
+    if (state.stage === 'final_review' && action === 'next') {
+      Object.assign(state, {stage: 'practice', index: 0, attempts: 0, result: '', review: true, replay: true, final: []});
+      return state;
+    }
+    if (!item) return state;
+    const final = state.stage === 'final', count = course.items.length;
+    if (action === 'next' && state.result) {
+      Object.assign(state, {attempts: 0, result: ''});
+      if (final && state.final.length === count) {
+        state.final = state.final.filter(a => !a.correct);
+        Object.assign(state, {index: -1, stage: state.final.length ? 'final_review' : 'mastered', finalFailed: Boolean(state.final.length)});
+      } else if (final) {
+        state.index = (state.index + 1) % count;
+      } else if (state.review && !state.replay && !state.index) {
+        Object.assign(state, {stage: 'final', index: 1, review: false});
+      } else if (state.index + 1 < count) {
+        state.index++;
+      } else if (count >= 3) {
+        if (state.replay) Object.assign(state, {stage: 'final', index: 0, review: false, replay: false});
+        else Object.assign(state, {index: 0, review: true});
+      } else Object.assign(state, {stage: 'exhausted', index: -1});
+      return state;
+    }
+    if (state.result || action !== 'answer' || !KEYS.includes(value)) return state;
+    const correct = courseQuestion(course, state, lang).correct_key === value;
+    if (!final && !correct && !state.attempts) {
+      state.attempts = 1;
+      return state;
+    }
+    if (final) state.final.push({index: state.index, correct: correct && spacedRecall(state, state.index)});
+    else {
+      const skill = state.skills[item.skill];
+      if (!state.used.includes(state.index)) {
+        state.used.push(state.index);
+        if (correct && !state.attempts && !skill.checks.some(c => c.evidence === item.quote || c.index === state.index)) {
+          skill.checks.push({index: state.index, evidence: item.quote});
+          if (skill.checks.length >= 2) skill.level = item.type === 'case' ? 4 : 3;
+        }
+      }
+      state.revealed[state.index] = state.history.length + 1;
+    }
+    state.history.push(state.index);
+    state.result = correct ? 'correct' : 'wrong';
+    return state;
+  }
+
   function courseTurn(course, previous, action, value, lang) {
+    if (course.compact) return compactTurn(course, previous, action, value, lang);
     if (!previous || action === 'restart') return startCourse(course);
     const state = JSON.parse(JSON.stringify(previous));
     state.history ??= state.used.slice();
@@ -331,7 +422,8 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, unsupportedNumbers, validItem, validateSet, validateCourse,
-    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes};
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, validItem, validateSet, validateCourse,
+    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
+    validateCaseSet, CASE_SET_VERSION, CASES_PER_SET};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;

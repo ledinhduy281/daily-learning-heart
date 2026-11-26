@@ -54,6 +54,13 @@ assert.equal(CaseQuiz.rejectReason(labCase, CaseQuiz.grounding(lesson)), "", "la
 assert.equal(CaseQuiz.rejectReason({...kase, stem_en: kase.stem_en + " She receives amiodarone 1 mg/min."},
   CaseQuiz.grounding(lesson)), "dose", "an infusion rate missing from the quote is a dose");
 assert.equal(CaseQuiz.validItem({...theory, quote: quote.replace(/ /g, "\u00a0")}, CaseQuiz.grounding(lesson)), true);
+const durationQuote = "The source reports a blood pressure of 120 mm Hg at the end of five years of follow-up.";
+const durationGround = {...CaseQuiz.grounding(lesson), excerpts: [durationQuote]};
+const durationItem = {...theory, quote: durationQuote, options: options(["110", "120", "125", "130"]),
+  explanation_en: "The 5-year measurement was 120mmHg.", explanation_vi: "Kết quả được báo cáo là 120 mm Hg sau 5 năm."};
+assert.equal(CaseQuiz.rejectReason(durationItem, durationGround), "", "duration words and spacing do not change the numeric value");
+assert.equal(CaseQuiz.rejectReason({...durationItem, explanation_en: "The value was documented after seven years."}, durationGround), "numbers");
+assert.deepEqual(CaseQuiz.unsupportedNumbers({...durationItem, explanation_en: "The value reflected a 7-year assessment."}, durationGround), ["7"]);
 
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};
 assert.equal(quiz.sourceQuestionCount(generated), 2, "a generated set replaces the default questions");
@@ -88,7 +95,9 @@ const tutor = vm.runInNewContext(escapeHtmlCode + "\n" + tutorCode + ";SocraticT
   App, CaseQuiz, ClinicalQuiz: quiz, document: {getElementById: id => nodes[id]},
 });
 const publishedLesson = {...lesson, id: "daily-fixture"};
-const published = Array.from({length: 3}, (_, i) => ({set_id: `set-${i}`, items: [theory, theory, theory, kase, kase, kase]}));
+const published = Array.from({length: 3}, (_, i) => ({version: CaseQuiz.CASE_SET_VERSION, set_id: `set-${i}`,
+  items: Array.from({length: 3}, (_, j) => ({...kase, stem_en: kase.stem_en + ` (Case ${i}-${j})`,
+    stem_vi: kase.stem_vi + ` (Ca ${i}-${j})`}))}));
 const storage = new Map();
 const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   CaseQuiz, ClinicalQuiz: quiz,
@@ -96,13 +105,16 @@ const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
     localStorage: {getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v)}},
 });
 const fresh = {...publishedLesson};
-assert.equal(quiz.sourceQuestionCount(fresh), 3, "the source-only fallback has three questions");
-assert.equal(quiz.sourceQuestionCount(quizSets.attach(fresh)), 6, "fresh devices start with the published mixed set");
+const offlineTheory = quiz.sourceCourse(fresh).items;
+assert.ok(offlineTheory.length >= 3 && offlineTheory.every(q => q.type === "theory"));
+const firstBank = quiz.sourceCourse(quizSets.attach(fresh));
+assert.equal(firstBank.items.length, offlineTheory.length + 3, "fresh devices start with theory plus three cases");
 assert.equal(quizSets.remaining(fresh), 2, "loading the default set is free");
 assert.equal(storage.size, 0);
 const firstSet = fresh.generated_quiz;
 const secondSet = quizSets.openNext(fresh);
 assert.notEqual(secondSet.set_id, firstSet.set_id);
+assert.deepEqual(quiz.sourceCourse(fresh).items.filter(q => q.type === "theory"), offlineTheory, "the new-set button swaps only the cases");
 assert.equal(quizSets.attach({...publishedLesson}).generated_quiz.set_id, secondSet.set_id, "reload resumes the chosen set");
 assert.equal(quizSets.remaining(fresh), 1);
 assert.ok(quizSets.openNext(fresh));

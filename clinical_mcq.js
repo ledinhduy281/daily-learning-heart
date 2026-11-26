@@ -38,6 +38,56 @@ const ClinicalQuiz = (() => {
         new Set([answer,...distractors].map(c=>Number(c.replace(/[,%]/g,'')))).size===4;
     });
   }
+  function excerptValues(quote) {
+    const values = quote.match(/(?:\d{1,3}(?:[, \u00a0\u202f]\d{3})+|\d+)(?:[.,]\d+)?/g) || [];
+    return new Set(values.map(value => Number(value.replace(/[, \u00a0\u202f](?=\d{3}(?!\d))/g, '').replace(',', '.'))));
+  }
+
+  function sourceCourse(primary) {
+    if (primary?.quiz_mode !== 'source_excerpt' || primary.lesson_format !== 'single_source') return null;
+    const pack = cases.validateCaseSet(primary, primary.generated_quiz);
+    const rows = [];
+    const addIndependent = row => {
+      const values = excerptValues(row.quote);
+      const [answer] = excerptValues(row.answer);
+      if (rows.some(other => other.values.has(answer) || values.has(other.answerValue))) return;
+      rows.push({...row, values, answerValue: answer});
+    };
+    for (const [, row] of sourceItems(primary)) addIndependent(row);
+    const ground = cases.grounding(primary);
+    for (const quote of ground.excerpts) {
+      if (rows.length >= 4) break;
+      for (const match of quote.matchAll(/(?<![\p{L}\p{N}.,-])\d+%(?![\p{L}\p{N}])/gu)) {
+        const start = Array.from(quote.slice(0, match.index)).length;
+        const answer = match[0];
+        const choices = alternatives(quote, true, {numeric: true, value: answer.slice(0, -1), start: match.index, end: match.index + answer.length - 1});
+        addIndependent({pmid: ground.pmid, quote, start, answer, distractors: choices.slice(1).map(([, n]) => n + '%')});
+        if (rows.length >= 4) break;
+      }
+    }
+    const theory = rows.map(({pmid, quote, start, answer, distractors}) => {
+      const chars = Array.from(quote);
+      const blank = chars.slice(0, start).join('') + ' ____ ' + chars.slice(start + Array.from(answer).length).join('');
+      return {type: 'theory', pmid, quote, answer: 'A', ai_generated: false, tier: 'medium', phase: 'practice', skill: 0,
+        stem_vi: `Giá trị nào hoàn thành câu trích nguyên văn? “${blank}”`,
+        stem_en: `Which value completes the verbatim excerpt? “${blank}”`,
+        explanation_vi: 'Đối chiếu giá trị được báo cáo cùng kết quả và nhóm đối tượng trong câu trích.',
+        explanation_en: 'Check the reported value against the outcome and population in the source sentence.',
+        hint_vi: 'Chỗ trống mô tả kết quả nào? Loại phương án vừa chọn rồi đối chiếu lại cụm từ ngay cạnh chỗ trống.',
+        hint_en: 'What result is the blank describing? Set aside your last choice and recheck the words immediately around the blank.',
+        options: [answer, ...distractors].map(n => ({vi: n, en: n}))};
+    });
+    const applications = (pack?.items || []).map(item => ({...item, tier: 'hard', phase: 'practice', skill: theory.length ? 1 : 0,
+      hint_vi: 'Bệnh nhân có đặc điểm nào quyết định việc áp dụng kết quả? Đối chiếu với nhóm đối tượng và kết quả trong câu hỏi.',
+      hint_en: 'Which patient feature determines whether the finding applies? Compare it with the population and outcome in the question.'}));
+    const items = Array.from({length: Math.max(theory.length, applications.length)}, (_, i) => [theory[i], applications[i]]).flat().filter(Boolean);
+    if (!items.length) return null;
+    const skills = [];
+    if (theory.length) skills.push({vi: 'Đọc kết quả từ nguồn', en: 'Interpret source findings'});
+    if (applications.length) skills.push({vi: 'Áp dụng vào lâm sàng', en: 'Apply findings clinically'});
+    return {compact: true, items, skills};
+  }
+
   function aiItems(primary) {
     if (primary?.quiz_mode!=='source_excerpt') return [];
     const set=primary.generated_quiz;
@@ -285,7 +335,7 @@ const ClinicalQuiz = (() => {
     Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,required_subskills:question.required_subskills,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
-  return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
+  return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceCourse,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
     hasSourceItems:primary=>sourceItems(primary).length>0||aiItems(primary).length>0,
     grounding:cases.grounding,validateSet:cases.validateSet};
 })();
