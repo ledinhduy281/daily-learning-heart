@@ -26,7 +26,7 @@ const requestBody = options => {
   return body;
 };
 
-function fakeGroq(faults = []) {
+function fakeGroq(faults = [], roundOffset = 0) {
   const calls = [];
   let round = -1, questions, repaired = 0;
   const prefixes = ["A. ", "(B) ", "C) ", "D: "];
@@ -38,9 +38,16 @@ function fakeGroq(faults = []) {
     if (system.startsWith("Independently answer")) {
       assert.ok(!user.includes('"answer"'), "independent re-solve never sees the key");
       assert.match(system, /ONLY its cited excerpt/);
+      assert.match(system, /Cardiovascular events are not cardiovascular mortality/);
+      assert.match(system, /exact clinical endpoint, population, effect direction, comparator, magnitude and time frame/);
+      assert.match(system, /supported as written in BOTH languages/);
       const numbered = [...user.matchAll(/^Q(\d+): (.*)$/gm)];
       const slots = numbered.map(m => Number(m[1]));
       const batch = slots.map(n => questions[n - 1]);
+      for (const q of batch) {
+        assert.ok(user.includes(`Vietnamese stem: ${q.stem_vi}`));
+        assert.ok(q.options.every(o => user.includes(`EN: ${o.en} | VI: ${o.vi}`)));
+      }
       assert.deepEqual(numbered.map(m => m[2]), batch.map(q => q.stem_en));
       assert.deepEqual([...user.matchAll(/^Cited excerpt: \[(\d+)\]$/gm)].map(m => Number(m[1])), batch.map(q => q.excerpt));
       const cited = [...new Set(batch.map(q => q.excerpt))];
@@ -54,7 +61,7 @@ function fakeGroq(faults = []) {
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     if (!repair) {
       repaired = 0;
-      questions = course(++round + 1).items.filter(i => i.type === "case").slice(0, 3);
+      questions = course(++round + 1 + roundOffset).items.filter(i => i.type === "case").slice(0, 3);
       assert.match(system, /exactly 3 bilingual clinical application case questions \(no theory questions\)/);
     } else repaired++;
     const slots = repair ? JSON.parse(repair).map(p => p.slot) : [1, 2, 3];
@@ -176,5 +183,24 @@ const quiet = () => {};
   assert.equal(deadlineCalls, 1, "a delayed retry cannot run past the job deadline");
   assert.equal(fs.readFileSync(setPath, "utf8"), before);
   console.log("Groq upstream diagnostics: HTTP status, redacted error, retry, transport failure, and no publish: OK");
+  const rerunEnv = {...env, REGENERATE_QUIZ_SETS: "true"};
+  const oldIds = read()[id].map(s => s.set_id);
+  const fresh = fakeGroq([], 10);
+  assert.equal(await main({root, env: rerunEnv, date, fetchImpl: fresh.fetchImpl, log: quiet}), 3,
+    "forced regeneration replaces today's sets even when all three already validate");
+  const newIds = read()[id].map(s => s.set_id);
+  assert.ok(newIds.every(id => !oldIds.includes(id)));
+  const store = read();
+  store[nextId] = store[id].map((s, i) => ({...s, set_id: `next-${i}`}));
+  store[nextId][0].items[0].options[0].vi = "Giảm tử vong do tim mạch";
+  store[nextId][1].items[0].explanation_en = "The trial reduced cardiovascular mortality.";
+  fs.writeFileSync(setPath, "window.EBM_QUIZ_SETS = " + JSON.stringify({sets: store}) + ";");
+  const offline = async () => badModel();
+  assert.equal(await main({root, env: rerunEnv, date: nextDate, fetchImpl: offline, log: quiet}), 0);
+  assert.deepEqual(Array.from(read()[nextId], s => s.set_id), ["next-2"],
+    "failed regeneration keeps the still-valid set and unpublishes the invalid ones");
+  assert.equal(await main({root, env, date: nextDate, fetchImpl: offline, log: quiet}), 0);
+  assert.deepEqual(Array.from(read()[id], s => s.set_id), Array.from(newIds), "regeneration does not rewrite prior lessons");
+  console.log("Daily rebuild: forced replacement, valid fallback, and invalid set removal: OK");
   console.log("Case-only generation: three cases per set, selective repairs, independent re-solve, no-key theory fallback: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));

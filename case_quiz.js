@@ -28,6 +28,73 @@ const CaseQuiz = (() => {
   const namesOptions = e => LETTERS.some(r => r.test(e)) || [...String(e).matchAll(LETTER_LIST)].some(m => !m[1]);
   const doses = s => String(s).replace(LAB, ' ').match(DOSE) || [];
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
+  const claimText = s => squash(s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ').replace(/\bnon fatal\b/g, 'nonfatal').trim();
+  const CLAIMS = Object.entries({
+    mortality: 'deaths?|died|mortality|fatal|tu vong|chet',
+    cardiovascular_mortality: '(?:cardiovascular|cardiac|cv) (?:deaths?|mortality)|deaths? (?:from|due to) cardiovascular causes?|tu vong (?:do )?tim mach',
+    all_cause_mortality: 'all cause (?:deaths?|mortality)|death from any cause|tu vong (?:do )?(?:moi|tat ca cac) nguyen nhan',
+    myocardial_infarction: 'myocardial infarctions?|heart attacks?|mi|nhoi mau co tim|nmct',
+    stroke: 'strokes?|cerebrovascular accidents?|dot quy|tai bien mach mau nao',
+    ischemic_stroke: 'isch[ae]emic strokes?|dot quy thieu mau(?: cuc bo)?|nhoi mau nao',
+    hemorrhagic_stroke: 'h[ae]emorrhagic strokes?|hemorrhagic strokes?|dot quy xuat huyet|xuat huyet nao',
+    hospitalization: 'hospitali[sz]ations?|hospitali[sz]ed|hospital admissions?|admitted to hospital|nhap vien|nhap benh vien',
+    heart_failure_hospitalization: 'heart failure hospitali[sz]ations?|hospitali[sz]ations? (?:for|due to) (?:heart failure|hf)|nhap vien (?:do|vi|vi benh) suy tim',
+    cardiovascular_events: '(?:cardiovascular|cv) (?:adverse )?events?|bien co tim mach|su kien tim mach',
+    events: 'events?|bien co|su kien',
+    major_cardiovascular_events: 'major (?:adverse )?cardiovascular events?|mace|bien co tim mach lon|bien co tim mach bat loi chinh',
+    primary_cardiovascular_outcome: 'primary cardiovascular (?:events?|outcomes?|endpoints?)|(?:bien co|ket cuc|tieu chi) tim mach chinh',
+    heart_failure: 'heart failure|hf|suy tim',
+    kidney_decline: '(?:decline|declines|reduction|reductions) in (?:renal|kidney) function|(?:renal|kidney) function (?:decline|declines|reduction|reductions)|suy giam (?:chuc nang )?than|giam chuc nang than',
+    kidney_failure: 'kidney failure|renal failure|suy than',
+    ckd_progression: '(?:ckd|chronic kidney disease) progression|progression of (?:ckd|chronic kidney disease)|benh than man(?: tinh)? tien trien',
+    bleeding: 'bleeding|h[ae]emorrhage|hemorrhage|xuat huyet|chay mau',
+    major_bleeding: 'major bleeding|major h[ae]emorrhage|xuat huyet (?:nang|chinh)|chay mau (?:nang|chinh)',
+    atrial_fibrillation: 'atrial fibrillation|af|rung nhi',
+    diabetes: 'diabetes|diabetic|dai thao duong|tieu duong',
+    type_2_diabetes: 'type 2 diabetes|t2d|t2dm|(?:dai thao duong|tieu duong) (?:type|typ|tuyp|loai) 2',
+    chronic_kidney_disease: 'chronic kidney disease|ckd|benh than man(?: tinh)?|suy than man(?: tinh)?',
+    with_ckd: '(?:patients? |participants? |adults? )with (?:and without )?(?:ckd|chronic kidney disease)|(?:benh nhan |nguoi )co benh than man(?: tinh)?',
+    without_ckd: '(?:with and )?without (?:ckd|chronic kidney disease)|khong (?:co |mac )?benh than man(?: tinh)?',
+    regardless_of_ckd: '(?:regardless|irrespective) of (?:ckd|chronic kidney disease)(?: status)?|without heterogeneity by (?:ckd|chronic kidney disease) status|no heterogeneity by (?:ckd|chronic kidney disease) status|bat ke (?:tinh trang )?(?:ckd|benh than man(?: tinh)?)',
+    hypertension: 'hypertens(?:ion|ive)|tang huyet ap',
+    women: 'women|woman|female(?: patients?| participants?)?|phu nu|benh nhan nu',
+    men: 'men|man|male(?: patients?| participants?)?|nam gioi|benh nhan nam|dan ong',
+    older_adults: 'older adults?|elderly|nguoi cao tuoi|benh nhan cao tuoi',
+    children: 'children|pediatric|paediatric|tre em|benh nhi',
+    pregnancy: 'pregnan(?:t|cy)|mang thai|thai ky|thai phu',
+    community_dwelling: 'community dwelling|song tai cong dong',
+    primary_prevention: 'primary prevention|du phong tien phat',
+    secondary_prevention: 'secondary prevention|du phong thu phat',
+    composite_endpoint: 'composite (?:outcomes?|endpoints?)|(?:ket cuc|tieu chi) gop',
+    nonfatal: 'nonfatal|khong gay tu vong',
+    reduced_ejection_fraction: 'reduced ejection fraction|hfref|phan suat tong mau giam',
+    preserved_ejection_fraction: 'preserved ejection fraction|hfpef|phan suat tong mau bao ton',
+    statistically_significant: '(?<!not )(?<!no )statistically significant|(?<!khong )co y nghia thong ke',
+    no_statistical_significance: 'not statistically significant|no statistically significant|khong co y nghia thong ke',
+    absolute_risk_reduction: 'absolute risk reduction|absolute reduction in risk|giam nguy co tuyet doi|giam tuyet doi nguy co',
+    relative_risk_reduction: 'relative risk reduction|relative reduction in risk|giam nguy co tuong doi|giam tuong doi nguy co',
+    only: 'only in (?:patients|participants|adults|women|men|children)|exclusively in|chi o (?:benh nhan|nguoi|phu nu|nam gioi|tre em)',
+  }).map(([kind, terms]) => [kind, new RegExp(`(?:^| )(${terms})(?= |$)`)]);
+  const QUALIFIERS = [
+    ['stage', /(?:^| )(?:stage|giai doan) ([1-5][ab]?|i{1,3}|iv|v)(?= |$)/g],
+    ['nyha', /(?:^| )nyha (?:class |do )?(iv|i{1,3}|[1-4])(?= |$)/g],
+  ];
+
+  function unsupportedClaims(item) {
+    const correct = item.options[KEYS.indexOf(item.answer)];
+    const quote = claimText(item.quote);
+    const found = new Set();
+    const cited = new Set(QUALIFIERS.flatMap(([kind, re]) => [...quote.matchAll(re)].map(([, value]) => `${kind} ${value}`)));
+    for (const field of [correct.vi, correct.en, item.explanation_vi, item.explanation_en]) {
+      const claim = claimText(field);
+      for (const [kind, re] of CLAIMS) if (re.test(claim) && !re.test(quote)) found.add(kind);
+      for (const [kind, re] of QUALIFIERS) {
+        for (const [, value] of claim.matchAll(re)) if (!cited.has(`${kind} ${value}`)) found.add(`${kind} ${value}`);
+      }
+    }
+    return [...found];
+  }
 
   function grounding(lesson) {
     const source = lesson && lesson.primary_source || {};
@@ -59,7 +126,8 @@ const CaseQuiz = (() => {
     for (const l of ['vi', 'en']) if (new Set(item.options.map(o => squash(o[l]).toLowerCase())).size !== 4) return 'options';
     if (unsupportedNumbers(item, ground).length) return 'numbers';
     if ([item.explanation_vi, item.explanation_en].some(namesOptions)) return 'letters';
-    return unsupportedDoses(item).length ? 'dose' : '';
+    if (unsupportedDoses(item).length) return 'dose';
+    return item.type === 'case' && unsupportedClaims(item).length ? 'claims' : '';
   }
 
   function unsupportedDoses(item) {
@@ -422,7 +490,7 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, validItem, validateSet, validateCourse,
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, unsupportedClaims, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
     validateCaseSet, CASE_SET_VERSION, CASES_PER_SET};
 })();

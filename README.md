@@ -30,6 +30,8 @@ The Review Quiz tab builds theory questions directly from the lesson's verbatim 
 
 The [owner's Socratic tutoring philosophy](docs/quiz_philosophy.md) is part of the clinical-case prompt used by [`generate_quiz_sets.js`](generate_quiz_sets.js). With the `GROQ_API_KEY` secret (optional `GROQ_MODEL` variable), the [daily refresh](.github/workflows/daily_refresh.yml) generates up to three sets of three bilingual clinical application questions from the day's single source. The generator independently re-solves the cases without seeing their keys. [`case_quiz.js`](case_quiz.js) checks counts, bilingual fields, exact quotes, and medical number/dose constraints before publication and again in the browser. Cases are labeled AI-written and not physician-reviewed.
 
+A normal refresh revalidates today's saved sets and fills empty slots. To rebuild even valid sets, manually run the daily refresh on `main` with `regenerate_quiz_sets=true`. If no new set passes, only previously saved sets that pass the current checks are retained.
+
 Practice shows one question at a time. On the first miss, a narrower question guides a retry; on the second miss, the quiz shows the explanation and exact source excerpt. Progress and the skill map are saved on the device. Two independent checks are required to raise a skill level; spaced repeats and the final assessment are review, not independent mastery checks. When there are enough questions to space the repeats, the final assessment follows practice and spaced review.
 
 ## Daily refresh
