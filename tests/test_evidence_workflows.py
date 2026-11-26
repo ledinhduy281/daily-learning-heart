@@ -109,6 +109,18 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual(self.bash(script, DIFF_STATUS="0").returncode, 0)
         self.assertEqual(self.bash(script, DIFF_STATUS="1").returncode, 42)
 
+    def test_queued_daily_refresh_checks_out_current_main_before_generating(self):
+        workflow = self.workflow("daily_refresh")
+        self.assertEqual(workflow["concurrency"], {"group": "daily-pillar-refresh", "cancel-in-progress": "false"})
+        steps = workflow["jobs"]["refresh-daily-pillar"]["steps"]
+        self.assertEqual(steps[0]["uses"], "actions/checkout@v4")
+        self.assertEqual(steps[0]["with"]["ref"], "${{ github.ref == 'refs/heads/main' && 'main' || '' }}")
+        publish = next(step for step in steps if "git push" in step.get("run", ""))
+        git = 'git() { case "$1" in diff) return 1;; pull) return 42;; push) echo "unexpected push";; esac; }\n'
+        result = self.bash(git + publish["run"])
+        self.assertEqual(result.returncode, 42, result.stderr)
+        self.assertNotIn("unexpected push", result.stdout)
+
     def test_pages_blocks_direct_merge_and_carryover_without_editing_legacy_or_evidence(self):
         steps = self.workflow("pages_publish")["jobs"]["build"]["steps"]
         assets, gate = [step["run"] for step in steps if "run" in step]

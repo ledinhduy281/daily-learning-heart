@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref == 'refs/heads/main' && 'main' || '' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -76,6 +78,6 @@ jobs:
             echo "No briefing changes to commit."
           else
             git commit -m "chore(daily): refresh single pillar briefing ($(TZ=Asia/Ho_Chi_Minh date +%F))"
-            git pull --rebase origin main || true
+            git pull --rebase origin main
             git push
           fi
