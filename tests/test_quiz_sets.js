@@ -15,7 +15,7 @@ const pmid = template.primary_source.pmid;
 const excerpts = template.quiz_source_texts[pmid];
 const caseQuote = course().items.find(q => q.type === "case").quote;
 const ckdQuote = caseQuote + " There was no heterogeneity by CKD status.";
-const lesson = {...template, id, date, quiz_source_texts: {...template.quiz_source_texts, [pmid]: [...excerpts, ckdQuote]}};
+const lesson = {...template, id, date, quiz_source_texts: {...template.quiz_source_texts, [pmid]: [excerpts[0], caseQuote, excerpts[1], ckdQuote]}};
 const nextDate = "2026-12-02", nextId = "ebm-2026-12-02-p2-focused";
 const dataPath = path.join(root, "data", "briefings.js");
 const setPath = path.join(root, "data", "quiz_sets.js");
@@ -69,6 +69,8 @@ function fakeGroq(faults = [], roundOffset = 0) {
       });
     }
     assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
+    assert.match(system, /Set "excerpt" to the 1-based integer index/);
+    assert.match(system, /Do not include a quote field/);
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     if (!repair) {
       repaired = 0;
@@ -76,13 +78,15 @@ function fakeGroq(faults = [], roundOffset = 0) {
       questions = course(++round + 1 + roundOffset).items.filter(i => i.type === "case").slice(0, 3);
       assert.match(system, /exactly 3 bilingual clinical application case questions \(no theory questions\)/);
     } else repaired++;
-    const slots = repair ? JSON.parse(repair).map(p => p.slot) : [1, 2, 3];
+    const requested = repair && JSON.parse(repair);
+    const slots = requested ? requested.map(p => p.slot) : [1, 2, 3];
     calls.push({mode: repair ? "repair" : "generate", slots});
     assert.equal(body.max_tokens, slots.length * 850);
     const prior = JSON.parse(user.split("PRIOR STEMS (do not repeat): ").at(-1));
     assert.ok(prior.length <= 24 && prior.every(s => s.length <= 100));
     const result = slots.map(n => {
       const q = structuredClone(questions[n - 1]);
+      q.excerpt = lesson.quiz_source_texts[pmid].indexOf(q.quote) + 1;
       q.options = q.options.map((o, j) => ({vi: prefixes[j] + o.vi, en: prefixes[j] + o.en}));
       delete q.quote;
       if (faults[round] === "theory") q.type = "theory";
@@ -98,8 +102,18 @@ function fakeGroq(faults = [], roundOffset = 0) {
           "the lexical check alone cannot verify the subgroup effect");
       }
       submitted[n - 1] = {...q, options: questions[n - 1].options};
+      if (faults[round] === "indices") {
+        if (repaired) q.excerpt = n === 1 ? "2" : "[2]";
+        else if (n === 1) q.excerpt = "2.5";
+        else if (n === 2) Object.assign(q, {excerpt: "2", quote: excerpts[1]});
+        else q.excerpt = "E2";
+      }
       return q;
     });
+    if (faults[round] === "count") {
+      if (!repaired) return reply({questions: result.slice(0, 2)});
+      assert.deepEqual(requested, [{slot: 3, reason: "count"}]);
+    }
     return reply({questions: result});
   }};
 }
@@ -115,7 +129,7 @@ const quiet = () => {};
   assert.equal(await main({root, env: {}, date, log: quiet}), 0, "no key: nothing to do");
   assert.ok(!fs.existsSync(setPath));
 
-  const g = fakeGroq(["repair"]);
+  const g = fakeGroq(["repair", "indices", "count"]);
   const logs = [];
   assert.equal(await main({root, env, date, fetchImpl: g.fetchImpl, log: m => logs.push(m)}), 3);
   const sets = read()[id];
@@ -126,16 +140,21 @@ const quiet = () => {};
     assert.ok(CaseQuiz.validateCaseSet(lesson, set));
     assert.ok(!CaseQuiz.validateCaseSet(lesson, {...set, items: set.items.slice(1)}));
     assert.ok(!CaseQuiz.validateCaseSet(lesson, {...set, items: set.items.map(q => ({...q, type: "theory"}))}));
-    assert.ok(set.items.every(q => lesson.quiz_source_texts[q.pmid].includes(q.quote)));
+    assert.ok(set.items.every(q => q.quote === caseQuote), "the cited index yields the exact source text");
   }
   assert.ok(!fs.readFileSync(setPath, "utf8").includes(env.GROQ_API_KEY));
   assert.deepEqual(g.calls.map(({mode, slots}) => [mode, ...slots]), [
     ["generate", 1, 2, 3], ["solve", 3], ["repair", 1, 2], ["solve", 1, 2], ["repair", 1], ["solve", 1],
-    ["generate", 1, 2, 3], ["solve", 1, 2, 3], ["generate", 1, 2, 3], ["solve", 1, 2, 3],
+    ["generate", 1, 2, 3], ["solve", 3], ["repair", 1, 2], ["solve", 1, 2],
+    ["generate", 1, 2, 3], ["solve", 1, 2], ["repair", 3], ["solve", 3],
   ]);
   assert.ok(logs.some(m => /Rejected case item 1: numbers; stem=.+; value=\["9\.98"\]/.test(m)));
   assert.ok(logs.some(m => /Rejected case item 2: options; stem=.+; value=.*"duplicate":\[1,2\].*"value":"/.test(m)));
   assert.ok(logs.some(m => /Rejected case item 1: resolve; stem=.+; value=\{"expected":"A","got":"D"\}/.test(m)));
+  assert.ok(logs.some(m => m.includes('"excerpt":"2.5"') && m.includes("case item 1: quote")));
+  assert.ok(logs.some(m => m.includes('"excerpt":"2","quote":') && m.includes("case item 2: quote")));
+  assert.ok(logs.includes("Groq case response count: expected 3, got 2."));
+  console.log("Excerpt references: numeric, string, bracketed and E-prefixed indices resolve verbatim; invalid citations and missing slots are repaired: OK");
   const never = async () => assert.fail("unnecessary model call");
   assert.equal(await main({root, env, date, fetchImpl: never, log: quiet}), 0, "three valid sets are left alone");
   assert.equal(await main({root, env, date: nextDate, fetchImpl: never, log: quiet}), 0, "no lesson for that date");
