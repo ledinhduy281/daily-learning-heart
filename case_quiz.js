@@ -139,6 +139,7 @@ const CaseQuiz = (() => {
     }
     if (diagnosis[0].tier !== 'easy' || tier !== 2 || integration !== 1 || covered.final.size !== skills.length ||
         practice.some(t => t.length !== PRACTICE_PER_SKILL || t.filter(d => d === 'hard').length < 2) ||
+        !items.some(i => i.phase === 'final' && i.type === 'case') ||
         !['theory', 'case'].every(t => items.some(i => i.type === t)) ||
         !FORMATS.every(f => items.some(i => i.format === f))) return null;
     return {version: COURSE_VERSION, set_id: set.set_id, model: set.model,
@@ -191,13 +192,21 @@ const CaseQuiz = (() => {
   function nextAssessment(course, state) {
     const slots = course.items.flatMap((q, i) => q.phase === 'final' ? [i] : []);
     if (state.final.length === slots.length) return false;
-    const slot = slots[state.final.length];
-    const {skill, tier} = course.items[slot];
-    const alternatives = skill === null ? [] : course.items.flatMap((q, i) =>
-      i !== slot && q.phase !== 'diagnostic' && q.skill === skill &&
-      TIERS.indexOf(q.tier) >= TIERS.indexOf(tier) ? [i] : [])
-      .sort((a, b) => Number(state.used.includes(a)) - Number(state.used.includes(b)));
-    const index = state.finalFailed ? selectRecall(state, [slot, ...alternatives]) : slot;
+    let index = slots[state.final.length];
+    if (state.finalFailed) {
+      const completed = new Set(state.final.map(attempt => course.items[attempt.index].skill));
+      index = undefined;
+      for (const slot of slots) {
+        const {skill, tier, type} = course.items[slot];
+        if (completed.has(skill)) continue;
+        const alternatives = skill === null ? [] : course.items.flatMap((q, i) =>
+          i !== slot && q.phase !== 'diagnostic' && q.skill === skill && q.type === type &&
+          TIERS.indexOf(q.tier) >= TIERS.indexOf(tier) ? [i] : [])
+          .sort((a, b) => Number(state.used.includes(a)) - Number(state.used.includes(b)));
+        index = selectRecall(state, [slot, ...alternatives]);
+        if (index != null) break;
+      }
+    }
     Object.assign(state, {stage: index == null ? 'exhausted' : 'final', index: index ?? -1});
     return true;
   }

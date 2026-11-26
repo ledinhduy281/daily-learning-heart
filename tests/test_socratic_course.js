@@ -18,6 +18,7 @@ for (const corrupt of [
   s => {s.items[4].hint_vi = "";},
   s => {s.items[4].skill = 1;},
   s => {s.items.at(-1).skill = 3;},
+  s => {s.items.filter(q => q.phase === "final").forEach(q => {q.type = "theory";});},
 ]) {
   const invalid = structuredClone(payload);
   corrupt(invalid);
@@ -96,7 +97,10 @@ const hardAlternative = bank.items.findIndex((q, i) => q.phase === "practice" &&
   q.tier === "hard" && i !== remediated.index);
 const retakeState = {...remediated, revealed: {...remediated.revealed}};
 delete retakeState.revealed[lowerTier];
-assert.equal(turn(retakeState, "next").index, failed.index, "an unrevealed easier item cannot replace a hard final");
+const tierBank = structuredClone(bank);
+tierBank.items[lowerTier].type = tierBank.items[unlocked.index].type;
+assert.equal(CaseQuiz.courseTurn(tierBank, retakeState, "next", undefined, "vi").index, failed.index,
+  "an unrevealed easier item of the same kind cannot replace a hard final");
 delete retakeState.revealed[hardAlternative];
 const retakeStart = turn(retakeState, "next");
 assert.equal(retakeStart.index, hardAlternative, "an unrevealed hard practice item replaces the revealed hard final");
@@ -117,6 +121,24 @@ while (diagnosticRetake.stage === "practice") diagnosticRetake = advance(diagnos
 for (let i = 0; i < diagnosticSkill; i++) diagnosticRetake = advance(diagnosticRetake);
 assert.ok(!(hardDiagnostic in diagnosticRetake.revealed));
 assert.equal(diagnosticRetake.index, diagnosticSkillFinal, "even a hard unrevealed diagnostic cannot replace a hard final");
+
+const caseOnlyFinal = structuredClone(bank);
+const onlyCaseIndex = unlocked.index;
+for (const [i, item] of caseOnlyFinal.items.entries()) {
+  if (i !== onlyCaseIndex && (item.phase === "final" || item.skill === missedSkill)) item.type = "theory";
+}
+assert.equal(caseOnlyFinal.items[onlyCaseIndex].type, "case");
+const caseRetake = {...retakeState, revealed: {...retakeState.revealed}};
+const caseTurn = (state, action, value) => CaseQuiz.courseTurn(caseOnlyFinal, state, action, value, "vi");
+let mixed = caseTurn(caseRetake, "next");
+assert.notEqual(mixed.index, hardAlternative, "an unrevealed theory item cannot replace the only clinical case");
+assert.notEqual(mixed.index, onlyCaseIndex, "defer a case disclosed too recently");
+while (mixed.stage === "final") {
+  mixed = caseTurn(caseTurn(mixed, "answer", CaseQuiz.courseQuestion(caseOnlyFinal, mixed, "vi").correct_key), "next");
+}
+assert.equal(mixed.stage, "mastered");
+assert.ok(mixed.final.some(a => caseOnlyFinal.items[a.index].type === "case" && a.correct));
+assert.deepEqual(new Set(mixed.final.map(a => caseOnlyFinal.items[a.index].skill)), new Set([0, 1, 2, 3, null]));
 
 let integrationMiss = unlocked;
 while (bank.items[integrationMiss.index].skill !== null) integrationMiss = advance(integrationMiss);

@@ -44,7 +44,7 @@ function course(round = 1) {
   };
   skills.forEach((_, i) => add("diagnostic", i, ["easy", "medium", "medium", "hard"][i], formats[i]));
   skills.forEach((_, i) => ["medium", "hard", "hard"].forEach((tier, j) => add("practice", i, tier, formats[(i + j) % formats.length])));
-  skills.forEach((_, i) => add("final", i, "hard", formats[i]));
+  skills.forEach((_, i) => add("final", i, "hard", i === 0 ? "apply" : formats[i]));
   add("final", null, "hard", "connect");
   return {version: 2, set_id: `fixture-${round}`, skills, items};
 }
