@@ -11,7 +11,11 @@ const {course, lesson: template} = require("./fixtures/socratic_course.js");
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "quiz-sets-"));
 fs.mkdirSync(path.join(root, "data"));
 const date = "2026-12-01", id = "ebm-2026-12-01-p2-focused";
-const lesson = {...template, id, date};
+const pmid = template.primary_source.pmid;
+const excerpts = template.quiz_source_texts[pmid];
+const caseQuote = course().items.find(q => q.type === "case").quote;
+const ckdQuote = caseQuote + " There was no heterogeneity by CKD status.";
+const lesson = {...template, id, date, quiz_source_texts: {...template.quiz_source_texts, [pmid]: [...excerpts, ckdQuote]}};
 const nextDate = "2026-12-02", nextId = "ebm-2026-12-02-p2-focused";
 const dataPath = path.join(root, "data", "briefings.js");
 const setPath = path.join(root, "data", "quiz_sets.js");
@@ -28,7 +32,7 @@ const requestBody = options => {
 
 function fakeGroq(faults = [], roundOffset = 0) {
   const calls = [];
-  let round = -1, questions, repaired = 0;
+  let round = -1, questions, submitted, repaired = 0;
   const prefixes = ["A. ", "(B) ", "C) ", "D: "];
   return {calls, fetchImpl: async (url, options) => {
     const body = requestBody(options);
@@ -41,12 +45,15 @@ function fakeGroq(faults = [], roundOffset = 0) {
       assert.match(system, /Cardiovascular events are not cardiovascular mortality/);
       assert.match(system, /exact clinical endpoint, population, effect direction, comparator, magnitude and time frame/);
       assert.match(system, /supported as written in BOTH languages/);
+      assert.match(system, /Solve the questions before reading the proposed explanations/);
+      assert.match(system, /every claim must be supported as written by the cited excerpt/);
       const numbered = [...user.matchAll(/^Q(\d+): (.*)$/gm)];
       const slots = numbered.map(m => Number(m[1]));
-      const batch = slots.map(n => questions[n - 1]);
-      for (const q of batch) {
+      const batch = slots.map(n => submitted[n - 1]);
+      for (const [i, q] of batch.entries()) {
         assert.ok(user.includes(`Vietnamese stem: ${q.stem_vi}`));
         assert.ok(q.options.every(o => user.includes(`EN: ${o.en} | VI: ${o.vi}`)));
+        assert.ok(user.includes(`Q${slots[i]} explanations:\nEN: ${q.explanation_en}\nVI: ${q.explanation_vi}`));
       }
       assert.deepEqual(numbered.map(m => m[2]), batch.map(q => q.stem_en));
       assert.deepEqual([...user.matchAll(/^Cited excerpt: \[(\d+)\]$/gm)].map(m => Number(m[1])), batch.map(q => q.excerpt));
@@ -55,12 +62,17 @@ function fakeGroq(faults = [], roundOffset = 0) {
         "EXCERPTS:\n" + cited.map(n => `[${n}] ${lesson.quiz_source_texts[lesson.primary_source.pmid][n - 1]}`).join("\n"));
       assert.ok(!user.match(/^[A-D]\. (?:\([A-D]\)|[A-D][.)])/m), "the solver sees only one option letter");
       calls.push({mode: "solve", slots});
-      return reply({answers: batch.map((q, i) => faults[round] === "repair" && repaired === 1 && slots[i] === 1 ? "D" : q.answer)});
+      return reply({
+        answers: batch.map((q, i) => faults[round] === "repair" && repaired === 1 && slots[i] === 1 ? "D" : q.answer),
+        explanations: batch.map((q, i) => faults[round] === "explanations" && !repaired
+          ? [{en: false, vi: true}, {en: true, vi: false}, {en: true}][slots[i] - 1] : {en: true, vi: true}),
+      });
     }
     assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     if (!repair) {
       repaired = 0;
+      submitted = [];
       questions = course(++round + 1 + roundOffset).items.filter(i => i.type === "case").slice(0, 3);
       assert.match(system, /exactly 3 bilingual clinical application case questions \(no theory questions\)/);
     } else repaired++;
@@ -78,6 +90,14 @@ function fakeGroq(faults = [], roundOffset = 0) {
         if (n === 1) q.explanation_en = "The abstract reports a hazard ratio of 9.98.";
         if (n === 2) q.options[1] = q.options[0];
       }
+      if (faults[round] === "explanations" && !repaired && n < 3) {
+        q.excerpt = excerpts.length + 1;
+        if (n === 1) q.explanation_en = "Only patients with CKD benefited.";
+        else q.explanation_vi = "Chỉ nhóm bệnh nhân có CKD được hưởng lợi.";
+        assert.equal(CaseQuiz.rejectReason({...q, quote: ckdQuote}, CaseQuiz.grounding(lesson)), "",
+          "the lexical check alone cannot verify the subgroup effect");
+      }
+      submitted[n - 1] = {...q, options: questions[n - 1].options};
       return q;
     });
     return reply({questions: result});
@@ -185,9 +205,20 @@ const quiet = () => {};
   console.log("Groq upstream diagnostics: HTTP status, redacted error, retry, transport failure, and no publish: OK");
   const rerunEnv = {...env, REGENERATE_QUIZ_SETS: "true"};
   const oldIds = read()[id].map(s => s.set_id);
-  const fresh = fakeGroq([], 10);
-  assert.equal(await main({root, env: rerunEnv, date, fetchImpl: fresh.fetchImpl, log: quiet}), 3,
+  const fresh = fakeGroq(["explanations"], 10);
+  const explanationLogs = [];
+  assert.equal(await main({root, env: rerunEnv, date, fetchImpl: fresh.fetchImpl, log: m => explanationLogs.push(m)}), 3,
     "forced regeneration replaces today's sets even when all three already validate");
+  assert.deepEqual(fresh.calls.slice(0, 4).map(({mode, slots}) => [mode, ...slots]),
+    [["generate", 1, 2, 3], ["solve", 1, 2, 3], ["repair", 1, 2, 3], ["solve", 1, 2, 3]]);
+  assert.deepEqual(explanationLogs.filter(m => m.includes(": explanation;")).map(m => m.replace(/; stem=.*; value=/, ": ")), [
+    'Rejected case item 1: explanation: ["en"]',
+    'Rejected case item 2: explanation: ["vi"]',
+    'Rejected case item 3: explanation: ["vi"]',
+  ]);
+  assert.ok(read()[id].flatMap(s => s.items).every(q => q.quote !== ckdQuote),
+    "contradictory explanations and unverified slots were replaced");
+  console.log("Independent re-solve: rejects contradictory or unverified bilingual explanations and repairs their slots: OK");
   const newIds = read()[id].map(s => s.set_id);
   assert.ok(newIds.every(id => !oldIds.includes(id)));
   const store = read();
