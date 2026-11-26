@@ -9695,7 +9695,8 @@
         set("socraticTitleText", t("Trắc Nghiệm Ôn Tập", "Review Quiz"));
         set("socraticPhaseBadge", {
           diagnostic: t("Chẩn đoán", "Diagnostic"), practice: t("Luyện tập", "Practice"),
-          final: t("Kiểm tra tổng hợp", "Mixed assessment"), mastered: t("Đạt mục tiêu 4/5", "Target met: 4/5"),
+          final: state?.finalFailed ? t("Làm lại kiểm tra tổng hợp", "Retake mixed assessment") : t("Kiểm tra tổng hợp", "Mixed assessment"),
+          mastered: t("Đạt mục tiêu 4/5", "Target met: 4/5"),
           exhausted: t("Hết câu luyện tập", "Practice bank exhausted"),
         }[stage]);
         set("socraticSubText", [this.quizSourceLabel(b, vi),
@@ -9727,7 +9728,8 @@
                 <div class="socratic-bar-track" aria-hidden="true"><div class="socratic-bar-fill" style="width:${level * 20}%"></div></div>
                 <div class="socratic-subskill-meta">
                   <span>${escapeHtml(this.getLevelName(level, vi))}</span>
-                  ${stage === "practice" && course.items.some((q, j) => q.phase === "practice" && q.skill === i && j !== state.index && !state.used.includes(j))
+                  ${stage === "practice" && !state.remediation?.length &&
+                    course.items.some((q, j) => q.phase === "practice" && q.skill === i && j !== state.index && !state.used.includes(j))
                     ? button("focus", isFirstPractice ? t("Chọn trọng tâm", "Set focus") : t("Ưu tiên câu tiếp", "Focus next"), i,
                       `aria-pressed="${(isFirstPractice ? item?.skill : state.focus) === i}"`) : ""}
                 </div>
@@ -9736,11 +9738,11 @@
           </section>` : "";
         const source = q => `<p>${escapeHtml(q[`explanation_${lang}`])}</p><blockquote>“${escapeHtml(q.quote)}”</blockquote>
           <a href="https://pubmed.ncbi.nlm.nih.gov/${q.pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${q.pmid}</a>`;
-        const finalReview = state.finalFailed ? `
-          <div class="socratic-transcript-card">${state.final.filter(a => !a.correct).map(a => {
-            const q = course.items[a.index];
-            return `<details><summary>${escapeHtml(q[`stem_${lang}`])}</summary>${source(q)}</details>`;
-          }).join("")}</div>` : "";
+        const finalReview = stage === "practice" && state.remediation?.length ? `
+          <div class="socratic-transcript-card">
+            <h2>${t("Ôn lại trước khi làm bài kiểm tra lần nữa", "Review before retaking the assessment")}</h2>
+            <p>${state.remediation.map(i => escapeHtml(course.skills[i][lang])).join(" · ")}</p>
+          </div>` : "";
         if (!item) {
           const message = stage === "mastered"
             ? t("Bạn đã đạt mức 4/5 ở mọi kỹ năng và qua bài kiểm tra tổng hợp.", "You reached 4/5 in every skill and passed the mixed assessment.")
@@ -9776,8 +9778,8 @@
             </button>`).join("")}</div>`}
           ${assessment ? "" : `<div class="socratic-cmd-strip">
             ${state.result ? "" : button("tell", t("Giải thích luôn", "Just tell me"))}
-            ${button("difficulty", t("Câu sau dễ hơn", "Easier next"), "medium", `aria-pressed="${state.prefer === "medium"}"`)}
-            ${button("difficulty", t("Câu sau khó hơn", "Harder next"), "hard", `aria-pressed="${state.prefer === "hard"}"`)}
+            ${state.remediation?.length ? "" : button("difficulty", t("Câu sau dễ hơn", "Easier next"), "medium", `aria-pressed="${state.prefer === "medium"}"`)}
+            ${state.remediation?.length ? "" : button("difficulty", t("Câu sau khó hơn", "Harder next"), "hard", `aria-pressed="${state.prefer === "hard"}"`)}
           </div>`}${map}${finalReview}`;
       },
 

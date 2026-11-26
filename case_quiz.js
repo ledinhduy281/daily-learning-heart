@@ -176,8 +176,15 @@ const CaseQuiz = (() => {
   }
 
   function nextPractice(course, state, revisit) {
-    let candidates = course.items.map((item, i) => ({...item, i}))
-      .filter(q => q.phase === 'practice' && !state.used.includes(q.i));
+    const practice = course.items.map((item, i) => ({...item, i})).filter(q => q.phase === 'practice');
+    if (state.remediation?.length) {
+      const candidates = practice.filter(q => state.remediation.includes(q.skill) && q.tier === 'hard');
+      const next = candidates.find(q => !state.used.includes(q.i)) ||
+        candidates.find(q => q.i !== state.index) || candidates[0];
+      Object.assign(state, {stage: 'practice', index: next.i, review: false, coached: true});
+      return;
+    }
+    let candidates = practice.filter(q => !state.used.includes(q.i));
     const practiceCount = state.used.filter(i => course.items[i].phase === 'practice').length;
     const spaced = practiceCount % 3 === 2;
     const focus = Number.isInteger(state.focus) ? state.focus : revisit;
@@ -227,14 +234,15 @@ const CaseQuiz = (() => {
         state.index++;
       } else if (state.stage === 'final' && state.final.every(attempt => attempt.correct)) {
         Object.assign(state, {stage: 'mastered', index: -1});
-      } else if (state.stage !== 'final' && !state.final.length && state.skills.every(s => s.level >= 4)) {
-        Object.assign(state, {stage: 'final', index: course.items.findIndex(q => q.phase === 'final')});
+      } else if (state.stage !== 'final' && !state.remediation?.length && state.skills.every(s => s.level >= 4)) {
+        Object.assign(state, {stage: 'final', index: course.items.findIndex(q => q.phase === 'final'), final: []});
       } else {
         if (state.stage === 'final') {
           const missed = state.final.filter(attempt => !attempt.correct);
-          const affected = missed.some(attempt => course.items[attempt.index].skill === null)
-            ? state.skills : missed.map(attempt => state.skills[course.items[attempt.index].skill]);
-          for (const s of affected) { s.level = Math.max(0, s.level - 1); s.checks = []; }
+          const affected = missed.map(attempt => course.items[attempt.index].skill);
+          state.remediation = affected.includes(null) ? state.skills.map((_, i) => i) : affected;
+          for (const i of state.remediation) state.skills[i].level = 3;
+          state.final = [];
           state.finalFailed = true;
         }
         nextPractice(course, state, result === 'wrong' || result === 'told' ? item.skill : null);
@@ -250,7 +258,10 @@ const CaseQuiz = (() => {
       if (state.review && skill) { skill.level = Math.max(0, skill.level - 1); skill.checks = []; }
       return state;
     }
-    if (state.stage !== 'final' && skill && independent) {
+    if (state.stage === 'practice' && state.remediation?.includes(item.skill) && correct && !state.attempts) {
+      skill.level = 4;
+      state.remediation = state.remediation.filter(i => i !== item.skill);
+    } else if (state.stage !== 'final' && skill && independent && !state.remediation?.includes(item.skill)) {
       skill.checks.push({level: TIERS.indexOf(item.tier) + 2, unprompted: !state.coached});
       if (skill.checks.length >= 2) {
         for (let target = 4; target > skill.level; target--) {
@@ -264,7 +275,7 @@ const CaseQuiz = (() => {
     }
     if (skill) skill.last = state.used.length;
     if (state.stage === 'diagnostic') skill.diagnostic = correct;
-    state.used.push(state.index);
+    if (!state.used.includes(state.index)) state.used.push(state.index);
     if (state.stage === 'final') state.final.push({index: state.index, correct});
     state.result = action === 'tell' ? 'told' : correct ? 'correct' : 'wrong';
     return state;
