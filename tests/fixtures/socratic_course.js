@@ -15,10 +15,10 @@ const skills = [
 ];
 const formats = ["explain", "predict", "apply", "critique", "connect"];
 const options = [
-  {vi: "Giảm biến cố tim mạch chính", en: "Fewer major cardiovascular events"},
-  {vi: "Không khác biệt về biến cố tim mạch chính", en: "No difference in major cardiovascular events"},
-  {vi: "Tăng biến cố tim mạch chính", en: "More major cardiovascular events"},
-  {vi: "Không đánh giá biến cố tim mạch chính", en: "Major cardiovascular events were not assessed"},
+  {vi: "Giảm biến cố tim mạch chính", en: "Fewer primary cardiovascular events"},
+  {vi: "Không khác biệt về biến cố tim mạch chính", en: "No difference in primary cardiovascular events"},
+  {vi: "Tăng biến cố tim mạch chính", en: "More primary cardiovascular events"},
+  {vi: "Không đánh giá biến cố tim mạch chính", en: "Primary cardiovascular events were not assessed"},
 ];
 
 function course(round = 1) {
@@ -33,7 +33,7 @@ function course(round = 1) {
     items.push({phase, skill, tier, format, type: isCase ? "case" : "theory",
       pmid, excerpt: excerpts.indexOf(quote) + 1, quote, options, answer: "A",
       stem_vi: `${vignette.vi}STAREE ghi nhận thay đổi nào về kết cục tim mạch chính? (${label})`,
-      stem_en: `${vignette.en}What did STAREE find about major cardiovascular outcomes? (${label})`,
+      stem_en: `${vignette.en}What did STAREE find about primary cardiovascular outcomes? (${label})`,
       explanation_vi: "Tỉ số nguy cơ được báo cáo thấp hơn một, theo hướng giảm biến cố.",
       explanation_en: "The reported hazard ratio was below one, in the direction of fewer events.",
       ...(phase === "practice" ? {

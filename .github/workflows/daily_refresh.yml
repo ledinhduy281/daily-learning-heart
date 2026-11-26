@@ -9,6 +9,11 @@ on:
     - cron: '17 23 * * *'
     - cron: '43 23 * * *'
   workflow_dispatch:
+    inputs:
+      regenerate_quiz_sets:
+        description: 'Rebuild today’s clinical quiz sets instead of reusing valid sets'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ['.github/workflows/daily_refresh.yml']
@@ -26,6 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref == 'refs/heads/main' && 'main' || '' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -58,6 +65,7 @@ jobs:
           TZ: Asia/Ho_Chi_Minh
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          REGENERATE_QUIZ_SETS: ${{ inputs.regenerate_quiz_sets }}
         run: |
           node generate_quiz_sets.js
 
@@ -70,6 +78,6 @@ jobs:
             echo "No briefing changes to commit."
           else
             git commit -m "chore(daily): refresh single pillar briefing ($(TZ=Asia/Ho_Chi_Minh date +%F))"
-            git pull --rebase origin main || true
+            git pull --rebase origin main
             git push
           fi
