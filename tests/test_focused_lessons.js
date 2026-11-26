@@ -147,6 +147,7 @@ assert.equal(context.getFocusedTemplateBriefing("2026-11-24", 9), null);
 App.mode = "history";
 App.savedGlobalMode = true;
 App.searchQuery = "";
+App.briefings = [];
 App.user = {bookmarked_ids: [saved.id, "ebm-2026-11-30-p9-focused", "ebm-2026-11-31-p9-focused", "missing"]};
 assert.ok(!App.briefings.some(b => b.id === saved.id));
 assert.equal(context.getHistoryScopeBriefings().length, 1);
