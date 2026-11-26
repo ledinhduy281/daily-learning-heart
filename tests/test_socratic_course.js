@@ -250,10 +250,16 @@ assert.equal(local.items.length, 4);
 assert.ok(local.items.every(q => !q.ai_generated && today.quiz_source_texts[q.pmid].includes(q.quote)));
 App.selected = today;
 App.currentLang = "vi";
+const legacyTheory = {started: true, answered_count: 2, correct_count: 1,
+  subskills: [{id: "risk", level: 2, checks: 2}], messages: [{role: "user", text: "Selected B"}]};
+tutor.store[today.id] = legacyTheory;
+tutor.saveStore();
 tutor.renderUI();
 assert.equal(nodes.labelStartSocratic.textContent, "Bắt đầu ôn tập");
 tutor.startIfIdle();
 const localKey = tutor.sessionKey(1, today);
+assert.notEqual(localKey, today.id);
+assert.deepEqual(JSON.parse(saved)[today.id], legacyTheory, "auto-starting the offline course preserves the previous session");
 const localState = () => tutor.store[localKey].course;
 const localQuestion = () => CaseQuiz.courseQuestion(local, localState(), App.currentLang);
 const badChoice = localQuestion().options.find(o => o.key !== localQuestion().correct_key).key;

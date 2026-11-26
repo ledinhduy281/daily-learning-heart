@@ -9265,12 +9265,17 @@
 
       sessionKey(pid, briefing) {
         const set = briefing?.generated_quiz?.set_id;
-        return briefing?.id ? (set ? `${briefing.id}#${set}` : briefing.id) : String(pid);
+        if (!briefing?.id) return String(pid);
+        if (set) return `${briefing.id}#${set}`;
+        return this.courseFor(briefing)?.compact ? `${briefing.id}#offline-theory` : briefing.id;
       },
 
       courseFor(b) {
-        if (!b?.generated_quiz || b.generated_quiz.version === CaseQuiz.CASE_SET_VERSION) return ClinicalQuiz.sourceCourse(b);
-        return b.generated_quiz.version === 2 ? CaseQuiz.validateCourse(b, b.generated_quiz) : null;
+        const set = b?.generated_quiz;
+        if (set?.version === 2) return CaseQuiz.validateCourse(b, set);
+        if (b?.lesson_format === "single_source" && b.quiz_mode === "source_excerpt" &&
+            (!set || set.version === CaseQuiz.CASE_SET_VERSION)) return ClinicalQuiz.sourceCourse(b);
+        return null;
       },
 
       courseAction(action, value) {
