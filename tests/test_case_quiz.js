@@ -224,9 +224,14 @@ const baselineOption = {
   vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nguy cơ được báo cáo tăng 42%.",
 };
 const repeatedBaselines = {...baselines, options: [baselineOption, ...baselines.options.slice(1)]};
-assert.equal(CaseQuiz.rejectReason(repeatedBaselines, renalGround), "", "a keyed option can repeat patient measurements already in the stem");
+assert.ok(CaseQuiz.rejectReason(repeatedBaselines, renalGround), "a keyed option cannot use uncited measurements as evidence");
+const followUp = "The trial found an EF of 55% at follow-up.";
+assert.equal(CaseQuiz.rejectReason({...baselines, explanation_en: followUp}, renalGround), "effects",
+  "the explanation must cite follow-up EF even when it equals the patient's baseline EF");
+assert.equal(CaseQuiz.rejectReason({...baselines, options: [{...baselines.options[0], en: followUp}, ...baselines.options.slice(1)]}, renalGround), "effects",
+  "the option must cite follow-up EF even when it equals the patient's baseline EF");
 for (const [lang, claim] of [["en", "The study reported a risk of 55%."], ["vi", "Nghiên cứu báo cáo nguy cơ là 55%."]]) {
-  const options = [{...baselineOption, [lang]: claim}, ...baselines.options.slice(1)];
+  const options = [{...baselines.options[0], [lang]: claim}, ...baselines.options.slice(1)];
   assert.equal(CaseQuiz.rejectReason({...baselines, options}, renalGround), "effects", "a baseline figure does not support a study effect");
 }
 for (const [lang, result] of [["en", " The study's event rate was 17%."], ["vi", " Tỷ lệ biến cố là 17%."], ["en", " The trial reported RR 1.25."]]) {

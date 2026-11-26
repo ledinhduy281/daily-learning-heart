@@ -104,9 +104,8 @@ const CaseQuiz = (() => {
     const cited = new Set(CLAIM_LANGUAGES.flatMap(lang => qualifierClaims(quote, lang)));
     const ckdStatusCited = CLAIM_LANGUAGES.some(lang => CKD_STATUS[lang].test(quote[lang]));
     for (const lang of CLAIM_LANGUAGES) {
-      const baseline = vignetteBaselines(item['stem_' + lang]);
       for (const field of [correct[lang], item['explanation_' + lang]]) {
-        const claim = claimText(withoutBaseline(field, baseline));
+        const claim = claimText(field);
         for (const [kind, re] of CLAIMS) {
           if (!matchesClaim(re, claim, lang) || CLAIM_LANGUAGES.some(lang => matchesClaim(re, quote, lang))) continue;
           if ((kind === 'with_ckd' || kind === 'without_ckd') && ckdStatusCited) continue;
@@ -174,19 +173,12 @@ const CaseQuiz = (() => {
     vi: /\b(?:bien co|tu vong|nhap vien|loi ich|tac dong|hieu qua|cai thien|thay doi)\b/,
   };
   const BASELINE_MEASUREMENT = /\b(?:(lvef|ef|(?:left ventricular )?ejection fraction|phân suất tống máu(?: thất trái)?)|(egfr|estimated glomerular filtration rate|(?:tốc độ |mức )?lọc cầu thận ước tính))\s*(?:[:=]|of\b|là\b)?\s*(\d+(?:[.,]\d+)?)(?:\s*(%|phần trăm\b))?(?![\d.,]*\d)/giu;
-  const REPORTED_MEASUREMENT = /\b(?:increas\w*|decreas\w*|reduc\w*|declin\w*|improv\w*|report\w*|fell|rose|tăng|giảm|cải thiện|báo cáo)(?:\s+(?:in|of|the))*\s*$/iu;
+  const REPORTED_MEASUREMENT = /\b(?:increas\w*|decreas\w*|reduc\w*|declin\w*|improv\w*|report\w*|found|showed|fell|rose|tăng|giảm|cải thiện|báo cáo|ghi nhận)(?:\s+(?:in|of|the|an?))*\s*$/iu;
   const STUDY_CLAUSE = /[!?;]|\.(?!\d)/;
-  function measurementKey(ef, value, unit, prefix) {
-    if ((ef && !unit) || REPORTED_MEASUREMENT.test(prefix)) return '';
-    return (ef ? 'ef ' : 'egfr ') + numbers(value)[0] + (unit ? '%' : '');
-  }
-  function vignetteBaselines(stem) {
-    return new Set([...stem.matchAll(BASELINE_MEASUREMENT)].map(match =>
-      measurementKey(match[1], match[3], match[4], stem.slice(0, match.index))).filter(Boolean));
-  }
-  function withoutBaseline(field, baseline) {
-    return field.replace(BASELINE_MEASUREMENT, (match, ef, _egfr, value, unit, index) =>
-      baseline.has(measurementKey(ef, value, unit, field.slice(0, index))) ? ' ' : match);
+  function withoutVignetteBaseline(clause, lang) {
+    if (!PATIENT[lang].test(claimText(clause)[lang])) return clause;
+    return clause.replace(BASELINE_MEASUREMENT, (match, ef, _egfr, _value, unit, index) =>
+      (ef && !unit) || REPORTED_MEASUREMENT.test(clause.slice(0, index)) ? match : ' ');
   }
   const RESULT_COUNT = /(\d+(?:[.,]\d+|[ \u00a0\u202f]\d{3})*)\s+(?:fewer |more )?(?:cases?|events?|deaths?|participants?|hospitali[sz]ations?|studies|trường hợp|biến cố|ca tử vong|người tham gia|ca nhập viện|nghiên cứu)(?![\p{L}\p{N}])/giu;
   const RESULT_STATEMENT = /\b(?:report(?:s|ed)?|found|showed|identified|included|fewer|more|ghi nhận|cho thấy|báo cáo|xác định|bao gồm)\b/iu;
@@ -220,7 +212,6 @@ const CaseQuiz = (() => {
     const found = new Set();
     for (const lang of CLAIM_LANGUAGES) {
       const stem = item['stem_' + lang];
-      const baseline = vignetteBaselines(stem);
       const stemWords = claimText(stem)[lang];
       const groups = ckdGroups(stemWords, lang);
       const thresholds = [...new Set(declineThresholds(stem))];
@@ -232,7 +223,7 @@ const CaseQuiz = (() => {
         if (!citedCkd.has(group)) found.add(group + ' not covered by the citation');
       }
       for (const [field, isStem] of [[stem, true], [correct[lang], false], [item['explanation_' + lang], false]]) {
-        const checked = withoutBaseline(field, baseline);
+        const checked = isStem ? field.split(STUDY_CLAUSE).map(clause => withoutVignetteBaseline(clause, lang)).join(';') : field;
         const clauses = checked.split(STUDY_CLAUSE);
         const figures = isStem ? clauses.flatMap(clause => {
           const normalized = claimText(clause)[lang];
