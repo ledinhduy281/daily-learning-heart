@@ -219,6 +219,16 @@ const baselines = {...matchedRenalCase,
   stem_vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nghiên cứu báo cáo tác động nào đến nguy cơ suy giảm ít nhất 30%?",
 };
 assert.equal(CaseQuiz.rejectReason(baselines, renalGround), "", "uncited patient measurements are not study results, even in a risk question");
+const baselineOption = {
+  en: "For this 63-year-old patient with EF 55%, BP 138/84 mmHg and eGFR 58, the reported risk increase was 42%.",
+  vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nguy cơ được báo cáo tăng 42%.",
+};
+const repeatedBaselines = {...baselines, options: [baselineOption, ...baselines.options.slice(1)]};
+assert.equal(CaseQuiz.rejectReason(repeatedBaselines, renalGround), "", "a keyed option can repeat patient measurements already in the stem");
+for (const [lang, claim] of [["en", "The study reported a risk of 55%."], ["vi", "Nghiên cứu báo cáo nguy cơ là 55%."]]) {
+  const options = [{...baselineOption, [lang]: claim}, ...baselines.options.slice(1)];
+  assert.equal(CaseQuiz.rejectReason({...baselines, options}, renalGround), "effects", "a baseline figure does not support a study effect");
+}
 for (const [lang, result] of [["en", " The study's event rate was 17%."], ["vi", " Tỷ lệ biến cố là 17%."], ["en", " The trial reported RR 1.25."]]) {
   const field = "stem_" + lang;
   assert.equal(CaseQuiz.rejectReason({...baselines, [field]: baselines[field] + result}, renalGround), "effects",
