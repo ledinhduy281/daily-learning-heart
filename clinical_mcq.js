@@ -38,19 +38,30 @@ const ClinicalQuiz = (() => {
         new Set([answer,...distractors].map(c=>Number(c.replace(/[,%]/g,'')))).size===4;
     });
   }
+  function excerptValues(quote) {
+    const values = quote.match(/(?:\d{1,3}(?:[, \u00a0\u202f]\d{3})+|\d+)(?:[.,]\d+)?/g) || [];
+    return new Set(values.map(value => Number(value.replace(/[, \u00a0\u202f](?=\d{3}(?!\d))/g, '').replace(',', '.'))));
+  }
+
   function sourceCourse(primary) {
     if (primary?.quiz_mode !== 'source_excerpt' || primary.lesson_format !== 'single_source') return null;
     const pack = cases.validateCaseSet(primary, primary.generated_quiz);
-    const rows = sourceItems(primary).map(([, row]) => row);
+    const rows = [];
+    const addIndependent = row => {
+      const values = excerptValues(row.quote);
+      const [answer] = excerptValues(row.answer);
+      if (rows.some(other => other.values.has(answer) || values.has(other.answerValue))) return;
+      rows.push({...row, values, answerValue: answer});
+    };
+    for (const [, row] of sourceItems(primary)) addIndependent(row);
     const ground = cases.grounding(primary);
     for (const quote of ground.excerpts) {
       if (rows.length >= 4) break;
       for (const match of quote.matchAll(/(?<![\p{L}\p{N}.,-])\d+%(?![\p{L}\p{N}])/gu)) {
         const start = Array.from(quote.slice(0, match.index)).length;
-        if (rows.some(row => row.quote === quote && row.start === start)) continue;
         const answer = match[0];
         const choices = alternatives(quote, true, {numeric: true, value: answer.slice(0, -1), start: match.index, end: match.index + answer.length - 1});
-        rows.push({pmid: ground.pmid, quote, start, answer, distractors: choices.slice(1).map(([, n]) => n + '%')});
+        addIndependent({pmid: ground.pmid, quote, start, answer, distractors: choices.slice(1).map(([, n]) => n + '%')});
         if (rows.length >= 4) break;
       }
     }

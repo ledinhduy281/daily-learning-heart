@@ -244,9 +244,23 @@ for (const lang of ["vi", "en"]) {
 }
 const data = {window: {}};
 vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), data);
-const today = data.window.EBM_BRIEFINGS_DATA.briefings.find(b => b.id === "ebm-2026-11-26-p1-focused");
+const bundle = data.window.EBM_BRIEFINGS_DATA;
+const today = bundle.briefings.find(b => b.id === "ebm-2026-11-26-p1-focused");
+for (const source of [...bundle.briefings, ...Object.values(bundle.focused_lessons)]) {
+  const questions = ClinicalQuiz.sourceCourse(source)?.items || [];
+  for (const item of questions) {
+    const key = item.options["ABCD".indexOf(item.answer)].en;
+    const number = key.replace(/%$/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const exposed = new RegExp(`(?<![\\d.,])${number}(?!\\d|[.,]\\d)`);
+    for (const other of questions.filter(q => q !== item)) {
+      for (const text of [other.stem_en, other.stem_vi, other.quote]) {
+        assert.doesNotMatch(text, exposed, `${source.id}: a different question exposes ${key}`);
+      }
+    }
+  }
+}
 const local = ClinicalQuiz.sourceCourse(today);
-assert.equal(local.items.length, 4);
+assert.equal(local.items.length, 3);
 assert.ok(local.items.every(q => !q.ai_generated && today.quiz_source_texts[q.pmid].includes(q.quote)));
 App.selected = today;
 App.currentLang = "vi";
@@ -282,7 +296,7 @@ assert.match(markup(), /Spaced review/);
 tutor.courseAction("answer", localQuestion().correct_key);
 tutor.courseAction("next");
 assert.equal(localState().stage, "final");
-assert.match(markup(), /Question 1\/4/);
+assert.match(markup(), /Question 1\/3/);
 for (const _ of local.items) {
   tutor.courseAction("answer", localQuestion().correct_key);
   tutor.courseAction("next");
@@ -290,4 +304,4 @@ for (const _ of local.items) {
 assert.equal(localState().stage, "mastered");
 assert.equal(localState().skills[0].level, 3, "spaced repeats and final checks never confer independent mastery");
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");
-console.log("Offline Socratic theory: four source questions, delayed reveal, spaced review, and final without AI: OK");
+console.log("Offline Socratic theory: no cross-question answer disclosures in bundled lessons, delayed reveal, spaced review, and final without AI: OK");
