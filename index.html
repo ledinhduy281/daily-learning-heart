@@ -9903,6 +9903,9 @@
         const instructions = aiSet
           ? (isVi ? "Bộ câu hỏi do AI (Groq) soạn từ trích đoạn nguồn, gồm câu lý thuyết và tình huống lâm sàng, chưa được bác sĩ duyệt. Sau khi trả lời, xem câu trích nguyên văn để đối chiếu."
             : "AI (Groq)-written set from the source excerpts, with theory and clinical-case questions; not physician-reviewed. After answering, check the verbatim quote.")
+          : b.generated_quiz?.model === "source-excerpt"
+          ? (isVi ? "Bộ ôn tập dự phòng gồm câu lý thuyết và tình huống lâm sàng dựa trên trích đoạn nguồn."
+            : "This backup set mixes theory and clinical scenarios based on verbatim source excerpts.")
           : isVi
           ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
           : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.";

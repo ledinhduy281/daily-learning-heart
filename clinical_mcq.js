@@ -285,7 +285,7 @@ const ClinicalQuiz = (() => {
     Object.assign(state,{current_question:question,correct_key:question.correct_key,explanation:question.explanation,current_options:question.options,last_question:question.question,required_subskills:question.required_subskills,options_lang:lang,question_revealed:false,last_eval:action==='answer'?evaluation:''});
     return {reply:feedback+question.question,state,eval:action==='answer'?evaluation:'start'};
   }
-  return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
+  return {build,turn,translate,normalized,reviewQuestion,migrateSourceReview,sourceItems,sourceQuestionCount:primary=>sourceReviewIds(primary).length,
     hasSourceItems:primary=>sourceItems(primary).length>0||aiItems(primary).length>0,
     grounding:cases.grounding,validateSet:cases.validateSet};
 })();

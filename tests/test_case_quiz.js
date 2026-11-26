@@ -54,6 +54,13 @@ assert.equal(CaseQuiz.rejectReason(labCase, CaseQuiz.grounding(lesson)), "", "la
 assert.equal(CaseQuiz.rejectReason({...kase, stem_en: kase.stem_en + " She receives amiodarone 1 mg/min."},
   CaseQuiz.grounding(lesson)), "dose", "an infusion rate missing from the quote is a dose");
 assert.equal(CaseQuiz.validItem({...theory, quote: quote.replace(/ /g, "\u00a0")}, CaseQuiz.grounding(lesson)), true);
+const durationQuote = "The source reports a blood pressure of 120 mm Hg at the end of five years of follow-up.";
+const durationGround = {...CaseQuiz.grounding(lesson), excerpts: [durationQuote]};
+const durationItem = {...theory, quote: durationQuote, options: options(["110", "120", "125", "130"]),
+  explanation_en: "The 5-year measurement was 120mmHg.", explanation_vi: "Kết quả được báo cáo là 120 mm Hg sau 5 năm."};
+assert.equal(CaseQuiz.rejectReason(durationItem, durationGround), "", "duration words and spacing do not change the numeric value");
+assert.equal(CaseQuiz.rejectReason({...durationItem, explanation_en: "The value was documented after seven years."}, durationGround), "numbers");
+assert.deepEqual(CaseQuiz.unsupportedNumbers({...durationItem, explanation_en: "The value reflected a 7-year assessment."}, durationGround), ["7"]);
 
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};
 assert.equal(quiz.sourceQuestionCount(generated), 2, "a generated set replaces the default questions");
