@@ -9696,6 +9696,7 @@
         set("socraticPhaseBadge", {
           diagnostic: t("Chẩn đoán", "Diagnostic"), practice: t("Luyện tập", "Practice"),
           final: state?.finalFailed ? t("Làm lại kiểm tra tổng hợp", "Retake mixed assessment") : t("Kiểm tra tổng hợp", "Mixed assessment"),
+          final_review: t("Xem lại bài kiểm tra", "Assessment review"),
           mastered: t("Đạt mục tiêu 4/5", "Target met: 4/5"),
           exhausted: t("Hết câu luyện tập", "Practice bank exhausted"),
         }[stage]);
@@ -9738,6 +9739,21 @@
           </section>` : "";
         const source = q => `<p>${escapeHtml(q[`explanation_${lang}`])}</p><blockquote>“${escapeHtml(q.quote)}”</blockquote>
           <a href="https://pubmed.ncbi.nlm.nih.gov/${q.pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${q.pmid}</a>`;
+        if (stage === "final_review") {
+          panel.innerHTML = `<section class="socratic-transcript-card">
+            <h2 tabindex="-1" data-course-heading>${t("Câu chưa đúng trong bài kiểm tra", "Missed assessment questions")}</h2>
+            ${state.final.map(({index}) => {
+              const q = course.items[index];
+              return `<details>
+                <summary>${escapeHtml(q[`stem_${lang}`])}</summary>
+                <p>${t("Đáp án đúng", "Correct answer")}: ${escapeHtml(q.options["ABCD".indexOf(q.answer)][lang])}</p>
+                ${source(q)}
+              </details>`;
+            }).join("")}
+            ${button("next", t("Quay lại luyện tập", "Return to practice"))}
+          </section>${map}`;
+          return;
+        }
         const finalReview = stage === "practice" && state.remediation?.length ? `
           <div class="socratic-transcript-card">
             <h2>${t("Ôn lại trước khi làm bài kiểm tra lần nữa", "Review before retaking the assessment")}</h2>

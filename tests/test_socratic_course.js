@@ -75,6 +75,10 @@ let failed = advance(unlocked, false);
 while (failed.stage === "final") failed = advance(failed);
 assert.ok(failed.finalFailed && failed.stage !== "mastered");
 assert.ok(failed.skills.some(s => s.level < 4));
+assert.equal(failed.stage, "final_review");
+assert.deepEqual(failed.final, [{index: unlocked.index, correct: false}]);
+const reviewState = failed;
+failed = turn(failed, "next");
 assert.equal(failed.stage, "practice", "a failed assessment leads to remediation even when the hard bank was used");
 assert.deepEqual(failed.final, []);
 const originalChecks = failed.skills[bank.items[failed.index].skill].checks.length;
@@ -92,6 +96,7 @@ assert.equal(unlocked.final.length, bank.skills.length + 1);
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
 const escapeHtml = html.match(/    function escapeHtml\(str\) \{[\s\S]*?\n    \}/)[0];
+const escape = vm.runInNewContext(escapeHtml + ";escapeHtml");
 const nodes = {
   socraticCourse: {hidden: true}, socraticTutorSection: {toggleAttribute() {}},
   socraticPhaseBadge: {}, labelNewQuizSet: {}, btnNewQuizSet: {style: {}},
@@ -138,4 +143,21 @@ tutor.courseAction("answer", wrongKey);
 assert.match(markup(), /Incorrect after two attempts/);
 assert.match(markup(), /<blockquote>|pubmed\.ncbi/);
 assert.doesNotMatch(markup(), /data-course-action="answer"/);
+for (const lang of ["vi", "en"]) {
+  App.currentLang = lang;
+  tutor.store[key] = {course: reviewState};
+  tutor.renderUI();
+  const missedIndex = reviewState.final[0].index;
+  const missed = bank.items[missedIndex];
+  const correct = missed.options["ABCD".indexOf(missed.answer)][lang];
+  assert.match(markup(), lang === "vi" ? /Câu chưa đúng trong bài kiểm tra/ : /Missed assessment questions/);
+  assert.ok(markup().includes(missed["stem_" + lang]));
+  assert.ok(!markup().includes(bank.items[missedIndex + 1]["stem_" + lang]));
+  assert.ok(markup().includes(correct));
+  assert.ok(markup().includes(missed["explanation_" + lang]));
+  assert.ok(markup().includes(`<blockquote>“${escape(missed.quote)}”</blockquote>`));
+  tutor.courseAction("next");
+  assert.equal(tutor.store[key].course.stage, "practice");
+  assert.doesNotMatch(markup(), /<blockquote>/);
+}
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");

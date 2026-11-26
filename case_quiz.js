@@ -211,6 +211,13 @@ const CaseQuiz = (() => {
   function courseTurn(course, previous, action, value, lang) {
     if (!previous || action === 'restart') return startCourse(course);
     const state = JSON.parse(JSON.stringify(previous));
+    if (state.stage === 'final_review') {
+      if (action === 'next') {
+        state.final = [];
+        nextPractice(course, state, null);
+      }
+      return state;
+    }
     const item = course.items[state.index];
     if (state.stage === 'practice' && action === 'focus' && course.skills[value]) {
       state.focus = value;
@@ -236,15 +243,13 @@ const CaseQuiz = (() => {
         Object.assign(state, {stage: 'mastered', index: -1});
       } else if (state.stage !== 'final' && !state.remediation?.length && state.skills.every(s => s.level >= 4)) {
         Object.assign(state, {stage: 'final', index: course.items.findIndex(q => q.phase === 'final'), final: []});
+      } else if (state.stage === 'final') {
+        const missed = state.final.filter(attempt => !attempt.correct);
+        const affected = missed.map(attempt => course.items[attempt.index].skill);
+        state.remediation = affected.includes(null) ? state.skills.map((_, i) => i) : affected;
+        for (const i of state.remediation) state.skills[i].level = 3;
+        Object.assign(state, {stage: 'final_review', index: -1, final: missed, finalFailed: true});
       } else {
-        if (state.stage === 'final') {
-          const missed = state.final.filter(attempt => !attempt.correct);
-          const affected = missed.map(attempt => course.items[attempt.index].skill);
-          state.remediation = affected.includes(null) ? state.skills.map((_, i) => i) : affected;
-          for (const i of state.remediation) state.skills[i].level = 3;
-          state.final = [];
-          state.finalFailed = true;
-        }
         nextPractice(course, state, result === 'wrong' || result === 'told' ? item.skill : null);
       }
       return state;
