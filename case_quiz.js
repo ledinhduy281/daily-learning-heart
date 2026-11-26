@@ -78,6 +78,74 @@ const CaseQuiz = (() => {
     return types.has('theory') && types.has('case') ? valid : [];
   }
 
+  const COURSE_VERSION = 2;
+  const FORMATS = ['predict', 'explain', 'critique', 'apply', 'connect'];
+  const TIERS = ['easy', 'medium', 'hard'];
+  const LANGS = ['vi', 'en'];
+  const PRACTICE_PER_SKILL = 3;
+
+  function validateCourse(lesson, set) {
+    if (lesson?.quiz_mode !== 'source_excerpt' || set?.version !== COURSE_VERSION || typeof set.set_id !== 'string' || !set.set_id.trim() ||
+        !Array.isArray(set.skills) || set.skills.length < 4 || set.skills.length > 10 ||
+        !Array.isArray(set.items) || !set.skills.every(s => s && LANGS.every(l => text(s[l], [3, 100])))) return null;
+    const {skills, items} = set;
+    const ground = grounding(lesson);
+    const diagnosis = items.filter(i => i?.phase === 'diagnostic');
+    if (diagnosis.length < 3 || diagnosis.length > 5 ||
+        items.length !== diagnosis.length + skills.length * (PRACTICE_PER_SKILL + 1) + 1) return null;
+    if (!LANGS.every(l => new Set(skills.map(s => squash(s[l]).toLowerCase())).size === skills.length)) return null;
+    const seen = {vi: new Set(), en: new Set()}, covered = {diagnostic: new Set(), final: new Set()};
+    const practice = skills.map(() => []);
+    const cleaned = [];
+    let tier = -1, phase = 0, integration = 0;
+    for (const item of items) {
+      const cited = {...ground, title: '', excerpts: [item?.quote]};
+      if (!item || typeof item.quote !== 'string' || !ground.excerpts.some(e => e.includes(item.quote)) ||
+          rejectReason(item, cited) ||
+          !FORMATS.includes(item.format) || !TIERS.includes(item.tier)) return null;
+      const p = ['diagnostic', 'practice', 'final'].indexOf(item.phase);
+      const t = TIERS.indexOf(item.tier);
+      if (p < phase) return null;
+      phase = p;
+      const idx = item.skill;
+      if (idx === null) {
+        if (p !== 2 || item.format !== 'connect' || ++integration > 1) return null;
+      } else {
+        if (!Number.isInteger(idx) || !skills[idx]) return null;
+        if (p === 1) practice[idx].push(item.tier);
+        else {
+          if (covered[item.phase].has(idx)) return null;
+          covered[item.phase].add(idx);
+        }
+      }
+      if (p === 0) {
+        if (t < tier) return null;
+        tier = t;
+      }
+      for (const l of LANGS) {
+        const stem = squash(item['stem_' + l]).toLowerCase();
+        const hint = item['hint_' + l];
+        const answer = squash(item.options[KEYS.indexOf(item.answer)][l]).toLowerCase();
+        if (seen[l].has(stem) || (p === 1 &&
+            (!text(hint, [12, 300]) || !hint.trim().endsWith('?') || namesOptions(hint) ||
+             squash(hint).toLowerCase().includes(answer) || squash(hint).toLowerCase() === stem ||
+             doses(hint).some(d => !doses(item.quote).map(doseKey).includes(doseKey(d)))))) return null;
+        seen[l].add(stem);
+      }
+      const base = clean(item);
+      if (rejectReason(base, cited)) return null;
+      cleaned.push({...base, quote: item.quote, phase: item.phase, skill: idx, format: item.format, tier: item.tier,
+        ...(p === 1 ? {hint_vi: squash(item.hint_vi), hint_en: squash(item.hint_en)} : {})});
+    }
+    if (diagnosis[0].tier !== 'easy' || tier !== 2 || integration !== 1 || covered.final.size !== skills.length ||
+        practice.some(t => t.length !== PRACTICE_PER_SKILL || t.filter(d => d === 'hard').length < 2) ||
+        !items.some(i => i.phase === 'final' && i.type === 'case') ||
+        !['theory', 'case'].every(t => items.some(i => i.type === t)) ||
+        !FORMATS.every(f => items.some(i => i.format === f))) return null;
+    return {version: COURSE_VERSION, set_id: set.set_id, model: set.model,
+      skills: skills.map(s => ({vi: squash(s.vi), en: squash(s.en)})), items: cleaned};
+  }
+
   const subskill = (item, sourceKind) => item.type === 'case' ? 3 : sourceKind === 'guideline' ? 0 : 1;
 
   function question(item, lang, slotIdx, variantIdx, sourceId, difficulty, sourceKind, required) {
@@ -98,6 +166,171 @@ const CaseQuiz = (() => {
     };
   }
 
-  return {grounding, clean, rejectReason, unsupportedNumbers, validItem, validateSet, question, subskill, AI_NOTE, LIMITS};
+  function startCourse(course) {
+    return {stage: 'diagnostic', index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
+      skills: course.skills.map(() => ({level: 0, checks: [], last: -1})), final: []};
+  }
+
+  function courseQuestion(course, state, lang) {
+    const item = course.items[state?.index];
+    const previous = (state.history || []).slice(0, state.result ? -1 : undefined);
+    const variant = state.index + previous.filter(i => i === state.index).length;
+    return item ? question(item, lang, 0, variant, '', item.tier, '', []) : null;
+  }
+
+  function spacedRecall(state, index) {
+    if (!(index in state.revealed)) return true;
+    const since = Math.max(state.revealed[index], state.history.lastIndexOf(index) + 1);
+    return new Set(state.history.slice(since)).size >= 2;
+  }
+
+  function selectRecall(state, candidates) {
+    return candidates.find(i => !(i in state.revealed)) ??
+      candidates.find(i => spacedRecall(state, i));
+  }
+
+  function nextAssessment(course, state) {
+    const slots = course.items.flatMap((q, i) => q.phase === 'final' ? [i] : []);
+    if (state.final.length === slots.length) return false;
+    let index = slots[state.final.length];
+    if (state.finalFailed) {
+      const completed = new Set(state.final.map(attempt => course.items[attempt.index].skill));
+      index = undefined;
+      for (const slot of slots) {
+        const {skill, tier, type} = course.items[slot];
+        if (completed.has(skill)) continue;
+        const alternatives = skill === null ? [] : course.items.flatMap((q, i) =>
+          i !== slot && q.phase !== 'diagnostic' && q.skill === skill && q.type === type &&
+          TIERS.indexOf(q.tier) >= TIERS.indexOf(tier) ? [i] : [])
+          .sort((a, b) => Number(state.used.includes(a)) - Number(state.used.includes(b)));
+        index = selectRecall(state, [slot, ...alternatives]);
+        if (index != null) break;
+      }
+    }
+    Object.assign(state, {stage: index == null ? 'exhausted' : 'final', index: index ?? -1});
+    return true;
+  }
+
+  function nextPractice(course, state, revisit) {
+    const practice = course.items.map((item, i) => ({...item, i})).filter(q => q.phase === 'practice');
+    if (state.remediation?.length) {
+      const hard = practice.filter(q => state.remediation.includes(q.skill) && q.tier === 'hard').map(q => q.i);
+      const gap = practice.map(q => q.i).filter(i => !hard.includes(i) && !state.history.slice(-2).includes(i));
+      const index = selectRecall(state, hard) ?? selectRecall(state, gap);
+      Object.assign(state, {stage: index == null ? 'exhausted' : 'practice', index: index ?? -1, review: false, coached: true});
+      return;
+    }
+    let candidates = practice.filter(q => !state.used.includes(q.i));
+    const practiceCount = state.used.filter(i => course.items[i].phase === 'practice').length;
+    const spaced = practiceCount % 3 === 2;
+    const focus = Number.isInteger(state.focus) ? state.focus : revisit;
+    const reviews = spaced ? candidates.filter(q => {
+      const s = state.skills[q.skill];
+      return s.last >= 0 && s.last < state.used.length - 2 && s.level > 0;
+    }) : [];
+    if (reviews.length && focus == null) candidates = reviews;
+    else if (candidates.some(q => q.skill === focus)) candidates = candidates.filter(q => q.skill === focus);
+    const requested = candidates.filter(q => q.tier === state.prefer);
+    if (requested.length) candidates = requested;
+    const placement = q => practiceCount === 0 && state.skills[q.skill].diagnostic === false ? 0 : 1;
+    candidates.sort((a, b) => placement(a) - placement(b) || state.skills[a.skill].level - state.skills[b.skill].level ||
+      state.skills[a.skill].last - state.skills[b.skill].last);
+    const next = candidates[0];
+    state.stage = next ? 'practice' : 'exhausted';
+    state.index = next?.i ?? -1;
+    state.review = Boolean(next && reviews.some(q => q.i === next.i));
+    state.coached = Boolean(next && revisit === next.skill);
+    delete state.focus;
+    delete state.prefer;
+  }
+
+  function courseTurn(course, previous, action, value, lang) {
+    if (!previous || action === 'restart') return startCourse(course);
+    const state = JSON.parse(JSON.stringify(previous));
+    state.history ??= state.used.slice();
+    state.revealed ??= Object.fromEntries(state.used.filter(i => course.items[i].phase === 'practice' ||
+      (state.finalFailed && course.items[i].phase === 'final')).map(i => [i, state.history.indexOf(i) + 1]));
+    if (state.stage === 'final_review') {
+      if (action === 'next') {
+        for (const {index} of state.final) state.revealed[index] = state.history.length;
+        state.final = [];
+        nextPractice(course, state, null);
+      }
+      return state;
+    }
+    const item = course.items[state.index];
+    if (state.stage === 'practice' && action === 'focus' && course.skills[value]) {
+      state.focus = value;
+      if (!state.attempts && !state.result && state.used.every(i => course.items[i].phase === 'diagnostic')) {
+        nextPractice(course, state, null);
+      }
+      return state;
+    }
+    if (state.stage === 'practice' && (value === 'medium' || value === 'hard') && action === 'difficulty') {
+      state.prefer = value;
+      return state;
+    }
+    if (!item) return state;
+    const skill = state.skills[item.skill];
+    if (action === 'next' && state.result) {
+      const result = state.result;
+      Object.assign(state, {attempts: 0, result: '', review: false});
+      if (state.stage === 'diagnostic' && course.items[state.index + 1]?.phase === 'diagnostic') {
+        state.index++;
+      } else if (state.stage === 'final' && nextAssessment(course, state)) {
+        return state;
+      } else if (state.stage === 'final' && state.final.every(attempt => attempt.correct)) {
+        Object.assign(state, {stage: 'mastered', index: -1});
+      } else if (state.stage !== 'final' && !state.remediation?.length && state.skills.every(s => s.level >= 4)) {
+        state.final = [];
+        nextAssessment(course, state);
+      } else if (state.stage === 'final') {
+        const missed = state.final.filter(attempt => !attempt.correct);
+        const affected = missed.map(attempt => course.items[attempt.index].skill);
+        state.remediation = affected.includes(null) ? state.skills.map((_, i) => i) : affected;
+        for (const i of state.remediation) state.skills[i].level = 3;
+        Object.assign(state, {stage: 'final_review', index: -1, final: missed, finalFailed: true});
+      } else {
+        nextPractice(course, state, result === 'wrong' || result === 'told' ? item.skill : null);
+      }
+      return state;
+    }
+    if (state.result || (action !== 'answer' && action !== 'tell') ||
+        (action === 'answer' && !KEYS.includes(value)) || (action === 'tell' && state.stage !== 'practice')) return state;
+    const correct = action === 'answer' && courseQuestion(course, state, lang).correct_key === value;
+    const independent = correct && state.attempts === 0 && !state.used.includes(state.index);
+    if (state.stage === 'practice' && action === 'answer' && !correct && !state.attempts) {
+      state.attempts = 1;
+      if (state.review && skill) { skill.level = Math.max(0, skill.level - 1); skill.checks = []; }
+      return state;
+    }
+    if (state.stage === 'practice' && state.remediation?.includes(item.skill) && item.tier === 'hard' &&
+        correct && !state.attempts && spacedRecall(state, state.index)) {
+      skill.level = 4;
+      state.remediation = state.remediation.filter(i => i !== item.skill);
+    } else if (state.stage !== 'final' && skill && independent && !state.remediation?.includes(item.skill)) {
+      skill.checks.push({level: TIERS.indexOf(item.tier) + 2, unprompted: !state.coached});
+      if (skill.checks.length >= 2) {
+        for (let target = 4; target > skill.level; target--) {
+          const qualifying = skill.checks.filter(check => check.level >= target);
+          if (qualifying.length >= 2 && qualifying.some(check => check.unprompted)) {
+            skill.level = target;
+            break;
+          }
+        }
+      }
+    }
+    if (skill) skill.last = state.used.length;
+    if (state.stage === 'diagnostic') skill.diagnostic = correct;
+    if (!state.used.includes(state.index)) state.used.push(state.index);
+    if (state.stage === 'final') state.final.push({index: state.index, correct: correct && spacedRecall(state, state.index)});
+    state.history.push(state.index);
+    if (state.stage === 'practice') state.revealed[state.index] = state.history.length;
+    state.result = action === 'tell' ? 'told' : correct ? 'correct' : 'wrong';
+    return state;
+  }
+
+  return {grounding, clean, rejectReason, unsupportedNumbers, validItem, validateSet, validateCourse,
+    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, COURSE_VERSION, PRACTICE_PER_SKILL};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;

@@ -41,7 +41,7 @@ const ClinicalQuiz = (() => {
   function aiItems(primary) {
     if (primary?.quiz_mode!=='source_excerpt') return [];
     const set=primary.generated_quiz;
-    const generated=set&&typeof set.set_id==='string'?cases.validateSet(primary,set.items):[];
+    const generated=set?.version===undefined&&typeof set?.set_id==='string'?cases.validateSet(primary,set.items):[];
     if (generated.length) return generated.map((item,i)=>[`gen:${set.set_id}:${i}`,item]);
     const ground=cases.grounding(primary);
     return (Array.isArray(primary.case_quiz_items)?primary.case_quiz_items:[]).map((item,i)=>[`case:${i}`,item])
@@ -234,24 +234,34 @@ const ClinicalQuiz = (() => {
       if (valid) current=state.current_question=canonical;
     }
     if (['answer','just_tell_me'].includes(action) && !valid) return {reply:en?'Please restart the quiz; this saved question has no reliable answer rationale.':'Vui lòng bắt đầu lại bài trắc nghiệm; câu đã lưu chưa có giải thích đáp án đáng tin cậy.',state,eval:'partial'};
-    if (['answer','just_tell_me'].includes(action) && sourceOnly) state.revealed_source_pmid=current.source_pmid;
     const correct=valid && choice===current.correct_key;
+    const legacySet=sourceOnly && current?.generation?.source_id?.startsWith('gen:');
+    const pendingRetry=legacySet && !state.question_revealed && state.attempts_on_current===1;
+    if (action==='answer' && !correct && legacySet && !state.question_revealed && !state.attempts_on_current) {
+      Object.assign(state,{attempts_on_current:1,answered_count:(state.answered_count||0)+1,streak:0,
+        last_updated_idx:-1,last_delta:0,last_eval:'wrong'});
+      const hint=current.case_type==='case'
+        ? (en?'Which detail in the vignette decides whether your choice applies?':'Chi tiết nào trong tình huống quyết định lựa chọn của bạn có phù hợp không?')
+        : (en?'Which part of the claim in your chosen option would the cited excerpt need to support?':'Trích đoạn được dẫn cần xác nhận phần nào trong nhận định bạn đã chọn?');
+      return {reply:(en?'Not quite. Try again: ':'Chưa đúng. Thử lại: ')+hint,state,eval:'wrong'};
+    }
+    if (['answer','just_tell_me'].includes(action) && sourceOnly) state.revealed_source_pmid=current.source_pmid;
     if (action==='just_tell_me' || (action==='answer' && !correct)) {
       Object.assign(state,{correct_key:current.correct_key,explanation:current.explanation,current_options:current.options,last_question:current.question});
-      if (action==='answer' && !state.question_revealed) {state.answered_count=(state.answered_count||0)+1;state.attempts_on_current=(state.attempts_on_current||0)+1;state.streak=0;}
+      if (action==='answer' && !state.question_revealed) {state.answered_count=(state.answered_count||0)+Number(!pendingRetry);state.attempts_on_current=(state.attempts_on_current||0)+1;state.streak=0;}
       Object.assign(state,{question_revealed:true,last_updated_idx:-1,last_delta:0,streak:0});
       state.last_eval=action==='answer'?'wrong':'partial';
       return {reply:(en?'Review the same question. ':'Ôn lại chính câu hỏi này. ')+current.explanation,state,eval:state.last_eval};
     }
     let feedback='';
-    const evaluation=state.question_revealed?'partial':'correct';
+    const evaluation=state.question_revealed||pendingRetry?'partial':'correct';
     if (action==='start_diagnostic') {
       Object.assign(state,{phase:'diagnostic',diag_step:0,focus_idx:0,answered_count:0,correct_count:0,attempts_on_current:0,streak:0,question_index:0});
       for (const s of state.subskills||[]) Object.assign(s,{level:0,checks:0,answered:0,correct:0});
     } else if (action==='answer') {
       feedback=current.explanation+'\n\n';
       const idx=current.subskill_idx ?? ({guideline:0,trial:1}[current.question_kind]),skills=state.subskills||[];
-      const earned=!state.question_revealed;
+      const earned=!state.question_revealed&&!pendingRetry;
       const credit=earned && Number.isInteger(idx) && idx>=0 && idx<4 && skills.length===4;
       if (credit) {skills[idx].level=Math.min(5,Math.max(2,(skills[idx].level||0)+1));for (const k of ['checks','answered','correct']) skills[idx][k]=(skills[idx][k]||0)+1;}
       Object.assign(state,{last_updated_idx:credit?idx:-1,last_delta:credit?1:0,answered_count:(state.answered_count||0)+Number(earned),correct_count:(state.correct_count||0)+Number(earned),streak:earned?(state.streak||0)+1:0,attempts_on_current:0,focus_idx:((state.focus_idx||0)+1)%4,diag_step:Math.min(3,(state.diag_step||0)+1),question_index:(state.question_index||0)+1});

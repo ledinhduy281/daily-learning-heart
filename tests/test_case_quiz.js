@@ -87,6 +87,29 @@ const App = {selected: generated};
 const tutor = vm.runInNewContext(escapeHtmlCode + "\n" + tutorCode + ";SocraticTutor", {
   App, CaseQuiz, ClinicalQuiz: quiz, document: {getElementById: id => nodes[id]},
 });
+const publishedLesson = {...lesson, id: "daily-fixture"};
+const published = Array.from({length: 3}, (_, i) => ({set_id: `set-${i}`, items: [theory, theory, theory, kase, kase, kase]}));
+const storage = new Map();
+const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
+  CaseQuiz, ClinicalQuiz: quiz,
+  window: {EBM_QUIZ_SETS: {sets: {[publishedLesson.id]: published}},
+    localStorage: {getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v)}},
+});
+const fresh = {...publishedLesson};
+assert.equal(quiz.sourceQuestionCount(fresh), 3, "the source-only fallback has three questions");
+assert.equal(quiz.sourceQuestionCount(quizSets.attach(fresh)), 6, "fresh devices start with the published mixed set");
+assert.equal(quizSets.remaining(fresh), 2, "loading the default set is free");
+assert.equal(storage.size, 0);
+const firstSet = fresh.generated_quiz;
+const secondSet = quizSets.openNext(fresh);
+assert.notEqual(secondSet.set_id, firstSet.set_id);
+assert.equal(quizSets.attach({...publishedLesson}).generated_quiz.set_id, secondSet.set_id, "reload resumes the chosen set");
+assert.equal(quizSets.remaining(fresh), 1);
+assert.ok(quizSets.openNext(fresh));
+assert.equal(quizSets.openNext(fresh), null);
+assert.equal(quizSets.pressesLeft(), 0);
+assert.equal(quizSets.attach({id: "no-published-set"}).generated_quiz, undefined);
+
 tutor.quizSets.attach = b => b;
 tutor.quizSets.available = () => [generated.generated_quiz];
 tutor.quizSourceLabel = () => "";
@@ -94,6 +117,25 @@ tutor.renderProgressDashboard = () => {};
 for (const lang of ["vi", "en"]) {
   const vi = lang === "vi";
   const first = quiz.turn(generated, {}, lang, "start_diagnostic").state;
+  const wrongKey = first.current_options.find(o => o.key !== first.correct_key).key;
+  const retry = quiz.turn(generated, first, lang, "answer", wrongKey);
+  const hint = tutor.renderTranscriptMessage({role: "assistant", text: retry.reply, source_pmid: retry.state.revealed_source_pmid}, retry.state, 2, vi);
+  assert.match(hint, vi ? /Chưa đúng\. Thử lại:/ : /Not quite\. Try again:/);
+  assert.doesNotMatch(hint, /Correct answer|Đáp án đúng|<blockquote>|pubmed\.ncbi/);
+  assert.equal(retry.state.question_revealed, false);
+  assert.equal(retry.state.question_index, first.question_index);
+  assert.equal(retry.state.attempts_on_current, 1);
+  assert.deepEqual(retry.state.current_options, first.current_options);
+  const secondMiss = quiz.turn(generated, retry.state, lang, "answer", wrongKey);
+  assert.ok(secondMiss.reply.includes(quote));
+  assert.equal(secondMiss.state.revealed_source_pmid, pmid);
+  assert.equal(secondMiss.state.question_revealed, true);
+  assert.equal(secondMiss.state.answered_count, 1);
+  const assisted = quiz.turn(generated, retry.state, lang, "answer", first.correct_key);
+  assert.equal(assisted.state.question_index, 1);
+  assert.equal(assisted.state.correct_count, 0);
+  assert.equal(assisted.eval, "partial");
+
   const turn = quiz.turn(generated, first, lang, "answer", first.correct_key);
   const saved = {role: "assistant", text: turn.reply, source_pmid: turn.state.revealed_source_pmid};
   const markup = tutor.renderTranscriptMessage(saved, turn.state, 2, vi);
@@ -116,6 +158,7 @@ for (const lang of ["vi", "en"]) {
   for (const remaining of [2, 0]) {
     tutor.quizSets.remaining = () => remaining;
     tutor.renderUI();
+    assert.equal(nodes.btnNewQuizSet.disabled, remaining === 0);
     assert.equal(nodes.labelNewQuizSet.textContent,
       vi ? `Tạo câu hỏi mới bằng AI (còn ${remaining} lượt)` : `New AI questions (${remaining} left)`);
   }
