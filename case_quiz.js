@@ -176,8 +176,9 @@ const CaseQuiz = (() => {
   function pairedDeclineEffects(quote) {
     const [outcomes, estimates] = quote.split(/\bdeclines by\b/i);
     const levels = declineThresholds(outcomes);
-    const figures = estimates ? effectFigures(estimates.replace(/\([^)]*\)/g, '')).filter(f => f.endsWith('%')) : [];
-    return levels.length > 1 && levels.length === figures.length ? new Map(levels.map((n, i) => [n, figures[i]])) : new Map();
+    const groups = estimates ? estimates.split(/(?:\s*,\s*(?:and\s+)?|\s+and\s+)(?=\d+(?:[.,]\d+)?\s*%)/i)
+      .map(group => new Set(effectFigures(group))) : [];
+    return levels.length > 1 && levels.length === groups.length ? new Map(levels.map((n, i) => [n, groups[i]])) : new Map();
   }
   const PATIENT = {
     en: /\b(?:patient|person|woman|man|adult|child)\b/,
@@ -191,6 +192,7 @@ const CaseQuiz = (() => {
     const citedCkd = new Set(CLAIM_LANGUAGES.flatMap(lang => ckdGroups(quote[lang], lang)));
     const citedLevels = new Set([...item.quote.matchAll(ABSOLUTE_RISK_LEVEL)].map(([, n]) => numbers(n)[0]));
     const declineEffects = pairedDeclineEffects(item.quote);
+    const pairedFigures = new Set([...declineEffects.values()].flatMap(figures => [...figures]));
     const relative = [...cited].some(figure => /^(?:rr|hr|or) /.test(figure));
     const egfr = CLAIMS.find(([kind]) => kind === 'egfr')[1];
     const citedEgfr = CLAIM_LANGUAGES.some(lang => matchesClaim(egfr, quote, lang));
@@ -211,7 +213,7 @@ const CaseQuiz = (() => {
       for (const [field, isStem] of [[stem, true], [correct[lang], false], [item['explanation_' + lang], false]]) {
         for (const figure of effectFigures(field)) {
           if (!cited.has(figure)) found.add(figure);
-          if (expectedDeclineEffect && figure !== expectedDeclineEffect && [...declineEffects.values()].includes(figure)) {
+          if (expectedDeclineEffect && pairedFigures.has(figure) && !expectedDeclineEffect.has(figure)) {
             found.add(figure + ' belongs to a different decline threshold');
           }
         }

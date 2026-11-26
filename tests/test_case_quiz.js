@@ -203,6 +203,17 @@ const mismatchedThreshold = {...withdrawnRenalCase,
 };
 assert.ok(CaseQuiz.unsupportedCaseEffects(mismatchedThreshold).includes("47% belongs to a different decline threshold"),
   "the 47% estimate cannot answer the 30% threshold even though both values appear in the same excerpt");
+const matchedRenalCase = {...withdrawnRenalCase,
+  stem_en: "A clinician reviews the intensive blood pressure lowering meta-analysis. What is the reported effect on the risk of a decline of at least 30%?",
+  stem_vi: "Một bác sĩ xem phân tích về hạ huyết áp tích cực. Can thiệp có tác động thế nào đến nguy cơ suy giảm ít nhất 30%?",
+  explanation_en: "Intensive BP lowering increased the risk of a decline of at least 30% by 42% (RR 1.42).",
+  explanation_vi: "Hạ huyết áp tích cực làm tăng 42% nguy cơ suy giảm ít nhất 30% (RR 1,42).",
+};
+assert.equal(CaseQuiz.rejectReason(matchedRenalCase, renalGround), "", "the paired 42% and RR 1.42 both apply to the 30% threshold");
+for (const [field, matching, wrong] of [["explanation_en", "RR 1.42", "RR 1.47"], ["explanation_vi", "RR 1,42", "RR 1,47"]]) {
+  const swapped = {...matchedRenalCase, [field]: matchedRenalCase[field].replace(matching, wrong)};
+  assert.equal(CaseQuiz.rejectReason(swapped, renalGround), "effects", "RR 1.47 belongs to the 40% threshold, not 30%");
+}
 console.log("Clinical effects: withdrawn eGFR case, unsupported populations, absolute risk wording, and wrong measures rejected: OK");
 
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};
