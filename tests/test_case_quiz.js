@@ -89,6 +89,21 @@ const ckdComparison = {...grounded,
   explanation_vi: "Trích đoạn 2 chỉ ra rằng giảm huyết áp mạnh hơn giảm nguy cơ sự kiện tim mạch 15% và không có sự khác biệt về độ đồng nhất (heterogeneity) theo tình trạng CKD, nghĩa là lợi ích tương tự ở cả hai nhóm. Vì vậy đáp án đúng là không có sự khác biệt.",
 };
 assert.equal(CaseQuiz.rejectReason(ckdComparison, eventGround), "", "CKD status supports both groups in the published comparison");
+const expandedCkd = {...ckdComparison,
+  explanation_vi: "Lợi ích tương tự ở bệnh nhân có bệnh thận mạn và bệnh nhân không có bệnh thận mạn.",
+};
+assert.equal(CaseQuiz.rejectReason(expandedCkd, eventGround), "", "bệnh thận mạn is CKD, not a male population");
+assert.deepEqual(CaseQuiz.unsupportedClaims({...expandedCkd,
+  explanation_vi: "Bệnh nhân hỏi ăn mì có làm thay đổi lợi ích không."}), [], "mì is not the clinical abbreviation MI");
+assert.ok(CaseQuiz.unsupportedClaims({...expandedCkd, explanation_vi: "Trích đoạn báo cáo giảm MI."}).includes("myocardial_infarction"),
+  "a genuine standalone clinical acronym still counts in Vietnamese");
+assert.ok(CaseQuiz.unsupportedClaims({...expandedCkd, explanation_en: "The trial enrolled one man."}).includes("men"),
+  "man still denotes the population in English");
+assert.ok(CaseQuiz.unsupportedClaims({...expandedCkd,
+  quote: "Lợi ích tương tự ở bệnh nhân có bệnh thận mạn và bệnh nhân không có bệnh thận mạn.",
+  explanation_en: "The benefit was seen in a man with CKD."}).includes("men"), "Vietnamese source text does not supply the English population");
+assert.deepEqual(CaseQuiz.unsupportedClaims({...expandedCkd,
+  explanation_en: "The wording is not a criticism of the study's management."}), [], "MI and man do not match inside other words");
 for (const [field, explanation] of [
   ["explanation_en", "The treatment reduced cardiovascular events but not cardiovascular mortality."],
   ["explanation_en", "The excerpt reports cardiovascular events, not cardiovascular mortality."],

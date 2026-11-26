@@ -93,7 +93,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
       if (faults[round] === "explanations" && !repaired && n < 3) {
         q.excerpt = excerpts.length + 1;
         if (n === 1) q.explanation_en = "Only patients with CKD benefited.";
-        else q.explanation_vi = "Chỉ nhóm bệnh nhân có CKD được hưởng lợi.";
+        else q.explanation_vi = "Lợi ích giới hạn ở bệnh nhân có bệnh thận mạn.";
         assert.equal(CaseQuiz.rejectReason({...q, quote: ckdQuote}, CaseQuiz.grounding(lesson)), "",
           "the lexical check alone cannot verify the subgroup effect");
       }
