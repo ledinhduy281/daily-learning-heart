@@ -1,8 +1,7 @@
 {
-  "last_pillar_id": 1,
-  "last_updated": "2026-11-26",
+  "last_pillar_id": 2,
+  "last_updated": "2026-11-27",
   "history": [
-    2,
     3,
     4,
     5,
@@ -11,9 +10,10 @@
     8,
     9,
     10,
-    1
+    1,
+    2
   ],
-  "today_pillar_id": 1,
-  "yesterday_pillar_id": 10,
-  "tomorrow_pillar_id": 2
+  "today_pillar_id": 2,
+  "yesterday_pillar_id": 1,
+  "tomorrow_pillar_id": 3
 }
