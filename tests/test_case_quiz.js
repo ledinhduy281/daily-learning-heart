@@ -136,6 +136,113 @@ assert.equal(CaseQuiz.validateCaseSet(eventLesson, {...eventSet, items: [liveCas
   "the browser cannot attach the already published pack with the bad case");
 console.log("Bilingual clinical claims: exact live mortality mismatch, unsupported populations and qualifiers rejected: OK");
 
+const withdrawnRenalCase = {
+  "type": "case",
+  "pmid": "42842238",
+  "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+  "answer": "A",
+  "stem_vi": "Một bệnh nhân 55 tuổi không có bệnh thận mạn đang được điều trị hạ huyết áp mạnh (giảm SBP 12 mmHg). Bác sĩ lo ngại về nguy cơ suy giảm chức năng thận. Theo phân tích, nguy cơ suy giảm eGFR ≥30 % so với tiêu chuẩn tăng bao nhiêu phần trăm?",
+  "stem_en": "A 55‑year‑old patient without chronic kidney disease is undergoing intensive blood pressure lowering (12 mmHg SBP reduction). The physician worries about kidney function decline. According to the meta‑analysis, the risk of a ≥30% eGFR decline compared with standard treatment increases by how many percent?",
+  "explanation_vi": "Trích đoạn 3 cho biết hạ huyết áp mạnh làm tăng nguy cơ suy giảm eGFR ≥30 % lên 42 % (RR 1.42).",
+  "explanation_en": "Excerpt 3 reports that intensive BP lowering raises the risk of a ≥30% eGFR decline by 42% (RR 1.42).",
+  "options": [
+    {
+      "vi": "42 %",
+      "en": "42%"
+    },
+    {
+      "vi": "15 %",
+      "en": "15%"
+    },
+    {
+      "vi": "0 % (không thay đổi)",
+      "en": "0% (no change)"
+    },
+    {
+      "vi": "-15 % (giảm)",
+      "en": "-15% (decrease)"
+    }
+  ]
+};
+const renalGround = {pmid: withdrawnRenalCase.pmid, title: "", excerpts: [withdrawnRenalCase.quote]};
+assert.equal(CaseQuiz.rejectReason(withdrawnRenalCase, renalGround), "claims", "the withdrawn case adds an unnamed eGFR endpoint");
+assert.ok(CaseQuiz.unsupportedClaims(withdrawnRenalCase).includes("egfr"));
+const unresolved = CaseQuiz.unsupportedCaseEffects(withdrawnRenalCase);
+assert.ok(unresolved.includes("without_ckd not covered by the citation"));
+assert.ok(unresolved.includes("eGFR endpoint not cited"));
+assert.ok(unresolved.includes("absolute risk level 42%"));
+const scopedQuote = "Among patients with CKD, intensive BP lowering increased risk of an eGFR decline of at least 30% by 42% (RR, 1.42).";
+const scopedGround = {...renalGround, excerpts: [scopedQuote]};
+const scopedCase = {...withdrawnRenalCase, quote: scopedQuote,
+  explanation_vi: "Hạ huyết áp tích cực làm tăng 42% nguy cơ suy giảm eGFR ≥30% (RR 1.42).",
+};
+assert.equal(CaseQuiz.rejectReason(scopedCase, scopedGround), "effects", "a CKD-only result cannot answer a non-CKD vignette");
+assert.equal(CaseQuiz.rejectReason({...scopedCase,
+  stem_en: scopedCase.stem_en.replace(" without chronic kidney disease", ""),
+  stem_vi: scopedCase.stem_vi.replace(" không có bệnh thận mạn", ""),
+}, scopedGround), "effects", "a CKD-only result requires the vignette to establish CKD");
+const applicable = {...scopedCase,
+  stem_en: scopedCase.stem_en.replace("without chronic kidney disease", "with chronic kidney disease"),
+  stem_vi: scopedCase.stem_vi.replace("không có bệnh thận mạn", "có bệnh thận mạn"),
+};
+assert.equal(CaseQuiz.rejectReason(applicable, scopedGround), "", "the endpoint, subgroup, and relative effect are all cited");
+for (const [field, explanation] of [
+  ["explanation_vi", withdrawnRenalCase.explanation_vi],
+  ["explanation_en", "The excerpt says that the risk increased to 42%."],
+  ["explanation_en", "The excerpt reports HR 1.42 for the decline."],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...applicable, [field]: explanation}, scopedGround), "effects",
+    "an absolute risk or different ratio is not a relative risk increase");
+}
+assert.equal(CaseQuiz.rejectReason({...applicable, stem_en: applicable.stem_en + " The trial reported a 17% increase."},
+  scopedGround), "effects", "an effect in the vignette does not support itself");
+assert.equal(CaseQuiz.rejectReason({...applicable, stem_en: applicable.stem_en + " The trial reported 17 deaths."},
+  scopedGround), "effects", "an absolute trial count in the stem must come from the excerpt");
+const mismatchedThreshold = {...withdrawnRenalCase,
+  options: [{en: "47%", vi: "47%"}, {en: "42%", vi: "42%"}, ...withdrawnRenalCase.options.slice(2)],
+};
+assert.ok(CaseQuiz.unsupportedCaseEffects(mismatchedThreshold).includes("47% belongs to a different decline threshold"),
+  "the 47% estimate cannot answer the 30% threshold even though both values appear in the same excerpt");
+const matchedRenalCase = {...withdrawnRenalCase,
+  stem_en: "A clinician reviews the intensive blood pressure lowering meta-analysis. What is the reported effect on the risk of a decline of at least 30%?",
+  stem_vi: "Một bác sĩ xem phân tích về hạ huyết áp tích cực. Can thiệp có tác động thế nào đến nguy cơ suy giảm ít nhất 30%?",
+  explanation_en: "Intensive BP lowering increased the risk of a decline of at least 30% by 42% (RR 1.42).",
+  explanation_vi: "Hạ huyết áp tích cực làm tăng 42% nguy cơ suy giảm ít nhất 30% (RR 1,42).",
+};
+assert.equal(CaseQuiz.rejectReason(matchedRenalCase, renalGround), "", "the paired 42% and RR 1.42 both apply to the 30% threshold");
+for (const [field, matching, wrong] of [["explanation_en", "RR 1.42", "RR 1.47"], ["explanation_vi", "RR 1,42", "RR 1,47"]]) {
+  const swapped = {...matchedRenalCase, [field]: matchedRenalCase[field].replace(matching, wrong)};
+  assert.equal(CaseQuiz.rejectReason(swapped, renalGround), "effects", "RR 1.47 belongs to the 40% threshold, not 30%");
+}
+const baselines = {...matchedRenalCase,
+  stem_en: "For a 63-year-old patient with EF 55%, BP 138/84 mmHg and eGFR 58, what effect on the risk of a decline of at least 30% was reported?",
+  stem_vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nghiên cứu báo cáo tác động nào đến nguy cơ suy giảm ít nhất 30%?",
+};
+assert.equal(CaseQuiz.rejectReason(baselines, renalGround), "", "uncited patient measurements are not study results, even in a risk question");
+assert.equal(CaseQuiz.rejectReason({...baselines, stem_vi: baselines.stem_vi.normalize("NFD")}, renalGround), "",
+  "Vietnamese baseline measurements match in both composed and decomposed Unicode");
+const baselineOption = {
+  en: "For this 63-year-old patient with EF 55%, BP 138/84 mmHg and eGFR 58, the reported risk increase was 42%.",
+  vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nguy cơ được báo cáo tăng 42%.",
+};
+const repeatedBaselines = {...baselines, options: [baselineOption, ...baselines.options.slice(1)]};
+assert.ok(CaseQuiz.rejectReason(repeatedBaselines, renalGround), "a keyed option cannot use uncited measurements as evidence");
+const followUp = "The trial found an EF of 55% at follow-up.";
+assert.equal(CaseQuiz.rejectReason({...baselines, explanation_en: followUp}, renalGround), "effects",
+  "the explanation must cite follow-up EF even when it equals the patient's baseline EF");
+assert.equal(CaseQuiz.rejectReason({...baselines, options: [{...baselines.options[0], en: followUp}, ...baselines.options.slice(1)]}, renalGround), "effects",
+  "the option must cite follow-up EF even when it equals the patient's baseline EF");
+for (const [lang, claim] of [["en", "The study reported a risk of 55%."], ["vi", "Nghiên cứu báo cáo nguy cơ là 55%."]]) {
+  const options = [{...baselines.options[0], [lang]: claim}, ...baselines.options.slice(1)];
+  assert.equal(CaseQuiz.rejectReason({...baselines, options}, renalGround), "effects", "a baseline figure does not support a study effect");
+}
+for (const [lang, result] of [["en", " The study's event rate was 17%."], ["vi", " Tỷ lệ biến cố là 17%."], ["en", " The trial reported RR 1.25."]]) {
+  const field = "stem_" + lang;
+  assert.equal(CaseQuiz.rejectReason({...baselines, [field]: baselines[field] + result}, renalGround), "effects",
+    "study rates and ratios in the stem still require support");
+}
+console.log("Clinical effects: withdrawn eGFR case, unsupported populations, absolute risk wording, and wrong measures rejected: OK");
+
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};
 assert.equal(quiz.sourceQuestionCount(generated), 2, "a generated set replaces the default questions");
 for (const lang of ["vi", "en"]) {
@@ -173,18 +280,19 @@ const published = Array.from({length: 3}, (_, i) => ({version: CaseQuiz.CASE_SET
   items: Array.from({length: 3}, (_, j) => ({...kase, stem_en: kase.stem_en + ` (Case ${i}-${j})`,
     stem_vi: kase.stem_vi + ` (Ca ${i}-${j})`}))}));
 const storage = new Map();
-const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
+const publishedTutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   CaseQuiz, ClinicalQuiz: quiz,
   window: {EBM_QUIZ_SETS: {sets: {[publishedLesson.id]: published}},
     localStorage: {getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v)}},
 });
+const {quizSets} = publishedTutor;
 const fresh = {...publishedLesson};
 const offlineTheory = quiz.sourceCourse(fresh).items;
 assert.ok(offlineTheory.length >= 3 && offlineTheory.every(q => q.type === "theory"));
 const firstBank = quiz.sourceCourse(quizSets.attach(fresh));
 assert.equal(firstBank.items.length, offlineTheory.length + 3, "fresh devices start with theory plus three cases");
 assert.equal(quizSets.remaining(fresh), 2, "loading the default set is free");
-assert.equal(storage.size, 0);
+assert.equal(storage.has(quizSets.pressKey), false);
 const firstSet = fresh.generated_quiz;
 const secondSet = quizSets.openNext(fresh);
 assert.notEqual(secondSet.set_id, firstSet.set_id);
@@ -195,6 +303,23 @@ assert.ok(quizSets.openNext(fresh));
 assert.equal(quizSets.openNext(fresh), null);
 assert.equal(quizSets.pressesLeft(), 0);
 assert.equal(quizSets.attach({id: "no-published-set"}).generated_quiz, undefined);
+storage.clear();
+const first = quizSets.attach({...publishedLesson});
+assert.equal(quizSets.openNext(first).set_id, "set-1");
+published.splice(0, 3, published[1], {...published[0], set_id: "replacement-a"}, {...published[2], set_id: "replacement-b"});
+const resumed = quizSets.attach({...publishedLesson});
+assert.equal(resumed.generated_quiz.set_id, "set-1", "refill preserves the selected retained set");
+assert.equal(quizSets.pressesLeft(), 1, "resuming does not spend a press");
+assert.equal(quizSets.openNext(resumed).set_id, "replacement-a");
+assert.equal(quizSets.openNext(resumed), null, "deduplication does not restore used quota");
+
+storage.set(quizSets.key, JSON.stringify({[publishedLesson.id]: {index: 1}}));
+storage.set(quizSets.pressKey, JSON.stringify({date: quizSets.today(), used: 1}));
+publishedTutor.store[publishedLesson.id + "#set-1"] = {course: {compact: true}};
+assert.equal(quizSets.attach({...publishedLesson}).generated_quiz.set_id, "set-1", "legacy index migrates from the retained course's ID");
+assert.equal(quizSets.pressesLeft(), 1);
+assert.equal(JSON.parse(storage.get(quizSets.key))[publishedLesson.id].selected, "set-1");
+console.log("Quiz pack selection: refill and legacy migration preserve retained set and daily quota: OK");
 
 tutor.quizSets.attach = b => b;
 tutor.quizSets.available = () => [generated.generated_quiz];

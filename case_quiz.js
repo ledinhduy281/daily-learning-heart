@@ -52,6 +52,7 @@ const CaseQuiz = (() => {
     primary_cardiovascular_outcome: ['primary cardiovascular (?:events?|outcomes?|endpoints?)', '(?:bien co|ket cuc|tieu chi) tim mach chinh'],
     heart_failure: ['heart failure|hf', 'suy tim', 'HF'],
     kidney_decline: ['(?:decline|declines|reduction|reductions) in (?:renal|kidney) function|(?:renal|kidney) function (?:decline|declines|reduction|reductions)', 'suy giam (?:chuc nang )?than|giam chuc nang than'],
+    egfr: ['egfr|estimated glomerular filtration rate', 'egfr|muc loc cau than uoc tinh|toc do loc cau than uoc tinh'],
     kidney_failure: ['kidney failure|renal failure', 'suy than'],
     ckd_progression: ['(?:ckd|chronic kidney disease) progression|progression of (?:ckd|chronic kidney disease)', 'benh than man(?: tinh)? tien trien'],
     bleeding: ['bleeding|h[ae]emorrhage|hemorrhage', 'xuat huyet|chay mau'],
@@ -133,6 +134,129 @@ const CaseQuiz = (() => {
       .flatMap(c => numbers(String(c).replace(refs, ' '))).filter(n => !allowed.has(n));
   }
 
+  const CKD_GROUP = {
+    en: /\b(?:ckd|chronic kidney disease)\b/,
+    vi: /\b(?:ckd|(?:benh|suy) than man(?: tinh)?)\b/,
+  };
+  const WITHOUT_CKD = {
+    en: /\b(?:without|no|non) (?:ckd|chronic kidney disease)\b/,
+    vi: /\bkhong (?:co |mac )?(?:ckd|benh than man(?: tinh)?)\b/,
+  };
+  const BOTH_CKD = {
+    en: /\b(?:with and without|with or without) (?:ckd|chronic kidney disease)\b|\b(?:no|without) heterogeneity by (?:ckd|chronic kidney disease) status\b/,
+    vi: /\bco va khong (?:co )?(?:ckd|benh than man(?: tinh)?)\b|\bkhong (?:co )?(?:khac biet(?: theo| ve)?|dong nhat) theo tinh trang (?:ckd|benh than man)\b/,
+  };
+  function ckdGroups(value, lang) {
+    if (BOTH_CKD[lang].test(value)) return ['with_ckd', 'without_ckd'];
+    const negative = WITHOUT_CKD[lang].test(value);
+    return [...(negative ? ['without_ckd'] : []),
+      ...(CKD_GROUP[lang].test(value.replace(WITHOUT_CKD[lang], ' ')) ? ['with_ckd'] : [])];
+  }
+
+  const PERCENT = /(\d+(?:[.,]\d+)?)\s*(%|percentage points?|điểm phần trăm|phần trăm)/giu;
+  const RATIO = /\b(relative risk|risk ratio|hazard ratio|odds ratio|rr|hr|or)(?:\s*\[(?:rr|hr|or)\])?\s*[:=,]?\s*(\d+(?:[.,]\d+)?)/gi;
+  const RATIO_KIND = {'relative risk': 'rr', 'risk ratio': 'rr', 'hazard ratio': 'hr', 'odds ratio': 'or'};
+  function effectFigures(value, includePercent = true) {
+    return [
+      ...(includePercent ? [...value.matchAll(PERCENT)].map(([, n, unit]) => numbers(n)[0] + (/point|điểm/iu.test(unit) ? ' pp' : '%')) : []),
+      ...[...value.matchAll(RATIO)].filter(([, measure]) => measure !== 'or')
+        .map(([, measure, n]) => (RATIO_KIND[measure.toLowerCase()] || measure.toLowerCase()) + ' ' + numbers(n)[0]),
+    ];
+  }
+
+  const ENDPOINT_CONTEXT = {
+    en: /\b(?:risk|rate|declines?|decreases?|increases?|reductions?|outcomes?|endpoints?)\b/,
+    vi: /\b(?:nguy co|ty le|ti le|suy giam|giam|tang|ket cuc|tieu chi)\b/,
+  };
+  const EFFECT_CONTEXT = {
+    en: /\b(?:events?|deaths?|mortality|hospitali[sz]ations?|incidence|benefit|effect|improvement|change)\b/,
+    vi: /\b(?:bien co|tu vong|nhap vien|loi ich|tac dong|hieu qua|cai thien|thay doi)\b/,
+  };
+  const BASELINE_MEASUREMENT = /\b(?:(lvef|ef|(?:left ventricular )?ejection fraction|phân suất tống máu(?: thất trái)?)|(egfr|estimated glomerular filtration rate|(?:tốc độ |mức )?lọc cầu thận ước tính))\s*(?:[:=]|of\b|là\b)?\s*(\d+(?:[.,]\d+)?)(?:\s*(%|phần trăm\b))?(?![\d.,]*\d)/giu;
+  const REPORTED_MEASUREMENT = /\b(?:increas\w*|decreas\w*|reduc\w*|declin\w*|improv\w*|report\w*|found|showed|fell|rose|tăng|giảm|cải thiện|báo cáo|ghi nhận)(?:\s+(?:in|of|the|an?))*\s*$/iu;
+  const STUDY_CLAUSE = /[!?;]|\.(?!\d)/;
+  function withoutVignetteBaseline(clause, lang) {
+    if (!PATIENT[lang].test(claimText(clause)[lang])) return clause;
+    return clause.replace(BASELINE_MEASUREMENT, (match, ef, _egfr, _value, unit, index) =>
+      (ef && !unit) || REPORTED_MEASUREMENT.test(clause.slice(0, index)) ? match : ' ');
+  }
+  const RESULT_COUNT = /(\d+(?:[.,]\d+|[ \u00a0\u202f]\d{3})*)\s+(?:fewer |more )?(?:cases?|events?|deaths?|participants?|hospitali[sz]ations?|studies|trường hợp|biến cố|ca tử vong|người tham gia|ca nhập viện|nghiên cứu)(?![\p{L}\p{N}])/giu;
+  const RESULT_STATEMENT = /\b(?:report(?:s|ed)?|found|showed|identified|included|fewer|more|ghi nhận|cho thấy|báo cáo|xác định|bao gồm)\b/iu;
+  const ABSOLUTE_RISK_LEVEL = /\b(?:increas(?:e|ed|es)|decreas(?:e|ed|es)|reduc(?:e|ed|es)|rais(?:e|ed|es)|tăng|giảm)\b[^.;!?]*?\b(?:to|lên|xuống|còn)\s+(\d+(?:[.,]\d+)?)\s*%/giu;
+  const DECLINE_THRESHOLD = /(?:≥|>=|at least|ít nhất)\s*(\d+(?:[.,]\d+)?)\s*%|(\d+(?:[.,]\d+)?)\s*%\s*(?:or greater|or more|trở lên)/giu;
+  const declineThresholds = text => [...text.matchAll(DECLINE_THRESHOLD)].map(([, before, after]) => numbers(before || after)[0]);
+  function pairedDeclineEffects(quote) {
+    const [outcomes, estimates] = quote.split(/\bdeclines by\b/i);
+    const levels = declineThresholds(outcomes);
+    const groups = estimates ? estimates.split(/(?:\s*,\s*(?:and\s+)?|\s+and\s+)(?=\d+(?:[.,]\d+)?\s*%)/i)
+      .map(group => new Set(effectFigures(group))) : [];
+    return levels.length > 1 && levels.length === groups.length ? new Map(levels.map((n, i) => [n, groups[i]])) : new Map();
+  }
+  const PATIENT = {
+    en: /\b(?:patient|person|woman|man|adult|child)\b/,
+    vi: /\b(?:benh nhan|nguoi phu nu|nguoi dan ong)\b/,
+  };
+
+  function unsupportedCaseEffects(item) {
+    const quote = claimText(item.quote);
+    const cited = new Set(effectFigures(item.quote));
+    const citedNumbers = new Set(numbers(item.quote));
+    const citedCkd = new Set(CLAIM_LANGUAGES.flatMap(lang => ckdGroups(quote[lang], lang)));
+    const citedLevels = new Set([...item.quote.matchAll(ABSOLUTE_RISK_LEVEL)].map(([, n]) => numbers(n)[0]));
+    const declineEffects = pairedDeclineEffects(item.quote);
+    const pairedFigures = new Set([...declineEffects.values()].flatMap(figures => [...figures]));
+    const relative = [...cited].some(figure => /^(?:rr|hr|or) /.test(figure));
+    const egfr = CLAIMS.find(([kind]) => kind === 'egfr')[1];
+    const citedEgfr = CLAIM_LANGUAGES.some(lang => matchesClaim(egfr, quote, lang));
+    const correct = item.options[KEYS.indexOf(item.answer)];
+    const found = new Set();
+    for (const lang of CLAIM_LANGUAGES) {
+      const stem = item['stem_' + lang];
+      const stemWords = claimText(stem)[lang];
+      const groups = ckdGroups(stemWords, lang);
+      const thresholds = [...new Set(declineThresholds(stem))];
+      const expectedDeclineEffect = thresholds.length === 1 ? declineEffects.get(thresholds[0]) : null;
+      if (citedCkd.size === 1 && !groups.length && PATIENT[lang].test(stemWords)) {
+        found.add('vignette does not establish ' + [...citedCkd][0]);
+      }
+      for (const group of groups) {
+        if (!citedCkd.has(group)) found.add(group + ' not covered by the citation');
+      }
+      for (const [field, isStem] of [[stem, true], [correct[lang], false], [item['explanation_' + lang], false]]) {
+        const checked = isStem ? field.normalize('NFC').split(STUDY_CLAUSE).map(clause => withoutVignetteBaseline(clause, lang)).join(';') : field;
+        const clauses = checked.split(STUDY_CLAUSE);
+        const figures = isStem ? clauses.flatMap(clause => {
+          const normalized = claimText(clause)[lang];
+          const hasEffect = ENDPOINT_CONTEXT[lang].test(normalized) || EFFECT_CONTEXT[lang].test(normalized) || RESULT_STATEMENT.test(clause);
+          return effectFigures(clause, hasEffect);
+        }) : effectFigures(checked);
+        for (const figure of figures) {
+          if (!cited.has(figure)) found.add(figure);
+          if (expectedDeclineEffect && pairedFigures.has(figure) && !expectedDeclineEffect.has(figure)) {
+            found.add(figure + ' belongs to a different decline threshold');
+          }
+        }
+        for (const [, n] of checked.matchAll(ABSOLUTE_RISK_LEVEL)) {
+          const number = numbers(n)[0];
+          if (relative && cited.has(number + '%') && !citedLevels.has(number)) found.add('absolute risk level ' + number + '%');
+        }
+        for (const clause of clauses) {
+          const normalized = claimText(clause);
+          if (isStem && !citedEgfr && ENDPOINT_CONTEXT[lang].test(normalized[lang]) && matchesClaim(egfr, normalized, lang)) {
+            found.add('eGFR endpoint not cited');
+          }
+          if (!isStem || RESULT_STATEMENT.test(clause)) {
+            for (const [, count] of clause.matchAll(RESULT_COUNT)) {
+              const n = numbers(count)[0];
+              if (!citedNumbers.has(n)) found.add('result figure ' + n);
+            }
+          }
+        }
+      }
+    }
+    return [...found];
+  }
+
   function rejectReason(item, ground) {
     if (!item || typeof item !== 'object' || !['theory', 'case'].includes(item.type)) return 'shape';
     if (item.pmid !== ground.pmid || !/^[1-9][0-9]{0,8}$/.test(ground.pmid)) return 'pmid';
@@ -147,7 +271,9 @@ const CaseQuiz = (() => {
     if (unsupportedNumbers(item, ground).length) return 'numbers';
     if ([item.explanation_vi, item.explanation_en].some(namesOptions)) return 'letters';
     if (unsupportedDoses(item).length) return 'dose';
-    return item.type === 'case' && unsupportedClaims(item).length ? 'claims' : '';
+    if (item.type !== 'case') return '';
+    if (unsupportedClaims(item).length) return 'claims';
+    return unsupportedCaseEffects(item).length ? 'effects' : '';
   }
 
   function unsupportedDoses(item) {
@@ -510,7 +636,7 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, unsupportedClaims, validItem, validateSet, validateCourse,
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
     validateCaseSet, CASE_SET_VERSION, CASES_PER_SET};
 })();

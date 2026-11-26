@@ -47,6 +47,10 @@ function fakeGroq(faults = [], roundOffset = 0) {
       assert.match(system, /supported as written in BOTH languages/);
       assert.match(system, /Solve the questions before reading the proposed explanations/);
       assert.match(system, /every claim must be supported as written by the cited excerpt/);
+      assert.match(system, /Verify every claimed effect figure in both stems/);
+      assert.match(system, /the same endpoint, threshold, comparator and population/);
+      assert.match(system, /reject a subgroup figure applied to someone outside/);
+      assert.match(system, /relative increase BY a percent as an absolute risk rising TO that percent/);
       const numbered = [...user.matchAll(/^Q(\d+): (.*)$/gm)];
       const slots = numbered.map(m => Number(m[1]));
       const batch = slots.map(n => submitted[n - 1]);
