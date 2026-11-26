@@ -2,9 +2,12 @@ name: Daily 06:00 AM Cardiology Pillar Refresh
 
 on:
   schedule:
-    # Off-minute UTC crons avoid top-of-hour (:00) GitHub Actions queue drops.
-    # 22:53 UTC = 05:53 AM Asia/Ho_Chi_Minh (generates & deploys by ~06:00 AM VN)
-    # 23:17 UTC & 23:43 UTC = 06:17 AM & 06:43 AM VN safety catch-up retries (idempotent)
+    # Start after midnight in Vietnam so delayed events can still publish before 06:00.
+    # Later slots reuse the dated lesson and only fill missing valid case sets.
+    - cron: '7 17 * * *'
+    - cron: '43 18 * * *'
+    - cron: '11 20 * * *'
+    - cron: '37 21 * * *'
     - cron: '53 22 * * *'
     - cron: '17 23 * * *'
     - cron: '43 23 * * *'
