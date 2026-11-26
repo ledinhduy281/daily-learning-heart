@@ -104,5 +104,33 @@ const quiet = () => {};
   assert.ok(logs.some(m => /"dose":1/.test(m) && /"count":5/.test(m)), logs.join("\n"));
   assert.equal(read()[nextId], undefined, "partial sets are never published");
   assert.equal(read()[id].length, 3, "earlier lessons keep their sets");
+
+  const upstreamLogs = [];
+  const rateLimit = () => new Response(JSON.stringify({error: {message: "Rate limit reached"}}),
+    {status: 429, headers: {"Retry-After": "0.001"}});
+  const badModel = () => new Response(JSON.stringify({error: {
+    message: `Unknown model for ${env.GROQ_API_KEY}\nAuthorization: Bearer gsk_another_credential\n${"x".repeat(500)}`,
+    debug: "DO NOT LOG THE FULL BODY",
+  }}), {status: 400});
+  const failures = [
+    rateLimit, badModel,
+    () => new Response("DO NOT LOG THE FULL BODY", {status: 413, statusText: "Content Too Large"}),
+    () => { throw new Error(`fetch failed for ${env.GROQ_API_KEY}`, {cause: {code: "ENOTFOUND"}}); },
+    badModel, badModel, badModel,
+  ];
+  const before = fs.readFileSync(setPath, "utf8");
+  await main({root, env, date: nextDate, fetchImpl: async () => failures.shift()(), log: m => upstreamLogs.push(m)});
+  assert.equal(failures.length, 0, "a 429 still retries the same generation phase");
+  const diagnostics = upstreamLogs.join("\n");
+  assert.match(diagnostics, /Groq diagnostic request failed \(HTTP 429, model=openai\/gpt-oss-120b, request_bytes=\d+, max_tokens=2480\): Rate limit reached/);
+  assert.match(diagnostics, /HTTP 400[^\n]+: Unknown model for \[REDACTED\] Authorization: \[REDACTED\]/);
+  assert.match(diagnostics, /HTTP 413[^\n]+: Content Too Large/);
+  assert.match(diagnostics, /no HTTP response[^\n]+: fetch failed for \[REDACTED\] — ENOTFOUND/);
+  assert.ok(!diagnostics.includes(env.GROQ_API_KEY));
+  assert.doesNotMatch(diagnostics, /gsk_another_credential|DO NOT LOG THE FULL BODY|x{401}/);
+  assert.equal(upstreamLogs.length, 8);
+  assert.match(upstreamLogs.at(-1), /rejected: \{"upstream":6\}/);
+  assert.equal(fs.readFileSync(setPath, "utf8"), before, "upstream failures leave previously published sets intact");
+  console.log("Groq upstream diagnostics: HTTP status, redacted error, retry, transport failure, and no publish: OK");
   console.log("Socratic course generation: philosophy, no-key mode, schema, re-solve, three mixed sets, and no partial sets: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));
