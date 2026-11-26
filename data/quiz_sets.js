@@ -542,6 +542,548 @@ window.EBM_QUIZ_SETS = {
      }
     ]
    }
+  ],
+  "ebm-2026-11-26-p1-focused": [
+   {
+    "set_id": "2026-11-26-mwwsh2w4-1",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Số lượng nghiên cứu và tổng số người tham gia trong phân tích hệ thống này là bao nhiêu?",
+      "stem_en": "How many studies and total participants were included in this systematic review?",
+      "explanation_vi": "Trích đoạn 1 nêu rõ có 27 nghiên cứu và 88 830 người tham gia, vì vậy đáp án đúng là lựa chọn đầu tiên. Các lựa chọn khác đưa ra số lượng không khớp với trích đoạn.",
+      "explanation_en": "Excerpt 1 states that there were 27 studies and 88 830 participants, so the first option is correct. The other options list numbers that do not match the excerpt.",
+      "options": [
+       {
+        "vi": "27 nghiên cứu và 88 830 người tham gia",
+        "en": "27 studies and 88 830 participants"
+       },
+       {
+        "vi": "30 nghiên cứu và 90 000 người tham gia",
+        "en": "30 studies and 90 000 participants"
+       },
+       {
+        "vi": "25 nghiên cứu và 85 000 người tham gia",
+        "en": "25 studies and 85 000 participants"
+       },
+       {
+        "vi": "27 nghiên cứu và 80 000 người tham gia",
+        "en": "27 studies and 80 000 participants"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Mức giảm rủi ro sự kiện tim mạch khi hạ huyết áp đòi hỏi giảm 10 mm Hg huyết áp tâm thu là bao nhiêu?",
+      "stem_en": "What is the relative risk reduction for cardiovascular events per 10 mm Hg lower systolic blood pressure?",
+      "explanation_vi": "Theo trích đoạn 2, giảm 10 mm Hg huyết áp tâm thu giảm rủi ro 15 % với RR 0.85. Các đáp án còn lại không phản ánh RR được nêu trong trích đoạn.",
+      "explanation_en": "Excerpt 2 reports a 15% risk reduction corresponding to RR 0.85 per 10 mm Hg SBP reduction. The other options do not match the quoted RR.",
+      "options": [
+       {
+        "vi": "RR 0.85",
+        "en": "RR 0.85"
+       },
+       {
+        "vi": "RR 0.90",
+        "en": "RR 0.90"
+       },
+       {
+        "vi": "RR 0.80",
+        "en": "RR 0.80"
+       },
+       {
+        "vi": "RR 0.95",
+        "en": "RR 0.95"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+      "answer": "A",
+      "stem_vi": "Theo phân tích, hạ huyết áp mạnh làm tăng nguy cơ suy giảm chức năng thận 30 % trở lên bao nhiêu phần trăm?",
+      "stem_en": "According to the analysis, intensive blood pressure lowering increases the risk of a ≥30% decline in kidney function by what percentage?",
+      "explanation_vi": "Trích đoạn 3 cho biết nguy cơ suy giảm ≥30 % tăng 42 %, vì vậy đáp án đúng là 42 %. Các mức khác không được đề cập trong trích đoạn.",
+      "explanation_en": "Excerpt 3 states that the risk of a ≥30% decline rises by 42%; therefore that is the correct figure. The other percentages are not mentioned.",
+      "options": [
+       {
+        "vi": "42 %",
+        "en": "42%"
+       },
+       {
+        "vi": "30 %",
+        "en": "30%"
+       },
+       {
+        "vi": "47 %",
+        "en": "47%"
+       },
+       {
+        "vi": "50 %",
+        "en": "50%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân nam 62 tuổi, không có bệnh thận mạn, được chỉ định hạ huyết áp mạnh. Theo dữ liệu trên, việc giảm 10 mm Hg huyết áp tâm thu sẽ làm giảm rủi ro các biến cố tim mạch bao nhiêu phần trăm?",
+      "stem_en": "A 62‑year‑old man without chronic kidney disease is started on intensive blood pressure lowering. According to the data, a 10 mm Hg SBP reduction would lower his risk of cardiovascular events by what percentage?",
+      "explanation_vi": "Trích đoạn 2 cho biết mỗi giảm 10 mm Hg huyết áp tâm thu giảm rủi ro 15 % (RR 0.85). Vì vậy đáp án đúng là 15 %. Các lựa chọn khác không phản ánh mức giảm được nêu.",
+      "explanation_en": "Excerpt 2 indicates a 15% risk reduction per 10 mm Hg SBP drop (RR 0.85). Hence the correct answer is 15%; the other percentages are not supported by the excerpt.",
+      "options": [
+       {
+        "vi": "15 %",
+        "en": "15%"
+       },
+       {
+        "vi": "10 %",
+        "en": "10%"
+       },
+       {
+        "vi": "20 %",
+        "en": "20%"
+       },
+       {
+        "vi": "5 %",
+        "en": "5%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+      "answer": "A",
+      "stem_vi": "Bệnh nữ 55 tuổi có bệnh thận mạn đang được điều trị hạ huyết áp mạnh. Theo phân tích, nguy cơ suy giảm chức năng thận ≥40 % sẽ tăng bao nhiêu phần trăm?",
+      "stem_en": "A 55‑year‑old woman with chronic kidney disease is undergoing intensive blood pressure lowering. According to the analysis, her risk of a ≥40% decline in kidney function will increase by what percentage?",
+      "explanation_vi": "Trích đoạn 3 nêu rằng giảm huyết áp mạnh làm tăng nguy cơ suy giảm ≥40 % lên 47 %. Do đó đáp án đúng là 47 %. Các con số còn lại không được đề cập.",
+      "explanation_en": "Excerpt 3 reports a 47% increase in risk for a ≥40% decline. Hence 47% is correct; the other percentages are not mentioned.",
+      "options": [
+       {
+        "vi": "47 %",
+        "en": "47%"
+       },
+       {
+        "vi": "42 %",
+        "en": "42%"
+       },
+       {
+        "vi": "30 %",
+        "en": "30%"
+       },
+       {
+        "vi": "50 %",
+        "en": "50%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Bác sĩ muốn biết tổng số bệnh nhân đã tham gia các nghiên cứu về hạ huyết áp trong phân tích này. Số bệnh nhân là bao nhiêu?",
+      "stem_en": "A physician wants to know the total number of patients included in the blood pressure lowering studies of this review. How many patients were there?",
+      "explanation_vi": "Trích đoạn 1 liệt kê 88 830 người tham gia. Vì vậy đáp án đúng là 88 830. Các con số khác không khớp với trích đoạn.",
+      "explanation_en": "Excerpt 1 lists 88 830 participants, making that the correct answer. The other numbers do not match the excerpt.",
+      "options": [
+       {
+        "vi": "88 830",
+        "en": "88 830"
+       },
+       {
+        "vi": "80 000",
+        "en": "80 000"
+       },
+       {
+        "vi": "90 000",
+        "en": "90 000"
+       },
+       {
+        "vi": "85 000",
+        "en": "85 000"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "set_id": "2026-11-26-mwwsh6nn-2",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Có bao nhiêu nghiên cứu được bao gồm trong phân tích hệ thống này?",
+      "stem_en": "How many studies were included in this systematic review?",
+      "explanation_vi": "Đoạn trích [1] nêu rõ đã xác định 27 nghiên cứu. Các đáp án khác không đề cập đến số lượng nghiên cứu.",
+      "explanation_en": "Excerpt [1] states that 27 studies were identified. The other options refer to participant count or risk percentages, not the number of studies.",
+      "options": [
+       {
+        "vi": "27",
+        "en": "27"
+       },
+       {
+        "vi": "88 830",
+        "en": "88 830"
+       },
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "42%",
+        "en": "42%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Mức giảm rủi ro sự kiện tim mạch là bao nhiêu cho mỗi 10 mm Hg hạ huyết áp tâm thu?",
+      "stem_en": "What is the risk reduction for cardiovascular events per 10 mm Hg lower systolic blood pressure?",
+      "explanation_vi": "Đoạn [2] cho biết giảm 15 % nguy cơ sự kiện tim mạch cho mỗi giảm 10 mm Hg SBP. Các lựa chọn khác là tỷ lệ tăng rủi ro thận hoặc RR chứ không phải phần trăm giảm.",
+      "explanation_en": "Excerpt [2] reports a 15% reduction in cardiovascular event risk per 10 mm Hg SBP reduction. The other options describe kidney‑related risk increases or the RR value, not the percent reduction.",
+      "options": [
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "42%",
+        "en": "42%"
+       },
+       {
+        "vi": "47%",
+        "en": "47%"
+       },
+       {
+        "vi": "0.85",
+        "en": "0.85"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+      "answer": "A",
+      "stem_vi": "Tăng nguy cơ suy giảm thận ≥30% khi hạ huyết áp mạnh là bao nhiêu?",
+      "stem_en": "What is the increased risk of a ≥30% decline in kidney function with intensive blood pressure lowering?",
+      "explanation_vi": "Theo đoạn [3], hạ huyết áp mạnh làm tăng nguy cơ suy giảm thận ≥30% lên 42%. Các đáp án còn lại không liên quan tới mức tăng này.",
+      "explanation_en": "Excerpt [3] states that intensive BP lowering raises the risk of a ≥30% kidney function decline by 42%. The other choices refer to unrelated percentages or study counts.",
+      "options": [
+       {
+        "vi": "42%",
+        "en": "42%"
+       },
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "0.85",
+        "en": "0.85"
+       },
+       {
+        "vi": "27",
+        "en": "27"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân 70 tuổi, có bệnh thận mạn, được đưa vào nhóm hạ huyết áp mạnh. Dựa trên dữ liệu, giảm 10 mm Hg huyết áp tâm thu sẽ làm giảm nguy cơ biến cố tim mạch bao nhiêu phần trăm?",
+      "stem_en": "A 70‑year‑old patient with chronic kidney disease is placed in an intensive BP lowering group. Based on the data, a 10 mm Hg SBP reduction would decrease his risk of cardiovascular events by what percentage?",
+      "explanation_vi": "Trích đoạn 2 cho biết mỗi giảm 10 mm Hg huyết áp tâm thu giảm rủi ro 15 % (RR 0.85), bất kể tình trạng CKD. Vì vậy đáp án đúng là 15 %. Các mức khác không được hỗ trợ.",
+      "explanation_en": "Excerpt 2 states a 15% risk reduction per 10 mm Hg SBP drop, independent of CKD status. Hence 15% is correct; the other percentages lack support.",
+      "options": [
+       {
+        "vi": "15 %",
+        "en": "15%"
+       },
+       {
+        "vi": "12 %",
+        "en": "12%"
+       },
+       {
+        "vi": "18 %",
+        "en": "18%"
+       },
+       {
+        "vi": "10 %",
+        "en": "10%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 60‑tuổi nam không có bệnh thận mạn, được chỉ định hạ huyết áp mạnh 10 mm Hg. Theo dữ liệu, nguy cơ sự kiện tim mạch của anh sẽ giảm bao nhiêu phần trăm?",
+      "stem_en": "A 60‑year‑old man without chronic kidney disease is placed on intensive blood pressure lowering that lowers SBP by 10 mm Hg. According to the data, by what percentage will his risk of cardiovascular events decrease?",
+      "explanation_vi": "Đoạn [2] cho biết mỗi giảm 10 mm Hg SBP giảm 15 % nguy cơ sự kiện tim mạch, bất kể tình trạng CKD. Vì bệnh nhân không có CKD, kết quả vẫn áp dụng.",
+      "explanation_en": "Excerpt [2] indicates a 15% risk reduction per 10 mm Hg SBP drop, independent of CKD status, so the man's risk falls by 15%.",
+      "options": [
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "42%",
+        "en": "42%"
+       },
+       {
+        "vi": "47%",
+        "en": "47%"
+       },
+       {
+        "vi": "0.85",
+        "en": "0.85"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân 68‑tuổi nữ có bệnh thận mạn, được đưa vào nhóm hạ huyết áp mạnh. Rủi ro suy giảm thận ≥40% sẽ tăng bao nhiêu phần trăm?",
+      "stem_en": "A 68‑year‑old woman with chronic kidney disease is assigned to intensive blood pressure lowering. By what percentage does her risk of a ≥40% decline in kidney function increase?",
+      "explanation_vi": "Đoạn [3] nêu rằng hạ huyết áp mạnh làm tăng nguy cơ suy giảm thận ≥40% lên 47%. Các đáp án khác không phản ánh mức tăng này.",
+      "explanation_en": "Excerpt [3] reports a 47% increase in risk for a ≥40% kidney function decline with intensive BP lowering. The other options are unrelated percentages.",
+      "options": [
+       {
+        "vi": "47%",
+        "en": "47%"
+       },
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "42%",
+        "en": "42%"
+       },
+       {
+        "vi": "0.85",
+        "en": "0.85"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "set_id": "2026-11-26-mwwshqev-3",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Theo nghiên cứu, bao nhiêu nghiên cứu đã được đưa vào phân tích?",
+      "stem_en": "According to the review, how many studies were included?",
+      "explanation_vi": "Trích đoạn cho biết đã xác định 27 nghiên cứu, vì vậy đáp án là 27. Các lựa chọn khác không khớp với số được nêu trong trích đoạn.",
+      "explanation_en": "The excerpt states that 27 studies were identified, so the correct answer is 27. The other options do not match the number reported in the excerpt.",
+      "options": [
+       {
+        "vi": "27",
+        "en": "27"
+       },
+       {
+        "vi": "30",
+        "en": "30"
+       },
+       {
+        "vi": "25",
+        "en": "25"
+       },
+       {
+        "vi": "22",
+        "en": "22"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Tổng số người tham gia trong các nghiên cứu là bao nhiêu?",
+      "stem_en": "What is the total number of participants across the included studies?",
+      "explanation_vi": "Trích đoạn ghi rõ 88 830 người tham gia, do đó đáp án đúng là 88 830. Các số còn lại không xuất hiện trong trích đoạn.",
+      "explanation_en": "The excerpt reports 88 830 participants, making that the correct answer. The other numbers are not mentioned in the excerpt.",
+      "options": [
+       {
+        "vi": "88 830",
+        "en": "88 830"
+       },
+       {
+        "vi": "85 000",
+        "en": "85 000"
+       },
+       {
+        "vi": "90 500",
+        "en": "90 500"
+       },
+       {
+        "vi": "80 200",
+        "en": "80 200"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "theory",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Giảm huyết áp mạnh làm giảm nguy cơ sự kiện tim mạch bao nhiêu phần trăm cho mỗi 10 mm Hg giảm SBP?",
+      "stem_en": "Intensive blood pressure lowering reduces the risk of cardiovascular events by what percentage per 10 mm Hg lower SBP?",
+      "explanation_vi": "Trích đoạn cho biết giảm 15% nguy cơ sự kiện tim mạch (RR 0.85) cho mỗi 10 mm Hg giảm SBP, nên đáp án là 15%. Các mức phần trăm khác không được nêu trong trích đoạn.",
+      "explanation_en": "The excerpt states a 15% risk reduction (RR 0.85) per 10 mm Hg SBP reduction, so 15% is correct. The other percentages are not supported by the excerpt.",
+      "options": [
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "10%",
+        "en": "10%"
+       },
+       {
+        "vi": "20%",
+        "en": "20%"
+       },
+       {
+        "vi": "5%",
+        "en": "5%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Một bác sĩ muốn biết tổng số người tham gia các nghiên cứu được phân tích. Tổng số người tham gia là bao nhiêu?",
+      "stem_en": "A physician wants to know the total number of participants across the included studies. What is that total?",
+      "explanation_vi": "Đoạn [1] ghi rõ tổng số người tham gia là 88 830. Các lựa chọn còn lại là số lượng nghiên cứu hoặc tỷ lệ phần trăm, không phải số người tham gia.",
+      "explanation_en": "Excerpt [1] specifies that the total participants amount to 88 830. The other options refer to study count or risk percentages, not participant numbers.",
+      "options": [
+       {
+        "vi": "88 830",
+        "en": "88 830"
+       },
+       {
+        "vi": "27",
+        "en": "27"
+       },
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "42%",
+        "en": "42%"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân 55‑tuổi nam có bệnh tim mạch cơ bản, được chỉ định hạ huyết áp mạnh 10 mm Hg. Rủi ro sự kiện tim mạch sẽ thay đổi như thế nào?",
+      "stem_en": "A 55‑year‑old man with pre‑existing cardiovascular disease is placed on intensive blood pressure lowering that reduces SBP by 10 mm Hg. How will his risk of cardiovascular events change?",
+      "explanation_vi": "Theo đoạn [2], mỗi giảm 10 mm Hg SBP giảm 15 % nguy cơ sự kiện tim mạch, bất kể bệnh nền. Các đáp án khác mô tả tăng rủi ro thận hoặc giá trị RR, không phải thay đổi phần trăm giảm.",
+      "explanation_en": "Excerpt [2] states that a 10 mm Hg SBP reduction leads to a 15% decrease in cardiovascular event risk, regardless of other conditions. The other options refer to kidney risk increases or the RR value, not the percent decrease.",
+      "options": [
+       {
+        "vi": "giảm 15%",
+        "en": "decrease by 15%"
+       },
+       {
+        "vi": "tăng 42%",
+        "en": "increase by 42%"
+       },
+       {
+        "vi": "tăng 47%",
+        "en": "increase by 47%"
+       },
+       {
+        "vi": "RR 0.85",
+        "en": "RR 0.85"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân nam 60 tuổi không có bệnh thận mạn được cho hạ huyết áp mạnh, giảm SBP 10 mm Hg. Theo dữ liệu, nguy cơ sự kiện tim mạch sẽ giảm bao nhiêu phần trăm?",
+      "stem_en": "A 60‑year‑old man without chronic kidney disease undergoes intensive blood pressure lowering with a 10 mm Hg SBP reduction. According to the data, his risk of cardiovascular events will decrease by what percentage?",
+      "explanation_vi": "Trích đoạn chỉ ra giảm 15% nguy cơ sự kiện tim mạch cho mỗi 10 mm Hg giảm SBP, vì vậy bệnh nhân này sẽ có giảm 15%. Các lựa chọn khác không được hỗ trợ bởi trích đoạn.",
+      "explanation_en": "The excerpt indicates a 15% reduction per 10 mm Hg SBP drop, so the patient’s risk decreases by 15%. The other options are not supported by the excerpt.",
+      "options": [
+       {
+        "vi": "15%",
+        "en": "15%"
+       },
+       {
+        "vi": "10%",
+        "en": "10%"
+       },
+       {
+        "vi": "20%",
+        "en": "20%"
+       },
+       {
+        "vi": "5%",
+        "en": "5%"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   }
   ]
  }
 };
