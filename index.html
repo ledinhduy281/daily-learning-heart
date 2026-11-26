@@ -3922,6 +3922,15 @@
     .socratic-transcript-card > :last-child {
       margin-bottom: 0;
     }
+
+    #socraticTutorSection[data-course] > :is(.socratic-progress-dash, .socratic-subskills-grid,
+      .socratic-scale-legend, .socratic-cmd-strip, .socratic-dialogue-box, .socratic-choices-wrap) {
+      display: none;
+    }
+    .socratic-course { display: grid; gap: 1rem; }
+    .socratic-course[hidden] { display: none; }
+    .socratic-course .socratic-cmd-strip { flex-wrap: wrap; }
+    .socratic-course .socratic-choice-btn { text-align: left; }
     .socratic-transcript-card blockquote {
       padding-inline-start: 10px;
       border-inline-start: 2px solid var(--color-hairline-strong);
@@ -4460,6 +4469,7 @@
         </div>
 
         <p class="socratic-sub-text new-quiz-status" id="newQuizStatus" role="status" hidden></p>
+        <div class="socratic-course" id="socraticCourse" hidden></div>
 
         <div class="socratic-progress-dash" id="socraticProgressDashboard"></div>
 
@@ -9032,28 +9042,35 @@
         },
         available(b) {
           const sets = b?.id ? globalThis.window?.EBM_QUIZ_SETS?.sets?.[b.id] : null;
-          return Array.isArray(sets) ? sets.filter(s => s && typeof s.set_id === "string" &&
-            ClinicalQuiz.validateSet(b, s.items).length) : [];
+          if (!Array.isArray(sets)) return [];
+          const courses = sets.map(s => CaseQuiz.validateCourse(b, s)).filter(Boolean);
+          return courses.length ? courses : sets.filter(s => {
+            if (!s || s.version !== undefined || typeof s.set_id !== "string" || s.items?.length !== 6) return false;
+            const items = ClinicalQuiz.validateSet(b, s.items);
+            return items.length === 6 && items.filter(i => i.type === "case").length === 3;
+          });
         },
         opened(b) {
-          const n = Number(b?.id ? this.read()[b.id] : 0);
+          const saved = b?.id && this.read()[b.id];
+          const n = typeof saved === "number" ? saved - 1 : saved?.index;
           return Number.isInteger(n) && n > 0 ? n : 0;
         },
         attach(b) {
           if (b?.id && !b.generated_quiz) {
-            const set = this.available(b)[this.opened(b) - 1];
+            const sets = this.available(b);
+            const set = sets[Math.min(this.opened(b), sets.length - 1)];
             if (set) b.generated_quiz = set;
           }
           return b;
         },
         remaining(b) {
-          return Math.min(this.pressesLeft(), Math.max(0, this.available(b).length - this.opened(b)));
+          return Math.min(this.pressesLeft(), Math.max(0, this.available(b).length - 1 - this.opened(b)));
         },
         openNext(b) {
-          const sets = this.available(b), n = this.opened(b);
+          const sets = this.available(b), n = this.opened(b) + 1;
           if (n >= sets.length || this.pressesLeft() <= 0) return null;
           const kept = Object.fromEntries(Object.entries(this.read()).filter(([id]) => id !== b.id).slice(-29));
-          this.write({...kept, [b.id]: n + 1});
+          this.write({...kept, [b.id]: {index: n}});
           this.write({date: this.today(), used: this.dailyPresses - this.pressesLeft() + 1}, this.pressKey);
           b.generated_quiz = sets[n];
           return sets[n];
@@ -9237,6 +9254,25 @@
         return briefing?.id ? (set ? `${briefing.id}#${set}` : briefing.id) : String(pid);
       },
 
+      courseFor(b) {
+        return b?.generated_quiz?.version === 2 ? CaseQuiz.validateCourse(b, b.generated_quiz) : null;
+      },
+
+      courseAction(action, value) {
+        const b = this.quizSets.attach(App.selected || getTodaySingleBriefing());
+        const course = this.courseFor(b);
+        if (!course) return;
+        const key = this.sessionKey(this.curPillarId, b);
+        const lang = App.currentLang || "vi";
+        const state = CaseQuiz.courseTurn(course, this.store[key]?.course, action, value, lang);
+        this.store[key] = {course: state};
+        this.saveStore();
+        this.renderUI();
+        if (action === "next" || action === "answer" || action === "tell") {
+          document.querySelector("#socraticCourse [data-course-heading]")?.focus();
+        }
+      },
+
       async openNextSet() {
         const b = App.selected || getTodaySingleBriefing();
         if (this.isBusy || !b) return;
@@ -9251,7 +9287,7 @@
           this.renderUI();
           return;
         }
-        const items = ClinicalQuiz.validateSet(b, set.items);
+        const items = this.courseFor(b)?.items || ClinicalQuiz.validateSet(b, set.items);
         const cases = items.filter(i => i.type === "case").length;
         const done = this.quizSets.pressesLeft() <= 0;
         status(isVi ? `Bộ mới: ${items.length - cases} câu lý thuyết, ${cases} câu tình huống lâm sàng.${done ? " Hôm nay thiết bị này đã dùng hết 2 lượt tạo câu hỏi mới." : ""}`
@@ -9282,6 +9318,7 @@
       getSession(pid = this.curPillarId, briefing = App.selected || getTodaySingleBriefing()) {
         this.quizSets.attach(briefing);
         const key = this.sessionKey(pid, briefing);
+        if (this.courseFor(briefing)) return {started: Boolean(this.store[key]?.course)};
         const pillarKey = String(pid);
         const markerKey = `legacy-migrated:${pillarKey}`;
         const legacy = this.store[pillarKey];
@@ -9402,6 +9439,10 @@
 
       onLanguageChanged() {
         const b = App.selected || getTodaySingleBriefing();
+        if (this.courseFor(b)) {
+          this.renderUI();
+          return;
+        }
         const sess = this.getSession(this.curPillarId, b);
         const curLang = App.currentLang || "vi";
         if (sess.started && !this.isFinished(sess) && b && sess.options_lang !== curLang) {
@@ -9439,6 +9480,12 @@
       },
 
       bindEvents() {
+        document.getElementById("socraticCourse")?.addEventListener("click", event => {
+          const button = event.target.closest("[data-course-action]");
+          if (!button) return;
+          const {courseAction, value} = button.dataset;
+          this.courseAction(courseAction, courseAction === "focus" ? Number(value) : value);
+        });
         const btnStart = document.getElementById("btnStartSocratic");
         if (btnStart) {
           btnStart.addEventListener("click", () => {
@@ -9462,6 +9509,10 @@
           btnReset.addEventListener("click", () => {
             if (this.isBusy) return;
             const briefing = App.selected || getTodaySingleBriefing();
+            if (this.courseFor(briefing)) {
+              this.courseAction("restart");
+              return;
+            }
             delete this.store[this.sessionKey(this.curPillarId, briefing)];
             this.saveStore();
             this.getSession();
@@ -9622,6 +9673,114 @@
         return "";
       },
 
+      renderNewSetButton(b, isVi) {
+        const button = document.getElementById("btnNewQuizSet");
+        if (!button) return;
+        const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
+        button.style.display = total > 1 ? "inline-flex" : "none";
+        button.disabled = this.isBusy;
+        button.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
+          : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
+        const label = document.getElementById("labelNewQuizSet");
+        if (label) label.textContent = isVi ? `Tạo câu hỏi mới bằng AI (còn ${left} lượt)` : `New AI questions (${left} left)`;
+      },
+
+      renderCourse(b, course, panel, vi) {
+        const lang = vi ? "vi" : "en";
+        const t = (v, e) => vi ? v : e;
+        const state = this.store[this.sessionKey(this.curPillarId, b)]?.course;
+        const stage = state?.stage || "diagnostic";
+        const item = course.items[state?.index];
+        const set = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
+        set("socraticTitleText", t("Trắc Nghiệm Ôn Tập", "Review Quiz"));
+        set("socraticPhaseBadge", {
+          diagnostic: t("Chẩn đoán", "Diagnostic"), practice: t("Luyện tập", "Practice"),
+          final: t("Kiểm tra tổng hợp", "Mixed assessment"), mastered: t("Đạt mục tiêu 4/5", "Target met: 4/5"),
+          exhausted: t("Hết câu luyện tập", "Practice bank exhausted"),
+        }[stage]);
+        set("socraticSubText", [this.quizSourceLabel(b, vi),
+          t("Bắt đầu với vài câu chẩn đoán, từng câu một. Sau đó xem bản đồ kỹ năng và luyện tập.",
+            "Start with a short diagnostic, one question at a time. Then check your skill map and practice."),
+          CaseQuiz.AI_NOTE[lang]].filter(Boolean).join(" "));
+        set("labelStartSocratic", t("Bắt đầu chẩn đoán", "Start diagnostic"));
+        set("labelResetSocratic", t("Học lại", "Restart"));
+        const start = document.getElementById("btnStartSocratic"), reset = document.getElementById("btnResetSocratic");
+        if (start) start.style.display = state ? "none" : "";
+        if (reset) reset.style.display = state ? "inline-flex" : "none";
+        if (!state) { panel.innerHTML = ""; return; }
+
+        const isFirstPractice = stage === "practice" && !state.attempts && !state.result &&
+          state.used.every(i => course.items[i].phase === "diagnostic");
+        const button = (action, label, value = "", more = "") =>
+          `<button type="button" class="socratic-cmd-btn" data-course-action="${action}" data-value="${value}" ${more}>${escapeHtml(label)}</button>`;
+        const map = stage !== "diagnostic" ? `
+          <section aria-label="${t("Bản đồ kỹ năng", "Skill map")}">
+            <h2>${t("Bản đồ kỹ năng", "Skill map")}</h2>
+            <p class="socratic-sub-text">${t("Mục tiêu 4/5. Cần ít nhất hai lần trả lời đúng độc lập; trắc nghiệm không xác nhận mức 5/5.",
+              "Target: 4/5. Levels require at least two independent correct checks; MCQs cannot verify 5/5.")}</p>
+            <div class="socratic-subskills-grid">${course.skills.map((skill, i) => {
+              const {level} = state.skills[i];
+              return `<div class="socratic-subskill-item${item?.skill === i ? " active-focus" : ""}">
+                <div class="socratic-subskill-top">
+                  <span class="socratic-subskill-name">${escapeHtml(skill[lang])}</span><span class="socratic-lvl-pill">${level}/5</span>
+                </div>
+                <div class="socratic-bar-track" aria-hidden="true"><div class="socratic-bar-fill" style="width:${level * 20}%"></div></div>
+                <div class="socratic-subskill-meta">
+                  <span>${escapeHtml(this.getLevelName(level, vi))}</span>
+                  ${stage === "practice" && course.items.some((q, j) => q.phase === "practice" && q.skill === i && j !== state.index && !state.used.includes(j))
+                    ? button("focus", isFirstPractice ? t("Chọn trọng tâm", "Set focus") : t("Ưu tiên câu tiếp", "Focus next"), i,
+                      `aria-pressed="${(isFirstPractice ? item?.skill : state.focus) === i}"`) : ""}
+                </div>
+              </div>`;
+            }).join("")}</div>
+          </section>` : "";
+        const source = q => `<p>${escapeHtml(q[`explanation_${lang}`])}</p><blockquote>“${escapeHtml(q.quote)}”</blockquote>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/${q.pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${q.pmid}</a>`;
+        const finalReview = state.finalFailed ? `
+          <div class="socratic-transcript-card">${state.final.filter(a => !a.correct).map(a => {
+            const q = course.items[a.index];
+            return `<details><summary>${escapeHtml(q[`stem_${lang}`])}</summary>${source(q)}</details>`;
+          }).join("")}</div>` : "";
+        if (!item) {
+          const message = stage === "mastered"
+            ? t("Bạn đã đạt mức 4/5 ở mọi kỹ năng và qua bài kiểm tra tổng hợp.", "You reached 4/5 in every skill and passed the mixed assessment.")
+            : t("Bộ này không còn câu kiểm tra độc lập. Nếu còn lượt, hãy mở bộ mới để kiểm tra bằng câu khác.",
+                "No independent checks remain in this set. Open a new set, if available, to practice with different questions.");
+          panel.innerHTML = `${map}<div class="socratic-transcript-card"><h2 tabindex="-1" data-course-heading>${message}</h2></div>${finalReview}`;
+          return;
+        }
+
+        const q = CaseQuiz.courseQuestion(course, state, lang);
+        const assessment = stage !== "practice";
+        const title = assessment
+          ? t("Câu", "Question") + ` ${course.items.slice(0, state.index + 1).filter(x => x.phase === stage).length}/${course.items.filter(x => x.phase === stage).length}`
+          : escapeHtml(course.skills[item.skill][lang]);
+        let result = "";
+        if (assessment && state.result) result = `<p>${t("Đã ghi nhận câu trả lời.", "Answer recorded.")}</p>`;
+        else if (state.result) {
+          const verdict = state.result === "correct" ? t("Đúng.", "Correct.") :
+            state.result === "wrong" ? t("Chưa đúng sau hai lần thử.", "Incorrect after two attempts.") : t("Đã bỏ qua.", "Skipped.");
+          result = `<p>${verdict} ${t("Đáp án", "Answer")}: ${escapeHtml(q.options.find(o => o.key === q.correct_key).text)}</p>${source(item)}`;
+        } else if (state.attempts === 1) result = `<p>${t("Chưa đúng. Thử lại:", "Not quite. Try again:")} ${escapeHtml(item[`hint_${lang}`])}</p>`;
+        const type = item.type === "case" ? t("Tình huống lâm sàng", "Clinical case") : t("Lý thuyết", "Theory");
+        panel.innerHTML = `
+          <div class="socratic-transcript-card socratic-question-card">
+            <h2 tabindex="-1" data-course-heading>${title} · ${type}</h2>
+            ${state.result ? "" : `<p>${escapeHtml(item[`stem_${lang}`])}</p>`}
+            <div role="status">${result}</div>
+            ${state.result ? button("next", t("Tiếp tục", "Continue")) : ""}
+          </div>
+          ${state.result ? "" : `<div class="socratic-choices-grid">${q.options.map(o => `
+            <button type="button" class="socratic-choice-btn" data-course-action="answer" data-value="${o.key}">
+              <span class="socratic-choice-badge">${o.key}</span><span class="socratic-choice-text">${escapeHtml(o.text)}</span>
+            </button>`).join("")}</div>`}
+          ${assessment ? "" : `<div class="socratic-cmd-strip">
+            ${state.result ? "" : button("tell", t("Giải thích luôn", "Just tell me"))}
+            ${button("difficulty", t("Câu sau dễ hơn", "Easier next"), "medium", `aria-pressed="${state.prefer === "medium"}"`)}
+            ${button("difficulty", t("Câu sau khó hơn", "Harder next"), "hard", `aria-pressed="${state.prefer === "hard"}"`)}
+          </div>`}${map}${finalReview}`;
+      },
+
       renderTranscriptMessage(message, sess, questionCount, isVi) {
         const text = String(message.text || "");
         const assistant = message.role === "assistant";
@@ -9673,10 +9832,16 @@
 
       renderUI() {
         const b = this.quizSets.attach(App.selected || getTodaySingleBriefing());
-        const available = ClinicalQuiz.hasSourceItems(b);
+        const course = this.courseFor(b);
+        const available = course || ClinicalQuiz.hasSourceItems(b);
         const isVi = App.currentLang === "vi";
         const section = document.getElementById("socraticTutorSection");
         if (section) section.hidden = !available;
+        const coursePanel = document.getElementById("socraticCourse");
+        if (coursePanel) {
+          coursePanel.hidden = !course;
+          section?.toggleAttribute("data-course", Boolean(course));
+        }
         const unavailable = document.getElementById("quizUnavailable");
         if (unavailable) {
           unavailable.hidden = available;
@@ -9684,6 +9849,13 @@
             : "No source-supported questions are available for this lesson.";
         }
         if (!available) return;
+        this.renderNewSetButton(b, isVi);
+        if (course && coursePanel) {
+          this.renderCourse(b, course, coursePanel, isVi);
+          return;
+        }
+        const start = document.getElementById("btnStartSocratic");
+        if (start) start.style.display = "";
         const sess = this.getSession();
         const questionCount = ClinicalQuiz.sourceQuestionCount(b);
         const startLabel = isVi ? `Bắt đầu ôn tập (${questionCount} câu)` : `Start review (${questionCount})`;
@@ -9730,15 +9902,6 @@
         const btnReset = document.getElementById("btnResetSocratic");
         if (btnReset) btnReset.style.display = sess.started ? "inline-flex" : "none";
         setEl("labelResetSocratic", isVi ? "Học lại" : "Restart");
-        const btnNewSet = document.getElementById("btnNewQuizSet");
-        if (btnNewSet) {
-          const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
-          btnNewSet.style.display = total ? "inline-flex" : "none";
-          btnNewSet.disabled = Boolean(this.isBusy);
-          btnNewSet.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
-            : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
-          setEl("labelNewQuizSet", isVi ? `Tạo câu hỏi mới bằng AI (còn ${left} lượt)` : `New AI questions (${left} left)`);
-        }
 
         setEl("btnSocCmdProgress", isVi ? "Xem tiến độ" : "Show progress");
         setEl("btnSocCmdHarder", isVi ? "Khó hơn" : "Harder");
@@ -9851,6 +10014,10 @@
       },
 
       async startDiagnostic() {
+        if (this.courseFor(this.quizSets.attach(App.selected || getTodaySingleBriefing()))) {
+          this.courseAction("restart");
+          return;
+        }
         const sess = this.getSession();
         sess.session_id = this.newQuizId();
         sess.question_id = this.newQuizId();
@@ -9957,7 +10124,7 @@
         }
 
         try {
-          if (App.serverAvailable && !isFileOrigin() && !b?.generated_quiz) {
+          if (App.serverAvailable && !isFileOrigin() && b?.quiz_mode !== "source_excerpt") {
             try {
               const res = await fetch("/api/socratic", {
                 method: "POST",

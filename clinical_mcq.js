@@ -41,7 +41,7 @@ const ClinicalQuiz = (() => {
   function aiItems(primary) {
     if (primary?.quiz_mode!=='source_excerpt') return [];
     const set=primary.generated_quiz;
-    const generated=set&&typeof set.set_id==='string'?cases.validateSet(primary,set.items):[];
+    const generated=set?.version===undefined&&typeof set?.set_id==='string'?cases.validateSet(primary,set.items):[];
     if (generated.length) return generated.map((item,i)=>[`gen:${set.set_id}:${i}`,item]);
     const ground=cases.grounding(primary);
     return (Array.isArray(primary.case_quiz_items)?primary.case_quiz_items:[]).map((item,i)=>[`case:${i}`,item])

@@ -1,0 +1,131 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const CaseQuiz = require("../case_quiz.js");
+const ClinicalQuiz = require("../clinical_mcq.js");
+const {course, lesson} = require("./fixtures/socratic_course.js");
+
+const payload = course();
+const bank = CaseQuiz.validateCourse(lesson, payload);
+assert.ok(bank);
+for (const corrupt of [
+  s => {s.items.pop();},
+  s => {s.items[0].quote = s.items[0].quote.replace(" ", "  ");},
+  s => {s.items[0].pmid = "1234";},
+  s => {s.items[0].tier = "hard";},
+  s => {s.items[1].stem_vi = s.items[0].stem_vi;},
+  s => {s.items[4].hint_en = s.items[4].options[0].en + "?";},
+  s => {s.items[4].hint_vi = "";},
+  s => {s.items[4].skill = 1;},
+  s => {s.items.at(-1).skill = 3;},
+]) {
+  const invalid = structuredClone(payload);
+  corrupt(invalid);
+  assert.equal(CaseQuiz.validateCourse(lesson, invalid), null);
+}
+
+const current = (state, lang = "vi") => CaseQuiz.courseQuestion(bank, state, lang);
+const turn = (state, action, value) => CaseQuiz.courseTurn(bank, state, action, value, "vi");
+const answer = (state, correct = true) => {
+  const q = current(state);
+  return turn(state, "answer", correct ? q.correct_key : q.options.find(o => o.key !== q.correct_key).key);
+};
+const advance = (state, correct = true) => turn(answer(state, correct), "next");
+
+let state = turn(null, "restart");
+assert.equal(current(state).correct_key, current(state, "en").correct_key);
+for (let i = 0; i < 4; i++) {
+  assert.equal(state.stage, "diagnostic");
+  assert.deepEqual(turn(state, "tell"), state, "no teaching in diagnostic");
+  state = advance(state);
+}
+assert.equal(state.stage, "practice");
+assert.ok(state.skills.every(s => s.level === 0), "one diagnostic response cannot raise a level");
+let placed = turn(null, "restart");
+for (let i = 0; i < 4; i++) placed = advance(placed, i !== 2);
+assert.equal(bank.items[placed.index].skill, 2, "diagnostic misses prioritize the first practice skill");
+assert.equal(bank.items[turn(placed, "focus", 0).index].skill, 0, "the learner can override the proposed starting skill");
+const first = state.index;
+const wrong = answer(state, false);
+assert.equal(wrong.index, first);
+assert.equal(wrong.attempts, 1);
+assert.equal(wrong.result, "");
+assert.deepEqual(turn(wrong, "next"), wrong, "must retry before moving on");
+const retryCorrect = answer(wrong);
+assert.equal(retryCorrect.result, "correct");
+assert.deepEqual(retryCorrect.skills.map(s => s.level), [0, 0, 0, 0], "assisted retry earns no skill credit");
+const twoMisses = answer(wrong, false);
+assert.equal(twoMisses.result, "wrong");
+const retest = turn(twoMisses, "next");
+assert.notEqual(retest.index, first, "retests with a distinct question");
+assert.equal(bank.items[retest.index].skill, bank.items[first].skill);
+assert.equal(retest.coached, true);
+
+let review, unlocked = state;
+while (unlocked.stage === "practice") {
+  if (unlocked.review && !review) review = unlocked;
+  unlocked = advance(unlocked);
+}
+assert.ok(review, "practice interleaves a spaced check without announcing it");
+const reviewedSkill = bank.items[review.index].skill;
+assert.equal(answer(review, false).skills[reviewedSkill].level, review.skills[reviewedSkill].level - 1);
+assert.equal(unlocked.stage, "final");
+assert.ok(unlocked.skills.every(s => s.level === 4), "two hard correct checks establish independent performance");
+let failed = advance(unlocked, false);
+while (failed.stage === "final") failed = advance(failed);
+assert.ok(failed.finalFailed && failed.stage !== "mastered");
+assert.ok(failed.skills.some(s => s.level < 4));
+while (unlocked.stage === "final") unlocked = advance(unlocked);
+assert.equal(unlocked.stage, "mastered");
+assert.equal(unlocked.final.length, bank.skills.length + 1);
+
+const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const tutorCode = html.match(/const SocraticTutor = \{[\s\S]*?\n    \};/)[0];
+const escapeHtml = html.match(/    function escapeHtml\(str\) \{[\s\S]*?\n    \}/)[0];
+const nodes = {
+  socraticCourse: {hidden: true}, socraticTutorSection: {toggleAttribute() {}},
+  socraticPhaseBadge: {}, labelNewQuizSet: {}, btnNewQuizSet: {style: {}},
+};
+const App = {currentLang: "vi", selected: {...lesson, id: "course-demo"}};
+let saved;
+const sandbox = {App, CaseQuiz, ClinicalQuiz, SOCRATIC_STATE_KEY: "socratic",
+  window: {EBM_QUIZ_SETS: {sets: {[App.selected.id]: [payload, course(2), course(3)]}}},
+  document: {getElementById: id => nodes[id], querySelector: () => null},
+  safeStorageGet: () => saved, safeStorageSet: (_, value) => { saved = value; },
+};
+const buildTutor = () => {
+  const tutor = vm.runInNewContext(escapeHtml + "\n" + tutorCode + ";SocraticTutor", {...sandbox});
+  tutor.loadStore();
+  tutor.quizSourceLabel = () => "";
+  return tutor;
+};
+let tutor = buildTutor();
+tutor.renderUI();
+assert.equal(nodes.socraticCourse.hidden, false);
+assert.equal(nodes.labelNewQuizSet.textContent, "Tạo câu hỏi mới bằng AI (còn 2 lượt)");
+tutor.startIfIdle();
+const key = tutor.sessionKey(1, App.selected);
+const markup = () => nodes.socraticCourse.innerHTML;
+assert.match(markup(), /Câu 1\/4/);
+assert.doesNotMatch(markup(), /Bản đồ kỹ năng|<blockquote>/);
+for (let i = 0; i < 4; i++) {
+  tutor.courseAction("answer", current(tutor.store[key].course).correct_key);
+  tutor.courseAction("next");
+}
+assert.match(markup(), /Bản đồ kỹ năng/);
+assert.match(markup(), /0\/5/);
+const question = current(tutor.store[key].course);
+const wrongKey = question.options.find(o => o.key !== question.correct_key).key;
+tutor.courseAction("answer", wrongKey);
+assert.match(markup(), /Chưa đúng\. Thử lại:/);
+assert.doesNotMatch(markup(), /<blockquote>|pubmed\.ncbi/);
+tutor = buildTutor();
+App.currentLang = "en";
+tutor.onLanguageChanged();
+assert.match(markup(), /Not quite\. Try again:/);
+assert.match(markup(), /Skill map/);
+tutor.courseAction("answer", wrongKey);
+assert.match(markup(), /Incorrect after two attempts/);
+assert.match(markup(), /<blockquote>|pubmed\.ncbi/);
+assert.doesNotMatch(markup(), /data-course-action="answer"/);
+console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");
