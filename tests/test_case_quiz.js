@@ -214,6 +214,16 @@ for (const [field, matching, wrong] of [["explanation_en", "RR 1.42", "RR 1.47"]
   const swapped = {...matchedRenalCase, [field]: matchedRenalCase[field].replace(matching, wrong)};
   assert.equal(CaseQuiz.rejectReason(swapped, renalGround), "effects", "RR 1.47 belongs to the 40% threshold, not 30%");
 }
+const baselines = {...matchedRenalCase,
+  stem_en: "For a 63-year-old patient with EF 55%, BP 138/84 mmHg and eGFR 58, what effect on the risk of a decline of at least 30% was reported?",
+  stem_vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nghiên cứu báo cáo tác động nào đến nguy cơ suy giảm ít nhất 30%?",
+};
+assert.equal(CaseQuiz.rejectReason(baselines, renalGround), "", "uncited patient measurements are not study results, even in a risk question");
+for (const [lang, result] of [["en", " The study's event rate was 17%."], ["vi", " Tỷ lệ biến cố là 17%."], ["en", " The trial reported RR 1.25."]]) {
+  const field = "stem_" + lang;
+  assert.equal(CaseQuiz.rejectReason({...baselines, [field]: baselines[field] + result}, renalGround), "effects",
+    "study rates and ratios in the stem still require support");
+}
 console.log("Clinical effects: withdrawn eGFR case, unsupported populations, absolute risk wording, and wrong measures rejected: OK");
 
 const generated = {...lesson, generated_quiz: {set_id: "s1", items: [theory, kase]}};

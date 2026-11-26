@@ -156,9 +156,9 @@ const CaseQuiz = (() => {
   const PERCENT = /(\d+(?:[.,]\d+)?)\s*(%|percentage points?|điểm phần trăm|phần trăm)/giu;
   const RATIO = /\b(relative risk|risk ratio|hazard ratio|odds ratio|rr|hr|or)(?:\s*\[(?:rr|hr|or)\])?\s*[:=,]?\s*(\d+(?:[.,]\d+)?)/gi;
   const RATIO_KIND = {'relative risk': 'rr', 'risk ratio': 'rr', 'hazard ratio': 'hr', 'odds ratio': 'or'};
-  function effectFigures(value) {
+  function effectFigures(value, includePercent = true) {
     return [
-      ...[...value.matchAll(PERCENT)].map(([, n, unit]) => numbers(n)[0] + (/point|điểm/iu.test(unit) ? ' pp' : '%')),
+      ...(includePercent ? [...value.matchAll(PERCENT)].map(([, n, unit]) => numbers(n)[0] + (/point|điểm/iu.test(unit) ? ' pp' : '%')) : []),
       ...[...value.matchAll(RATIO)].filter(([, measure]) => measure !== 'or')
         .map(([, measure, n]) => (RATIO_KIND[measure.toLowerCase()] || measure.toLowerCase()) + ' ' + numbers(n)[0]),
     ];
@@ -168,6 +168,13 @@ const CaseQuiz = (() => {
     en: /\b(?:risk|rate|declines?|decreases?|increases?|reductions?|outcomes?|endpoints?)\b/,
     vi: /\b(?:nguy co|ty le|ti le|suy giam|giam|tang|ket cuc|tieu chi)\b/,
   };
+  const EFFECT_CONTEXT = {
+    en: /\b(?:events?|deaths?|mortality|hospitali[sz]ations?|incidence|benefit|effect|improvement|change)\b/,
+    vi: /\b(?:bien co|tu vong|nhap vien|loi ich|tac dong|hieu qua|cai thien|thay doi)\b/,
+  };
+  const BASELINE_MEASUREMENT = /\b(?:lvef|ef|(?:left ventricular )?ejection fraction|phan suat tong mau(?: that trai)?)\s*(?:[:=]|of\b|la\b)?\s*\d+(?:[.,]\d+)?\s*(?:%|phan tram\b)|\b(?:egfr|estimated glomerular filtration rate|(?:toc do |muc )?loc cau than uoc tinh)\s*(?:[:=]|of\b|la\b)?\s*\d+(?:[.,]\d+)?/gi;
+  const STUDY_CLAUSE = /[!?;]|\.(?!\d)/;
+  const withoutBaseline = clause => clause.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').replace(BASELINE_MEASUREMENT, ' ');
   const RESULT_COUNT = /(\d+(?:[.,]\d+|[ \u00a0\u202f]\d{3})*)\s+(?:fewer |more )?(?:cases?|events?|deaths?|participants?|hospitali[sz]ations?|studies|trường hợp|biến cố|ca tử vong|người tham gia|ca nhập viện|nghiên cứu)(?![\p{L}\p{N}])/giu;
   const RESULT_STATEMENT = /\b(?:report(?:s|ed)?|found|showed|identified|included|fewer|more|ghi nhận|cho thấy|báo cáo|xác định|bao gồm)\b/iu;
   const ABSOLUTE_RISK_LEVEL = /\b(?:increas(?:e|ed|es)|decreas(?:e|ed|es)|reduc(?:e|ed|es)|rais(?:e|ed|es)|tăng|giảm)\b[^.;!?]*?\b(?:to|lên|xuống|còn)\s+(\d+(?:[.,]\d+)?)\s*%/giu;
@@ -211,7 +218,14 @@ const CaseQuiz = (() => {
         if (!citedCkd.has(group)) found.add(group + ' not covered by the citation');
       }
       for (const [field, isStem] of [[stem, true], [correct[lang], false], [item['explanation_' + lang], false]]) {
-        for (const figure of effectFigures(field)) {
+        const clauses = field.split(STUDY_CLAUSE);
+        const figures = isStem ? clauses.flatMap(clause => {
+          const normalized = claimText(clause)[lang];
+          const baselineFree = withoutBaseline(clause);
+          const hasEffect = ENDPOINT_CONTEXT[lang].test(normalized) || EFFECT_CONTEXT[lang].test(normalized) || RESULT_STATEMENT.test(clause);
+          return effectFigures(clause, false).concat(hasEffect ? effectFigures(baselineFree).filter(f => f.endsWith('%') || f.endsWith(' pp')) : []);
+        }) : effectFigures(field);
+        for (const figure of figures) {
           if (!cited.has(figure)) found.add(figure);
           if (expectedDeclineEffect && pairedFigures.has(figure) && !expectedDeclineEffect.has(figure)) {
             found.add(figure + ' belongs to a different decline threshold');
@@ -221,8 +235,8 @@ const CaseQuiz = (() => {
           const number = numbers(n)[0];
           if (relative && cited.has(number + '%') && !citedLevels.has(number)) found.add('absolute risk level ' + number + '%');
         }
-        for (const clause of field.split(/[!?;]|\.(?!\d)/)) {
-          const normalized = claimText(clause);
+        for (const clause of clauses) {
+          const normalized = claimText(isStem ? withoutBaseline(clause) : clause);
           if (isStem && !citedEgfr && ENDPOINT_CONTEXT[lang].test(normalized[lang]) && matchesClaim(egfr, normalized, lang)) {
             found.add('eGFR endpoint not cited');
           }
