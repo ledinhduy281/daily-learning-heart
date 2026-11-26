@@ -158,6 +158,7 @@ for (const lang of ["vi", "en"]) {
   for (const remaining of [2, 0]) {
     tutor.quizSets.remaining = () => remaining;
     tutor.renderUI();
+    assert.equal(nodes.btnNewQuizSet.disabled, remaining === 0);
     assert.equal(nodes.labelNewQuizSet.textContent,
       vi ? `Tạo câu hỏi mới bằng AI (còn ${remaining} lượt)` : `New AI questions (${remaining} left)`);
   }

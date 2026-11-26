@@ -9678,7 +9678,7 @@
         if (!button) return;
         const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
         button.style.display = total > 1 ? "inline-flex" : "none";
-        button.disabled = this.isBusy;
+        button.disabled = this.isBusy || left <= 0;
         button.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
           : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
         const label = document.getElementById("labelNewQuizSet");
