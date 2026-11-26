@@ -9064,30 +9064,52 @@
             return items.length === 6 && items.filter(i => i.type === "case").length === 3;
           });
         },
-        opened(b) {
-          const saved = b?.id && this.read()[b.id];
-          const n = typeof saved === "number" ? saved - 1 : saved?.index;
-          return Number.isInteger(n) && n > 0 ? n : 0;
+        selection(b, sets, saved) {
+          const ids = new Set(sets.map(s => s.set_id));
+          const prefix = b.id + "#";
+          const opened = Array.isArray(saved?.opened)
+            ? new Set(saved.opened.filter(id => typeof id === "string"))
+            : new Set(Object.keys(SocraticTutor.store).filter(key => key.startsWith(prefix))
+              .map(key => key.slice(prefix.length)).filter(id => ids.has(id)));
+          const selected = ids.has(saved?.selected) ? saved.selected
+            : [...opened].reverse().find(id => ids.has(id)) || sets[0]?.set_id;
+          if (selected) opened.add(selected);
+          return {selected, opened: [...opened]};
+        },
+        saveSelection(b, all, selection) {
+          const kept = Object.fromEntries(Object.entries(all).filter(([id]) => id !== b.id).slice(-29));
+          this.write({...kept, [b.id]: selection});
         },
         attach(b) {
-          if (b?.id && !b.generated_quiz) {
+          if (b?.id) {
             const sets = this.available(b);
-            const set = sets[Math.min(this.opened(b), sets.length - 1)];
-            if (set) b.generated_quiz = set;
+            if (sets.length) {
+              const all = this.read(), saved = all[b.id];
+              const selection = this.selection(b, sets, saved);
+              b.generated_quiz = sets.find(s => s.set_id === selection.selected);
+              if (saved?.selected !== selection.selected || !Array.isArray(saved.opened) || !saved.opened.includes(selection.selected)) {
+                this.saveSelection(b, all, selection);
+              }
+            }
           }
           return b;
         },
         remaining(b) {
-          return Math.min(this.pressesLeft(), Math.max(0, this.available(b).length - 1 - this.opened(b)));
+          const sets = this.available(b);
+          if (!sets.length) return 0;
+          const {opened} = this.selection(b, sets, this.read()[b.id]);
+          return Math.min(this.pressesLeft(), sets.filter(s => !opened.includes(s.set_id)).length);
         },
         openNext(b) {
-          const sets = this.available(b), n = this.opened(b) + 1;
-          if (n >= sets.length || this.pressesLeft() <= 0) return null;
-          const kept = Object.fromEntries(Object.entries(this.read()).filter(([id]) => id !== b.id).slice(-29));
-          this.write({...kept, [b.id]: {index: n}});
-          this.write({date: this.today(), used: this.dailyPresses - this.pressesLeft() + 1}, this.pressKey);
-          b.generated_quiz = sets[n];
-          return sets[n];
+          const left = this.pressesLeft(), sets = this.available(b);
+          if (!sets.length || left <= 0) return null;
+          const all = this.read(), {opened} = this.selection(b, sets, all[b.id]);
+          const set = sets.find(s => !opened.includes(s.set_id));
+          if (!set) return null;
+          this.saveSelection(b, all, {selected: set.set_id, opened: [...opened, set.set_id]});
+          this.write({date: this.today(), used: this.dailyPresses - left + 1}, this.pressKey);
+          b.generated_quiz = set;
+          return set;
         }
       },
 

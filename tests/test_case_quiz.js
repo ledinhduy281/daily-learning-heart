@@ -242,18 +242,19 @@ const published = Array.from({length: 3}, (_, i) => ({version: CaseQuiz.CASE_SET
   items: Array.from({length: 3}, (_, j) => ({...kase, stem_en: kase.stem_en + ` (Case ${i}-${j})`,
     stem_vi: kase.stem_vi + ` (Ca ${i}-${j})`}))}));
 const storage = new Map();
-const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
+const publishedTutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   CaseQuiz, ClinicalQuiz: quiz,
   window: {EBM_QUIZ_SETS: {sets: {[publishedLesson.id]: published}},
     localStorage: {getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v)}},
 });
+const {quizSets} = publishedTutor;
 const fresh = {...publishedLesson};
 const offlineTheory = quiz.sourceCourse(fresh).items;
 assert.ok(offlineTheory.length >= 3 && offlineTheory.every(q => q.type === "theory"));
 const firstBank = quiz.sourceCourse(quizSets.attach(fresh));
 assert.equal(firstBank.items.length, offlineTheory.length + 3, "fresh devices start with theory plus three cases");
 assert.equal(quizSets.remaining(fresh), 2, "loading the default set is free");
-assert.equal(storage.size, 0);
+assert.equal(storage.has(quizSets.pressKey), false);
 const firstSet = fresh.generated_quiz;
 const secondSet = quizSets.openNext(fresh);
 assert.notEqual(secondSet.set_id, firstSet.set_id);
@@ -264,6 +265,23 @@ assert.ok(quizSets.openNext(fresh));
 assert.equal(quizSets.openNext(fresh), null);
 assert.equal(quizSets.pressesLeft(), 0);
 assert.equal(quizSets.attach({id: "no-published-set"}).generated_quiz, undefined);
+storage.clear();
+const first = quizSets.attach({...publishedLesson});
+assert.equal(quizSets.openNext(first).set_id, "set-1");
+published.splice(0, 3, published[1], {...published[0], set_id: "replacement-a"}, {...published[2], set_id: "replacement-b"});
+const resumed = quizSets.attach({...publishedLesson});
+assert.equal(resumed.generated_quiz.set_id, "set-1", "refill preserves the selected retained set");
+assert.equal(quizSets.pressesLeft(), 1, "resuming does not spend a press");
+assert.equal(quizSets.openNext(resumed).set_id, "replacement-a");
+assert.equal(quizSets.openNext(resumed), null, "deduplication does not restore used quota");
+
+storage.set(quizSets.key, JSON.stringify({[publishedLesson.id]: {index: 1}}));
+storage.set(quizSets.pressKey, JSON.stringify({date: quizSets.today(), used: 1}));
+publishedTutor.store[publishedLesson.id + "#set-1"] = {course: {compact: true}};
+assert.equal(quizSets.attach({...publishedLesson}).generated_quiz.set_id, "set-1", "legacy index migrates from the retained course's ID");
+assert.equal(quizSets.pressesLeft(), 1);
+assert.equal(JSON.parse(storage.get(quizSets.key))[publishedLesson.id].selected, "set-1");
+console.log("Quiz pack selection: refill and legacy migration preserve retained set and daily quota: OK");
 
 tutor.quizSets.attach = b => b;
 tutor.quizSets.available = () => [generated.generated_quiz];
