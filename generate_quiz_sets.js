@@ -33,7 +33,7 @@ function systemPrompt(pmid, philosophy, phase) {
     diagnostic: 'Return {"skills":[{"vi":"…","en":"…"}, …],"questions":[…]}. Create exactly four distinct source-specific ' +
       'subskills numbered 0-3 by position and exactly four questions, one per skill ordered easy to hard. Include both a theory and a case question.',
     practice: `Return {"questions":[…]}. Write exactly ${PRACTICE_PER_SKILL} independent questions for the requested skill: ` +
-      'one medium and two hard checks using different angles. Add "hint_vi" and ' +
+      'one medium and two hard checks using different angles. Include at least one theory question and one clinical case for this skill. Add "hint_vi" and ' +
       '"hint_en": a short narrower question ending in ? that probes the reasoning without naming a choice, quoting the answer or revealing it.',
     final: 'Return {"questions":[…]}. Write exactly one hard, independent question per skill plus one integrative question ' +
       'with "skill":null and "format":"connect" that combines at least two skills. Include both theory and case.'

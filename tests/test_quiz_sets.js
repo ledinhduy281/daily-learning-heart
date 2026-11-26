@@ -60,6 +60,7 @@ function fakeGroq(faults = []) {
     }));
     if (phase === "practice") {
       const target = Number(user.match(/REQUESTED SKILL INDEX: ([0-9])/)[1]);
+      assert.match(system, /at least one theory question and one clinical case for this skill/);
       questions = questions.filter(q => q.skill === target);
       assert.equal(body.max_tokens, 2550);
     }

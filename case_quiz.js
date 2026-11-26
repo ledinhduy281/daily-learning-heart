@@ -139,6 +139,7 @@ const CaseQuiz = (() => {
     }
     if (diagnosis[0].tier !== 'easy' || tier !== 2 || integration !== 1 || covered.final.size !== skills.length ||
         practice.some(t => t.length !== PRACTICE_PER_SKILL || t.filter(d => d === 'hard').length < 2) ||
+        !items.some(i => i.phase === 'practice' && i.type === 'case') ||
         !items.some(i => i.phase === 'final' && i.type === 'case') ||
         !['theory', 'case'].every(t => items.some(i => i.type === t)) ||
         !FORMATS.every(f => items.some(i => i.format === f))) return null;

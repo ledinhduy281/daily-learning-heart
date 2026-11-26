@@ -18,6 +18,7 @@ for (const corrupt of [
   s => {s.items[4].hint_vi = "";},
   s => {s.items[4].skill = 1;},
   s => {s.items.at(-1).skill = 3;},
+  s => {s.items.filter(q => q.phase === "practice").forEach(q => {q.type = "theory";});},
   s => {s.items.filter(q => q.phase === "final").forEach(q => {q.type = "theory";});},
 ]) {
   const invalid = structuredClone(payload);
