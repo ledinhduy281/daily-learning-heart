@@ -83,6 +83,7 @@ const CaseQuiz = (() => {
   const TIERS = ['easy', 'medium', 'hard'];
   const LANGS = ['vi', 'en'];
   const PRACTICE_PER_SKILL = 3;
+  const hasMixedTypes = items => ['theory', 'case'].every(type => items.some(item => item?.type === type));
 
   function validateCourse(lesson, set) {
     if (lesson?.quiz_mode !== 'source_excerpt' || set?.version !== COURSE_VERSION || typeof set.set_id !== 'string' || !set.set_id.trim() ||
@@ -112,7 +113,7 @@ const CaseQuiz = (() => {
         if (p !== 2 || item.format !== 'connect' || ++integration > 1) return null;
       } else {
         if (!Number.isInteger(idx) || !skills[idx]) return null;
-        if (p === 1) practice[idx].push(item.tier);
+        if (p === 1) practice[idx].push(item);
         else {
           if (covered[item.phase].has(idx)) return null;
           covered[item.phase].add(idx);
@@ -138,9 +139,9 @@ const CaseQuiz = (() => {
         ...(p === 1 ? {hint_vi: squash(item.hint_vi), hint_en: squash(item.hint_en)} : {})});
     }
     if (diagnosis[0].tier !== 'easy' || tier !== 2 || integration !== 1 || covered.final.size !== skills.length ||
-        practice.some(t => t.length !== PRACTICE_PER_SKILL || t.filter(d => d === 'hard').length < 2) ||
+        practice.some(group => group.length !== PRACTICE_PER_SKILL ||
+          group.filter(q => q.tier === 'hard').length < 2 || !hasMixedTypes(group)) ||
         !items.some(i => i.phase === 'final' && i.type === 'case') ||
-        !['theory', 'case'].every(t => items.some(i => i.type === t)) ||
         !FORMATS.every(f => items.some(i => i.format === f))) return null;
     return {version: COURSE_VERSION, set_id: set.set_id, model: set.model,
       skills: skills.map(s => ({vi: squash(s.vi), en: squash(s.en)})), items: cleaned};
@@ -331,6 +332,6 @@ const CaseQuiz = (() => {
   }
 
   return {grounding, clean, rejectReason, unsupportedNumbers, validItem, validateSet, validateCourse,
-    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, COURSE_VERSION, PRACTICE_PER_SKILL};
+    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;
