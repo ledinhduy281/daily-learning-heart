@@ -1894,6 +1894,10 @@
       gap: 16px;
     }
 
+    .block-b-quiz-button {
+      align-self: flex-start;
+    }
+
     .trial-box-card {
       background-color: var(--color-canvas);
       border: 1px solid var(--color-hairline);
@@ -4356,6 +4360,7 @@
       <div class="trials-grid-deck" id="trialsGridDeck">
         <!-- Rendered by JS -->
       </div>
+      <button type="button" class="btn btn-primary-green block-b-quiz-button" id="btnGoToReviewQuiz">Đến phần trắc nghiệm</button>
 
       <!-- 3. TAKE-HOME CLINICAL PEARLS -->
       <div class="pearls-card-supa" id="briefingPearlsCard">
@@ -4814,6 +4819,7 @@
         priorGuideline: "Khuyến cáo tiền nhiệm",
         currentGuideline: "Khuyến cáo hiện hành",
         trialsSectionTitle: "Các Thử Nghiệm Lâm Sàng Bản Lề",
+        goToReviewQuiz: "Đến phần trắc nghiệm",
         pearlsHeaderTitle: "Điểm Nhấn Lâm Sàng Khi Đi Buồng",
         pearlGuidelineTag: "KHUYẾN CÁO",
         pearlTrialTag: "THỬ NGHIỆM BẢN LỀ",
@@ -4895,6 +4901,7 @@
         priorGuideline: "Prior Guideline",
         currentGuideline: "Current Guideline",
         trialsSectionTitle: "Landmark Clinical Trials",
+        goToReviewQuiz: "Go to the review quiz",
         pearlsHeaderTitle: "Take-Home Clinical Pearls for Rounds",
         pearlGuidelineTag: "GUIDELINE",
         pearlTrialTag: "LANDMARK RCT",
@@ -6144,6 +6151,7 @@
 
       document.getElementById("guidelinePipelineTitle").textContent = t("guidelinePipelineTitle");
       document.getElementById("trialsSectionTitle").textContent = t("trialsSectionTitle");
+      setTxt("#btnGoToReviewQuiz", t("goToReviewQuiz"));
       document.getElementById("pearlsHeaderTitle").textContent = t("pearlsHeaderTitle");
       document.getElementById("sourcesSectionTitle").textContent = t("sourcesSectionTitle");
       document.getElementById("bottomFeedbackTitle").textContent = t("bottomFeedbackTitle");
@@ -7527,6 +7535,10 @@
 
     function bindStudyTabs() {
       const tabs = Array.from(document.querySelectorAll("#studyTabs [role='tab']"));
+      document.getElementById("btnGoToReviewQuiz").addEventListener("click", () => {
+        showStudyTab("tabReviewQuiz");
+        document.getElementById("tabReviewQuiz").focus();
+      });
       tabs.forEach((tab, index) => {
         tab.addEventListener("click", () => showStudyTab(tab.id));
         tab.addEventListener("keydown", event => {

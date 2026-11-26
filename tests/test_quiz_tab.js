@@ -6,6 +6,10 @@ const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 assert.match(html, /id="tabReviewQuiz" role="tab" aria-controls="quizTabPanel"[^>]*>Trắc Nghiệm Ôn Tập</);
 assert.match(html, /setTxt\("#tabReviewQuiz", isVi \? "Trắc Nghiệm Ôn Tập" : "Review Quiz"\)/);
 assert.match(html, /id="quizTabPanel" role="tabpanel"[^>]* hidden>\s*<p[^>]*>[^<]*<\/p>\s*<section[^>]*id="socraticTutorSection"/);
+assert.match(html, /id="trialsGridDeck">\s*<!-- Rendered by JS -->\s*<\/div>\s*<button type="button"[^>]*id="btnGoToReviewQuiz">Đến phần trắc nghiệm<\/button>/);
+assert.match(html, /goToReviewQuiz: "Đến phần trắc nghiệm"/);
+assert.match(html, /goToReviewQuiz: "Go to the review quiz"/);
+assert.match(html, /setTxt\("#btnGoToReviewQuiz", t\("goToReviewQuiz"\)\)/);
 
 const tab = (id, panel) => ({
   id,
@@ -17,7 +21,9 @@ const tab = (id, panel) => ({
 });
 const home = tab("tabStudyHome", "homeTabPanel");
 const quiz = tab("tabReviewQuiz", "quizTabPanel");
-const nodes = {homeTabPanel: {hidden: false}, quizTabPanel: {hidden: true}, socraticTutorSection: {hidden: true}};
+const shortcut = {addEventListener(name, handler) { this[name] = handler; }};
+const nodes = {homeTabPanel: {hidden: false}, quizTabPanel: {hidden: true}, socraticTutorSection: {hidden: true},
+  tabReviewQuiz: quiz, btnGoToReviewQuiz: shortcut};
 const transcript = nodes.socraticMessagesList = {
   scrollTop: 0,
   get scrollHeight() { return nodes.quizTabPanel.hidden ? 0 : 900; },
@@ -64,3 +70,13 @@ assert.equal(starts, 1, "returning to the quiz must not restart it");
 assert.equal(session.question_index, 1);
 assert.equal(transcript.scrollTop, 900, "showing a saved quiz scrolls its visible transcript to the latest question");
 console.log("Bilingual review tab, keyboard navigation, and in-progress quiz preservation: OK");
+
+home.click();
+quiz.focused = false;
+shortcut.click();
+assert.equal(nodes.homeTabPanel.hidden, true);
+assert.equal(nodes.quizTabPanel.hidden, false);
+assert.equal(quiz["aria-selected"], "true");
+assert.equal(quiz.focused, true);
+assert.equal(starts, 1, "the Block B button must not restart a quiz in progress");
+console.log("Block B quiz button opens and focuses the existing quiz tab: OK");
