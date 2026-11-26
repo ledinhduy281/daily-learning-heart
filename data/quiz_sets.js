@@ -542,6 +542,196 @@ window.EBM_QUIZ_SETS = {
      }
     ]
    }
+  ],
+  "ebm-2026-11-26-p1-focused": [
+   {
+    "version": 3,
+    "set_id": "2026-11-26-cases-f09f60054546",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 60 tuổi có bệnh tim mạch mạch vành và huyết áp hệ thống 150/95 mmHg, không có bệnh thận mạn tính, được điều trị hạ huyết áp một cách tích cực so với mục tiêu huyết áp tiêu chuẩn. Theo kết quả nghiên cứu, điều này sẽ ảnh hưởng như thế nào đến nguy cơ xảy ra các sự kiện tim mạch?",
+      "stem_en": "A 60‑year‑old patient with coronary artery disease and a systolic blood pressure of 150/95 mmHg, without chronic kidney disease, undergoes intensive blood pressure lowering versus standard targets. According to the study, how will this affect the risk of cardiovascular events?",
+      "explanation_vi": "Kết quả từ trích đoạn [2] cho thấy hạ huyết áp tích cực làm giảm nguy cơ các sự kiện tim mạch 15% cho mỗi giảm 10 mm Hg huyết áp tâm thu, và không có sự khác biệt theo tình trạng CKD, vì vậy bệnh nhân không có CKD cũng được hưởng lợi.",
+      "explanation_en": "Excerpt [2] reports that intensive BP lowering reduces cardiovascular event risk by 15% per 10‑mm Hg SBP reduction, with no heterogeneity by CKD status, so patients without CKD also benefit.",
+      "options": [
+       {
+        "vi": "Giảm nguy cơ sự kiện tim mạch khoảng 15% cho mỗi giảm 10 mm Hg huyết áp tâm thu",
+        "en": "Reduces cardiovascular event risk by about 15% for each 10‑mm Hg reduction in systolic BP"
+       },
+       {
+        "vi": "Không có sự thay đổi đáng kể về nguy cơ sự kiện tim mạch",
+        "en": "No significant change in cardiovascular event risk"
+       },
+       {
+        "vi": "Tăng nguy cơ sự kiện tim mạch khoảng 15% cho mỗi giảm 10 mm Hg huyết áp tâm thu",
+        "en": "Increases cardiovascular event risk by about 15% for each 10‑mm Hg reduction in systolic BP"
+       },
+       {
+        "vi": "Chỉ giảm nguy cơ sự kiện tim mạch ở bệnh nhân có bệnh thận mạn tính",
+        "en": "Reduces cardiovascular event risk only in patients with chronic kidney disease"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering increased risk of 30% or greater and 40% or greater declines by 42% (RR, 1.42; 95% CI, 1.28-1.58) and 47% (RR, 1.47; 95% CI, 1.30-1.66).",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 55 tuổi không có bệnh thận mạn đang được điều trị hạ huyết áp mạnh (giảm SBP 12 mmHg). Bác sĩ lo ngại về nguy cơ suy giảm chức năng thận. Theo phân tích, nguy cơ suy giảm eGFR ≥30 % so với tiêu chuẩn tăng bao nhiêu phần trăm?",
+      "stem_en": "A 55‑year‑old patient without chronic kidney disease is undergoing intensive blood pressure lowering (12 mmHg SBP reduction). The physician worries about kidney function decline. According to the meta‑analysis, the risk of a ≥30% eGFR decline compared with standard treatment increases by how many percent?",
+      "explanation_vi": "Trích đoạn 3 cho biết hạ huyết áp mạnh làm tăng nguy cơ suy giảm eGFR ≥30 % lên 42 % (RR 1.42).",
+      "explanation_en": "Excerpt 3 reports that intensive BP lowering raises the risk of a ≥30% eGFR decline by 42% (RR 1.42).",
+      "options": [
+       {
+        "vi": "42 %",
+        "en": "42%"
+       },
+       {
+        "vi": "15 %",
+        "en": "15%"
+       },
+       {
+        "vi": "0 % (không thay đổi)",
+        "en": "0% (no change)"
+       },
+       {
+        "vi": "-15 % (giảm)",
+        "en": "-15% (decrease)"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "A",
+      "stem_vi": "Một nhà nghiên cứu muốn thiết kế một thử nghiệm ngẫu nhiên về hạ huyết áp ở bệnh nhân suy tim. Họ muốn biết quy mô mẫu tối thiểu dựa trên dữ liệu hiện có. Theo tổng hợp, có bao nhiêu nghiên cứu và tổng số người tham gia đã được phân tích?",
+      "stem_en": "A researcher plans a randomized trial on blood pressure lowering in heart‑failure patients and wants to know the existing evidence base. According to the systematic review, how many studies and total participants were included?",
+      "explanation_vi": "Trích đoạn 1 ghi rằng tổng cộng có 27 nghiên cứu với 88 830 người tham gia được bao gồm trong phân tích.",
+      "explanation_en": "Excerpt 1 states that the review identified 27 studies comprising 88,830 participants.",
+      "options": [
+       {
+        "vi": "27 nghiên cứu, 88 830 người tham gia",
+        "en": "27 studies, 88,830 participants"
+       },
+       {
+        "vi": "15 nghiên cứu, 45 000 người tham gia",
+        "en": "15 studies, 45,000 participants"
+       },
+       {
+        "vi": "30 nghiên cứu, 100 000 người tham gia",
+        "en": "30 studies, 100,000 participants"
+       },
+       {
+        "vi": "10 nghiên cứu, 20 000 người tham gia",
+        "en": "10 studies, 20,000 participants"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "version": 3,
+    "set_id": "2026-11-26-cases-ae29fe0630e6",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "B",
+      "stem_vi": "Một bệnh nhân 68 tuổi mắc bệnh tim mạch mạn tính có huyết áp tâm thu 158 mmHg. Bác sĩ quyết định áp dụng chế độ hạ huyết áp mạnh hơn so với tiêu chuẩn. Theo kết quả nghiên cứu, mức giảm nguy cơ sự kiện tim mạch sẽ là bao nhiêu so với mỗi 10 mmHg giảm SBP?",
+      "stem_en": "A 68‑year‑old patient with chronic cardiovascular disease has a systolic blood pressure of 158 mmHg. The physician plans to implement intensive blood pressure lowering compared with standard care. According to the study, what is the relative reduction in cardiovascular events per 10‑mmHg SBP decrease?",
+      "explanation_vi": "Excerpt 2 cho biết hạ huyết áp mạnh giảm nguy cơ sự kiện tim mạch 15% cho mỗi 10 mmHg giảm SBP (RR 0.85). Vì vậy đáp án đúng là giảm 15%.",
+      "explanation_en": "Excerpt 2 states that intensive BP lowering reduces cardiovascular event risk by 15% per 10‑mmHg SBP reduction (RR 0.85). Hence the correct answer is a 15% reduction.",
+      "options": [
+       {
+        "vi": "Giảm 5%",
+        "en": "5% reduction"
+       },
+       {
+        "vi": "Giảm 15%",
+        "en": "15% reduction"
+       },
+       {
+        "vi": "Giảm 25%",
+        "en": "25% reduction"
+       },
+       {
+        "vi": "Giảm 35%",
+        "en": "35% reduction"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "Intensive BP lowering reduced the risk of cardiovascular events by 15% per 10-mm Hg lower SBP (relative risk [RR], 0.85; 95% CI, 0.81-0.89), without heterogeneity by CKD status.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 62 tuổi có bệnh thận mạn và huyết áp tâm thu 160 mmHg đang được cân nhắc điều trị hạ huyết áp. Bác sĩ muốn biết mức giảm rủi ro tai biến tim mạch dự kiến nếu hạ huyết áp tâm thu thêm 10 mmHg theo phương pháp hạ huyết áp cường độ cao. Theo kết quả nghiên cứu, bệnh nhân này sẽ có:",
+      "stem_en": "A 62‑year‑old patient with chronic kidney disease has a systolic blood pressure of 160 mmHg and is being considered for intensive blood pressure lowering. The physician wants to know the expected reduction in cardiovascular event risk if systolic BP is lowered an additional 10 mmHg using intensive therapy. According to the study, the patient would experience:",
+      "explanation_vi": "Nghiên cứu cho thấy mỗi giảm 10 mmHg huyết áp tâm thu bằng phương pháp hạ huyết áp cường độ cao làm giảm nguy cơ các sự kiện tim mạch 15% (RR = 0.85), và hiệu quả này không khác nhau giữa người có và không có CKD.",
+      "explanation_en": "The meta‑analysis reported that a 10‑mmHg reduction in systolic BP achieved with intensive lowering reduces cardiovascular event risk by 15% (RR = 0.85), with consistent effects regardless of CKD status.",
+      "options": [
+       {
+        "vi": "Giảm 15% nguy cơ tai biến tim mạch (RR = 0.85)",
+        "en": "A 15% risk reduction for cardiovascular events (RR = 0.85)"
+       },
+       {
+        "vi": "Giảm 30% nguy cơ tai biến tim mạch (RR = 0.70)",
+        "en": "A 30% risk reduction for cardiovascular events (RR = 0.70)"
+       },
+       {
+        "vi": "Tăng 15% nguy cơ tai biến tim mạch (RR = 1.15)",
+        "en": "A 15% increase in cardiovascular event risk (RR = 1.15)"
+       },
+       {
+        "vi": "Không có thay đổi đáng kể về nguy cơ (RR ≈ 1.00)",
+        "en": "No significant change in risk (RR ≈ 1.00)"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42842238",
+      "quote": "We identified 27 studies including 88 830 participants.",
+      "answer": "C",
+      "stem_vi": "Trong một phân tích hệ thống, bao nhiêu nghiên cứu và tổng số bệnh nhân đã được đưa vào để đánh giá tác động của hạ huyết áp mạnh so với tiêu chuẩn?",
+      "stem_en": "In the systematic review, how many studies and total participants were included to evaluate intensive versus standard blood pressure lowering?",
+      "explanation_vi": "Excerpt 1 nêu rằng có 27 nghiên cứu với tổng cộng 88 830 người tham gia. Vì vậy đáp án đúng là 27 nghiên cứu, 88 830 bệnh nhân.",
+      "explanation_en": "Excerpt 1 states that 27 studies comprising 88,830 participants were identified. Hence the correct answer is 27 studies, 88,830 participants.",
+      "options": [
+       {
+        "vi": "15 nghiên cứu, 45 000 bệnh nhân",
+        "en": "15 studies, 45,000 participants"
+       },
+       {
+        "vi": "20 nghiên cứu, 60 000 bệnh nhân",
+        "en": "20 studies, 60,000 participants"
+       },
+       {
+        "vi": "27 nghiên cứu, 88 830 bệnh nhân",
+        "en": "27 studies, 88,830 participants"
+       },
+       {
+        "vi": "30 nghiên cứu, 100 000 bệnh nhân",
+        "en": "30 studies, 100,000 participants"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   }
   ]
  }
 };
