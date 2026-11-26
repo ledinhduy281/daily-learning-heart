@@ -223,7 +223,7 @@ const CaseQuiz = (() => {
         if (!citedCkd.has(group)) found.add(group + ' not covered by the citation');
       }
       for (const [field, isStem] of [[stem, true], [correct[lang], false], [item['explanation_' + lang], false]]) {
-        const checked = isStem ? field.split(STUDY_CLAUSE).map(clause => withoutVignetteBaseline(clause, lang)).join(';') : field;
+        const checked = isStem ? field.normalize('NFC').split(STUDY_CLAUSE).map(clause => withoutVignetteBaseline(clause, lang)).join(';') : field;
         const clauses = checked.split(STUDY_CLAUSE);
         const figures = isStem ? clauses.flatMap(clause => {
           const normalized = claimText(clause)[lang];

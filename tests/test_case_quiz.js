@@ -219,6 +219,8 @@ const baselines = {...matchedRenalCase,
   stem_vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nghiên cứu báo cáo tác động nào đến nguy cơ suy giảm ít nhất 30%?",
 };
 assert.equal(CaseQuiz.rejectReason(baselines, renalGround), "", "uncited patient measurements are not study results, even in a risk question");
+assert.equal(CaseQuiz.rejectReason({...baselines, stem_vi: baselines.stem_vi.normalize("NFD")}, renalGround), "",
+  "Vietnamese baseline measurements match in both composed and decomposed Unicode");
 const baselineOption = {
   en: "For this 63-year-old patient with EF 55%, BP 138/84 mmHg and eGFR 58, the reported risk increase was 42%.",
   vi: "Với bệnh nhân 63 tuổi có phân suất tống máu 55%, huyết áp 138/84 mmHg và eGFR 58, nguy cơ được báo cáo tăng 42%.",
