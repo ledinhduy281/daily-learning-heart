@@ -176,9 +176,9 @@ const escapeHtml = html.match(/    function escapeHtml\(str\) \{[\s\S]*?\n    \}
 const escape = vm.runInNewContext(escapeHtml + ";escapeHtml");
 const nodes = {
   socraticCourse: {hidden: true}, socraticTutorSection: {toggleAttribute() {}},
-  socraticPhaseBadge: {}, labelNewQuizSet: {}, btnNewQuizSet: {style: {}},
+  socraticPhaseBadge: {}, labelStartSocratic: {}, labelNewQuizSet: {}, btnNewQuizSet: {style: {}},
 };
-const App = {currentLang: "vi", selected: {...lesson, id: "course-demo"}};
+const App = {currentLang: "vi", selected: {...lesson, lesson_format: "legacy", id: "course-demo"}};
 let saved;
 const sandbox = {App, CaseQuiz, ClinicalQuiz, SOCRATIC_STATE_KEY: "socratic",
   window: {EBM_QUIZ_SETS: {sets: {[App.selected.id]: [payload, course(2), course(3)]}}},
@@ -242,4 +242,46 @@ for (const lang of ["vi", "en"]) {
   assert.ok(markup().includes(bank.items[retakeStart.index]["stem_" + lang]));
   assert.doesNotMatch(markup(), /<blockquote>/);
 }
+const data = {window: {}};
+vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), data);
+const today = data.window.EBM_BRIEFINGS_DATA.briefings.find(b => b.id === "ebm-2026-11-26-p1-focused");
+const local = ClinicalQuiz.sourceCourse(today);
+assert.equal(local.items.length, 4);
+assert.ok(local.items.every(q => !q.ai_generated && today.quiz_source_texts[q.pmid].includes(q.quote)));
+App.selected = today;
+App.currentLang = "vi";
+tutor.renderUI();
+assert.equal(nodes.labelStartSocratic.textContent, "Bắt đầu ôn tập");
+tutor.startIfIdle();
+const localKey = tutor.sessionKey(1, today);
+const localState = () => tutor.store[localKey].course;
+const localQuestion = () => CaseQuiz.courseQuestion(local, localState(), App.currentLang);
+const badChoice = localQuestion().options.find(o => o.key !== localQuestion().correct_key).key;
+tutor.courseAction("answer", badChoice);
+assert.match(markup(), /Chưa đúng\. Thử lại:/);
+assert.doesNotMatch(markup(), /<blockquote>|pubmed\.ncbi/);
+App.currentLang = "en";
+tutor.onLanguageChanged();
+assert.match(markup(), /Not quite\. Try again:/);
+tutor.courseAction("answer", badChoice);
+assert.match(markup(), /Incorrect after two attempts/);
+assert.ok(markup().includes(`<blockquote>“${escape(local.items[0].quote)}”</blockquote>`));
+tutor.courseAction("next");
+for (let i = 1; i < local.items.length; i++) {
+  tutor.courseAction("answer", localQuestion().correct_key);
+  tutor.courseAction("next");
+}
+assert.equal(localState().skills[0].level, 3);
+assert.match(markup(), /Spaced review/);
+tutor.courseAction("answer", localQuestion().correct_key);
+tutor.courseAction("next");
+assert.equal(localState().stage, "final");
+assert.match(markup(), /Question 1\/4/);
+for (const _ of local.items) {
+  tutor.courseAction("answer", localQuestion().correct_key);
+  tutor.courseAction("next");
+}
+assert.equal(localState().stage, "mastered");
+assert.equal(localState().skills[0].level, 3, "spaced repeats and final checks never confer independent mastery");
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");
+console.log("Offline Socratic theory: four source questions, delayed reveal, spaced review, and final without AI: OK");

@@ -87,11 +87,33 @@ const CaseQuiz = (() => {
   }
 
   const COURSE_VERSION = 2;
+  const CASE_SET_VERSION = 3, CASES_PER_SET = 3;
   const FORMATS = ['predict', 'explain', 'critique', 'apply', 'connect'];
   const TIERS = ['easy', 'medium', 'hard'];
   const LANGS = ['vi', 'en'];
   const PRACTICE_PER_SKILL = 3;
   const hasMixedTypes = items => ['theory', 'case'].every(type => items.some(item => item?.type === type));
+
+  function validateCaseSet(lesson, set) {
+    if (lesson?.quiz_mode !== 'source_excerpt' || set?.version !== CASE_SET_VERSION ||
+        typeof set.set_id !== 'string' || !set.set_id.trim() || !Array.isArray(set.items) || set.items.length !== CASES_PER_SET) return null;
+    const ground = grounding(lesson);
+    const seen = {vi: new Set(), en: new Set()};
+    const items = [];
+    for (const item of set.items) {
+      if (item?.type !== 'case' || !ground.excerpts.includes(item.quote)) return null;
+      const cited = {...ground, title: '', excerpts: [item.quote]};
+      if (rejectReason(item, cited)) return null;
+      const parsed = {...clean(item), quote: item.quote, ai_generated: true};
+      for (const lang of ['vi', 'en']) {
+        const key = parsed['stem_' + lang].toLowerCase();
+        if (seen[lang].has(key)) return null;
+        seen[lang].add(key);
+      }
+      items.push(parsed);
+    }
+    return {version: CASE_SET_VERSION, set_id: set.set_id, model: set.model, items};
+  }
 
   function courseItemReason(item, ground) {
     const reason = rejectReason(item, {...ground, title: '', excerpts: [item?.quote]});
@@ -185,7 +207,8 @@ const CaseQuiz = (() => {
   }
 
   function startCourse(course) {
-    return {stage: 'diagnostic', index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
+    return {stage: course.compact ? 'practice' : 'diagnostic', ...(course.compact ? {compact: true} : {}),
+      index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
       skills: course.skills.map(() => ({level: 0, checks: [], last: -1})), final: []};
   }
 
@@ -262,7 +285,58 @@ const CaseQuiz = (() => {
     delete state.prefer;
   }
 
+  function compactTurn(course, previous, action, value, lang) {
+    if (!previous?.compact || action === 'restart') return startCourse(course);
+    const state = JSON.parse(JSON.stringify(previous));
+    const item = course.items[state.index];
+    if (state.stage === 'final_review' && action === 'next') {
+      Object.assign(state, {stage: 'practice', index: 0, attempts: 0, result: '', review: true, replay: true, final: []});
+      return state;
+    }
+    if (!item) return state;
+    const final = state.stage === 'final', count = course.items.length;
+    if (action === 'next' && state.result) {
+      Object.assign(state, {attempts: 0, result: ''});
+      if (final && state.final.length === count) {
+        state.final = state.final.filter(a => !a.correct);
+        Object.assign(state, {index: -1, stage: state.final.length ? 'final_review' : 'mastered', finalFailed: Boolean(state.final.length)});
+      } else if (final) {
+        state.index = (state.index + 1) % count;
+      } else if (state.review && !state.replay && !state.index) {
+        Object.assign(state, {stage: 'final', index: 1, review: false});
+      } else if (state.index + 1 < count) {
+        state.index++;
+      } else if (count >= 3) {
+        if (state.replay) Object.assign(state, {stage: 'final', index: 0, review: false, replay: false});
+        else Object.assign(state, {index: 0, review: true});
+      } else Object.assign(state, {stage: 'exhausted', index: -1});
+      return state;
+    }
+    if (state.result || action !== 'answer' || !KEYS.includes(value)) return state;
+    const correct = courseQuestion(course, state, lang).correct_key === value;
+    if (!final && !correct && !state.attempts) {
+      state.attempts = 1;
+      return state;
+    }
+    if (final) state.final.push({index: state.index, correct: correct && spacedRecall(state, state.index)});
+    else {
+      const skill = state.skills[item.skill];
+      if (!state.used.includes(state.index)) {
+        state.used.push(state.index);
+        if (correct && !state.attempts && !skill.checks.some(c => c.evidence === item.quote || c.index === state.index)) {
+          skill.checks.push({index: state.index, evidence: item.quote});
+          if (skill.checks.length >= 2) skill.level = item.type === 'case' ? 4 : 3;
+        }
+      }
+      state.revealed[state.index] = state.history.length + 1;
+    }
+    state.history.push(state.index);
+    state.result = correct ? 'correct' : 'wrong';
+    return state;
+  }
+
   function courseTurn(course, previous, action, value, lang) {
+    if (course.compact) return compactTurn(course, previous, action, value, lang);
     if (!previous || action === 'restart') return startCourse(course);
     const state = JSON.parse(JSON.stringify(previous));
     state.history ??= state.used.slice();
@@ -349,6 +423,7 @@ const CaseQuiz = (() => {
   }
 
   return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, validItem, validateSet, validateCourse,
-    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes};
+    question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
+    validateCaseSet, CASE_SET_VERSION, CASES_PER_SET};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;

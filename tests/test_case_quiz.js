@@ -95,7 +95,9 @@ const tutor = vm.runInNewContext(escapeHtmlCode + "\n" + tutorCode + ";SocraticT
   App, CaseQuiz, ClinicalQuiz: quiz, document: {getElementById: id => nodes[id]},
 });
 const publishedLesson = {...lesson, id: "daily-fixture"};
-const published = Array.from({length: 3}, (_, i) => ({set_id: `set-${i}`, items: [theory, theory, theory, kase, kase, kase]}));
+const published = Array.from({length: 3}, (_, i) => ({version: CaseQuiz.CASE_SET_VERSION, set_id: `set-${i}`,
+  items: Array.from({length: 3}, (_, j) => ({...kase, stem_en: kase.stem_en + ` (Case ${i}-${j})`,
+    stem_vi: kase.stem_vi + ` (Ca ${i}-${j})`}))}));
 const storage = new Map();
 const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   CaseQuiz, ClinicalQuiz: quiz,
@@ -103,13 +105,16 @@ const {quizSets} = vm.runInNewContext(tutorCode + ";SocraticTutor", {
     localStorage: {getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v)}},
 });
 const fresh = {...publishedLesson};
-assert.equal(quiz.sourceQuestionCount(fresh), 3, "the source-only fallback has three questions");
-assert.equal(quiz.sourceQuestionCount(quizSets.attach(fresh)), 6, "fresh devices start with the published mixed set");
+const offlineTheory = quiz.sourceCourse(fresh).items;
+assert.ok(offlineTheory.length >= 3 && offlineTheory.every(q => q.type === "theory"));
+const firstBank = quiz.sourceCourse(quizSets.attach(fresh));
+assert.equal(firstBank.items.length, offlineTheory.length + 3, "fresh devices start with theory plus three cases");
 assert.equal(quizSets.remaining(fresh), 2, "loading the default set is free");
 assert.equal(storage.size, 0);
 const firstSet = fresh.generated_quiz;
 const secondSet = quizSets.openNext(fresh);
 assert.notEqual(secondSet.set_id, firstSet.set_id);
+assert.deepEqual(quiz.sourceCourse(fresh).items.filter(q => q.type === "theory"), offlineTheory, "the new-set button swaps only the cases");
 assert.equal(quizSets.attach({...publishedLesson}).generated_quiz.set_id, secondSet.set_id, "reload resumes the chosen set");
 assert.equal(quizSets.remaining(fresh), 1);
 assert.ok(quizSets.openNext(fresh));

@@ -9055,6 +9055,8 @@
         available(b) {
           const sets = b?.id ? globalThis.window?.EBM_QUIZ_SETS?.sets?.[b.id] : null;
           if (!Array.isArray(sets)) return [];
+          const caseSets = sets.map(s => CaseQuiz.validateCaseSet(b, s)).filter(Boolean).slice(0, 3);
+          if (caseSets.length || b.lesson_format === "single_source") return caseSets;
           const courses = sets.map(s => CaseQuiz.validateCourse(b, s)).filter(Boolean);
           return courses.length ? courses : sets.filter(s => {
             if (!s || s.version !== undefined || typeof s.set_id !== "string" || s.items?.length !== 6) return false;
@@ -9267,7 +9269,8 @@
       },
 
       courseFor(b) {
-        return b?.generated_quiz?.version === 2 ? CaseQuiz.validateCourse(b, b.generated_quiz) : null;
+        if (!b?.generated_quiz || b.generated_quiz.version === CaseQuiz.CASE_SET_VERSION) return ClinicalQuiz.sourceCourse(b);
+        return b.generated_quiz.version === 2 ? CaseQuiz.validateCourse(b, b.generated_quiz) : null;
       },
 
       courseAction(action, value) {
@@ -9691,8 +9694,8 @@
         const total = this.quizSets.available(b).length, left = this.quizSets.remaining(b);
         button.style.display = total > 1 ? "inline-flex" : "none";
         button.disabled = this.isBusy || left <= 0;
-        button.title = isVi ? "Mở bộ câu hỏi mới do AI (Groq) soạn sẵn từ nguồn hôm nay, gồm câu lý thuyết và tình huống lâm sàng"
-          : "Open a new pre-generated AI (Groq) set from today's source, with theory and clinical-case questions";
+        button.title = isVi ? "Mở ba tình huống lâm sàng mới do AI (Groq) soạn từ nguồn hôm nay"
+          : "Open three new pre-generated clinical cases from today's source";
         const label = document.getElementById("labelNewQuizSet");
         if (label) label.textContent = isVi ? `Tạo câu hỏi mới bằng AI (còn ${left} lượt)` : `New AI questions (${left} left)`;
       },
@@ -9700,23 +9703,29 @@
       renderCourse(b, course, panel, vi) {
         const lang = vi ? "vi" : "en";
         const t = (v, e) => vi ? v : e;
-        const state = this.store[this.sessionKey(this.curPillarId, b)]?.course;
-        const stage = state?.stage || "diagnostic";
+        const saved = this.store[this.sessionKey(this.curPillarId, b)]?.course;
+        const state = course.compact && !saved?.compact ? null : saved;
+        const stage = state?.stage || (course.compact ? "practice" : "diagnostic");
         const item = course.items[state?.index];
         const set = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
         set("socraticTitleText", t("Trắc Nghiệm Ôn Tập", "Review Quiz"));
         set("socraticPhaseBadge", {
           diagnostic: t("Chẩn đoán", "Diagnostic"), practice: t("Luyện tập", "Practice"),
-          final: state?.finalFailed ? t("Làm lại kiểm tra tổng hợp", "Retake mixed assessment") : t("Kiểm tra tổng hợp", "Mixed assessment"),
+          final: course.compact ? t("Kiểm tra ôn tập", "Review assessment") :
+            state?.finalFailed ? t("Làm lại kiểm tra tổng hợp", "Retake mixed assessment") : t("Kiểm tra tổng hợp", "Mixed assessment"),
           final_review: t("Xem lại bài kiểm tra", "Assessment review"),
-          mastered: t("Đạt mục tiêu 4/5", "Target met: 4/5"),
+          mastered: course.compact ? t("Đã qua bài kiểm tra", "Assessment passed") : t("Đạt mục tiêu 4/5", "Target met: 4/5"),
           exhausted: t("Hết câu luyện tập", "Practice bank exhausted"),
         }[stage]);
         set("socraticSubText", [this.quizSourceLabel(b, vi),
+          course.compact ? t("Ôn từng câu, xem bản đồ kỹ năng rồi làm bài kiểm tra.",
+            "Practice one question at a time, track your skills, then take the assessment.") :
           t("Bắt đầu với vài câu chẩn đoán, từng câu một. Sau đó xem bản đồ kỹ năng và luyện tập.",
             "Start with a short diagnostic, one question at a time. Then check your skill map and practice."),
+          course.compact ? (course.items.some(q => q.type === "case") &&
+            t("Các ca lâm sàng do AI (Groq) soạn, chưa được bác sĩ duyệt.", "Clinical cases are AI-written (Groq) and not physician-reviewed.")) :
           CaseQuiz.AI_NOTE[lang]].filter(Boolean).join(" "));
-        set("labelStartSocratic", t("Bắt đầu chẩn đoán", "Start diagnostic"));
+        set("labelStartSocratic", course.compact ? t("Bắt đầu ôn tập", "Start review") : t("Bắt đầu chẩn đoán", "Start diagnostic"));
         set("labelResetSocratic", t("Học lại", "Restart"));
         const start = document.getElementById("btnStartSocratic"), reset = document.getElementById("btnResetSocratic");
         if (start) start.style.display = state ? "none" : "";
@@ -9741,7 +9750,7 @@
                 <div class="socratic-bar-track" aria-hidden="true"><div class="socratic-bar-fill" style="width:${level * 20}%"></div></div>
                 <div class="socratic-subskill-meta">
                   <span>${escapeHtml(this.getLevelName(level, vi))}</span>
-                  ${stage === "practice" && !state.remediation?.length &&
+                  ${!course.compact && stage === "practice" && !state.remediation?.length &&
                     course.items.some((q, j) => q.phase === "practice" && q.skill === i && j !== state.index && !state.used.includes(j))
                     ? button("focus", isFirstPractice ? t("Chọn trọng tâm", "Set focus") : t("Ưu tiên câu tiếp", "Focus next"), i,
                       `aria-pressed="${(isFirstPractice ? item?.skill : state.focus) === i}"`) : ""}
@@ -9773,7 +9782,8 @@
           </div>` : "";
         if (!item) {
           const message = stage === "mastered"
-            ? t("Bạn đã đạt mức 4/5 ở mọi kỹ năng và qua bài kiểm tra tổng hợp.", "You reached 4/5 in every skill and passed the mixed assessment.")
+            ? course.compact ? t("Bạn đã qua bài kiểm tra ôn tập.", "You passed the review assessment.")
+              : t("Bạn đã đạt mức 4/5 ở mọi kỹ năng và qua bài kiểm tra tổng hợp.", "You reached 4/5 in every skill and passed the mixed assessment.")
             : t("Bộ này không còn câu kiểm tra độc lập. Nếu còn lượt, hãy mở bộ mới để kiểm tra bằng câu khác.",
                 "No independent checks remain in this set. Open a new set, if available, to practice with different questions.");
           panel.innerHTML = `${map}<div class="socratic-transcript-card"><h2 tabindex="-1" data-course-heading>${message}</h2></div>${finalReview}`;
@@ -9784,8 +9794,8 @@
         const assessment = stage !== "practice";
         const position = stage === "final" ? state.final.length + Number(!state.result) : state.index + 1;
         const title = assessment
-          ? t("Câu", "Question") + ` ${position}/${course.items.filter(x => x.phase === stage).length}`
-          : escapeHtml(course.skills[item.skill][lang]);
+          ? t("Câu", "Question") + ` ${position}/${course.compact ? course.items.length : course.items.filter(x => x.phase === stage).length}`
+          : state.review && course.compact ? t("Ôn cách quãng", "Spaced review") : escapeHtml(course.skills[item.skill][lang]);
         let result = "";
         if (assessment && state.result) result = `<p>${t("Đã ghi nhận câu trả lời.", "Answer recorded.")}</p>`;
         else if (state.result) {
@@ -9805,7 +9815,7 @@
             <button type="button" class="socratic-choice-btn" data-course-action="answer" data-value="${o.key}">
               <span class="socratic-choice-badge">${o.key}</span><span class="socratic-choice-text">${escapeHtml(o.text)}</span>
             </button>`).join("")}</div>`}
-          ${assessment ? "" : `<div class="socratic-cmd-strip">
+          ${assessment || course.compact ? "" : `<div class="socratic-cmd-strip">
             ${state.result ? "" : button("tell", t("Giải thích luôn", "Just tell me"))}
             ${state.remediation?.length ? "" : button("difficulty", t("Câu sau dễ hơn", "Easier next"), "medium", `aria-pressed="${state.prefer === "medium"}"`)}
             ${state.remediation?.length ? "" : button("difficulty", t("Câu sau khó hơn", "Harder next"), "hard", `aria-pressed="${state.prefer === "hard"}"`)}
@@ -9903,9 +9913,6 @@
         const instructions = aiSet
           ? (isVi ? "Bộ câu hỏi do AI (Groq) soạn từ trích đoạn nguồn, gồm câu lý thuyết và tình huống lâm sàng, chưa được bác sĩ duyệt. Sau khi trả lời, xem câu trích nguyên văn để đối chiếu."
             : "AI (Groq)-written set from the source excerpts, with theory and clinical-case questions; not physician-reviewed. After answering, check the verbatim quote.")
-          : b.generated_quiz?.model === "source-excerpt"
-          ? (isVi ? "Bộ ôn tập dự phòng gồm câu lý thuyết và tình huống lâm sàng dựa trên trích đoạn nguồn."
-            : "This backup set mixes theory and clinical scenarios based on verbatim source excerpts.")
           : isVi
           ? "Điền trích đoạn gốc. Sau khi trả lời, xem câu nguyên văn và nguồn PubMed để đối chiếu."
           : "Complete the original excerpt. After answering, check the verbatim quote and its PubMed source.";
