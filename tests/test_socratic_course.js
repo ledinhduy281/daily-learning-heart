@@ -82,13 +82,44 @@ failed = turn(failed, "next");
 assert.equal(failed.stage, "practice", "a failed assessment leads to remediation even when the hard bank was used");
 assert.deepEqual(failed.final, []);
 const originalChecks = failed.skills[bank.items[failed.index].skill].checks.length;
+const staleReview = {...failed, revealed: {...failed.revealed, [failed.index]: failed.history.length}};
+assert.equal(answer(staleReview).skills[bank.items[failed.index].skill].level, 3,
+  "a correct answer immediately after disclosure cannot restore the level");
 const remediated = answer(failed);
 assert.equal(remediated.skills[bank.items[failed.index].skill].checks.length, originalChecks, "a replay is not a new independent check");
 failed = turn(remediated, "next");
 assert.equal(failed.stage, "final", "renewed proficiency unlocks a fresh attempt");
 assert.deepEqual(failed.final, []);
+assert.notEqual(failed.index, unlocked.index, "retake substitutes a question whose answer was not revealed");
+assert.equal(bank.items[failed.index].skill, bank.items[unlocked.index].skill);
+assert.ok(!(failed.index in failed.revealed));
+const retakeStart = failed;
 while (failed.stage === "final") failed = advance(failed);
 assert.equal(failed.stage, "mastered", "only the new attempt determines the retake result");
+
+let integrationMiss = unlocked;
+while (bank.items[integrationMiss.index].skill !== null) integrationMiss = advance(integrationMiss);
+const integrationIndex = integrationMiss.index;
+const originalIntegrationKey = current(integrationMiss).correct_key;
+let integrationRetake = turn(advance(integrationMiss, false), "next");
+const missedIntegrationAt = integrationRetake.revealed[integrationIndex];
+const firstRemediation = integrationRetake;
+integrationRetake = advance(integrationRetake, false);
+integrationRetake = advance(integrationRetake, false);
+assert.equal(integrationRetake.skills[bank.items[firstRemediation.index].skill].level, 3);
+assert.notEqual(integrationRetake.index, firstRemediation.index, "just-revealed practice cannot be used again immediately");
+while (integrationRetake.stage === "practice") integrationRetake = advance(integrationRetake);
+assert.equal(integrationRetake.stage, "final");
+while (integrationRetake.index !== integrationIndex && integrationRetake.stage === "final") {
+  integrationRetake = advance(integrationRetake);
+}
+assert.equal(integrationRetake.index, integrationIndex, "retake still checks the integration skill");
+assert.ok(new Set(integrationRetake.history.slice(missedIntegrationAt)).size >= 2);
+assert.notEqual(current(integrationRetake).correct_key, originalIntegrationKey, "a reused integration item has reshuffled choices");
+const prematureIntegration = {...integrationRetake,
+  revealed: {...integrationRetake.revealed, [integrationIndex]: integrationRetake.history.length}};
+assert.equal(advance(prematureIntegration).stage, "final_review", "an unspaced answer cannot pass the final");
+assert.equal(advance(integrationRetake).stage, "mastered");
 while (unlocked.stage === "final") unlocked = advance(unlocked);
 assert.equal(unlocked.stage, "mastered");
 assert.equal(unlocked.final.length, bank.skills.length + 1);
@@ -158,6 +189,11 @@ for (const lang of ["vi", "en"]) {
   assert.ok(markup().includes(`<blockquote>“${escape(missed.quote)}”</blockquote>`));
   tutor.courseAction("next");
   assert.equal(tutor.store[key].course.stage, "practice");
+  assert.doesNotMatch(markup(), /<blockquote>/);
+  tutor.store[key] = {course: retakeStart};
+  tutor.renderUI();
+  assert.match(markup(), lang === "vi" ? /Câu 1\/5/ : /Question 1\/5/);
+  assert.ok(markup().includes(bank.items[retakeStart.index]["stem_" + lang]));
   assert.doesNotMatch(markup(), /<blockquote>/);
 }
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");

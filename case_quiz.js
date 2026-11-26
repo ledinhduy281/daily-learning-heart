@@ -166,22 +166,48 @@ const CaseQuiz = (() => {
   }
 
   function startCourse(course) {
-    return {stage: 'diagnostic', index: 0, attempts: 0, result: '', review: false, used: [],
+    return {stage: 'diagnostic', index: 0, attempts: 0, result: '', review: false, used: [], history: [], revealed: {},
       skills: course.skills.map(() => ({level: 0, checks: [], last: -1})), final: []};
   }
 
   function courseQuestion(course, state, lang) {
     const item = course.items[state?.index];
-    return item ? question(item, lang, 0, state.index, '', item.tier, '', []) : null;
+    const previous = (state.history || []).slice(0, state.result ? -1 : undefined);
+    const variant = state.index + previous.filter(i => i === state.index).length;
+    return item ? question(item, lang, 0, variant, '', item.tier, '', []) : null;
+  }
+
+  function spacedRecall(state, index) {
+    if (!(index in state.revealed)) return true;
+    const since = Math.max(state.revealed[index], state.history.lastIndexOf(index) + 1);
+    return new Set(state.history.slice(since)).size >= 2;
+  }
+
+  function selectRecall(state, candidates) {
+    return candidates.find(i => !(i in state.revealed)) ??
+      candidates.find(i => spacedRecall(state, i));
+  }
+
+  function nextAssessment(course, state) {
+    const slots = course.items.flatMap((q, i) => q.phase === 'final' ? [i] : []);
+    if (state.final.length === slots.length) return false;
+    const slot = slots[state.final.length];
+    const skill = course.items[slot].skill;
+    const alternatives = skill === null ? [] : course.items.flatMap((q, i) =>
+      i !== slot && q.skill === skill ? [i] : [])
+      .sort((a, b) => Number(state.used.includes(a)) - Number(state.used.includes(b)));
+    const index = state.finalFailed ? selectRecall(state, [slot, ...alternatives]) : slot;
+    Object.assign(state, {stage: index == null ? 'exhausted' : 'final', index: index ?? -1});
+    return true;
   }
 
   function nextPractice(course, state, revisit) {
     const practice = course.items.map((item, i) => ({...item, i})).filter(q => q.phase === 'practice');
     if (state.remediation?.length) {
-      const candidates = practice.filter(q => state.remediation.includes(q.skill) && q.tier === 'hard');
-      const next = candidates.find(q => !state.used.includes(q.i)) ||
-        candidates.find(q => q.i !== state.index) || candidates[0];
-      Object.assign(state, {stage: 'practice', index: next.i, review: false, coached: true});
+      const hard = practice.filter(q => state.remediation.includes(q.skill) && q.tier === 'hard').map(q => q.i);
+      const gap = practice.map(q => q.i).filter(i => !hard.includes(i) && !state.history.slice(-2).includes(i));
+      const index = selectRecall(state, hard) ?? selectRecall(state, gap);
+      Object.assign(state, {stage: index == null ? 'exhausted' : 'practice', index: index ?? -1, review: false, coached: true});
       return;
     }
     let candidates = practice.filter(q => !state.used.includes(q.i));
@@ -211,8 +237,12 @@ const CaseQuiz = (() => {
   function courseTurn(course, previous, action, value, lang) {
     if (!previous || action === 'restart') return startCourse(course);
     const state = JSON.parse(JSON.stringify(previous));
+    state.history ??= state.used.slice();
+    state.revealed ??= Object.fromEntries(state.used.filter(i => course.items[i].phase === 'practice' ||
+      (state.finalFailed && course.items[i].phase === 'final')).map(i => [i, state.history.indexOf(i) + 1]));
     if (state.stage === 'final_review') {
       if (action === 'next') {
+        for (const {index} of state.final) state.revealed[index] = state.history.length;
         state.final = [];
         nextPractice(course, state, null);
       }
@@ -237,12 +267,13 @@ const CaseQuiz = (() => {
       Object.assign(state, {attempts: 0, result: '', review: false});
       if (state.stage === 'diagnostic' && course.items[state.index + 1]?.phase === 'diagnostic') {
         state.index++;
-      } else if (state.stage === 'final' && course.items[state.index + 1]?.phase === 'final') {
-        state.index++;
+      } else if (state.stage === 'final' && nextAssessment(course, state)) {
+        return state;
       } else if (state.stage === 'final' && state.final.every(attempt => attempt.correct)) {
         Object.assign(state, {stage: 'mastered', index: -1});
       } else if (state.stage !== 'final' && !state.remediation?.length && state.skills.every(s => s.level >= 4)) {
-        Object.assign(state, {stage: 'final', index: course.items.findIndex(q => q.phase === 'final'), final: []});
+        state.final = [];
+        nextAssessment(course, state);
       } else if (state.stage === 'final') {
         const missed = state.final.filter(attempt => !attempt.correct);
         const affected = missed.map(attempt => course.items[attempt.index].skill);
@@ -263,7 +294,8 @@ const CaseQuiz = (() => {
       if (state.review && skill) { skill.level = Math.max(0, skill.level - 1); skill.checks = []; }
       return state;
     }
-    if (state.stage === 'practice' && state.remediation?.includes(item.skill) && correct && !state.attempts) {
+    if (state.stage === 'practice' && state.remediation?.includes(item.skill) && item.tier === 'hard' &&
+        correct && !state.attempts && spacedRecall(state, state.index)) {
       skill.level = 4;
       state.remediation = state.remediation.filter(i => i !== item.skill);
     } else if (state.stage !== 'final' && skill && independent && !state.remediation?.includes(item.skill)) {
@@ -281,7 +313,9 @@ const CaseQuiz = (() => {
     if (skill) skill.last = state.used.length;
     if (state.stage === 'diagnostic') skill.diagnostic = correct;
     if (!state.used.includes(state.index)) state.used.push(state.index);
-    if (state.stage === 'final') state.final.push({index: state.index, correct});
+    if (state.stage === 'final') state.final.push({index: state.index, correct: correct && spacedRecall(state, state.index)});
+    state.history.push(state.index);
+    if (state.stage === 'practice') state.revealed[state.index] = state.history.length;
     state.result = action === 'tell' ? 'told' : correct ? 'correct' : 'wrong';
     return state;
   }

@@ -9770,8 +9770,9 @@
 
         const q = CaseQuiz.courseQuestion(course, state, lang);
         const assessment = stage !== "practice";
+        const position = stage === "final" ? state.final.length + Number(!state.result) : state.index + 1;
         const title = assessment
-          ? t("Câu", "Question") + ` ${course.items.slice(0, state.index + 1).filter(x => x.phase === stage).length}/${course.items.filter(x => x.phase === stage).length}`
+          ? t("Câu", "Question") + ` ${position}/${course.items.filter(x => x.phase === stage).length}`
           : escapeHtml(course.skills[item.skill][lang]);
         let result = "";
         if (assessment && state.result) result = `<p>${t("Đã ghi nhận câu trả lời.", "Answer recorded.")}</p>`;
