@@ -62,6 +62,12 @@ const bound = {...kase, options: options(["0.70", "0.61", "0.82", "1.00"]),
   stem_vi: "So sánh tỷ lệ rủi ro (hazard ratio) giữa nhóm atorvastatin và giả dược cho sự kiện tim mạch chính. Giá trị nào dưới 1 cho thấy lợi thế của atorvastatin?"};
 assert.equal(CaseQuiz.rejectReason(bound, stareeGround), "ambiguous");
 assert.equal(CaseQuiz.rejectReason({...bound, stem_en: theory.stem_en, stem_vi: theory.stem_vi}, stareeGround), "", "a point estimate is unambiguous");
+const namedEstimate = {...bound,
+  stem_en: "For primary cardiovascular events, which reported hazard ratio below 1 is the point estimate for atorvastatin versus placebo?",
+  stem_vi: "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin so với giả dược?"};
+assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "the reported value is distinct from its confidence limits");
+assert.equal(CaseQuiz.rejectReason({...namedEstimate, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
+  "each language must distinguish the reported estimate from its confidence limits");
 console.log("Live STAREE regressions: individual and cohort projections, unsupported stem figures, and ambiguous CI bounds rejected: OK");
 
 assert.equal(CaseQuiz.validateSet(lesson, [theory, kase]).length, 2);

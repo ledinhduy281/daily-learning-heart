@@ -225,7 +225,9 @@ const CaseQuiz = (() => {
         !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
       const checked = vignette ? withoutVignetteBaseline(clause, lang)
         .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ').replace(LAB, ' ') : clause;
-      return answerNumbers(checked.replace(DOSE, ' ')).filter(n => !cited.has(n));
+      const withoutNullBound = namesEstimate(clause, lang) && namesRatio(clause, lang)
+        ? checked.replace(UPPER_BOUND, (bound, value) => boundValue(value) === 1 ? ' ' : bound) : checked;
+      return answerNumbers(withoutNullBound.replace(DOSE, ' ')).filter(n => !cited.has(n));
     }));
   }
 
@@ -271,13 +273,26 @@ const CaseQuiz = (() => {
   }
 
   const UPPER_BOUND = /(?:\b(?:below|less than|under|dưới|nhỏ hơn|thấp hơn)\s+|<\s*)(\d+(?:[.,]\d+)?|one\b|một\b)/iu;
+  const namesRatio = (clause, lang) => /\b(?:hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or|(?:ti|ty) so nguy co)\b/
+    .test(claimText(clause)[lang]);
+  const boundValue = value => Number(numbers(value)[0] ?? 1);
+
+  function namesEstimate(question, lang) {
+    const words = claimText(question)[lang];
+    if (lang === 'en') {
+      return /\bpoint estimate\b/.test(words) || namesRatio(question, lang) &&
+        /\b(?:reported|reports?|observed|did the (?:trial|study|analysis) find)\b/.test(words);
+    }
+    return /\buoc luong diem\b/.test(words) || namesRatio(question, lang) && /\b(?:bao cao|ghi nhan|quan sat)\b/.test(words);
+  }
+
   function ambiguousBound(item) {
     const cited = new Set(citedExcerpts(item).flatMap(numbers));
     return CLAIM_LANGUAGES.some(lang => {
       const question = item['stem_' + lang].split(STUDY_CLAUSE).filter(s => s.trim()).at(-1);
       const bound = question?.match(UPPER_BOUND)?.[1];
-      if (!bound) return false;
-      const limit = Number(numbers(bound)[0] ?? 1);
+      if (!bound || namesEstimate(question, lang)) return false;
+      const limit = boundValue(bound);
       const fits = option => {
         const value = option[lang].trim();
         return /^\d+(?:[.,]\d+)?$/.test(value) && cited.has(numbers(value)[0]) && Number(value.replace(',', '.')) < limit;
