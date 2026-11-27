@@ -263,7 +263,8 @@ const CaseQuiz = (() => {
   const CONTRAST = {en: /\b(?:but|however|yet|nevertheless)\b/, vi: /\b(?:nhung|tuy nhien|tuy vay|song)\b/};
 
   function projectionClauses(value, lang) {
-    return value.split(STUDY_CLAUSE).flatMap(clause => claimText(clause)[lang].split(CONTRAST[lang]));
+    return value.split(/[!?;]|\.(?!\d)|(?<!\d),|,(?!\d)/)
+      .flatMap(clause => claimText(clause)[lang].split(CONTRAST[lang]));
   }
 
   function projectsGroupResult(item) {
