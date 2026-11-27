@@ -40,6 +40,23 @@ const individual = {...reportedEvents, options: options(["10.9 events per 1000 p
   explanation_en: "The incidence in the atorvastatin group was 10.9 events per 1000 person-years.",
   explanation_vi: "Tỷ lệ trong nhóm atorvastatin là 10.9 trên 1000 người-năm."};
 assert.equal(CaseQuiz.rejectReason(individual, stareeGround), "projection");
+const reportedRate = {...individual,
+  stem_en: "What incidence rate of primary cardiovascular events did STAREE report in the atorvastatin group?",
+  stem_vi: "STAREE báo cáo tỷ lệ biến cố tim mạch chính nào trong nhóm dùng atorvastatin?",
+  options: options(["10.9", "12.0", "13.0", "20.0"]),
+};
+assert.equal(CaseQuiz.rejectReason(reportedRate, stareeGround), "", "unreported rate distractors pass");
+for (const [lang, key, distractor] of [
+  ["en", "10.9/1000 PY", "15.5/1000 PY"],
+  ["en", "10.9 events per 1000 person-years", "15.5 events per 100 person-years"],
+  ["en", "10.9/1000", "15.5/1000"],
+  ["vi", "10,9 trên 1000 người-năm", "15,5 trên 1000 người-năm"],
+]) {
+  const [correct, alternative, ...rest] = reportedRate.options;
+  assert.equal(CaseQuiz.rejectReason({...reportedRate,
+    options: [{...correct, [lang]: key}, {...alternative, [lang]: distractor}, ...rest],
+  }, stareeGround), "ambiguous", "a rate denominator must not hide the other arm's reported estimate in " + lang);
+}
 assert.equal(CaseQuiz.rejectReason({...individual, stem_en: individual.stem_en.replace("6 years", "5.9 years"),
   stem_vi: reportedEvents.stem_vi}, stareeGround), "projection", "a grounded duration does not support an individual prediction");
 assert.equal(CaseQuiz.rejectReason({...individual, stem_vi: reportedEvents.stem_vi,

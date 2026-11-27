@@ -291,6 +291,8 @@ const CaseQuiz = (() => {
   const RATIO_BEFORE_BOUND = /(?:\b(?:hazard ratio|risk ratio|relative risk|odds ratio|HR|RR|OR)|(?:tỉ|tỷ) số nguy cơ)(?:\s+nào)?\s*\(?\s*$/iu;
   const BOUND_END = /^\s*\)?\s*(?:$|[?!.,;:]|(?:is|was|did|for|được|cho|là)(?![\p{L}\p{N}]))/iu;
   const boundValue = value => Number(numbers(value)[0] ?? 1);
+  const RATE_DENOMINATOR = /(?:\bper|trên|\/)\s*\d+(?:[., \u00a0\u202f]\d{3})*\s*(?:person[\s\-–‑]*years?|người[\s\-–‑]*năm|PY)(?![\p{L}\p{N}])|\/\s*(?:1[., \u00a0\u202f]?000|100)(?![\p{L}\p{N}]|[.,]\d)/giu;
+  const optionFigures = value => answerNumbers(value.normalize('NFC').replace(RATE_DENOMINATOR, ' '));
 
   function hasReportedDistractor(item) {
     const answer = KEYS.indexOf(item.answer);
@@ -299,13 +301,13 @@ const CaseQuiz = (() => {
     }));
     return CLAIM_LANGUAGES.some(lang => {
       const key = item.options[answer][lang];
-      const keyFigures = answerNumbers(key);
+      const keyFigures = optionFigures(key);
       const keyRatios = effectFigures(key, false);
       return evidence.some(({figures, ratios}) =>
         (keyFigures.length === 1 && figures.includes(keyFigures[0]) || keyRatios.some(ratio => ratios.includes(ratio))) &&
         item.options.some((option, index) => {
           if (index === answer) return false;
-          const offered = answerNumbers(option[lang]);
+          const offered = optionFigures(option[lang]);
           return offered.some(n => !keyFigures.includes(n)) && offered.every(n => figures.includes(n));
         }));
     });
