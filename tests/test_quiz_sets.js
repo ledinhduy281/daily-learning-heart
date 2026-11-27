@@ -53,6 +53,7 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
       assert.match(system, /the same endpoint, threshold, comparator and population/);
       assert.match(system, /reject a subgroup figure applied to someone outside/);
       assert.match(system, /relative increase BY a percent as an absolute risk rising TO that percent/);
+      assert.match(system, /List every defensible option/);
       const numbered = [...user.matchAll(/^Q(\d+): (.*)$/gm)];
       const slots = numbered.map(m => Number(m[1]));
       const batch = slots.map(n => submitted[n - 1]);
@@ -70,9 +71,11 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
       assert.ok(!user.match(/^[A-D]\. (?:\([A-D]\)|[A-D][.)])/m), "the solver sees only one option letter");
       calls.push({mode: "solve", slots, estimated});
       return reply({
-        answers: batch.map((q, i) => faults[round] === "repair" && repaired === 1 && slots[i] === 1 ? "D" : q.answer),
+        answers: batch.map((q, i) => faults[round] === "repair" && repaired === 1 && slots[i] === 1 ? ["D"] :
+          faults[round] === "multi-key" && !repaired ? [[q.answer, "D"], [], q.answer][slots[i] - 1] : [q.answer]),
         explanations: batch.map((q, i) => faults[round] === "explanations" && !repaired
-          ? [{en: false, vi: true}, {en: true, vi: false}, {en: true}][slots[i] - 1] : {en: true, vi: true}),
+          ? [{en: false, vi: true}, {en: true, vi: false}, {en: true}][slots[i] - 1] :
+          {en: true, vi: true, primary: faults[round] !== "primary-verdict" || repaired > 0}),
       });
     }
     assert.match(system, /Set "excerpt" to the 1-based integer index/);
@@ -80,6 +83,7 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
     assert.match(system, /Do not include a quote field/);
     assert.match(system, /Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt/);
     assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
+    assert.match(system, /in option text or explanations \(never say "Answer A"\)/);
     assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     assert.equal(system.includes(philosophy), !repair, "only initial case generation includes the full philosophy");
@@ -126,6 +130,11 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
         q.excerpt = ["[2]", "E1"];
         submitted[n - 1].excerpt = [2, 1];
       }
+      if (["answer-first", "primary-verdict"].includes(faults[round]) && n === 1) {
+        q.excerpt = [1, 2];
+        q.options[0] = {en: "0.70", vi: "0.70"};
+        Object.assign(submitted[n - 1], {excerpt: [2, 1], options: [q.options[0], ...questions[n - 1].options.slice(1)]});
+      }
       if (["completion", "partial", "ambiguous"].includes(faults[round]) && !repaired) {
         if (n === 1) {
           q.stem_en = "An older adult who meets STAREE eligibility asks what the study reported for atorvastatin 40 mg daily versus placebo.";
@@ -157,6 +166,9 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
         q.explanation_en += " The finding was in community-dwelling adults.";
         assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "claims");
         Object.assign(submitted[n - 1], {explanation_en: q.explanation_en, excerpt: [2, 1]});
+      }
+      if (faults[round] === "log-explanation" && n === 1 && !repaired) {
+        q.explanation_en = "The source reports fewer primary cardiovascular events. ".repeat(7) + "A final unsupported figure is 30%.";
       }
       return q;
     });
@@ -214,7 +226,7 @@ const quiet = () => {};
     return tokens ? [tokens.slice(1).map(Number)] : [];
   }), g.calls.map(({estimated}) => [estimated, expectedTotal += estimated]));
   assert.ok(logs.some(m => /Rejected case item 2: options; stem=.+; value=.*"duplicate":\[1,2\].*"value":"/.test(m)));
-  assert.ok(logs.some(m => /Rejected case item 1: resolve; stem=.+; value=\{"expected":"A","got":"D"\}/.test(m)));
+  assert.ok(logs.some(m => /Rejected case item 1: resolve; stem=.+; value=\{"expected":"A","got":\["D"\]\}/.test(m)));
   assert.ok(logs.some(m => m.includes('"excerpt":"2.5"') && m.includes("case item 1: quote")));
   assert.ok(logs.some(m => m.includes('"excerpt":"2","quote":') && m.includes("case item 2: quote")));
   assert.ok(logs.includes("Groq case response count: expected 3, got 2."));
@@ -393,6 +405,28 @@ const quiet = () => {};
     assert.ok(rejections.some(m => /Rejected case item 2: numbers;.*value=\["30"\]/.test(m)));
   }
   publishLessons([lesson]);
+  for (const fault of ["multi-key", "answer-first", "primary-verdict", "log-explanation"]) {
+    const mock = fakeGroq([fault], 90);
+    const logs = [];
+    assert.equal(await main({root, env: rerunEnv, date, fetchImpl: mock.fetchImpl, log: m => logs.push(m)}), 3);
+    if (fault === "multi-key") {
+      assert.deepEqual(mock.calls[2].slots, [1, 2, 3], "multiple, missing and malformed keys all require repair");
+      assert.ok(logs.filter(m => /Rejected case item \d: resolve/.test(m)).length === 3);
+    } else if (fault === "answer-first" || fault === "primary-verdict") {
+      assert.deepEqual(mock.calls[1].slots, [1, 2, 3]);
+      if (fault === "primary-verdict") {
+        assert.deepEqual(mock.calls[2].slots, [1], "a missing primary finding verdict requires repair");
+        assert.match(logs.find(m => m.startsWith("Rejected case item 1:")), /citation-order/);
+      }
+      assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, excerpts[0]]);
+    } else {
+      const entry = logs.find(m => /Rejected case item 1: numbers/.test(m));
+      const evidence = JSON.parse(entry.split("; evidence=")[1]);
+      assert.equal(evidence.explanations.en, "The source reports fewer primary cardiovascular events. ".repeat(7) + "A final unsupported figure is 30%.");
+      assert.ok(evidence.explanations.vi);
+    }
+  }
+  console.log("Independent solver rejects non-singleton keys; numeric answer citations are reordered; full explanations are logged: OK");
   const countMock = fakeGroq(["count-completion"], 60);
   assert.equal(await main({root, env: rerunEnv, date, fetchImpl: countMock.fetchImpl, log: quiet}), 3);
   assert.deepEqual(countMock.calls[1].slots, [1, 2, 3], "a missing enrollment count doesn't require a repair");
