@@ -399,15 +399,19 @@ const quiet = () => {};
       const response = await primaryWithHeaders.fetchImpl(url, request);
       return {...response, headers: new Headers({
         "x-ratelimit-remaining-tokens": "8000", "x-ratelimit-reset-tokens": "1ms",
-        "x-ratelimit-remaining-requests": "41", "x-ratelimit-reset-requests": "23h59m",
-        "x-ratelimit-remaining-tokens-day": "4500", "x-ratelimit-reset-tokens-day": "23h",
+        "x-ratelimit-remaining-requests": primaryWithHeaders.calls.length === 2 ? "1" : "41",
+        "x-ratelimit-reset-requests": "23h59m",
+        "x-ratelimit-remaining-tokens-day": String([4500, 6500, 1000][primaryWithHeaders.calls.length - 1]),
+        "x-ratelimit-reset-tokens-day": "23h",
         "x-ratelimit-remaining-requests-minute": "5", "x-ratelimit-reset-requests-minute": "57s",
       })};
     },
   }), 3);
-  assert.deepEqual(quotaCalls, [primaryModel, primaryModel, fallbackModel, thirdModel, thirdModel, thirdModel, thirdModel]);
+  assert.deepEqual(quotaCalls, [primaryModel, primaryModel, primaryModel, fallbackModel, thirdModel, thirdModel, thirdModel, thirdModel]);
+  assert.deepEqual(primaryWithHeaders.calls.map(call => call.mode), ["generate", "solve", "generate"]);
+  assert.ok(primaryWithHeaders.calls[2].estimated < 6500, "daily balance covers the generation request alone");
   assert.deepEqual(Array.from(read()[id], set => set.model), [primaryModel, thirdModel, thirdModel]);
-  assert.match(quotaLogs.join("\n"), /skipped for openai\/gpt-oss-120b: known daily quota cannot cover one set/);
+  assert.match(quotaLogs.join("\n"), /Groq re-solve skipped for openai\/gpt-oss-120b: known daily quota cannot cover the request/);
   const loggedQuota = quotaLogs.find(m => m.includes("rate limits:") && m.includes(primaryModel));
   assert.deepEqual(JSON.parse(loggedQuota.slice(loggedQuota.indexOf("{"))), {
     requestsDay: {remaining: 41, limit: null, reset: "23h59m"},

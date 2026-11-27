@@ -128,9 +128,9 @@ function rateGate(now, wait, budgetMs) {
       estimates.clear();
       for (const window of Object.keys(quota)) delete quota[window];
     },
-    dailyShortage(tokens, requests) {
+    dailyShortage(tokens) {
       return (active('tokensDay').remaining ?? Infinity) < tokens ||
-        (active('requestsDay').remaining ?? Infinity) < requests;
+        active('requestsDay').remaining === 0;
     },
     observe(headers, status, stage, message = '') {
       for (const window of Object.keys(QUOTA_HEADERS)) {
@@ -173,15 +173,15 @@ function groqBody(model, system, user, maxTokens) {
   return body;
 }
 
-async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage, setEstimate) {
+async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage) {
   const body = groqBody(model, system, user, maxTokens);
   const safeModel = redactError(model, key);
   let jsonRetry = false;
   for (let limited = 0; limited < 4;) {
     const payload = JSON.stringify(body), bytes = Buffer.byteLength(payload);
     const estimated = estimatePromptTokens(bytes) + maxTokens;
-    if (gate.dailyShortage(setEstimate ?? estimated, setEstimate ? 2 : 1)) {
-      log(`Groq ${stage} skipped for ${safeModel}: known daily quota cannot cover ${setEstimate ? 'one set' : 'the request'} (estimated ${setEstimate ?? estimated} tokens).`);
+    if (gate.dailyShortage(estimated)) {
+      log(`Groq ${stage} skipped for ${safeModel}: known daily quota cannot cover the request (estimated ${estimated} tokens).`);
       return DAILY_LIMIT;
     }
     if (!await gate.ready(stage, bytes)) return null;
@@ -383,11 +383,7 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
     const system = systemPrompt(ground.pmid, options.philosophy, pending.length, repairing, options.examples);
     const user = `${header}\n` + (repairing ? `REPAIR SLOTS: ${JSON.stringify(pending.map(({slot, reason}) => ({slot: slot + 1, reason})))}\n` : '') +
       `PRIOR STEMS (do not repeat): ${JSON.stringify(prior)}`;
-    const maxTokens = pending.length * TOKENS_PER_QUESTION;
-    const estimatedSolve = estimatePromptTokens(Buffer.byteLength(header)) + maxTokens + RESOLVE_TOKENS + TOKENS_PER_QUESTION;
-    const setEstimate = repairing ? undefined :
-      estimatePromptTokens(Buffer.byteLength(JSON.stringify(groqBody(options.model, system, user, maxTokens)))) + maxTokens + estimatedSolve;
-    const generated = await groq(options, system, user, maxTokens, 'case', setEstimate);
+    const generated = await groq(options, system, user, pending.length * TOKENS_PER_QUESTION, 'case');
     if (generated === DAILY_LIMIT) return {problem: 'daily-limit'};
     if (!generated) return {problem: 'upstream'};
     const questions = generated.questions;
