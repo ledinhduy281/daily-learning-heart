@@ -324,28 +324,33 @@ const quiet = () => {};
     .map(({quote, ...q}) => ({...q, excerpt: lesson.quiz_source_texts[pmid].indexOf(quote) + 1}));
   const spare = {...original[0], stem_en: original[0].stem_en + " Consider the same trial comparison.",
     stem_vi: original[0].stem_vi + " Xét cùng phép so sánh trong thử nghiệm."};
+  const lastSpare = {...original[0], stem_en: original[0].stem_en + " Consider the comparison again.",
+    stem_vi: original[0].stem_vi + " Xem lại phép so sánh này."};
   const finalRepairCalls = [];
+  const finalRepairLogs = [];
   let generation = 0;
   virtualTime = 0;
-  assert.equal(await main({root, env, date, log: quiet, budgetMs: 1, now: () => virtualTime,
+  assert.equal(await main({root, env, date, log: m => finalRepairLogs.push(m), budgetMs: 1, now: () => virtualTime,
     fetchImpl: async (_, request) => {
       const [system, user] = requestBody(request).messages.map(m => m.content);
       if (!system.startsWith("Independently answer")) {
         finalRepairCalls.push("generation");
         const invalid = {...original[0], type: "theory"};
-        return reply({questions: [[], [invalid, ...original.slice(1)], [invalid], [original[0], spare]][++generation]});
+        return reply({questions: [[], [invalid, ...original.slice(1)], [invalid], [original[0], spare, lastSpare]][++generation]});
       }
       const stems = [...user.matchAll(/^Q\d+: (.*)$/gm)].map(([, stem]) => stem);
       finalRepairCalls.push(stems);
-      if (stems.includes(spare.stem_en)) virtualTime++;
+      if (stems.includes(spare.stem_en)) return reply({answers: []});
+      if (stems.includes(lastSpare.stem_en)) virtualTime++;
       return reply({answers: stems.map(stem => stem === original[0].stem_en ? [] : ["A"]),
         explanations: stems.map(() => ({en: true, vi: true, primary: true}))});
     },
-  }), 1, "a verifier-rejected candidate on the final repair does not waste a valid spare");
+  }), 1, "verifier rejection and a malformed spare verdict on the final repair do not discard verified items or the remaining spare");
   assert.deepEqual(finalRepairCalls, ["generation", original.slice(1).map(q => q.stem_en),
-    "generation", "generation", [original[0].stem_en], [spare.stem_en]]);
+    "generation", "generation", [original[0].stem_en], [spare.stem_en], [lastSpare.stem_en]]);
+  assert.match(finalRepairLogs.join("\n"), /resolve;.*"expectedCount":1,"answerCount":0/);
   assert.deepEqual(Array.from(read()[id][0].items, q => q.stem_en),
-    [spare.stem_en, original[1].stem_en, original[2].stem_en]);
+    [lastSpare.stem_en, original[1].stem_en, original[2].stem_en]);
   fs.unlinkSync(setPath);
 
   const g = fakeGroq(["repair", "indices", "count"]);

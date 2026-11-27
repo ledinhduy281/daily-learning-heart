@@ -267,7 +267,10 @@ async function resolveItems(items, excerpts, options, indices) {
     `EXCERPTS:\n${cited}\n\nQUESTIONS:\n${exam}\n\nPROPOSED EXPLANATIONS:\n${explanations}`, RESOLVE_TOKENS, 're-solve');
   if (check === DAILY_LIMIT) return {problem: 'daily-limit'};
   if (!check) return {problem: 'upstream'};
-  if (!Array.isArray(check.answers) || check.answers.length !== batch.length) return {problem: 'resolve'};
+  if (!Array.isArray(check.answers) || check.answers.length !== batch.length) {
+    const got = {expectedCount: batch.length, answerCount: Array.isArray(check.answers) ? check.answers.length : null};
+    return {rejected: indices.map(slot => ({slot, reason: 'resolve', got}))};
+  }
   const verdicts = Array.isArray(check.explanations) && check.explanations.length === batch.length ? check.explanations : [];
   return {rejected: indices.flatMap((slot, i) => {
     const answers = check.answers[i];
