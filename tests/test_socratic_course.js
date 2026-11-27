@@ -326,5 +326,19 @@ for (let attempt = 1; attempt <= 2; attempt++) {
     [regimen, outcome].map(text => `“${escape(text)}”`));
 }
 console.log("Dual citations: both verbatim quotes reveal on the second miss: OK");
+const dualItem = dualCourse.items[dualIndex];
+const singleItem = {...dualItem, quote: outcome, quotes: undefined};
+const creditCourse = {...dualCourse, items: [dualItem, singleItem,
+  {...dualItem, quotes: [outcome, regimen]}, {...singleItem}]};
+let creditState = CaseQuiz.startCourse(creditCourse);
+for (const _ of creditCourse.items) {
+  const answer = CaseQuiz.courseQuestion(creditCourse, creditState, "en").correct_key;
+  creditState = CaseQuiz.courseTurn(creditCourse, creditState, "answer", answer, "en");
+  creditState = CaseQuiz.courseTurn(creditCourse, creditState, "next", undefined, "en");
+}
+assert.deepEqual(creditState.skills[dualItem.skill].checks.map(c => c.index), [0, 1],
+  "only identical citation sets, irrespective of quote order, share skill credit");
+assert.equal(creditState.skills[dualItem.skill].level, 4);
+console.log("Dual-citation skill credit: overlapping sets count separately; identical sets do not: OK");
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");
 console.log("Offline Socratic theory: no cross-question answer disclosures in bundled lessons, delayed reveal, spaced review, and final without AI: OK");

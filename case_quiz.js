@@ -561,10 +561,9 @@ const CaseQuiz = (() => {
       const skill = state.skills[item.skill];
       if (!state.used.includes(state.index)) {
         state.used.push(state.index);
-        const quotes = citedExcerpts(item);
-        if (correct && !state.attempts && !skill.checks.some(c => c.index === state.index ||
-            citedExcerpts(course.items[c.index]).some(q => quotes.includes(q)))) {
-          skill.checks.push({index: state.index, evidence: item.quote ?? JSON.stringify(quotes)});
+        const evidence = item.quote ?? JSON.stringify([...item.quotes].sort());
+        if (correct && !state.attempts && !skill.checks.some(c => c.index === state.index || c.evidence === evidence)) {
+          skill.checks.push({index: state.index, evidence});
           if (skill.checks.length >= 2) skill.level = item.type === 'case' ? 4 : 3;
         }
       }
