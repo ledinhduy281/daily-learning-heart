@@ -2,6 +2,7 @@
 const CaseQuiz = (() => {
   const KEYS = ['A', 'B', 'C', 'D'];
   const LIMITS = {items: 8, quote: [20, 700], stem: [20, 900], caseStem: 60, option: [1, 300], explanation: [20, 900]};
+  const MAX_CASE_EXCERPTS = 2;
   const AI_NOTE = {
     vi: 'Câu hỏi do AI (Groq) soạn từ trích đoạn nguồn, chưa được bác sĩ duyệt.',
     en: 'Written by AI (Groq) from the source excerpt; not physician-reviewed.'
@@ -28,6 +29,8 @@ const CaseQuiz = (() => {
   const LETTER_LIST = /(?:^|[^\p{L}\p{N}])((?:[Ss]tages?|[Cc]lass(?:es)?|[Tt]ypes?|[Gg]rades?|[Gg]iai đoạn|[Nn]hóm|[Pp]hân độ|[Ll]oại|[Mm]ức)\s+)?[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])+(?![\p{L}\p{N}])/gu;
   const namesOptions = e => LETTERS.some(r => r.test(e)) || [...String(e).matchAll(LETTER_LIST)].some(m => !m[1]);
   const doses = s => String(s).replace(LAB, ' ').match(DOSE) || [];
+  const quotedDoseKeys = excerpts => new Set(excerpts.flatMap(q => doses(squash(q))
+    .flatMap(d => [doseKey(d), doseKey(d.replace(EN_DAILY, ''))])));
   const text = (v, [min, max]) => typeof v === 'string' && squash(v).length >= min && v.length <= max;
   const claimWords = s => s.replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
   function claimText(s) {
@@ -100,15 +103,15 @@ const CaseQuiz = (() => {
 
   function unsupportedClaims(item) {
     const correct = item.options[KEYS.indexOf(item.answer)];
-    const quote = claimText(item.quote);
+    const quotes = citedExcerpts(item).map(claimText);
     const found = new Set();
-    const cited = new Set(CLAIM_LANGUAGES.flatMap(lang => qualifierClaims(quote, lang)));
-    const ckdStatusCited = CLAIM_LANGUAGES.some(lang => CKD_STATUS[lang].test(quote[lang]));
+    const cited = new Set(quotes.flatMap(q => CLAIM_LANGUAGES.flatMap(lang => qualifierClaims(q, lang))));
+    const ckdStatusCited = quotes.some(q => CLAIM_LANGUAGES.some(lang => CKD_STATUS[lang].test(q[lang])));
     for (const lang of CLAIM_LANGUAGES) {
       for (const field of [correct[lang], item['explanation_' + lang]]) {
         const claim = claimText(field);
         for (const [kind, re] of CLAIMS) {
-          if (!matchesClaim(re, claim, lang) || CLAIM_LANGUAGES.some(lang => matchesClaim(re, quote, lang))) continue;
+          if (!matchesClaim(re, claim, lang) || quotes.some(q => CLAIM_LANGUAGES.some(lang => matchesClaim(re, q, lang)))) continue;
           if ((kind === 'with_ckd' || kind === 'without_ckd') && ckdStatusCited) continue;
           found.add(kind);
         }
@@ -126,9 +129,12 @@ const CaseQuiz = (() => {
     return {pmid, kind: source.kind || '', title: source.title || source.name || '', excerpts};
   }
 
+  const citedExcerpts = item => item?.quotes ?? [item?.quote];
+
   // Numbers in the correct option and explanations must come from the source or the stem; "excerpt 2" / "[2]" are references.
   function unsupportedNumbers(item, ground) {
-    const allowed = new Set(numbers([ground.title, ...ground.excerpts, item.stem_vi, item.stem_en].join(' ')));
+    const fields = item.quotes ? citedExcerpts(item) : [ground.title, ...ground.excerpts, item.stem_vi, item.stem_en];
+    const allowed = new Set(fields.flatMap(numbers));
     const correct = item.options[KEYS.indexOf(item.answer)];
     const refs = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|trích dẫn|câu trích|phần trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
     return [correct.vi, correct.en, item.explanation_vi, item.explanation_en]
@@ -199,16 +205,20 @@ const CaseQuiz = (() => {
   };
 
   function unsupportedCaseEffects(item) {
-    const quote = claimText(item.quote);
-    const cited = new Set(effectFigures(item.quote));
-    const citedNumbers = new Set(numbers(item.quote));
-    const citedCkd = new Set(CLAIM_LANGUAGES.flatMap(lang => ckdGroups(quote[lang], lang)));
-    const citedLevels = new Set([...item.quote.matchAll(ABSOLUTE_RISK_LEVEL)].map(([, n]) => numbers(n)[0]));
-    const declineEffects = pairedDeclineEffects(item.quote);
-    const pairedFigures = new Set([...declineEffects.values()].flatMap(figures => [...figures]));
+    const excerpts = citedExcerpts(item);
+    const evidence = excerpts.map(text => {
+      const quote = claimText(text);
+      return {quote, figures: effectFigures(text), numbers: numbers(text), declines: pairedDeclineEffects(text),
+        ckd: CLAIM_LANGUAGES.flatMap(lang => ckdGroups(quote[lang], lang))};
+    });
+    const cited = new Set(evidence.flatMap(e => e.figures));
+    const citedNumbers = new Set(evidence.flatMap(e => e.numbers));
+    const citedCkd = new Set(evidence.flatMap(e => e.ckd));
+    const citedLevels = new Set(excerpts.flatMap(q => [...q.matchAll(ABSOLUTE_RISK_LEVEL)].map(([, n]) => numbers(n)[0])));
+    const pairedFigures = new Set(evidence.flatMap(e => [...e.declines.values()].flatMap(figures => [...figures])));
     const relative = [...cited].some(figure => /^(?:rr|hr|or) /.test(figure));
     const egfr = CLAIMS.find(([kind]) => kind === 'egfr')[1];
-    const citedEgfr = CLAIM_LANGUAGES.some(lang => matchesClaim(egfr, quote, lang));
+    const citedEgfr = evidence.some(e => CLAIM_LANGUAGES.some(lang => matchesClaim(egfr, e.quote, lang)));
     const correct = item.options[KEYS.indexOf(item.answer)];
     const found = new Set();
     for (const lang of CLAIM_LANGUAGES) {
@@ -216,7 +226,9 @@ const CaseQuiz = (() => {
       const stemWords = claimText(stem)[lang];
       const groups = ckdGroups(stemWords, lang);
       const thresholds = [...new Set(declineThresholds(stem))];
-      const expectedDeclineEffect = thresholds.length === 1 ? declineEffects.get(thresholds[0]) : null;
+      const expectedDeclineEffects = thresholds.length === 1 ? evidence.map(e => e.declines.get(thresholds[0])).filter(Boolean) : [];
+      const fitsPopulation = e => !e.ckd.length || (groups.length
+        ? groups.every(group => e.ckd.includes(group)) : new Set(e.ckd).size !== 1 || !PATIENT[lang].test(stemWords));
       if (citedCkd.size === 1 && !groups.length && PATIENT[lang].test(stemWords)) {
         found.add('vignette does not establish ' + [...citedCkd][0]);
       }
@@ -233,7 +245,10 @@ const CaseQuiz = (() => {
         }) : effectFigures(checked);
         for (const figure of figures) {
           if (!cited.has(figure)) found.add(figure);
-          if (expectedDeclineEffect && pairedFigures.has(figure) && !expectedDeclineEffect.has(figure)) {
+          else if (evidence.length > 1 && !evidence.some(e => e.figures.includes(figure) && fitsPopulation(e))) {
+            found.add(figure + ' not supported for the vignette population');
+          }
+          if (expectedDeclineEffects.length && pairedFigures.has(figure) && !expectedDeclineEffects.some(expected => expected.has(figure))) {
             found.add(figure + ' belongs to a different decline threshold');
           }
         }
@@ -250,6 +265,9 @@ const CaseQuiz = (() => {
             for (const [, count] of clause.matchAll(RESULT_COUNT)) {
               const n = numbers(count)[0];
               if (!citedNumbers.has(n)) found.add('result figure ' + n);
+              else if (evidence.length > 1 && !evidence.some(e => e.numbers.includes(n) && fitsPopulation(e))) {
+                found.add('result figure ' + n + ' not supported for the vignette population');
+              }
             }
           }
         }
@@ -261,9 +279,11 @@ const CaseQuiz = (() => {
   function rejectReason(item, ground) {
     if (!item || typeof item !== 'object' || !['theory', 'case'].includes(item.type)) return 'shape';
     if (item.pmid !== ground.pmid || !/^[1-9][0-9]{0,8}$/.test(ground.pmid)) return 'pmid';
-    if (!text(item.quote, LIMITS.quote)) return 'quote';
-    const quote = squash(item.quote);
-    if (!ground.excerpts.some(e => squash(e).includes(quote))) return 'quote';
+    if (item.quotes !== undefined) {
+      if (item.type !== 'case' || item.quote !== undefined || !Array.isArray(item.quotes) || item.quotes.length !== MAX_CASE_EXCERPTS ||
+          new Set(item.quotes).size !== item.quotes.length ||
+          !item.quotes.every(q => text(q, LIMITS.quote) && ground.excerpts.includes(q))) return 'quote';
+    } else if (!text(item.quote, LIMITS.quote) || !ground.excerpts.some(e => squash(e).includes(squash(item.quote)))) return 'quote';
     const stemMin = item.type === 'case' ? [LIMITS.caseStem, LIMITS.stem[1]] : LIMITS.stem;
     if (!['vi', 'en'].every(l => text(item['stem_' + l], stemMin) && text(item['explanation_' + l], LIMITS.explanation))) return 'text';
     if (!Array.isArray(item.options) || item.options.length !== 4 || !KEYS.includes(item.answer)) return 'options';
@@ -280,7 +300,7 @@ const CaseQuiz = (() => {
   function unsupportedDoses(item) {
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
-    const quoted = new Set(doses(squash(item.quote)).flatMap(d => [doseKey(d), doseKey(d.replace(EN_DAILY, ''))]));
+    const quoted = quotedDoseKeys(citedExcerpts(item));
     return doses(everything).filter(d => !quoted.has(doseKey(d)));
   }
 
@@ -288,7 +308,8 @@ const CaseQuiz = (() => {
 
   function clean(item) {
     const pick = (o, l) => squash(o[l]);
-    return {type: item.type, pmid: item.pmid, quote: squash(item.quote), answer: item.answer,
+    const citation = item.quotes ? {quotes: item.quotes.slice()} : {quote: squash(item.quote)};
+    return {type: item.type, pmid: item.pmid, ...citation, answer: item.answer,
       stem_vi: squash(item.stem_vi), stem_en: squash(item.stem_en),
       explanation_vi: squash(item.explanation_vi), explanation_en: squash(item.explanation_en),
       options: item.options.map(o => ({vi: pick(o, 'vi'), en: pick(o, 'en')})), ai_generated: item.ai_generated !== false};
@@ -296,7 +317,7 @@ const CaseQuiz = (() => {
 
   function validateSet(lesson, items) {
     const ground = grounding(lesson);
-    const valid = (Array.isArray(items) ? items : []).slice(0, LIMITS.items).filter(i => validItem(i, ground)).map(clean);
+    const valid = (Array.isArray(items) ? items : []).slice(0, LIMITS.items).filter(i => i?.quotes === undefined && validItem(i, ground)).map(clean);
     const types = new Set(valid.map(i => i.type));
     return types.has('theory') && types.has('case') ? valid : [];
   }
@@ -316,10 +337,12 @@ const CaseQuiz = (() => {
     const seen = {vi: new Set(), en: new Set()};
     const items = [];
     for (const item of set.items) {
-      if (item?.type !== 'case' || !ground.excerpts.includes(item.quote)) return null;
-      const cited = {...ground, title: '', excerpts: [item.quote]};
+      if (item?.type !== 'case') return null;
+      const excerpts = citedExcerpts(item);
+      if (!Array.isArray(excerpts) || !excerpts.every(q => ground.excerpts.includes(q))) return null;
+      const cited = {...ground, title: '', excerpts};
       if (rejectReason(item, cited)) return null;
-      const parsed = {...clean(item), quote: item.quote, ai_generated: true};
+      const parsed = {...clean(item), ...(item.quotes ? {} : {quote: item.quote}), ai_generated: true};
       for (const lang of ['vi', 'en']) {
         const key = parsed['stem_' + lang].toLowerCase();
         if (seen[lang].has(key)) return null;
@@ -339,7 +362,7 @@ const CaseQuiz = (() => {
       const answer = squash(item.options[KEYS.indexOf(item.answer)][l]).toLowerCase();
       return !text(hint, [12, 300]) || !hint.trim().endsWith('?') || namesOptions(hint) ||
         squash(hint).toLowerCase().includes(answer) || squash(hint).toLowerCase() === squash(item['stem_' + l]).toLowerCase() ||
-        doses(hint).some(d => !doses(item.quote).map(doseKey).includes(doseKey(d)));
+        doses(hint).some(d => !quotedDoseKeys([item.quote]).has(doseKey(d)));
     })) return 'hint';
     return '';
   }
@@ -538,8 +561,10 @@ const CaseQuiz = (() => {
       const skill = state.skills[item.skill];
       if (!state.used.includes(state.index)) {
         state.used.push(state.index);
-        if (correct && !state.attempts && !skill.checks.some(c => c.evidence === item.quote || c.index === state.index)) {
-          skill.checks.push({index: state.index, evidence: item.quote});
+        const quotes = citedExcerpts(item);
+        if (correct && !state.attempts && !skill.checks.some(c => c.index === state.index ||
+            citedExcerpts(course.items[c.index]).some(q => quotes.includes(q)))) {
+          skill.checks.push({index: state.index, evidence: item.quote ?? JSON.stringify(quotes)});
           if (skill.checks.length >= 2) skill.level = item.type === 'case' ? 4 : 3;
         }
       }
@@ -639,6 +664,6 @@ const CaseQuiz = (() => {
 
   return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
-    validateCaseSet, CASE_SET_VERSION, CASES_PER_SET};
+    citedExcerpts, validateCaseSet, CASE_SET_VERSION, CASES_PER_SET, MAX_CASE_EXCERPTS};
 })();
 if (typeof module !== 'undefined') module.exports = CaseQuiz;

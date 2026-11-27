@@ -46,7 +46,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
       assert.match(system, /exact clinical endpoint, population, effect direction, comparator, magnitude and time frame/);
       assert.match(system, /supported as written in BOTH languages/);
       assert.match(system, /Solve the questions before reading the proposed explanations/);
-      assert.match(system, /every claim must be supported as written by the cited excerpt/);
+      assert.match(system, /every claim must be supported as written by that question’s cited excerpts/);
       assert.match(system, /Verify every claimed effect figure in both stems/);
       assert.match(system, /the same endpoint, threshold, comparator and population/);
       assert.match(system, /reject a subgroup figure applied to someone outside/);
@@ -60,8 +60,9 @@ function fakeGroq(faults = [], roundOffset = 0) {
         assert.ok(user.includes(`Q${slots[i]} explanations:\nEN: ${q.explanation_en}\nVI: ${q.explanation_vi}`));
       }
       assert.deepEqual(numbered.map(m => m[2]), batch.map(q => q.stem_en));
-      assert.deepEqual([...user.matchAll(/^Cited excerpt: \[(\d+)\]$/gm)].map(m => Number(m[1])), batch.map(q => q.excerpt));
-      const cited = [...new Set(batch.map(q => q.excerpt))];
+      assert.deepEqual([...user.matchAll(/^Cited excerpt: (.+)$/gm)].map(m => m[1]),
+        batch.map(q => [].concat(q.excerpt).map(n => `[${n}]`).join(", ")));
+      const cited = [...new Set(batch.flatMap(q => q.excerpt))];
       assert.deepEqual(user.split("\n\nQUESTIONS:\n")[0],
         "EXCERPTS:\n" + cited.map(n => `[${n}] ${lesson.quiz_source_texts[lesson.primary_source.pmid][n - 1]}`).join("\n"));
       assert.ok(!user.match(/^[A-D]\. (?:\([A-D]\)|[A-D][.)])/m), "the solver sees only one option letter");
@@ -112,6 +113,10 @@ function fakeGroq(faults = [], roundOffset = 0) {
         else if (n === 2) Object.assign(q, {excerpt: "2", quote: excerpts[1]});
         else q.excerpt = "E2";
       }
+      if (faults[round] === "count" && repaired) {
+        q.excerpt = ["E1", "[2]"];
+        submitted[n - 1].excerpt = [1, 2];
+      }
       return q;
     });
     if (faults[round] === "count") {
@@ -144,8 +149,11 @@ const quiet = () => {};
     assert.ok(CaseQuiz.validateCaseSet(lesson, set));
     assert.ok(!CaseQuiz.validateCaseSet(lesson, {...set, items: set.items.slice(1)}));
     assert.ok(!CaseQuiz.validateCaseSet(lesson, {...set, items: set.items.map(q => ({...q, type: "theory"}))}));
-    assert.ok(set.items.every(q => q.quote === caseQuote), "the cited index yields the exact source text");
+    assert.ok(set.items.every(q => CaseQuiz.citedExcerpts(q).includes(caseQuote)), "the cited index yields the exact source text");
   }
+  assert.deepEqual(JSON.parse(JSON.stringify(sets[2].items[2].quotes)), [excerpts[0], caseQuote]);
+  assert.ok(!Object.hasOwn(sets[2].items[2], "quote"), "a dual citation stores both exact excerpts");
+  assert.ok(sets[0].items.every(q => q.quote === caseQuote), "the single-excerpt artifact shape is unchanged");
   assert.ok(!fs.readFileSync(setPath, "utf8").includes(env.GROQ_API_KEY));
   assert.deepEqual(g.calls.map(({mode, slots}) => [mode, ...slots]), [
     ["generate", 1, 2, 3], ["solve", 3], ["repair", 1, 2], ["solve", 1, 2], ["repair", 1], ["solve", 1],

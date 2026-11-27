@@ -9785,7 +9785,8 @@
               </div>`;
             }).join("")}</div>
           </section>` : "";
-        const source = q => `<p>${escapeHtml(q[`explanation_${lang}`])}</p><blockquote>“${escapeHtml(q.quote)}”</blockquote>
+        const source = q => `<p>${escapeHtml(q[`explanation_${lang}`])}</p>${CaseQuiz.citedExcerpts(q).map(quote =>
+          `<blockquote>“${escapeHtml(quote)}”</blockquote>`).join("")}
           <a href="https://pubmed.ncbi.nlm.nih.gov/${q.pmid}/" target="_blank" rel="noopener noreferrer">PubMed · PMID ${q.pmid}</a>`;
         if (stage === "final_review") {
           panel.innerHTML = `<section class="socratic-transcript-card">
