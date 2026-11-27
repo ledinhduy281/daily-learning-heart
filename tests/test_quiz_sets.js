@@ -132,6 +132,11 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
           q.stem_vi = "Một người cao tuổi đủ tiêu chí STAREE hỏi kết quả của atorvastatin 40 mg/ngày so với giả dược.";
           q.explanation_en = "The hazard ratio for primary cardiovascular events was 0.70 with atorvastatin 40 mg daily versus placebo.";
           q.explanation_vi = "Tỉ số nguy cơ của biến cố tim mạch chính là 0,70 với atorvastatin 40 mg/ngày so với giả dược.";
+          if (faults[round] === "completion") {
+            q.explanation_en += " The finding was in community-dwelling adults.";
+            q.explanation_vi += " Kết quả này ghi nhận ở người sống tại cộng đồng.";
+            assert.deepEqual(CaseQuiz.unsupportedClaims({...q, quote: caseQuote}), ["community_dwelling"]);
+          }
           Object.assign(submitted[n - 1], {
             stem_en: q.stem_en, stem_vi: q.stem_vi, explanation_en: q.explanation_en, explanation_vi: q.explanation_vi,
             excerpt: faults[round] === "completion" ? [2, 1] : 2,

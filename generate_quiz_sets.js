@@ -218,10 +218,8 @@ function groundFor(candidate, ground) {
 
 function completeCitation(candidate, ground) {
   const {quote, excerpt, ...fields} = candidate;
-  if (!quote || CaseQuiz.unsupportedClaims(candidate).length) return null;
+  if (!quote) return null;
   const missingNumbers = CaseQuiz.unsupportedNumbers(candidate, groundFor(candidate, ground));
-  const missingCounts = new Set(missingNumbers.map(n => 'result figure ' + n));
-  if (CaseQuiz.unsupportedCaseEffects(candidate).some(reason => !missingCounts.has(reason))) return null;
   const missingDoses = CaseQuiz.unsupportedDoses(candidate);
   let completion = null;
   for (const [index, background] of ground.excerpts.entries()) {
