@@ -227,6 +227,17 @@ const quiet = () => {};
   assert.deepEqual(CaseQuiz.unsupportedDoses(arniCase), []);
   assert.deepEqual(CaseQuiz.unsupportedStemNumbers(arniCase), []);
   for (const [lang, stem] of [
+    ["en", "A patient has heart failure. In the trial, median potassium was 4.5 mmol/L."],
+    ["en", "A patient has heart failure. Potassium 4.5 mmol/L was the group baseline."],
+    ["vi", "Bệnh nhân bị suy tim. Kali 4,5 mmol/L là trung vị của nhóm thử nghiệm."],
+  ]) {
+    assert.deepEqual(CaseQuiz.unsupportedStemNumbers({...arniCase, ["stem_" + lang]: stem}), ["4.5"],
+      "a study lab result needs citation even after a patient vignette");
+  }
+  assert.deepEqual(CaseQuiz.unsupportedStemNumbers({...arniCase,
+    stem_en: "A patient has heart failure. Her potassium is 4.7 mmol/L.",
+  }), [], "the patient's own lab result remains exempt");
+  for (const [lang, stem] of [
     ["en", "For this patient, the trial requires K+ < 5.0 mEq/L."],
     ["en", "A patient's potassium must be under 5.0 mmol/L."],
     ["en", "A patient's potassium eligibility cutoff is 5.0 mg/dL."],

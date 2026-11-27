@@ -221,6 +221,10 @@ const CaseQuiz = (() => {
     en: /\b(?:below|above|under|over|less than|more than|greater than|at least|at most|eligible|eligibility|qualif\w*|criteri(?:a|on)|cut[- ]?offs?|thresholds?|inclusion|exclusion|requir\w*|defin\w*|must)\b/,
     vi: /\b(?:duoi|tren|nho hon|lon hon|thap hon|cao hon|it nhat|toi da|du dieu kien|dieu kien|tieu chi|nguong|yeu cau|dinh nghia|phai)\b/,
   };
+  const LAB_STUDY = {
+    en: /\b(?:trials?|stud(?:y|ies)|arms?|groups?|participants?|patients enrolled|medians?|means?|cohorts?)\b/,
+    vi: /\b(?:nghien cuu|thu nghiem|nhom|trung vi|trung binh|doan he|nguoi tham gia)\b/,
+  };
   const PATIENT_POSSESSIVE = {en: /\b(?:her|his|their)\b/, vi: /\b(?:ba|ong|co|anh) ay\b/};
   const LAB_FRAGMENT = /^\s*(?:k\+|ldl|hdl|egfr|creatinine|potassium|sodium|glucose|kali|natri)\s*[:=]?\s*\d/iu;
   const namesPatient = (text, lang) => PATIENT[lang].test(text) || lang === 'vi' && /\b(?:ba|ong) \d+ tuoi\b/.test(text);
@@ -231,9 +235,9 @@ const CaseQuiz = (() => {
       const worded = claimText(clause)[lang];
       const patient = namesPatient(worded, lang);
       const vignette = patient || !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
-      const labCutoff = /[<>≤≥]/.test(clause) || LAB_CUTOFF[lang].test(worded);
+      const groundedLab = /[<>≤≥]/.test(clause) || LAB_CUTOFF[lang].test(worded) || LAB_STUDY[lang].test(worded);
       const hasLab = clause.search(LAB) !== -1;
-      const baseline = hasLab && labCutoff ? clause : withoutVignetteBaseline(clause, lang);
+      const baseline = hasLab && groundedLab ? clause : withoutVignetteBaseline(clause, lang);
       const checked = vignette ? baseline
         .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ') : clause;
       const withoutNullBound = checked.replace(UPPER_BOUND, (bound, value, offset) => {
@@ -243,7 +247,7 @@ const CaseQuiz = (() => {
       });
       const labFragment = LAB_FRAGMENT.test(clause) && clauses.slice(0, index).some(prior => namesPatient(claimText(prior)[lang], lang));
       const patientLab = (patient || PATIENT_POSSESSIVE[lang].test(worded) || labFragment) &&
-        !labCutoff && !RESULT_STATEMENT.test(clause);
+        !groundedLab && !RESULT_STATEMENT.test(clause);
       return answerNumbers(withoutNullBound.replace(LAB_OR_DOSE, (match, lab) => lab && !patientLab ? match : ' '))
         .filter(n => !cited.has(n));
     }));
