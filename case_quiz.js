@@ -17,7 +17,7 @@ const CaseQuiz = (() => {
   const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?:\s*\/\s*(?:kg|m2|m²|min|phút|h|hr|giờ|day|ngày|d)(?![\p{L}\p{N}]))*(?:\s+(?:(?:once|twice)\s+daily|\d+\s+times?\s+(?:daily|per\s+day)|daily|per\s+day)(?![\p{L}\p{N}]))?/giu;
   const EN_DAILY = /\s+(?:once\s+daily|daily|per\s+day)$/i;
   // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
-  const LAB = /\d+(?:[.,]\d+)?\s?(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
+  const LAB = /\d+(?:[.,]\d+)?\s*(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg|mEq)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
   // The app shuffles options, so explanations must not name them by letter.
   const LETTERS = [/(?:[Oo]ptions?|[Cc]hoices?|[Aa]nswers?|[Đđ]áp án|[Pp]hương án|[Ll]ựa chọn|[Cc]họn)\s*\(?[A-D]\)?(?![\p{L}\p{N}])/u,
     /(?:^|[^\p{L}\p{N}])[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])*\s+(?:(?:is|are|là)\s+)?(?:correct|incorrect|wrong|right|đúng|sai)(?![\p{L}])/u];
@@ -774,7 +774,7 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedStemNumbers, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedStemNumbers, doses, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
     citedExcerpts, validateCaseSet, CASE_SET_VERSION, CASES_PER_SET, MAX_CASE_EXCERPTS};
 })();

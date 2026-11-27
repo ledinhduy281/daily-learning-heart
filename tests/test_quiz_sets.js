@@ -87,7 +87,7 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
     assert.match(system, /in option text or explanations \(never say "Answer A"\)/);
     assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);
     assert.match(system, /All four options must be distinct in each language/);
-    assert.match(system, /If any stem, option, or explanation includes "40 mg", cite \[1\]/);
+    assert.match(system, /If any stem, option, or explanation includes "40 mg once daily", cite \[1\]/);
     assert.match(system, /\[2\] gives "hazard ratio 0\.70"\. Use the reported estimate, not a percentage derived from it/);
     assert.match(system, /Do not offer its CI bounds 0\.61 or 0\.82 as distractors/);
     assert.match(system, /"0\.70" and "reported hazard ratio 0\.70" are the same answer, not distinct options/);
@@ -212,6 +212,34 @@ const quiet = () => {};
 (async () => {
   assert.equal(await main({root, env: {}, date, log: quiet}), 0, "no key: nothing to do");
   assert.ok(!fs.existsSync(setPath));
+
+  const arniScope = {window: {}};
+  vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), arniScope);
+  const arni = {...arniScope.window.EBM_BRIEFINGS_DATA.focused_lessons["5"], date, id};
+  assert.equal(arni.primary_source.pmid, "43012096");
+  const arniExcerpts = arni.quiz_source_texts["43012096"];
+  assert.match(arniExcerpts[2], /hyperkalaemia >5\.5\s+mmol\/L/);
+  assert.deepEqual(Array.from(arniExcerpts.flatMap(CaseQuiz.doses)), [], "the ARNI source does not cite a drug dose");
+  const arniCase = {...course().items.find(q => q.type === "case"), quote: arniExcerpts[1],
+    stem_en: "A patient with heart failure has potassium of 4.7 mEq/L and creatinine of 1.4 mg/dL.",
+    stem_vi: "Bệnh nhân này bị suy tim và có kali 4,7 mmol/L.",
+  };
+  assert.deepEqual(CaseQuiz.unsupportedDoses(arniCase), []);
+  assert.deepEqual(CaseQuiz.unsupportedStemNumbers(arniCase), []);
+  publishLessons([arni]);
+  let arniPrompt, virtualTime = 0;
+  assert.equal(await main({root, env, date, log: quiet, budgetMs: 1, now: () => virtualTime,
+    fetchImpl: async (_, request) => {
+      arniPrompt = JSON.parse(request.body).messages;
+      virtualTime++;
+      return reply({});
+    },
+  }), 0);
+  assert.match(arniPrompt[1].content, /hyperkalaemia >5\.5\s+mmol\/L/);
+  assert.doesNotMatch(arniPrompt[0].content, /If any stem, option, or explanation includes|regimen excerpt second/);
+  assert.match(arniPrompt[0].content, /Fictional patient lab values in a stem do not need a regimen citation, but study thresholds must be supported/);
+  publishLessons([lesson]);
+  console.log("ARNI prompt: potassium threshold is not a regimen; fictional lab concentrations need no regimen citation: OK");
 
   const g = fakeGroq(["repair", "indices", "count"]);
   const logs = [];

@@ -32,11 +32,10 @@ function todayLesson(data, date) {
 
 function sourceExamples(excerpts) {
   const examples = [];
-  const dose = /\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|g|mL|mmol|IU)(?![\p{L}\p{N}])/iu;
-  const doseIndex = excerpts.findIndex(excerpt => dose.test(excerpt));
+  const doseIndex = excerpts.findIndex(excerpt => CaseQuiz.doses(excerpt).length);
   if (doseIndex >= 0) {
-    const strength = excerpts[doseIndex].match(dose)[0];
-    examples.push(`If any stem, option, or explanation includes "${strength}", cite [${doseIndex + 1}] for it. If another excerpt contains the result, cite the result excerpt first and the regimen excerpt second.`);
+    const [regimen] = CaseQuiz.doses(excerpts[doseIndex]);
+    examples.push(`If any stem, option, or explanation includes "${regimen}", cite [${doseIndex + 1}] for it. If another excerpt contains the result, cite the result excerpt first and the regimen excerpt second.`);
   }
   const ratio = /\b((?:hazard|risk|odds) ratio|relative risk|HR|RR|OR)[,:=]?\s+(\d+(?:[.,]\d+)?)(?:[;,]\s*(?:\d+%\s+)?(?:confidence interval(?:\s*\[CI\])?|CI)[,\s:]+(\d+(?:[.,]\d+)?)\s*(?:to|[-–])\s*(\d+(?:[.,]\d+)?))?/i;
   const ratios = excerpts.map((excerpt, i) => ({match: excerpt.match(ratio), i})).filter(entry => entry.match);
@@ -65,6 +64,7 @@ function systemPrompt(pmid, philosophy, count, repairing, examples = '') {
     'Do not repeat any prior stem. Never use the keyed estimate’s confidence limits or other figures from the excerpt reporting the keyed estimate as distractors. Use qualitative distractors instead and explain why the correct reasoning follows from the cited excerpt. ' +
     'Provide exactly 4 options. Do not prefix or mention option letters in option text or explanations (never say "Answer A"); only the answer field contains the letter key. Require exactly one defensible answer and use qualitative distractors when needed. ' +
     'All four options must be distinct in each language, and each Vietnamese option must mean the same as its English counterpart. Cite the excerpt containing any dose used in the stem, options, or explanations. ' +
+    'Lab concentrations such as mmol/L, mg/dL, and mEq/L are not doses. Fictional patient lab values in a stem do not need a regimen citation, but study thresholds must be supported by a cited excerpt. ' +
     examples +
     `Fields: type ("case"), pmid ("${pmid}"), excerpt (integer or array of two distinct integers), stem_vi, stem_en, ` +
     'options (four objects with vi and en), answer ("A"-"D"), explanation_vi, explanation_en. ' +
