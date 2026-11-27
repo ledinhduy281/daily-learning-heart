@@ -198,6 +198,9 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
       if (!repaired) return reply({questions: result.slice(0, 2)});
       assert.deepEqual(requested, [{slot: 3, reason: "count"}]);
     }
+    if (faults[round] === "oversized" && !repaired) {
+      return reply({questions: [{...result[0], type: "theory"}, result[0], result[0], result[1], result[2]]});
+    }
     return reply({questions: result});
   }};
 }
@@ -263,8 +266,59 @@ const quiet = () => {};
   assert.match(arniPrompt[1].content, /hyperkalaemia >5\.5\s+mmol\/L/);
   assert.doesNotMatch(arniPrompt[0].content, /If any stem, option, or explanation includes|regimen excerpt second/);
   assert.match(arniPrompt[0].content, /Fictional patient lab values in a stem do not need a regimen citation, but study thresholds must be supported/);
+  const pci = {...arniScope.window.EBM_BRIEFINGS_DATA.briefings.find(b => b.id === "ebm-2026-11-28-p3-focused"), date, id};
+  assert.equal(pci.primary_source.pmid, "42747372");
+  const pciQuote = pci.quiz_source_texts["42747372"][1];
+  const pciItem = {
+    type: "case", pmid: "42747372", excerpt: 2, answer: "A",
+    stem_en: "A patient undergoing PCI asks how imaging guidance compares with angiography alone for target lesion failure.",
+    stem_vi: "Một bệnh nhân chuẩn bị PCI hỏi hướng dẫn bằng hình ảnh so với chụp mạch đơn thuần ảnh hưởng thế nào đến thất bại tổn thương đích.",
+    explanation_en: "The meta-analysis found a lower relative risk of target lesion failure with imaging guidance.",
+    explanation_vi: "Phân tích gộp ghi nhận nguy cơ tương đối của thất bại tổn thương đích thấp hơn khi có hướng dẫn bằng hình ảnh.",
+    options: [
+      {en: "RR 0.72", vi: "RR 0,72"}, {en: "RR 0.73", vi: "RR 0,73"},
+      {en: "RR 0.85", vi: "RR 0,85"}, {en: "The risk was unchanged", vi: "Nguy cơ không đổi"},
+    ],
+  };
+  const pciGround = CaseQuiz.grounding(pci);
+  assert.equal(CaseQuiz.rejectReason({...pciItem, quote: pciQuote}, pciGround), "ambiguous");
+  const qualitative = {...pciItem, options: [
+    pciItem.options[0], pciItem.options[3],
+    {en: "The risk was higher", vi: "Nguy cơ cao hơn"},
+    {en: "The outcome was not measured", vi: "Kết cục không được đo lường"},
+  ]};
+  assert.equal(CaseQuiz.rejectReason({...qualitative, quote: pciQuote}, pciGround), "");
+  publishLessons([pci]);
+  const pciLogs = [];
+  let pciCalls = 0;
+  virtualTime = 0;
+  assert.equal(await main({root, env, date, log: m => pciLogs.push(m), budgetMs: 1, now: () => virtualTime,
+    fetchImpl: async (_, request) => {
+      const [system] = requestBody(request).messages;
+      assert.match(system.content, /root JSON object must have exactly one key, "questions"/);
+      assert.match(system.content, /Do not offer its CI bounds 0\.61 or 0\.85 as distractors/);
+      assert.match(system.content, /Do not use another endpoint’s effect size/);
+      if (++pciCalls === 1) return reply({questions: [pciItem]});
+      virtualTime++;
+      return reply({items: [pciItem]});
+    },
+  }), 0);
+  assert.match(pciLogs.join("\n"), /ambiguous;.*"option":2,"figures":\["0\.73"\]/);
+  assert.match(pciLogs.join("\n"), /ambiguous;.*"option":3,"figures":\["0\.85"\]/);
+  assert.match(pciLogs.join("\n"), /got no questions array \(root=object; keys=\["items"\]\)/);
   publishLessons([lesson]);
   console.log("ARNI prompt: potassium threshold is not a regimen; fictional lab concentrations need no regimen citation: OK");
+
+  const oversized = fakeGroq(["oversized"], 900);
+  const oversizedLogs = [];
+  assert.equal(await main({root, env, date, fetchImpl: oversized.fetchImpl, log: m => oversizedLogs.push(m)}), 3);
+  assert.deepEqual(oversized.calls.slice(0, 2).map(({mode, slots}) => [mode, ...slots]), [
+    ["generate", 1, 2, 3], ["solve", 1, 2, 3],
+  ], "salvage three valid items from five without sending a repair");
+  assert.match(oversizedLogs.join("\n"), /expected 3, got 5/);
+  assert.match(oversizedLogs.join("\n"), /Rejected case item 1: shape/);
+  assert.match(oversizedLogs.join("\n"), /Rejected case item 2: duplicate/);
+  fs.unlinkSync(setPath);
 
   const g = fakeGroq(["repair", "indices", "count"]);
   const logs = [];

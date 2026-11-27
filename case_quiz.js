@@ -313,23 +313,26 @@ const CaseQuiz = (() => {
   const RATE_DENOMINATOR = /(?:\bper|trên|\/)\s*\d+(?:[., \u00a0\u202f]\d{3})*\s*(?:person[\s\-–‑]*years?|người[\s\-–‑]*năm|PY)(?![\p{L}\p{N}])|\/\s*(?:1[., \u00a0\u202f]?000|100)(?![\p{L}\p{N}]|[.,]\d)/giu;
   const optionFigures = value => answerNumbers(value.normalize('NFC').replace(RATE_DENOMINATOR, ' '));
 
-  function hasReportedDistractor(item) {
+  function* reportedDistractors(item) {
     const answer = KEYS.indexOf(item.answer);
     const evidence = citedExcerpts(item).map(quote => ({
       figures: numbers(quote), ratios: effectFigures(quote, false),
     }));
-    return CLAIM_LANGUAGES.some(lang => {
+    for (const lang of CLAIM_LANGUAGES) {
       const key = item.options[answer][lang];
       const keyFigures = optionFigures(key);
       const keyRatios = effectFigures(key, false);
-      return evidence.some(({figures, ratios}) =>
-        (keyFigures.length === 1 && figures.includes(keyFigures[0]) || keyRatios.some(ratio => ratios.includes(ratio))) &&
-        item.options.some((option, index) => {
-          if (index === answer) return false;
-          const offered = optionFigures(option[lang]);
-          return offered.some(n => !keyFigures.includes(n)) && offered.every(n => figures.includes(n));
-        }));
-    });
+      for (const [index, option] of item.options.entries()) {
+        if (index === answer) continue;
+        const offered = optionFigures(option[lang]);
+        const conflicting = offered.filter(n => !keyFigures.includes(n));
+        if (!conflicting.length) continue;
+        const excerpts = evidence.flatMap(({figures, ratios}, i) =>
+          (keyFigures.length === 1 && figures.includes(keyFigures[0]) || keyRatios.some(ratio => ratios.includes(ratio))) &&
+          offered.every(n => figures.includes(n)) ? [i + 1] : []);
+        if (excerpts.length) yield {lang, option: index + 1, figures: [...new Set(conflicting)], citedExcerptPositions: excerpts};
+      }
+    }
   }
 
   function unsupportedCaseEffects(item) {
@@ -424,7 +427,7 @@ const CaseQuiz = (() => {
     if (unsupportedClaims(item).length) return 'claims';
     if (unsupportedCaseEffects(item).length) return 'effects';
     if (projectsGroupResult(item)) return 'projection';
-    if (hasReportedDistractor(item)) return 'ambiguous';
+    if (!reportedDistractors(item).next().done) return 'ambiguous';
     if (unsupportedStemNumbers(item).length) return 'stem-numbers';
     return hasSecondaryAnswer(item) ? 'citation-order' : '';
   }
@@ -793,7 +796,7 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedStemNumbers, doses, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedStemNumbers, doses, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, reportedDistractors, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
     citedExcerpts, validateCaseSet, CASE_SET_VERSION, CASES_PER_SET, MAX_CASE_EXCERPTS};
 })();
