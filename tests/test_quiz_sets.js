@@ -82,6 +82,7 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
     assert.match(system, /put the excerpt that supports the key finding in the correct option first/);
     assert.match(system, /Do not include a quote field/);
     assert.match(system, /Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt/);
+    assert.match(system, /Never use the keyed estimate’s confidence limits or other figures from the excerpt reporting the keyed estimate as distractors/);
     assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
     assert.match(system, /in option text or explanations \(never say "Answer A"\)/);
     assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);

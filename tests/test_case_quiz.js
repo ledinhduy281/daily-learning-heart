@@ -81,11 +81,19 @@ const bound = {...kase, options: options(["0.70", "0.61", "0.82", "1.00"]),
   stem_en: "Compare the hazard ratio between the atorvastatin and placebo groups for primary cardiovascular events. Which value below 1 indicates a benefit of atorvastatin?",
   stem_vi: "So sánh tỷ lệ rủi ro (hazard ratio) giữa nhóm atorvastatin và giả dược cho sự kiện tim mạch chính. Giá trị nào dưới 1 cho thấy lợi thế của atorvastatin?"};
 assert.equal(CaseQuiz.rejectReason(bound, stareeGround), "ambiguous");
-assert.equal(CaseQuiz.rejectReason({...bound, stem_en: theory.stem_en, stem_vi: theory.stem_vi}, stareeGround), "", "a point estimate is unambiguous");
-const namedEstimate = {...bound,
+const reportedHR = {...bound, stem_en: theory.stem_en, stem_vi: theory.stem_vi};
+assert.equal(CaseQuiz.rejectReason(reportedHR, stareeGround), "ambiguous", "a reported HR question cannot offer its CI bounds");
+const distinctOptions = options(["0.70", "0.50", "0.94", "1.00"]);
+assert.equal(CaseQuiz.rejectReason({...reportedHR, options: distinctOptions}, stareeGround), "", "unreported alternatives pass");
+assert.equal(CaseQuiz.rejectReason({...reportedHR, options: options(["0.70", "412", "0.94", "1.00"])}, stareeGround), "ambiguous",
+  "other figures from the answer-bearing excerpt are not distractors");
+assert.equal(CaseQuiz.rejectReason({...reportedHR,
+  options: options(["HR 0.70", "Lower 95% CI bound: 0.61", "HR 0.94", "HR 1.00"])}, stareeGround), "ambiguous",
+  "labeling a cited confidence bound does not make it a valid distractor");
+const namedEstimate = {...bound, options: distinctOptions,
   stem_en: "For primary cardiovascular events, which reported hazard ratio below 1 is the point estimate for atorvastatin versus placebo?",
   stem_vi: "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin so với giả dược?"};
-assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "the reported value is distinct from its confidence limits");
+assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "a unitless null comparator is not a study figure");
 assert.equal(CaseQuiz.rejectReason({...namedEstimate,
   stem_en: namedEstimate.stem_en.replace("below 1", "(<1)")}, stareeGround), "", "a symbolic null comparator is not a study figure");
 for (const [lang, stem] of [
@@ -97,13 +105,13 @@ for (const [lang, stem] of [
   assert.deepEqual(CaseQuiz.unsupportedStemNumbers(duration), ["1"], "a unit-bearing threshold needs grounding");
   assert.notEqual(CaseQuiz.rejectReason(duration, stareeGround), "");
 }
-assert.equal(CaseQuiz.rejectReason({...namedEstimate, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
-  "each language must distinguish the reported estimate from its confidence limits");
+assert.equal(CaseQuiz.rejectReason({...namedEstimate, options: bound.options, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
+  "explicit estimate wording does not permit confidence bound distractors in either language");
 for (const [lang, stem] of [
   ["en", "When reviewing the reported hazard ratio for primary cardiovascular events, which value is below 1?"],
   ["vi", "Khi xem hazard ratio được báo cáo cho biến cố tim mạch chính, giá trị nào dưới 1?"],
 ]) {
-  assert.equal(CaseQuiz.rejectReason({...namedEstimate, ["stem_" + lang]: stem}, stareeGround), "ambiguous",
+  assert.equal(CaseQuiz.rejectReason({...namedEstimate, options: bound.options, ["stem_" + lang]: stem}, stareeGround), "ambiguous",
     "mentioning the reported estimate does not disambiguate a different question in " + lang);
 }
 console.log("Live STAREE regressions: individual and cohort projections, unsupported stem figures, and ambiguous CI bounds rejected: OK");

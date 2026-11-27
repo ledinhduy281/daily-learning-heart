@@ -41,7 +41,7 @@ function systemPrompt(pmid, philosophy, count, repairing) {
     'Ask what the study reported for the relevant group, never what will happen to an individual or a hypothetical cohort. ' +
     'do not substitute mortality for events, or infer an outcome, subgroup effect, or recommendation not stated there. Never invent a dose. ' +
     'Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt, except fictional patient characteristics such as age or baseline measurements in the stem. Do not calculate differences, convert HR or RR to percentages (e.g. 30% from HR 0.70), or round. ' +
-    'Do not repeat any prior stem. Build plausible distractors and explain why the correct reasoning follows from the cited excerpt. ' +
+    'Do not repeat any prior stem. Never use the keyed estimate’s confidence limits or other figures from the excerpt reporting the keyed estimate as distractors. Use qualitative distractors instead and explain why the correct reasoning follows from the cited excerpt. ' +
     'Provide exactly 4 options. Do not prefix or mention option letters in option text or explanations (never say "Answer A"); only the answer field contains the letter key. Require exactly one defensible answer and use qualitative distractors when needed. ' +
     `Fields: type ("case"), pmid ("${pmid}"), excerpt (integer or array of two distinct integers), stem_vi, stem_en, ` +
     'options (four objects with vi and en), answer ("A"-"D"), explanation_vi, explanation_en. ' +

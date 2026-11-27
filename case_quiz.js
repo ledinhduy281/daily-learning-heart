@@ -225,11 +225,11 @@ const CaseQuiz = (() => {
         !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
       const checked = vignette ? withoutVignetteBaseline(clause, lang)
         .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ').replace(LAB, ' ') : clause;
-      const withoutNullBound = namesEstimate(clause, lang) ? checked.replace(UPPER_BOUND, (bound, value, offset) => {
+      const withoutNullBound = checked.replace(UPPER_BOUND, (bound, value, offset) => {
         const before = checked.slice(0, offset);
         const after = checked.slice(offset + bound.length);
         return boundValue(value) === 1 && RATIO_BEFORE_BOUND.test(before) && BOUND_END.test(after) ? ' ' : bound;
-      }) : checked;
+      });
       return answerNumbers(withoutNullBound.replace(DOSE, ' ')).filter(n => !cited.has(n));
     }));
   }
@@ -295,28 +295,22 @@ const CaseQuiz = (() => {
   const BOUND_END = /^\s*\)?\s*(?:$|[?!.,;:]|(?:is|was|did|for|được|cho|là)(?![\p{L}\p{N}]))/iu;
   const boundValue = value => Number(numbers(value)[0] ?? 1);
 
-  function namesEstimate(question, lang) {
-    const words = claimText(question)[lang];
-    if (lang === 'en') {
-      return /\b(?:which|what)(?: is| was)? (?:the )?(?:point estimate|(?:reported|observed) (?:value|hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or))\b/.test(words) ||
-        /\b(?:which|what)(?: is| was)? (?:the )?(?:hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or|value)(?: (?:below|less than|under) (?:1|one))? (?:was reported|did the (?:trial|study|analysis) (?:report|find))\b/.test(words);
-    }
-    return /\buoc luong diem (?:nao|la bao nhieu)\b/.test(words) ||
-      /\b(?:hazard ratio|hr|rr|(?:ti|ty) so nguy co|gia tri) (?:nao|la bao nhieu)(?: (?:duoi|nho hon|thap hon) (?:1|mot))? (?:duoc )?(?:bao cao|ghi nhan|quan sat)\b/.test(words);
-  }
-
-  function ambiguousBound(item) {
-    const cited = new Set(citedExcerpts(item).flatMap(numbers));
+  function hasReportedDistractor(item) {
+    const answer = KEYS.indexOf(item.answer);
+    const evidence = citedExcerpts(item).map(quote => ({
+      figures: numbers(quote), ratios: effectFigures(quote, false),
+    }));
     return CLAIM_LANGUAGES.some(lang => {
-      const question = item['stem_' + lang].split(STUDY_CLAUSE).filter(s => s.trim()).at(-1);
-      const bound = question?.match(UPPER_BOUND)?.[1];
-      if (!bound || namesEstimate(question, lang)) return false;
-      const limit = boundValue(bound);
-      const fits = option => {
-        const value = option[lang].trim();
-        return /^\d+(?:[.,]\d+)?$/.test(value) && cited.has(numbers(value)[0]) && Number(value.replace(',', '.')) < limit;
-      };
-      return fits(item.options[KEYS.indexOf(item.answer)]) && item.options.filter(fits).length > 1;
+      const key = item.options[answer][lang];
+      const keyFigures = answerNumbers(key);
+      const keyRatios = effectFigures(key, false);
+      return evidence.some(({figures, ratios}) =>
+        (keyFigures.length === 1 && figures.includes(keyFigures[0]) || keyRatios.some(ratio => ratios.includes(ratio))) &&
+        item.options.some((option, index) => {
+          if (index === answer) return false;
+          const offered = answerNumbers(option[lang]);
+          return offered.some(n => !keyFigures.includes(n)) && offered.every(n => figures.includes(n));
+        }));
     });
   }
 
@@ -412,7 +406,7 @@ const CaseQuiz = (() => {
     if (unsupportedClaims(item).length) return 'claims';
     if (unsupportedCaseEffects(item).length) return 'effects';
     if (projectsGroupResult(item)) return 'projection';
-    if (ambiguousBound(item)) return 'ambiguous';
+    if (hasReportedDistractor(item)) return 'ambiguous';
     if (unsupportedStemNumbers(item).length) return 'stem-numbers';
     return hasSecondaryAnswer(item) ? 'citation-order' : '';
   }
