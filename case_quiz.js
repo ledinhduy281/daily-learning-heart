@@ -18,6 +18,7 @@ const CaseQuiz = (() => {
   const EN_DAILY = /\s+(?:once\s+daily|daily|per\s+day)$/i;
   // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
   const LAB = /\d+(?:[.,]\d+)?\s*(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg|mEq)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
+  const LAB_OR_DOSE = new RegExp(`(${LAB.source})|${DOSE.source}`, 'giu');
   // The app shuffles options, so explanations must not name them by letter.
   const LETTERS = [/(?:[Oo]ptions?|[Cc]hoices?|[Aa]nswers?|[Đđ]áp án|[Pp]hương án|[Ll]ựa chọn|[Cc]họn)\s*\(?[A-D]\)?(?![\p{L}\p{N}])/u,
     /(?:^|[^\p{L}\p{N}])[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])*\s+(?:(?:is|are|là)\s+)?(?:correct|incorrect|wrong|right|đúng|sai)(?![\p{L}])/u];
@@ -216,21 +217,35 @@ const CaseQuiz = (() => {
   const VIGNETTE_AGE = /\b(?:aged?\s+\d{1,3}(?![\d.,])|\d{1,3}\s*(?:[-‐‑– ]\s*years?[-‐‑– ]\s*old|tuổi\b))/giu;
   const VIGNETTE_STAGE = /\b(?:stage|grade|giai đoạn|phân độ)\s+\d+(?![\d.,])/giu;
   const VIGNETTE_BP = /\b(?:bp|sbp|(?:systolic )?blood pressure|huyết áp(?: tâm thu)?)\s*(?:of |is |là |[:=]\s*)?\d+(?:\s*\/\s*\d+)?\s*mm\s*hg\b/giu;
+  const LAB_CUTOFF = {
+    en: /\b(?:below|above|under|over|less than|more than|greater than|at least|at most|eligible|eligibility|qualif\w*|criteri(?:a|on)|cut[- ]?offs?|thresholds?|inclusion|exclusion|requir\w*|defin\w*|must)\b/,
+    vi: /\b(?:duoi|tren|nho hon|lon hon|thap hon|cao hon|it nhat|toi da|du dieu kien|dieu kien|tieu chi|nguong|yeu cau|dinh nghia|phai)\b/,
+  };
+  const PATIENT_POSSESSIVE = {en: /\b(?:her|his|their)\b/, vi: /\b(?:ba|ong|co|anh) ay\b/};
+  const LAB_FRAGMENT = /^\s*(?:k\+|ldl|hdl|egfr|creatinine|potassium|sodium|glucose|kali|natri)\s*[:=]?\s*\d/iu;
+  const namesPatient = (text, lang) => PATIENT[lang].test(text) || lang === 'vi' && /\b(?:ba|ong) \d+ tuoi\b/.test(text);
 
   function unsupportedStemNumbers(item) {
     const cited = new Set(citedExcerpts(item).flatMap(numbers));
-    return CLAIM_LANGUAGES.flatMap(lang => item['stem_' + lang].normalize('NFC').split(STUDY_CLAUSE).flatMap(clause => {
+    return CLAIM_LANGUAGES.flatMap(lang => item['stem_' + lang].normalize('NFC').split(STUDY_CLAUSE).flatMap((clause, index, clauses) => {
       const worded = claimText(clause)[lang];
-      const vignette = PATIENT[lang].test(worded) || lang === 'vi' && /\b(?:ba|ong) \d+ tuoi\b/.test(worded) ||
-        !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
-      const checked = vignette ? withoutVignetteBaseline(clause, lang)
-        .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ').replace(LAB, ' ') : clause;
+      const patient = namesPatient(worded, lang);
+      const vignette = patient || !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
+      const labCutoff = /[<>≤≥]/.test(clause) || LAB_CUTOFF[lang].test(worded);
+      const hasLab = clause.search(LAB) !== -1;
+      const baseline = hasLab && labCutoff ? clause : withoutVignetteBaseline(clause, lang);
+      const checked = vignette ? baseline
+        .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ') : clause;
       const withoutNullBound = checked.replace(UPPER_BOUND, (bound, value, offset) => {
         const before = checked.slice(0, offset);
         const after = checked.slice(offset + bound.length);
         return boundValue(value) === 1 && RATIO_BEFORE_BOUND.test(before) && BOUND_END.test(after) ? ' ' : bound;
       });
-      return answerNumbers(withoutNullBound.replace(DOSE, ' ')).filter(n => !cited.has(n));
+      const labFragment = LAB_FRAGMENT.test(clause) && clauses.slice(0, index).some(prior => namesPatient(claimText(prior)[lang], lang));
+      const patientLab = (patient || PATIENT_POSSESSIVE[lang].test(worded) || labFragment) &&
+        !labCutoff && !RESULT_STATEMENT.test(clause);
+      return answerNumbers(withoutNullBound.replace(LAB_OR_DOSE, (match, lab) => lab && !patientLab ? match : ' '))
+        .filter(n => !cited.has(n));
     }));
   }
 

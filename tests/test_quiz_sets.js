@@ -226,6 +226,20 @@ const quiet = () => {};
   };
   assert.deepEqual(CaseQuiz.unsupportedDoses(arniCase), []);
   assert.deepEqual(CaseQuiz.unsupportedStemNumbers(arniCase), []);
+  for (const [lang, stem] of [
+    ["en", "For this patient, the trial requires K+ < 5.0 mEq/L."],
+    ["en", "A patient's potassium must be under 5.0 mmol/L."],
+    ["en", "A patient's potassium eligibility cutoff is 5.0 mg/dL."],
+    ["vi", "Bệnh nhân này chỉ đủ điều kiện nếu kali dưới 5,0 mmol/L."],
+    ["en", "The trial used potassium of 5.0 mmol/L to define hyperkalaemia."],
+  ]) {
+    const cutoff = {...arniCase, ["stem_" + lang]: stem};
+    assert.deepEqual(CaseQuiz.unsupportedDoses(cutoff), [], "a lab threshold is not a dose");
+    assert.deepEqual(CaseQuiz.unsupportedStemNumbers(cutoff), ["5"], "an uncited lab cutoff cannot be a vignette measurement");
+  }
+  assert.deepEqual(CaseQuiz.unsupportedStemNumbers({...arniCase, quote: arniExcerpts[2],
+    stem_en: "This patient asks about the reported hyperkalaemia threshold of >5.5 mmol/L.",
+  }), [], "a cited lab threshold passes");
   publishLessons([arni]);
   let arniPrompt, virtualTime = 0;
   assert.equal(await main({root, env, date, log: quiet, budgetMs: 1, now: () => virtualTime,
