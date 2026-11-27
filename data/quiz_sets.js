@@ -646,6 +646,106 @@ window.EBM_QUIZ_SETS = {
       "ai_generated": true
      }
     ]
+   },
+   {
+    "version": 3,
+    "set_id": "2026-11-27-cases-554deb21cf59",
+    "model": "openai/gpt-oss-20b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo."
+      ],
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 73 tuổi sống tự lập, không có tiền sử bệnh tim mạch, tiểu đường hoặc mất trí nhớ, được đề nghị dùng atorvastatin 40 mg/ngày. Bạn cần biết tỷ lệ sự kiện tim mạch chính trong nhóm điều trị so với nhóm giả dược trong 5.9 năm theo nghiên cứu STAREE.",
+      "stem_en": "A 73‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia is offered atorvastatin 40 mg daily. What was the primary cardiovascular event rate in the atorvastatin versus placebo group over 5.9 years in the STAREE trial?",
+      "explanation_vi": "Theo dữ liệu (Excerpt 3), tỷ lệ sự kiện tim mạch chính là 10.9 events/1000 person‑years trong nhóm atorvastatin và 15.5 events/1000 person‑years trong nhóm giả dược.",
+      "explanation_en": "According to Excerpt 3, the primary cardiovascular event rate was 10.9 events/1000 person‑years in the atorvastatin group and 15.5 events/1000 person‑years in the placebo group.",
+      "options": [
+       {
+        "vi": "10.9 events per 1000 person‑years vs 15.5 events per 1000 person‑years",
+        "en": "10.9 events per 1000 person‑years vs 15.5 events per 1000 person‑years"
+       },
+       {
+        "vi": "10.9 events per 1000 person‑years vs 10.9 events per 1000 person‑years",
+        "en": "10.9 events per 1000 person‑years vs 10.9 events per 1000 person‑years"
+       },
+       {
+        "vi": "15.5 events per 1000 person‑years vs 10.9 events per 1000 person‑years",
+        "en": "15.5 events per 1000 person‑years vs 10.9 events per 1000 person‑years"
+       },
+       {
+        "vi": "15.5 events per 1000 person‑years vs 15.5 events per 1000 person‑years",
+        "en": "15.5 events per 1000 person‑years vs 15.5 events per 1000 person‑years"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo."
+      ],
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 78 tuổi sống tự lập, không có tiền sử bệnh tim mạch, tiểu đường hoặc mất trí nhớ, được phân bổ ngẫu nhiên vào nhóm điều trị atorvastatin 40 mg/ngày. Bạn cần biết tỉ lệ sự kiện tim mạch chính trong 5.9 năm so với nhóm giả dược trong nghiên cứu STAREE.",
+      "stem_en": "A 78‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia is randomized to atorvastatin 40 mg daily. What was the primary cardiovascular event rate in the atorvastatin versus placebo group over 5.9 years in the STAREE trial?",
+      "explanation_vi": "Tỷ lệ sự kiện tim mạch chính là 10.9 events/1000 person‑years trong nhóm atorvastatin và 15.5 events/1000 person‑years trong nhóm giả dược (Excerpt 3).",
+      "explanation_en": "The primary cardiovascular event rate was 10.9 events/1000 person‑years in the atorvastatin group and 15.5 events/1000 person‑years in the placebo group (Excerpt 3).",
+      "options": [
+       {
+        "vi": "10.9 events per 1000 person‑years vs 15.5 events per 1000 person‑years",
+        "en": "10.9 events per 1000 person‑years vs 15.5 events per 1000 person‑years"
+       },
+       {
+        "vi": "15.5 events per 1000 person‑years vs 10.9 events per 1000 person‑years",
+        "en": "15.5 events per 1000 person‑years vs 10.9 events per 1000 person‑years"
+       },
+       {
+        "vi": "10.9 events per 1000 person‑years vs 10.9 events per 1000 person‑years",
+        "en": "10.9 events per 1000 person‑years vs 10.9 events per 1000 person‑years"
+       },
+       {
+        "vi": "15.5 events per 1000 person‑years vs 15.5 events per 1000 person‑years",
+        "en": "15.5 events per 1000 person‑years vs 15.5 events per 1000 person‑years"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quote": "A total of 9971 participants were enrolled: 4984 were assigned to receive atorvastatin and 4987 to receive placebo.",
+      "answer": "A",
+      "stem_vi": "Bạn được hỏi số lượng bệnh nhân được phân bố vào nhóm atorvastatin và nhóm giả dược trong nghiên cứu STAREE.",
+      "stem_en": "How many participants were assigned to the atorvastatin and placebo groups in the STAREE trial?",
+      "explanation_vi": "Nghiên cứu ghi nhận 4984 bệnh nhân được phân vào nhóm atorvastatin và 4987 vào nhóm giả dược.",
+      "explanation_en": "The study enrolled 4984 participants in the atorvastatin group and 4987 in the placebo group.",
+      "options": [
+       {
+        "vi": "4984 cho atorvastatin và 4987 cho giả dược",
+        "en": "4984 for atorvastatin and 4987 for placebo"
+       },
+       {
+        "vi": "4970 cho atorvastatin và 5001 cho giả dược",
+        "en": "4970 for atorvastatin and 5001 for placebo"
+       },
+       {
+        "vi": "5000 cho atorvastatin và 4971 cho giả dược",
+        "en": "5000 for atorvastatin and 4971 for placebo"
+       },
+       {
+        "vi": "4995 cho atorvastatin và 4986 cho giả dược",
+        "en": "4995 for atorvastatin and 4986 for placebo"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
    }
   ]
  }
