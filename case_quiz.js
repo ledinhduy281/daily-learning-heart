@@ -295,10 +295,11 @@ const CaseQuiz = (() => {
   function namesEstimate(question, lang) {
     const words = claimText(question)[lang];
     if (lang === 'en') {
-      return /\bpoint estimate\b/.test(words) || namesRatio(question, lang) &&
-        /\b(?:reported|reports?|observed|did the (?:trial|study|analysis) find)\b/.test(words);
+      return /\b(?:which|what)(?: is| was)? (?:the )?(?:point estimate|(?:reported|observed) (?:value|hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or))\b/.test(words) ||
+        /\b(?:which|what)(?: is| was)? (?:the )?(?:hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or|value)(?: (?:below|less than|under) (?:1|one))? (?:was reported|did the (?:trial|study|analysis) (?:report|find))\b/.test(words);
     }
-    return /\buoc luong diem\b/.test(words) || namesRatio(question, lang) && /\b(?:bao cao|ghi nhan|quan sat)\b/.test(words);
+    return /\buoc luong diem (?:nao|la bao nhieu)\b/.test(words) ||
+      /\b(?:hazard ratio|hr|rr|(?:ti|ty) so nguy co|gia tri) (?:nao|la bao nhieu)(?: (?:duoi|nho hon|thap hon) (?:1|mot))? (?:duoc )?(?:bao cao|ghi nhan|quan sat)\b/.test(words);
   }
 
   function ambiguousBound(item) {

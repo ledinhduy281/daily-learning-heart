@@ -88,6 +88,13 @@ const namedEstimate = {...bound,
 assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "the reported value is distinct from its confidence limits");
 assert.equal(CaseQuiz.rejectReason({...namedEstimate, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
   "each language must distinguish the reported estimate from its confidence limits");
+for (const [lang, stem] of [
+  ["en", "When reviewing the reported hazard ratio for primary cardiovascular events, which value is below 1?"],
+  ["vi", "Khi xem hazard ratio được báo cáo cho biến cố tim mạch chính, giá trị nào dưới 1?"],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...namedEstimate, ["stem_" + lang]: stem}, stareeGround), "ambiguous",
+    "mentioning the reported estimate does not disambiguate a different question in " + lang);
+}
 console.log("Live STAREE regressions: individual and cohort projections, unsupported stem figures, and ambiguous CI bounds rejected: OK");
 
 assert.equal(CaseQuiz.validateSet(lesson, [theory, kase]).length, 2);
