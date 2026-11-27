@@ -149,9 +149,17 @@ const eventGround = {pmid: liveCase.pmid, title: "Cardiovascular mortality", exc
 assert.equal(CaseQuiz.rejectReason(liveCase, eventGround), "claims", "the exact live case must not conflate events and mortality");
 const eventOption = {vi: "Giảm biến cố tim mạch 15% cho mỗi 10 mmHg giảm SBP", en: "Reduces cardiovascular events by 15% per 10 mmHg SBP reduction"};
 const grounded = {...liveCase, options: [eventOption, ...liveCase.options.slice(1)],
-  stem_en: liveCase.stem_en.replace("to <130 mmHg", "").replace(" at 140 mmHg", ""),
-  stem_vi: liveCase.stem_vi.replace(" xuống mức <130 mmHg", "").replace(" 140 mmHg", "")};
+  stem_en: liveCase.stem_en.replace("to <130 mmHg", "").replace(" at 140 mmHg", "").replace("provide for this patient", "show in the study"),
+  stem_vi: liveCase.stem_vi.replace(" xuống mức <130 mmHg", "").replace(" 140 mmHg", "").replace("bệnh nhân này sẽ có lợi ích gì", "nghiên cứu ghi nhận lợi ích gì")};
 assert.equal(CaseQuiz.rejectReason(grounded, eventGround), "", "translated equivalents and ungrounded distractors are allowed");
+const conditionalBP = {
+  en: "A 62‑year‑old patient with chronic kidney disease has a systolic blood pressure of 160 mmHg and is being considered for intensive blood pressure lowering. The physician wants to know the expected reduction in cardiovascular event risk if systolic BP is lowered an additional 10 mmHg using intensive therapy. According to the study, the patient would experience:",
+  vi: "Một bệnh nhân 62 tuổi có bệnh thận mạn và huyết áp tâm thu 160 mmHg đang được cân nhắc điều trị hạ huyết áp. Bác sĩ muốn biết mức giảm rủi ro tai biến tim mạch dự kiến nếu hạ huyết áp tâm thu thêm 10 mmHg theo phương pháp hạ huyết áp cường độ cao. Theo kết quả nghiên cứu, bệnh nhân này sẽ có:",
+};
+for (const lang of ["en", "vi"]) {
+  assert.equal(CaseQuiz.rejectReason({...grounded, ["stem_" + lang]: conditionalBP[lang]}, eventGround), "projection",
+    "the November 26 case projects a group result onto an individual in " + lang);
+}
 const ckdComparison = {...grounded,
   options: [{vi: "Không, lợi ích tương tự bất kể CKD", en: "No, benefit is similar regardless of CKD status"}, ...grounded.options.slice(1)],
   explanation_en: "Excerpt 2 notes a 15% reduction in cardiovascular events with intensive BP lowering and reports no heterogeneity by CKD status, indicating the benefit is similar for patients with and without CKD. Hence the correct answer is that there is no difference.",

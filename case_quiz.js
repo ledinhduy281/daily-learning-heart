@@ -229,14 +229,15 @@ const CaseQuiz = (() => {
     }));
   }
 
-  const PROJECTION = {
-    en: /\b(?:predict\w*|project\w*|will (?:experience|have|develop|suffer)|would (?:you )?expect|how many (?:\w+ ){0,4}will|over the next)\b/,
-    vi: /\b(?:du doan|uoc tinh|se (?:gap|mac)|trong \d+(?: \d+)? nam toi|bao nhieu (?:\w+ ){0,4}se)\b/,
-  };
   const FUTURE_EVENT = {
-    en: /\bwill (?:experience|have|develop|suffer)\b/,
-    vi: /\bse (?:gap|mac)\b/,
+    en: /\b(?:will|would) (?:experience|have|develop|suffer)\b/,
+    vi: /\b(?:se|co the) (?:gap|mac|co|trai qua)\b/,
   };
+  const PROJECTION = {
+    en: /\b(?:predict\w*|project\w*|would (?:you )?expect|how many (?:\w+ ){0,4}will|over the next)\b/,
+    vi: /\b(?:du doan|uoc tinh|trong \d+(?: \d+)? nam toi|bao nhieu (?:\w+ ){0,4}se)\b/,
+  };
+  const isProjection = (value, lang) => PROJECTION[lang].test(value) || FUTURE_EVENT[lang].test(value);
   const PERSONAL = {
     en: /\b(?:this patient|this person|this (?:woman|man|adult)|(?:her|his|your) risk|she|he|a patient)\b/,
     vi: /\b(?:benh nhan nay|nguoi nay|mot benh nhan|nguy co cua (?:ba|ong|co|anh) ay)\b/,
@@ -262,10 +263,10 @@ const CaseQuiz = (() => {
       const result = ENDPOINT_CONTEXT[lang].test(stem + ' ' + key) || EFFECT_CONTEXT[lang].test(stem + ' ' + key) ||
         /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(stem + ' ' + key);
       return result && (PERSONAL_RISK[lang].test(key) ||
-        COHORT[lang].test(stem) && (PROJECTION[lang].test(stem) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
-        PROJECTION[lang].test(stem) && PERSONAL[lang].test(stem) ||
+        COHORT[lang].test(stem) && (isProjection(stem, lang) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
+        isProjection(stem, lang) && PERSONAL[lang].test(stem) ||
         FUTURE_EVENT[lang].test(stem) && PATIENT[lang].test(stem) ||
-        PROJECTION[lang].test(key) && (COHORT[lang].test(key) || PERSONAL[lang].test(key) || PATIENT[lang].test(stem)));
+        isProjection(key, lang) && (COHORT[lang].test(key) || PERSONAL[lang].test(key) || PATIENT[lang].test(stem)));
     });
   }
 
