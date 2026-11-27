@@ -130,15 +130,24 @@ const CaseQuiz = (() => {
   }
 
   const citedExcerpts = item => item?.quotes ?? [item?.quote];
+  const CITATION_REF = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|trích dẫn|câu trích|phần trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
+  const answerNumbers = value => numbers(value.replace(CITATION_REF, ' '));
+
+  function hasSecondaryAnswer(item) {
+    if (!item.quotes) return false;
+    const key = item.options[KEYS.indexOf(item.answer)];
+    const figures = [...answerNumbers(key.en), ...answerNumbers(key.vi)];
+    const [first, second] = item.quotes.map(numbers);
+    return figures.every(n => second.includes(n)) && figures.some(n => !first.includes(n));
+  }
 
   // Numbers in the correct option and explanations must come from the source or the stem; "excerpt 2" / "[2]" are references.
   function unsupportedNumbers(item, ground) {
     const fields = item.quotes ? citedExcerpts(item) : [ground.title, ...ground.excerpts, item.stem_vi, item.stem_en];
     const allowed = new Set(fields.flatMap(numbers));
     const correct = item.options[KEYS.indexOf(item.answer)];
-    const refs = /\[\s*\d+\s*\]|\b(?:excerpts?|trích đoạn|đoạn trích|trích dẫn|câu trích|phần trích|đoạn)\s*(?:số\s*)?\[?\d+\]?/giu;
     return [correct.vi, correct.en, item.explanation_vi, item.explanation_en]
-      .flatMap(c => numbers(String(c).replace(refs, ' '))).filter(n => !allowed.has(n));
+      .flatMap(answerNumbers).filter(n => !allowed.has(n));
   }
 
   const CKD_GROUP = {
@@ -177,7 +186,7 @@ const CaseQuiz = (() => {
   };
   const EFFECT_CONTEXT = {
     en: /\b(?:events?|deaths?|mortality|hospitali[sz]ations?|incidence|benefit|effect|improvement|change)\b/,
-    vi: /\b(?:bien co|tu vong|nhap vien|loi ich|tac dong|hieu qua|cai thien|thay doi)\b/,
+    vi: /\b(?:bien co|su kien|tu vong|nhap vien|loi ich|tac dong|hieu qua|cai thien|thay doi)\b/,
   };
   const BASELINE_MEASUREMENT = /\b(?:(lvef|ef|(?:left ventricular )?ejection fraction|phân suất tống máu(?: thất trái)?)|(egfr|estimated glomerular filtration rate|(?:tốc độ |mức )?lọc cầu thận ước tính))\s*(?:[:=]|of\b|là\b)?\s*(\d+(?:[.,]\d+)?)(?:\s*(%|phần trăm\b))?(?![\d.,]*\d)/giu;
   const REPORTED_MEASUREMENT = /\b(?:increas\w*|decreas\w*|reduc\w*|declin\w*|improv\w*|report\w*|found|showed|fell|rose|tăng|giảm|cải thiện|báo cáo|ghi nhận)(?:\s+(?:in|of|the|an?))*\s*$/iu;
@@ -203,6 +212,106 @@ const CaseQuiz = (() => {
     en: /\b(?:patient|person|woman|man|adult|child)\b/,
     vi: /\b(?:benh nhan|nguoi phu nu|nguoi dan ong)\b/,
   };
+
+  const VIGNETTE_AGE = /\b(?:aged?\s+\d{1,3}(?![\d.,])|\d{1,3}\s*(?:[-‐‑– ]\s*years?[-‐‑– ]\s*old|tuổi\b))/giu;
+  const VIGNETTE_STAGE = /\b(?:stage|grade|giai đoạn|phân độ)\s+\d+(?![\d.,])/giu;
+  const VIGNETTE_BP = /\b(?:bp|sbp|(?:systolic )?blood pressure|huyết áp(?: tâm thu)?)\s*(?:of |is |là |[:=]\s*)?\d+(?:\s*\/\s*\d+)?\s*mm\s*hg\b/giu;
+
+  function unsupportedStemNumbers(item) {
+    const cited = new Set(citedExcerpts(item).flatMap(numbers));
+    return CLAIM_LANGUAGES.flatMap(lang => item['stem_' + lang].normalize('NFC').split(STUDY_CLAUSE).flatMap(clause => {
+      const worded = claimText(clause)[lang];
+      const vignette = PATIENT[lang].test(worded) || lang === 'vi' && /\b(?:ba|ong) \d+ tuoi\b/.test(worded) ||
+        !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
+      const checked = vignette ? withoutVignetteBaseline(clause, lang)
+        .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ').replace(LAB, ' ') : clause;
+      const withoutNullBound = checked.replace(UPPER_BOUND, (bound, value, offset) => {
+        const before = checked.slice(0, offset);
+        const after = checked.slice(offset + bound.length);
+        return boundValue(value) === 1 && RATIO_BEFORE_BOUND.test(before) && BOUND_END.test(after) ? ' ' : bound;
+      });
+      return answerNumbers(withoutNullBound.replace(DOSE, ' ')).filter(n => !cited.has(n));
+    }));
+  }
+
+  const FUTURE_EVENT = {
+    en: /\b(?:will|would) (?:experience|have|develop|suffer)\b/,
+    vi: /\b(?:se|co the) (?:gap|mac|co|trai qua)\b/,
+  };
+  const PROJECTION = {
+    en: /\b(?:predict\w*|project\w*|would (?:you )?expect|how many (?:\w+ ){0,4}will|over the next)\b/,
+    vi: /\b(?:du doan|uoc tinh|trong \d+(?: \d+)? nam toi|bao nhieu (?:\w+ ){0,4}se)\b/,
+  };
+  const isProjection = (value, lang) => PROJECTION[lang].test(value) || FUTURE_EVENT[lang].test(value);
+  const PERSONAL = {
+    en: /\b(?:this patient|this person|this (?:woman|man|adult)|(?:her|his|your) risk|she|he|a patient)\b/,
+    vi: /\b(?:benh nhan nay|nguoi nay|mot benh nhan|nguy co cua (?:ba|ong|co|anh) ay)\b/,
+  };
+  const COHORT = {
+    en: /\b(?:hypothetical|cohort of \d|in \d+(?: \d+)* (?:patients|adults|people|participants))\b/,
+    vi: /\b(?:gia dinh|nhom \d+(?: \d+)* (?:nguoi|benh nhan))\b/,
+  };
+  const PERSONAL_RISK = {
+    en: /\b(?:(?:her|his|your|this patient s) (?:risk|incidence|event rate) (?:is|will be)|(?:risk|incidence|event rate) (?:in|for) this patient (?:is|will be))\b/,
+    vi: /\b(?:nguy co|ty le|ti le) (?:cua|o) benh nhan nay (?:la|se la)\b/,
+  };
+  const HYPOTHETICAL_COUNT = {
+    en: /\b(?:hypothetical|suppose|imagine|if)\b.*\bhow many\b/,
+    vi: /\b(?:gia dinh|gia su|neu)\b.*\bbao nhieu\b/,
+  };
+  const PROJECTION_LIMIT = {
+    en: /\b(?:(?:cannot|can t|(?:does|do|did|could) not|is unable to) (?:\w+ ){0,8}(?:predict|estimate|project|determine|tell|establish)|not (?:an? )?(?:individual|personal|patient specific) (?:risk|prediction|estimate))\b/,
+    vi: /\b(?:(?:khong the|khong du de|khong dung de) (?:\w+ ){0,8}(?:du doan|uoc tinh|ngoai suy|xac dinh)|khong phai (?:la )?(?:nguy co|du doan|uoc tinh) ca nhan)\b/,
+  };
+  function projectionClauses(value, lang) {
+    return value.split(/[!?;\r\n\u2028\u2029]|\.(?!\d)/).map(clause => claimText(clause)[lang]);
+  }
+
+  function projectsGroupResult(item) {
+    const correct = item.options[KEYS.indexOf(item.answer)];
+    return CLAIM_LANGUAGES.some(lang => {
+      const stemClauses = projectionClauses(item['stem_' + lang], lang);
+      const keyClauses = projectionClauses(correct[lang], lang);
+      const limit = clause => PROJECTION_LIMIT[lang].test(clause);
+      const stem = stemClauses.filter(c => !limit(c)).join(' ');
+      const key = keyClauses.filter(c => !limit(c)).join(' ');
+      if (stemClauses.some(limit) && !keyClauses.some(limit) &&
+          stemClauses.some(c => limit(c) && isProjection(c, lang))) return true;
+      const result = ENDPOINT_CONTEXT[lang].test(stem + ' ' + key) || EFFECT_CONTEXT[lang].test(stem + ' ' + key) ||
+        /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(stem + ' ' + key);
+      return result && (PERSONAL_RISK[lang].test(key) ||
+        COHORT[lang].test(stem) && (isProjection(stem, lang) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
+        isProjection(stem, lang) && PERSONAL[lang].test(stem) ||
+        FUTURE_EVENT[lang].test(stem) && PATIENT[lang].test(stem) ||
+        isProjection(key, lang) && (COHORT[lang].test(key) || PERSONAL[lang].test(key) || PATIENT[lang].test(stemClauses.join(' '))));
+    });
+  }
+
+  const UPPER_BOUND = /(?:\b(?:below|less than|under|dưới|nhỏ hơn|thấp hơn)\s+|<\s*)(\d+(?:[.,]\d+)?|one\b|một\b)/iu;
+  const RATIO_BEFORE_BOUND = /(?:\b(?:hazard ratio|risk ratio|relative risk|odds ratio|HR|RR|OR)|(?:tỉ|tỷ) số nguy cơ)(?:\s+nào)?\s*\(?\s*$/iu;
+  const BOUND_END = /^\s*\)?\s*(?:$|[?!.,;:]|(?:is|was|did|for|được|cho|là)(?![\p{L}\p{N}]))/iu;
+  const boundValue = value => Number(numbers(value)[0] ?? 1);
+  const RATE_DENOMINATOR = /(?:\bper|trên|\/)\s*\d+(?:[., \u00a0\u202f]\d{3})*\s*(?:person[\s\-–‑]*years?|người[\s\-–‑]*năm|PY)(?![\p{L}\p{N}])|\/\s*(?:1[., \u00a0\u202f]?000|100)(?![\p{L}\p{N}]|[.,]\d)/giu;
+  const optionFigures = value => answerNumbers(value.normalize('NFC').replace(RATE_DENOMINATOR, ' '));
+
+  function hasReportedDistractor(item) {
+    const answer = KEYS.indexOf(item.answer);
+    const evidence = citedExcerpts(item).map(quote => ({
+      figures: numbers(quote), ratios: effectFigures(quote, false),
+    }));
+    return CLAIM_LANGUAGES.some(lang => {
+      const key = item.options[answer][lang];
+      const keyFigures = optionFigures(key);
+      const keyRatios = effectFigures(key, false);
+      return evidence.some(({figures, ratios}) =>
+        (keyFigures.length === 1 && figures.includes(keyFigures[0]) || keyRatios.some(ratio => ratios.includes(ratio))) &&
+        item.options.some((option, index) => {
+          if (index === answer) return false;
+          const offered = optionFigures(option[lang]);
+          return offered.some(n => !keyFigures.includes(n)) && offered.every(n => figures.includes(n));
+        }));
+    });
+  }
 
   function unsupportedCaseEffects(item) {
     const excerpts = citedExcerpts(item);
@@ -294,7 +403,11 @@ const CaseQuiz = (() => {
     if (unsupportedDoses(item).length) return 'dose';
     if (item.type !== 'case') return '';
     if (unsupportedClaims(item).length) return 'claims';
-    return unsupportedCaseEffects(item).length ? 'effects' : '';
+    if (unsupportedCaseEffects(item).length) return 'effects';
+    if (projectsGroupResult(item)) return 'projection';
+    if (hasReportedDistractor(item)) return 'ambiguous';
+    if (unsupportedStemNumbers(item).length) return 'stem-numbers';
+    return hasSecondaryAnswer(item) ? 'citation-order' : '';
   }
 
   function unsupportedDoses(item) {
@@ -661,7 +774,7 @@ const CaseQuiz = (() => {
     return state;
   }
 
-  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
+  return {grounding, clean, rejectReason, courseItemReason, unsupportedNumbers, unsupportedStemNumbers, unsupportedDoses, unsupportedClaims, unsupportedCaseEffects, validItem, validateSet, validateCourse,
     question, subskill, startCourse, courseQuestion, courseTurn, AI_NOTE, LIMITS, TIERS, COURSE_VERSION, PRACTICE_PER_SKILL, hasMixedTypes,
     citedExcerpts, validateCaseSet, CASE_SET_VERSION, CASES_PER_SET, MAX_CASE_EXCERPTS};
 })();

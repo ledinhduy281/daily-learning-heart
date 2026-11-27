@@ -24,7 +24,7 @@ const options = [
 function course(round = 1) {
   const items = [];
   const add = (phase, skill, tier, format) => {
-    const label = `${round}.${items.length + 1}`;
+    const label = `${String(round).replace(/\d/g, n => String.fromCharCode(97 + Number(n)))}-${String.fromCharCode(97 + items.length)}`;
     const isCase = format === "apply" || format === "predict";
     const vignette = isCase ? {
       vi: "Một phụ nữ cao tuổi chưa mắc bệnh tim mạch hỏi về kết quả dùng atorvastatin. ",

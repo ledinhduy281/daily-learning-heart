@@ -24,6 +24,119 @@ const kase = {...theory, type: "case", answer: "A",
   explanation_vi: "STAREE ghi nhận ít biến cố tim mạch chính hơn với atorvastatin (hazard ratio 0.70).",
   explanation_en: "STAREE recorded fewer primary cardiovascular events with atorvastatin (hazard ratio 0.70)."};
 
+const stareeRegimen = lesson.quiz_source_texts[pmid].find(t => t.includes("40 mg once daily"));
+const stareeGround = {pmid, excerpts: [quote, stareeRegimen]};
+const {quote: _single, ...caseFields} = kase;
+const reportedEvents = {...caseFields, quotes: [quote, stareeRegimen], options: options(["297 and 412", "412 and 297", "297 and 4987", "4984 and 412"]),
+  stem_en: "A 72‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia was prescribed atorvastatin 40 mg daily. After a median of 5.9 years of follow‑up, how many patients experienced a primary cardiovascular event in the atorvastatin group compared with the placebo group?",
+  stem_vi: "Một bệnh nhân 72 tuổi, sống trong cộng đồng, không có tiền sử bệnh tim mạch, tiểu đường hay mất trí nhớ, được kê đơn atorvastatin 40 mg mỗi ngày. Sau 5,9 năm theo dõi, có bao nhiêu bệnh nhân đã xảy ra sự kiện tim mạch chính trong nhóm điều trị atorvastatin so với nhóm giả dược?",
+  explanation_en: "The trial recorded 297 in the atorvastatin group and 412 in the placebo group.",
+  explanation_vi: "Thử nghiệm ghi nhận 297 trong nhóm atorvastatin và 412 trong nhóm giả dược."};
+assert.equal(CaseQuiz.rejectReason(reportedEvents, stareeGround), "", "the valid live STAREE observed-event question still passes");
+assert.equal(CaseQuiz.rejectReason({...reportedEvents, quotes: [stareeRegimen, quote]}, stareeGround), "citation-order");
+const individual = {...reportedEvents, options: options(["10.9 events per 1000 person-years", "15.5 events per 1000 person-years", "12.0 events per 1000 person-years", "20.0 events per 1000 person-years"]),
+  stem_en: "A 75‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia has been offered atorvastatin 40 mg daily. Based on the STAREE trial data, what is the predicted incidence of primary cardiovascular events in this patient over the next 6 years?",
+  stem_vi: "Một bệnh nhân 75 tuổi, sống độc lập trong cộng đồng, không có tiền sử bệnh tim mạch, tiểu đường hoặc bệnh mất trí nhớ, được đề nghị bắt đầu thuốc atorvastatin 40 mg/ngày. Bạn dựa vào dữ liệu nghiên cứu STAREE, bạn sẽ dự đoán tỷ lệ sự kiện tim mạch chính trong nhóm điều trị trong 6 năm tới?",
+  explanation_en: "The incidence in the atorvastatin group was 10.9 events per 1000 person-years.",
+  explanation_vi: "Tỷ lệ trong nhóm atorvastatin là 10.9 trên 1000 người-năm."};
+assert.equal(CaseQuiz.rejectReason(individual, stareeGround), "projection");
+const reportedRate = {...individual,
+  stem_en: "What incidence rate of primary cardiovascular events did STAREE report in the atorvastatin group?",
+  stem_vi: "STAREE báo cáo tỷ lệ biến cố tim mạch chính nào trong nhóm dùng atorvastatin?",
+  options: options(["10.9", "12.0", "13.0", "20.0"]),
+};
+assert.equal(CaseQuiz.rejectReason(reportedRate, stareeGround), "", "unreported rate distractors pass");
+for (const [lang, key, distractor] of [
+  ["en", "10.9/1000 PY", "15.5/1000 PY"],
+  ["en", "10.9 events per 1000 person-years", "15.5 events per 100 person-years"],
+  ["en", "10.9/1000", "15.5/1000"],
+  ["vi", "10,9 trên 1000 người-năm", "15,5 trên 1000 người-năm"],
+]) {
+  const [correct, alternative, ...rest] = reportedRate.options;
+  assert.equal(CaseQuiz.rejectReason({...reportedRate,
+    options: [{...correct, [lang]: key}, {...alternative, [lang]: distractor}, ...rest],
+  }, stareeGround), "ambiguous", "a rate denominator must not hide the other arm's reported estimate in " + lang);
+}
+assert.equal(CaseQuiz.rejectReason({...individual, stem_en: individual.stem_en.replace("6 years", "5.9 years"),
+  stem_vi: reportedEvents.stem_vi}, stareeGround), "projection", "a grounded duration does not support an individual prediction");
+assert.equal(CaseQuiz.rejectReason({...individual, stem_vi: reportedEvents.stem_vi,
+  stem_en: "A 75-year-old community-dwelling patient will experience a primary cardiovascular event at what rate if given atorvastatin?"
+}, stareeGround), "projection", "future events in an individual are not trial results");
+assert.equal(CaseQuiz.rejectReason({...individual, stem_en: reportedEvents.stem_en, stem_vi: reportedEvents.stem_vi,
+  options: [{...individual.options[0], en: "This patient's incidence is 10.9 events per 1000 person-years."}, ...individual.options.slice(1)]
+}, stareeGround), "projection", "a keyed option cannot personalize the group rate");
+const critique = {...individual,
+  stem_en: "A 75-year-old woman asks about atorvastatin. Why can't this trial predict her personal risk of a primary cardiovascular event?",
+  stem_vi: "Một phụ nữ 75 tuổi hỏi về atorvastatin. Vì sao không thể dự đoán nguy cơ biến cố tim mạch chính của bệnh nhân này từ thử nghiệm?",
+  options: [{en: "The trial reports a group incidence rate, not an individual prediction.",
+    vi: "Thử nghiệm báo cáo tỷ lệ của nhóm, không phải là dự đoán cá nhân."}, ...individual.options.slice(1)],
+};
+assert.equal(CaseQuiz.rejectReason(critique, stareeGround), "", "a critique can teach the limit of group estimates");
+assert.equal(CaseQuiz.rejectReason({...critique,
+  stem_en: "A 75-year-old woman asks about atorvastatin. Why is it that this trial cannot, on its own, predict her personal risk?",
+  options: [{...critique.options[0], en: "The trial cannot, on its own, predict her personal risk."}, ...critique.options.slice(1)],
+}, stareeGround), "", "commas around an aside do not break a limitation");
+assert.equal(CaseQuiz.rejectReason({...critique, options: individual.options}, stareeGround), "projection",
+  "a critique stem does not excuse a keyed option that fails to state the limitation");
+assert.equal(CaseQuiz.rejectReason({...critique, options: [{...critique.options[0],
+  en: "The trial cannot predict her personal risk; but this patient's incidence is 10.9 events per 1000 person-years."
+}, ...critique.options.slice(1)]}, stareeGround), "projection", "a limitation does not excuse a later personalized estimate");
+for (const [lang, key] of [
+  ["en", "The trial cannot predict her personal risk. This patient's incidence is 10.9 events per 1000 person-years."],
+  ["vi", "Thử nghiệm không thể dự đoán nguy cơ cá nhân. Tỷ lệ ở bệnh nhân này là 10,9 trên 1000 người-năm."],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...critique,
+    options: [{...critique.options[0], [lang]: key}, ...critique.options.slice(1)]
+  }, stareeGround), "projection", "a separate limitation sentence does not exempt a prediction in " + lang);
+}
+const cohort = {...reportedEvents, options: options(["412 participants", "297 participants", "500 participants", "600 participants"]),
+  stem_en: "A cohort of 5000 adults aged 70 or older, with no prior cardiovascular disease, were randomized to receive atorvastatin 40 mg daily or placebo. How many participants would you expect to experience a primary cardiovascular event in the placebo group after 5.9 years?",
+  stem_vi: "Một nhóm 5000 người 70 tuổi trở lên, không có bệnh tim mạch trước đây, được chia ngẫu nhiên để nhận atorvastatin 40 mg/ngày hoặc giả dược. Bạn sẽ dự đoán số lượng bệnh nhân có sự kiện tim mạch chính trong nhóm giả dược sau 5.9 năm?",
+  explanation_en: "The trial reported 412 participants experienced primary cardiovascular events in the placebo group.",
+  explanation_vi: "Trong nhóm giả dược có 412 người tham gia xảy ra sự kiện tim mạch chính."};
+assert.equal(CaseQuiz.rejectReason(cohort, stareeGround), "projection");
+assert.deepEqual([...new Set(CaseQuiz.unsupportedStemNumbers(cohort))], ["5000"]);
+assert.deepEqual([...new Set(CaseQuiz.unsupportedStemNumbers(individual))], ["6"]);
+assert.equal(CaseQuiz.rejectReason({...reportedEvents, stem_en: reportedEvents.stem_en.replace("5.9 years", "6 years")}, stareeGround), "stem-numbers");
+const bound = {...kase, options: options(["0.70", "0.61", "0.82", "1.00"]),
+  stem_en: "Compare the hazard ratio between the atorvastatin and placebo groups for primary cardiovascular events. Which value below 1 indicates a benefit of atorvastatin?",
+  stem_vi: "So sánh tỷ lệ rủi ro (hazard ratio) giữa nhóm atorvastatin và giả dược cho sự kiện tim mạch chính. Giá trị nào dưới 1 cho thấy lợi thế của atorvastatin?"};
+assert.equal(CaseQuiz.rejectReason(bound, stareeGround), "ambiguous");
+const reportedHR = {...bound, stem_en: theory.stem_en, stem_vi: theory.stem_vi};
+assert.equal(CaseQuiz.rejectReason(reportedHR, stareeGround), "ambiguous", "a reported HR question cannot offer its CI bounds");
+const distinctOptions = options(["0.70", "0.50", "0.94", "1.00"]);
+assert.equal(CaseQuiz.rejectReason({...reportedHR, options: distinctOptions}, stareeGround), "", "unreported alternatives pass");
+assert.equal(CaseQuiz.rejectReason({...reportedHR, options: options(["0.70", "412", "0.94", "1.00"])}, stareeGround), "ambiguous",
+  "other figures from the answer-bearing excerpt are not distractors");
+assert.equal(CaseQuiz.rejectReason({...reportedHR,
+  options: options(["HR 0.70", "Lower 95% CI bound: 0.61", "HR 0.94", "HR 1.00"])}, stareeGround), "ambiguous",
+  "labeling a cited confidence bound does not make it a valid distractor");
+const namedEstimate = {...bound, options: distinctOptions,
+  stem_en: "For primary cardiovascular events, which reported hazard ratio below 1 is the point estimate for atorvastatin versus placebo?",
+  stem_vi: "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin so với giả dược?"};
+assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "a unitless null comparator is not a study figure");
+assert.equal(CaseQuiz.rejectReason({...namedEstimate,
+  stem_en: namedEstimate.stem_en.replace("below 1", "(<1)")}, stareeGround), "", "a symbolic null comparator is not a study figure");
+for (const [lang, stem] of [
+  ["en", "Which reported hazard ratio under 1 year of follow-up applies to primary cardiovascular events with atorvastatin?"],
+  ["en", "Which reported hazard ratio below 1% applies to primary cardiovascular events with atorvastatin?"],
+  ["vi", "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin trong dưới 1 năm?"],
+]) {
+  const duration = {...namedEstimate, ["stem_" + lang]: stem};
+  assert.deepEqual(CaseQuiz.unsupportedStemNumbers(duration), ["1"], "a unit-bearing threshold needs grounding");
+  assert.notEqual(CaseQuiz.rejectReason(duration, stareeGround), "");
+}
+assert.equal(CaseQuiz.rejectReason({...namedEstimate, options: bound.options, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
+  "explicit estimate wording does not permit confidence bound distractors in either language");
+for (const [lang, stem] of [
+  ["en", "When reviewing the reported hazard ratio for primary cardiovascular events, which value is below 1?"],
+  ["vi", "Khi xem hazard ratio được báo cáo cho biến cố tim mạch chính, giá trị nào dưới 1?"],
+]) {
+  assert.equal(CaseQuiz.rejectReason({...namedEstimate, options: bound.options, ["stem_" + lang]: stem}, stareeGround), "ambiguous",
+    "mentioning the reported estimate does not disambiguate a different question in " + lang);
+}
+console.log("Live STAREE regressions: individual and cohort projections, unsupported stem figures, and ambiguous CI bounds rejected: OK");
+
 assert.equal(CaseQuiz.validateSet(lesson, [theory, kase]).length, 2);
 assert.deepEqual(CaseQuiz.validateSet(lesson, [theory, theory]), [], "a set needs both theory and case questions");
 for (const broken of [
@@ -108,8 +221,18 @@ const liveCase = {
 const eventGround = {pmid: liveCase.pmid, title: "Cardiovascular mortality", excerpts: [eventQuote, "Other excerpt: mortality and stroke."]};
 assert.equal(CaseQuiz.rejectReason(liveCase, eventGround), "claims", "the exact live case must not conflate events and mortality");
 const eventOption = {vi: "Giảm biến cố tim mạch 15% cho mỗi 10 mmHg giảm SBP", en: "Reduces cardiovascular events by 15% per 10 mmHg SBP reduction"};
-const grounded = {...liveCase, options: [eventOption, ...liveCase.options.slice(1)]};
+const grounded = {...liveCase, options: [eventOption, ...liveCase.options.slice(1)],
+  stem_en: liveCase.stem_en.replace("to <130 mmHg", "").replace(" at 140 mmHg", "").replace("provide for this patient", "show in the study"),
+  stem_vi: liveCase.stem_vi.replace(" xuống mức <130 mmHg", "").replace(" 140 mmHg", "").replace("bệnh nhân này sẽ có lợi ích gì", "nghiên cứu ghi nhận lợi ích gì")};
 assert.equal(CaseQuiz.rejectReason(grounded, eventGround), "", "translated equivalents and ungrounded distractors are allowed");
+const conditionalBP = {
+  en: "A 62‑year‑old patient with chronic kidney disease has a systolic blood pressure of 160 mmHg and is being considered for intensive blood pressure lowering. The physician wants to know the expected reduction in cardiovascular event risk if systolic BP is lowered an additional 10 mmHg using intensive therapy. According to the study, the patient would experience:",
+  vi: "Một bệnh nhân 62 tuổi có bệnh thận mạn và huyết áp tâm thu 160 mmHg đang được cân nhắc điều trị hạ huyết áp. Bác sĩ muốn biết mức giảm rủi ro tai biến tim mạch dự kiến nếu hạ huyết áp tâm thu thêm 10 mmHg theo phương pháp hạ huyết áp cường độ cao. Theo kết quả nghiên cứu, bệnh nhân này sẽ có:",
+};
+for (const lang of ["en", "vi"]) {
+  assert.equal(CaseQuiz.rejectReason({...grounded, ["stem_" + lang]: conditionalBP[lang]}, eventGround), "projection",
+    "the November 26 case projects a group result onto an individual in " + lang);
+}
 const ckdComparison = {...grounded,
   options: [{vi: "Không, lợi ích tương tự bất kể CKD", en: "No, benefit is similar regardless of CKD status"}, ...grounded.options.slice(1)],
   explanation_en: "Excerpt 2 notes a 15% reduction in cardiovascular events with intensive BP lowering and reports no heterogeneity by CKD status, indicating the benefit is similar for patients with and without CKD. Hence the correct answer is that there is no difference.",
@@ -155,7 +278,7 @@ for (const [lang, value, claim] of [
 const viOnly = {...grounded, options: [{...eventOption, vi: liveCase.options[0].vi}, ...grounded.options.slice(1)]};
 assert.equal(CaseQuiz.rejectReason(viOnly, eventGround), "claims", "a wrong endpoint in either language invalidates the option");
 const eventLesson = {quiz_mode: "source_excerpt", primary_source: {pmid: liveCase.pmid}, quiz_source_texts: {[liveCase.pmid]: eventGround.excerpts}};
-const otherItems = [2, 3].map(i => ({...grounded, stem_vi: grounded.stem_vi + ` (Tình huống ${i})`,
+const otherItems = ["ii", "iii"].map(i => ({...grounded, stem_vi: grounded.stem_vi + ` (Tình huống ${i})`,
   stem_en: grounded.stem_en + ` (Vignette ${i})`}));
 const eventSet = {version: CaseQuiz.CASE_SET_VERSION, set_id: "2026-11-26-grounding-regression"};
 assert.ok(CaseQuiz.validateCaseSet(eventLesson, {...eventSet, items: [grounded, ...otherItems]}));
@@ -213,8 +336,8 @@ assert.equal(CaseQuiz.rejectReason({...scopedCase,
   stem_vi: scopedCase.stem_vi.replace(" không có bệnh thận mạn", ""),
 }, scopedGround), "effects", "a CKD-only result requires the vignette to establish CKD");
 const applicable = {...scopedCase,
-  stem_en: scopedCase.stem_en.replace("without chronic kidney disease", "with chronic kidney disease"),
-  stem_vi: scopedCase.stem_vi.replace("không có bệnh thận mạn", "có bệnh thận mạn"),
+  stem_en: scopedCase.stem_en.replace("without chronic kidney disease", "with chronic kidney disease").replace(" (12 mmHg SBP reduction)", ""),
+  stem_vi: scopedCase.stem_vi.replace("không có bệnh thận mạn", "có bệnh thận mạn").replace(" (giảm SBP 12 mmHg)", ""),
 };
 assert.equal(CaseQuiz.rejectReason(applicable, scopedGround), "", "the endpoint, subgroup, and relative effect are all cited");
 for (const [field, explanation] of [
@@ -308,8 +431,8 @@ const tutor = vm.runInNewContext(escapeHtmlCode + "\n" + tutorCode + ";SocraticT
 });
 const publishedLesson = {...lesson, id: "daily-fixture"};
 const published = Array.from({length: 3}, (_, i) => ({version: CaseQuiz.CASE_SET_VERSION, set_id: `set-${i}`,
-  items: Array.from({length: 3}, (_, j) => ({...kase, stem_en: kase.stem_en + ` (Case ${i}-${j})`,
-    stem_vi: kase.stem_vi + ` (Ca ${i}-${j})`}))}));
+  items: ["i", "ii", "iii"].map(j => ({...kase, stem_en: kase.stem_en + ` (Case ${["i", "ii", "iii"][i]}-${j})`,
+    stem_vi: kase.stem_vi + ` (Ca ${["i", "ii", "iii"][i]}-${j})`}))}));
 const storage = new Map();
 const publishedTutor = vm.runInNewContext(tutorCode + ";SocraticTutor", {
   CaseQuiz, ClinicalQuiz: quiz,
