@@ -145,9 +145,18 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
         }
         if (n === 2) q.explanation_en = "The study reported a 30% reduction in primary cardiovascular events.";
       }
-      if (faults[round] === "count-completion" && n === 1) {
+      if (["count-completion", "effects-completion"].includes(faults[round]) && n === 1) {
         q.explanation_en = "The trial included 9971 participants and reported fewer primary cardiovascular events with atorvastatin.";
-        Object.assign(submitted[n - 1], {explanation_en: q.explanation_en, excerpt: [2, 3]});
+        if (faults[round] === "effects-completion") {
+          q.stem_en += " The trial included 9971 participants.";
+          assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "effects");
+        }
+        Object.assign(submitted[n - 1], {stem_en: q.stem_en, explanation_en: q.explanation_en, excerpt: [2, 3]});
+      }
+      if (faults[round] === "claims-completion" && n === 1) {
+        q.explanation_en += " The finding was in community-dwelling adults.";
+        assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "claims");
+        Object.assign(submitted[n - 1], {explanation_en: q.explanation_en, excerpt: [2, 1]});
       }
       return q;
     });
@@ -346,6 +355,13 @@ const quiet = () => {};
   assert.equal(await main({root, env: rerunEnv, date, fetchImpl: countMock.fetchImpl, log: quiet}), 3);
   assert.deepEqual(countMock.calls[1].slots, [1, 2, 3], "a missing enrollment count doesn't require a repair");
   assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, excerpts[1]]);
+  for (const [fault, background] of [["effects-completion", excerpts[1]], ["claims-completion", excerpts[0]]]) {
+    const mock = fakeGroq([fault], 70);
+    assert.equal(await main({root, env: rerunEnv, date, fetchImpl: mock.fetchImpl, log: quiet}), 3);
+    assert.deepEqual(mock.calls[1].slots, [1, 2, 3], "a grounding failure resolved by the second citation doesn't require a repair");
+    assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, background]);
+  }
+  console.log("Citation completion: qualifying population and enrollment count also complete after claims or effects failures: OK");
   console.log("Citation completion: STAREE population and regimen supported; partial matches ignored; absent 30% and true ambiguity rejected: OK");
   console.log("Case-only generation: three cases per set, selective repairs, independent re-solve, no-key theory fallback: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));

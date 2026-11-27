@@ -219,9 +219,6 @@ function groundFor(candidate, ground) {
 function completeCitation(candidate, ground) {
   const {quote, excerpt, ...fields} = candidate;
   if (!quote) return null;
-  const missingNumbers = CaseQuiz.unsupportedNumbers(candidate, groundFor(candidate, ground));
-  const missingDoses = CaseQuiz.unsupportedDoses(candidate);
-  if (!missingNumbers.length && !missingDoses.length) return null;
   let completion = null;
   for (const [index, background] of ground.excerpts.entries()) {
     if (background === quote) continue;
@@ -307,7 +304,7 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
       let candidate = candidateFor(item, excerpts);
       let reason = !candidate ? 'quote' : item.type !== 'case' ? 'shape' :
         CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
-      if (reason === 'numbers' || reason === 'dose') {
+      if (['numbers', 'dose', 'claims', 'effects'].includes(reason)) {
         const completed = completeCitation(candidate, ground);
         if (completed) { candidate = completed; reason = ''; }
       }
