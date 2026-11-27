@@ -638,6 +638,208 @@ window.EBM_QUIZ_SETS = {
      }
     ]
    }
+  ],
+  "ebm-2026-11-27-p2-focused": [
+   {
+    "version": 3,
+    "set_id": "2026-11-27-cases-4fa11873428b",
+    "model": "openai/gpt-oss-20b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo."
+      ],
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 72 tuổi, sống trong cộng đồng, không có tiền sử bệnh tim mạch, tiểu đường hay mất trí nhớ, được kê đơn atorvastatin 40 mg mỗi ngày. Sau 5,9 năm theo dõi, có bao nhiêu bệnh nhân đã xảy ra sự kiện tim mạch chính trong nhóm điều trị atorvastatin so với nhóm giả dược?",
+      "stem_en": "A 72‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia was prescribed atorvastatin 40 mg daily. After a median of 5.9 years of follow‑up, how many patients experienced a primary cardiovascular event in the atorvastatin group compared with the placebo group?",
+      "explanation_vi": "Theo dữ liệu (excerpt 3) trong STAREE, 297 bệnh nhân trong nhóm atorvastatin và 412 bệnh nhân trong nhóm giả dược đã xảy ra sự kiện tim mạch chính trong thời gian theo dõi.",
+      "explanation_en": "According to excerpt 3 from the STAREE trial, 297 patients in the atorvastatin group and 412 patients in the placebo group experienced a primary cardiovascular event during the follow‑up period.",
+      "options": [
+       {
+        "vi": "297 trong nhóm atorvastatin và 412 trong nhóm giả dược",
+        "en": "297 in the atorvastatin group and 412 in the placebo group"
+       },
+       {
+        "vi": "412 trong nhóm atorvastatin và 297 trong nhóm giả dược",
+        "en": "412 in the atorvastatin group and 297 in the placebo group"
+       },
+       {
+        "vi": "297 trong nhóm atorvastatin và 4987 trong nhóm giả dược",
+        "en": "297 in the atorvastatin group and 4987 in the placebo group"
+       },
+       {
+        "vi": "4984 trong nhóm atorvastatin và 412 trong nhóm giả dược",
+        "en": "4984 in the atorvastatin group and 412 in the placebo group"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quote": "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+      "answer": "A",
+      "stem_vi": "Trong nhóm điều trị atorvastatin, tỷ lệ sự kiện tim mạch chính là bao nhiêu mỗi 1000 người‑năm?",
+      "stem_en": "What is the incidence rate of primary cardiovascular events per 1000 person‑years in the atorvastatin group?",
+      "explanation_vi": "Excerpt 3 ghi rõ tỷ lệ 10.9 sự kiện mỗi 1000 người‑năm trong nhóm atorvastatin.",
+      "explanation_en": "Excerpt 3 states an incidence of 10.9 events per 1000 person‑years in the atorvastatin group.",
+      "options": [
+       {
+        "vi": "10.9",
+        "en": "10.9"
+       },
+       {
+        "vi": "15.5",
+        "en": "15.5"
+       },
+       {
+        "vi": "0.70",
+        "en": "0.70"
+       },
+       {
+        "vi": "0.61",
+        "en": "0.61"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quote": "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+      "answer": "A",
+      "stem_vi": "So sánh tỷ lệ rủi ro (hazard ratio) giữa nhóm atorvastatin và giả dược cho sự kiện tim mạch chính. Giá trị nào dưới 1 cho thấy lợi thế của atorvastatin?",
+      "stem_en": "Compare the hazard ratio between the atorvastatin and placebo groups for primary cardiovascular events. Which value below 1 indicates a benefit of atorvastatin?",
+      "explanation_vi": "Excerpt 3 cho biết hazard ratio là 0.70, thấp hơn 1, cho thấy lợi thế của atorvastatin.",
+      "explanation_en": "Excerpt 3 reports a hazard ratio of 0.70, which is less than 1 and indicates a benefit of atorvastatin.",
+      "options": [
+       {
+        "vi": "0.70",
+        "en": "0.70"
+       },
+       {
+        "vi": "0.61",
+        "en": "0.61"
+       },
+       {
+        "vi": "0.82",
+        "en": "0.82"
+       },
+       {
+        "vi": "1.00",
+        "en": "1.00"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "version": 3,
+    "set_id": "2026-11-27-cases-7ff89a370feb",
+    "model": "openai/gpt-oss-20b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo.",
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001)."
+      ],
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 75 tuổi, sống độc lập trong cộng đồng, không có tiền sử bệnh tim mạch, tiểu đường hoặc bệnh mất trí nhớ, được đề nghị bắt đầu thuốc atorvastatin 40 mg/ngày. Bạn dựa vào dữ liệu nghiên cứu STAREE, bạn sẽ dự đoán tỷ lệ sự kiện tim mạch chính trong nhóm điều trị trong 6 năm tới?",
+      "stem_en": "A 75‑year‑old community‑dwelling patient with no history of cardiovascular disease, diabetes, or dementia has been offered atorvastatin 40 mg daily. Based on the STAREE trial data, what is the predicted incidence of primary cardiovascular events in this patient over the next 6 years?",
+      "explanation_vi": "Theo dữ liệu [3], tỷ lệ sự kiện tim mạch chính trong nhóm atorvastatin là 10.9 events per 1000 person‑years.",
+      "explanation_en": "According to excerpt [3], the incidence of primary cardiovascular events in the atorvastatin group was 10.9 events per 1000 person‑years.",
+      "options": [
+       {
+        "vi": "10.9 events per 1000 person‑years",
+        "en": "10.9 events per 1000 person‑years"
+       },
+       {
+        "vi": "15.5 events per 1000 person‑years",
+        "en": "15.5 events per 1000 person‑years"
+       },
+       {
+        "vi": "12.0 events per 1000 person‑years",
+        "en": "12.0 events per 1000 person‑years"
+       },
+       {
+        "vi": "20.0 events per 1000 person‑years",
+        "en": "20.0 events per 1000 person‑years"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo.",
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001)."
+      ],
+      "answer": "A",
+      "stem_vi": "Một nhóm 5000 người 70 tuổi trở lên, không có bệnh tim mạch trước đây, được chia ngẫu nhiên để nhận atorvastatin 40 mg/ngày hoặc giả dược. Bạn sẽ dự đoán số lượng bệnh nhân có sự kiện tim mạch chính trong nhóm giả dược sau 5.9 năm?",
+      "stem_en": "A cohort of 5000 adults aged 70 or older, with no prior cardiovascular disease, were randomized to receive atorvastatin 40 mg daily or placebo. How many participants would you expect to experience a primary cardiovascular event in the placebo group after 5.9 years?",
+      "explanation_vi": "Theo dữ liệu [3], trong nhóm giả dược có 412 bệnh nhân xảy ra sự kiện tim mạch chính.",
+      "explanation_en": "Excerpt [3] reports 412 participants with primary cardiovascular events in the placebo group.",
+      "options": [
+       {
+        "vi": "412 participants",
+        "en": "412 participants"
+       },
+       {
+        "vi": "297 participants",
+        "en": "297 participants"
+       },
+       {
+        "vi": "500 participants",
+        "en": "500 participants"
+       },
+       {
+        "vi": "600 participants",
+        "en": "600 participants"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42670961",
+      "quotes": [
+       "After a median of 5.9 years, a primary cardiovascular event had occurred in 297 participants (10.9 events per 1000 person-years) in the atorvastatin group and in 412 participants (15.5 events per 1000 person-years) in the placebo group (hazard ratio, 0.70; 95% confidence interval [CI], 0.61 to 0.82; P<0.001).",
+       "Community-dwelling adults at least 70 years of age with no history of cardiovascular disease, diabetes, or dementia were randomly assigned in a 1:1 ratio to receive atorvastatin at a dose of 40 mg once daily or identical placebo."
+      ],
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 78 tuổi, không có tiền sử tim mạch, được điều trị atorvastatin 40 mg/ngày. Bạn tính được tỷ lệ rủi ro (hazard ratio) so với nhóm giả dược là bao nhiêu?",
+      "stem_en": "A 78‑year‑old patient with no prior cardiovascular disease is treated with atorvastatin 40 mg daily. What is the hazard ratio for primary cardiovascular events compared with placebo?",
+      "explanation_vi": "Theo dữ liệu [3], hazard ratio giữa nhóm atorvastatin và giả dược là 0.70.",
+      "explanation_en": "Excerpt [3] provides a hazard ratio of 0.70 for atorvastatin versus placebo.",
+      "options": [
+       {
+        "vi": "0.70",
+        "en": "0.70"
+       },
+       {
+        "vi": "1.00",
+        "en": "1.00"
+       },
+       {
+        "vi": "1.30",
+        "en": "1.30"
+       },
+       {
+        "vi": "0.50",
+        "en": "0.50"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   }
   ]
  }
 };
