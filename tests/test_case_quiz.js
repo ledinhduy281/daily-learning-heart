@@ -44,6 +44,18 @@ assert.equal(CaseQuiz.rejectReason({...rateWithAnswer, stem_en: kase.stem_en + "
   stem_vi: kase.stem_vi + " Bà được truyền amiodarone 1 mg/phút."}, rateGround), "", "a translated rate unit is the same rate");
 assert.equal(CaseQuiz.rejectReason({...rateWithAnswer, stem_en: kase.stem_en + " She received a 1 mg bolus of amiodarone."}, rateGround),
   "dose", "a bolus is not the quoted infusion rate");
+const regimen = lesson.quiz_source_texts[pmid].find(t => t.includes("40 mg once daily"));
+const dailyDose = {...kase, quote: regimen, explanation_en: "The trial used the reported regimen.",
+  explanation_vi: "Nghiên cứu sử dụng liều được báo cáo.", options: options(["The reported trial regimen", "An alternative regimen", "No regimen", "Unknown regimen"]),
+  stem_vi: kase.stem_vi + " Bà hỏi về atorvastatin 40\u202fmg/ngày."};
+for (const dose of ["40 mg once daily", "40 mg daily", "40 mg per day", "40 mg"]) {
+  assert.equal(CaseQuiz.rejectReason({...dailyDose, stem_en: kase.stem_en + " She asks about atorvastatin " + dose + "."},
+    CaseQuiz.grounding(lesson)), "", dose);
+}
+for (const dose of ["80 mg daily", "40 mg/kg/day", "40 mg twice daily", "40 mg/min"]) {
+  assert.equal(CaseQuiz.rejectReason({...dailyDose, stem_en: kase.stem_en + " She asks about atorvastatin " + dose + "."},
+    CaseQuiz.grounding(lesson)), "dose", dose);
+}
 const stagesQuote = quote + " Heart failure stages B and C were included.";
 assert.equal(CaseQuiz.rejectReason({...kase, quote: stagesQuote, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},
   {...CaseQuiz.grounding(lesson), excerpts: [stagesQuote]}), "", "grounded clinical stage letters are not option references");

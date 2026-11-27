@@ -13,7 +13,8 @@ const CaseQuiz = (() => {
     .replace(/\b(\d{1,3})(?:[ \u00a0\u202f]\d{3})+(?!\d)/g, m => m.replace(/\s/g, ''))
     .match(/\d+(?:[.,]\d+)*/g) || []).map(n => n.replace(/,/g, '.')).map(n =>
     /^[1-9]\d{0,2}(?:\.\d{3})+$/.test(n) ? n.replace(/\./g, '') : n.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, ''));
-  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?:\s*\/\s*(?:kg|m2|m²|min|phút|h|hr|giờ|day|ngày|d)(?![\p{L}\p{N}]))*/giu;
+  const DOSE = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|g|ml|mmol|iu|ui|units?|đơn vị)(?![\p{L}\p{N}])(?:\s*\/\s*(?:kg|m2|m²|min|phút|h|hr|giờ|day|ngày|d)(?![\p{L}\p{N}]))*(?:\s+(?:(?:once|twice)\s+daily|\d+\s+times?\s+(?:daily|per\s+day)|daily|per\s+day)(?![\p{L}\p{N}]))?/giu;
+  const EN_DAILY = /\s+(?:once\s+daily|daily|per\s+day)$/i;
   // Lab concentrations and eGFR in a vignette are not doses (mmol/L, mg/dL, mL/min); rates such as mg/min still are.
   const LAB = /\d+(?:[.,]\d+)?\s?(?:(?:mg|g|mmol|µmol|μmol|mcg|µg|μg|ng|pg)\s*\/\s*d?l|ml\s*\/\s*min(?:\s*\/\s*1[.,]73\s*m(?:2|²))?)(?![\p{L}])/giu;
   // The app shuffles options, so explanations must not name them by letter.
@@ -21,7 +22,7 @@ const CaseQuiz = (() => {
     /(?:^|[^\p{L}\p{N}])[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])*\s+(?:(?:is|are|là)\s+)?(?:correct|incorrect|wrong|right|đúng|sai)(?![\p{L}])/u];
   const UNIT_ALIASES = {'phút': 'min', 'giờ': 'h', hr: 'h', 'ngày': 'day', d: 'day', 'm²': 'm2', 'μg': 'mcg', 'µg': 'mcg', ui: 'iu',
     unit: 'units', 'đơn vị': 'units'};
-  const doseKey = d => squash(d).toLowerCase().replace(/,/g, '.').replace(/\s*\/\s*/g, '/').replace(/(\d)\s+/, '$1')
+  const doseKey = d => squash(d).toLowerCase().replace(EN_DAILY, '/day').replace(/,/g, '.').replace(/\s*\/\s*/g, '/').replace(/(\d)\s+/, '$1')
     .replace(/[\p{L}²]+(?: vị)?/gu, u => UNIT_ALIASES[u] || u);
   // "A and C give…" names options; "stages B and C" or "class A or B" names a clinical grade.
   const LETTER_LIST = /(?:^|[^\p{L}\p{N}])((?:[Ss]tages?|[Cc]lass(?:es)?|[Tt]ypes?|[Gg]rades?|[Gg]iai đoạn|[Nn]hóm|[Pp]hân độ|[Ll]oại|[Mm]ức)\s+)?[A-D](?:\s*(?:,|and|và|or|hoặc)\s*[A-D])+(?![\p{L}\p{N}])/gu;
@@ -279,7 +280,7 @@ const CaseQuiz = (() => {
   function unsupportedDoses(item) {
     const everything = [item.stem_vi, item.stem_en, item.explanation_vi, item.explanation_en,
       ...item.options.flatMap(o => [o.vi, o.en])].join('\n');
-    const quoted = new Set(doses(squash(item.quote)).map(doseKey));
+    const quoted = new Set(doses(squash(item.quote)).flatMap(d => [doseKey(d), doseKey(d.replace(EN_DAILY, ''))]));
     return doses(everything).filter(d => !quoted.has(doseKey(d)));
   }
 
