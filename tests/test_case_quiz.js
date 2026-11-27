@@ -86,6 +86,17 @@ const namedEstimate = {...bound,
   stem_en: "For primary cardiovascular events, which reported hazard ratio below 1 is the point estimate for atorvastatin versus placebo?",
   stem_vi: "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin so với giả dược?"};
 assert.equal(CaseQuiz.rejectReason(namedEstimate, stareeGround), "", "the reported value is distinct from its confidence limits");
+assert.equal(CaseQuiz.rejectReason({...namedEstimate,
+  stem_en: namedEstimate.stem_en.replace("below 1", "(<1)")}, stareeGround), "", "a symbolic null comparator is not a study figure");
+for (const [lang, stem] of [
+  ["en", "Which reported hazard ratio under 1 year of follow-up applies to primary cardiovascular events with atorvastatin?"],
+  ["en", "Which reported hazard ratio below 1% applies to primary cardiovascular events with atorvastatin?"],
+  ["vi", "Đối với biến cố tim mạch chính, hazard ratio nào dưới 1 được báo cáo cho atorvastatin trong dưới 1 năm?"],
+]) {
+  const duration = {...namedEstimate, ["stem_" + lang]: stem};
+  assert.deepEqual(CaseQuiz.unsupportedStemNumbers(duration), ["1"], "a unit-bearing threshold needs grounding");
+  assert.notEqual(CaseQuiz.rejectReason(duration, stareeGround), "");
+}
 assert.equal(CaseQuiz.rejectReason({...namedEstimate, stem_vi: bound.stem_vi}, stareeGround), "ambiguous",
   "each language must distinguish the reported estimate from its confidence limits");
 for (const [lang, stem] of [

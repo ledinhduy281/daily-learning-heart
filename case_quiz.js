@@ -225,8 +225,11 @@ const CaseQuiz = (() => {
         !RESULT_STATEMENT.test(clause) && !EFFECT_CONTEXT[lang].test(worded);
       const checked = vignette ? withoutVignetteBaseline(clause, lang)
         .replace(VIGNETTE_AGE, ' ').replace(VIGNETTE_STAGE, ' ').replace(VIGNETTE_BP, ' ').replace(LAB, ' ') : clause;
-      const withoutNullBound = namesEstimate(clause, lang) && namesRatio(clause, lang)
-        ? checked.replace(UPPER_BOUND, (bound, value) => boundValue(value) === 1 ? ' ' : bound) : checked;
+      const withoutNullBound = namesEstimate(clause, lang) ? checked.replace(UPPER_BOUND, (bound, value, offset) => {
+        const before = checked.slice(0, offset);
+        const after = checked.slice(offset + bound.length);
+        return boundValue(value) === 1 && RATIO_BEFORE_BOUND.test(before) && BOUND_END.test(after) ? ' ' : bound;
+      }) : checked;
       return answerNumbers(withoutNullBound.replace(DOSE, ' ')).filter(n => !cited.has(n));
     }));
   }
@@ -288,8 +291,8 @@ const CaseQuiz = (() => {
   }
 
   const UPPER_BOUND = /(?:\b(?:below|less than|under|dưới|nhỏ hơn|thấp hơn)\s+|<\s*)(\d+(?:[.,]\d+)?|one\b|một\b)/iu;
-  const namesRatio = (clause, lang) => /\b(?:hazard ratio|risk ratio|relative risk|odds ratio|hr|rr|or|(?:ti|ty) so nguy co)\b/
-    .test(claimText(clause)[lang]);
+  const RATIO_BEFORE_BOUND = /(?:\b(?:hazard ratio|risk ratio|relative risk|odds ratio|HR|RR|OR)|(?:tỉ|tỷ) số nguy cơ)(?:\s+nào)?\s*\(?\s*$/iu;
+  const BOUND_END = /^\s*\)?\s*(?:$|[?!.,;:]|(?:is|was|did|for|được|cho|là)(?![\p{L}\p{N}]))/iu;
   const boundValue = value => Number(numbers(value)[0] ?? 1);
 
   function namesEstimate(question, lang) {
