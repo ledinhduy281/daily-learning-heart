@@ -11,6 +11,8 @@ const SETS_PER_LESSON = 3, MAX_ROUNDS = 6, KEEP_LESSONS = 30;
 const TOKENS_PER_QUESTION = 850, PRIOR_STEM_LIMIT = 24, PRIOR_STEM_CHARS = 100;
 const RESOLVE_TOKENS = 768;
 const RUN_BUDGET_MS = 14 * 60_000, REQUEST_TIMEOUT_MS = 45_000;
+const PRIMARY_MODEL = 'openai/gpt-oss-120b', FALLBACK_MODEL = 'openai/gpt-oss-20b';
+const DAILY_LIMIT = Symbol('daily token limit');
 const {CASE_SET_VERSION, CASES_PER_SET} = CaseQuiz;
 
 const vnDate = (d = new Date()) => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Ho_Chi_Minh'}).format(d);
@@ -68,6 +70,11 @@ function rateGate(now, wait, budgetMs) {
   const estimates = new Map();
   return {
     timeLeft: () => deadline - now(),
+    reset() {
+      blockedUntil = resetAt = capacity = observedAt = 0;
+      remaining = Infinity;
+      estimates.clear();
+    },
     observe(response, stage, message = '') {
       const header = name => response.headers?.get?.(name);
       const reset = durationMs(header('x-ratelimit-reset-tokens'));
@@ -103,7 +110,7 @@ function rateGate(now, wait, budgetMs) {
 async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage) {
   const body = {model, temperature: 0.7, max_tokens: maxTokens, response_format: {type: 'json_object'},
     messages: [{role: 'system', content: system + '\nReply with a single JSON object.'}, {role: 'user', content: user}]};
-  if (model.startsWith('openai/gpt-oss')) Object.assign(body, {reasoning_effort: 'low', include_reasoning: false});
+  if ([PRIMARY_MODEL, FALLBACK_MODEL].includes(model)) Object.assign(body, {reasoning_effort: 'low', include_reasoning: false});
   let jsonRetry = false;
   for (let limited = 0; limited < 4;) {
     const payload = JSON.stringify(body), bytes = Buffer.byteLength(payload);
@@ -126,8 +133,9 @@ async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, ma
       let error;
       try { error = (await response.json())?.error; } catch (_) {}
       const message = typeof error?.message === 'string' ? error.message : '';
-      gate.observe(response, stage, message);
       report(`HTTP ${response.status}`, message || response.statusText);
+      if (response.status === 429 && /\b(?:tokens per day|TPD)\b/i.test(message)) return DAILY_LIMIT;
+      gate.observe(response, stage, message);
       if (response.status === 429) { limited++; continue; }
       if (response.status === 400 && !jsonRetry &&
           (error?.code === 'json_validate_failed' || /\bfailed to generate JSON\b/i.test(message))) {
@@ -176,6 +184,7 @@ async function resolveItems(items, excerpts, options, indices) {
     'Return {"answers":["A", ...],"explanations":[{"en":true,"vi":true}, ...]} with one entry per question in each array, in order. ' +
     'Use false for a language if any claim is unsupported or there is no uniquely supported option.',
     `EXCERPTS:\n${cited}\n\nQUESTIONS:\n${exam}\n\nPROPOSED EXPLANATIONS:\n${explanations}`, RESOLVE_TOKENS, 're-solve');
+  if (check === DAILY_LIMIT) return {problem: 'daily-limit'};
   if (!check) return {problem: 'upstream'};
   if (!Array.isArray(check.answers) || check.answers.length !== batch.length) return {problem: 'resolve'};
   const verdicts = Array.isArray(check.explanations) && check.explanations.length === batch.length ? check.explanations : [];
@@ -285,6 +294,7 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
     const generated = await groq(options, systemPrompt(ground.pmid, options.philosophy, pending.length, repairing),
       `${header}\n` + (repairing ? `REPAIR SLOTS: ${JSON.stringify(pending.map(({slot, reason}) => ({slot: slot + 1, reason})))}\n` : '') +
       `PRIOR STEMS (do not repeat): ${JSON.stringify(prior)}`, pending.length * TOKENS_PER_QUESTION, 'case');
+    if (generated === DAILY_LIMIT) return {problem: 'daily-limit'};
     if (!generated) return {problem: 'upstream'};
     const questions = generated.questions;
     const count = Array.isArray(questions) ? questions.length : null;
@@ -334,7 +344,7 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
 }
 
 async function buildSets(lesson, existing, options) {
-  const {model, log, gate} = options;
+  const {log, gate} = options;
   const ground = CaseQuiz.grounding(lesson);
   const excerpts = ground.excerpts.slice(0, 8);
   const header = `SOURCE (PMID ${ground.pmid}, ${ground.kind}): ${ground.title}\nEXCERPTS:\n` +
@@ -342,13 +352,28 @@ async function buildSets(lesson, existing, options) {
   const sets = existing.slice(), reasons = {};
   const seen = Object.fromEntries(['en', 'vi'].map(l => [l, new Set(sets.flatMap(s => s.items.map(i => stemKey(i['stem_' + l]))))]));
   for (let round = 0; round < MAX_ROUNDS && sets.length < SETS_PER_LESSON && gate.timeLeft() > 0; round++) {
+    const {model} = options;
     const {items, problem} = await buildCaseSet(ground, excerpts, header, seen, options);
-    if (problem) { reasons[problem] = (reasons[problem] || 0) + 1; continue; }
+    if (problem) {
+      reasons[problem] = (reasons[problem] || 0) + 1;
+      if (problem === 'daily-limit') {
+        if (model !== PRIMARY_MODEL) {
+          log(`Groq daily token limit for ${redactError(model, options.key)}; stopping quiz generation.`);
+          break;
+        }
+        log(`Groq daily token limit for ${model}; switching to ${FALLBACK_MODEL} for generation and re-solve.`);
+        options.model = FALLBACK_MODEL;
+        gate.reset();
+        round--;
+      }
+      continue;
+    }
     const signature = createHash('sha256').update(JSON.stringify(items)).digest('hex').slice(0, 12);
     const set = CaseQuiz.validateCaseSet(lesson, {version: CASE_SET_VERSION, set_id: `${lesson.date}-cases-${signature}`, model, items});
     if (!set) { reasons.set = (reasons.set || 0) + 1; continue; }
     for (const item of set.items) for (const l of ['en', 'vi']) seen[l].add(stemKey(item['stem_' + l]));
     sets.push(set);
+    log(`Validated quiz case set ${set.set_id}; model=${redactError(model, options.key)}`);
   }
   log(`quiz case sets for ${lesson.id}: ${sets.length}/${SETS_PER_LESSON} (${sets.length - existing.length} new); rejected: ${JSON.stringify(reasons)}`);
   return sets;
@@ -365,7 +390,7 @@ async function main({root = ROOT, env = process.env, fetchImpl = globalThis.fetc
   now = Date.now, wait = sleep, budgetMs = RUN_BUDGET_MS} = {}) {
   const key = (env.GROQ_API_KEY || '').trim();
   if (!key) { log('GROQ_API_KEY not set; quiz sets unchanged.'); return 0; }
-  const model = (env.GROQ_MODEL || '').trim() || 'openai/gpt-oss-120b';
+  const model = (env.GROQ_MODEL || '').trim() || PRIMARY_MODEL;
   const out = path.join(root, 'data', 'quiz_sets.js');
   const lesson = todayLesson(loadScript(path.join(root, 'data', 'briefings.js'), 'EBM_BRIEFINGS_DATA'), date);
   if (!lesson) { log(`No source-excerpt lesson for ${date}; quiz sets unchanged.`); return 0; }

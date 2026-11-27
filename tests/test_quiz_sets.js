@@ -303,6 +303,48 @@ const quiet = () => {};
   assert.equal(fs.readFileSync(setPath, "utf8"), before);
   console.log("Groq upstream diagnostics: HTTP status, redacted error, retry, transport failure, and no publish: OK");
   const rerunEnv = {...env, REGENERATE_QUIZ_SETS: "true"};
+  const primaryModel = "openai/gpt-oss-120b", fallbackModel = "openai/gpt-oss-20b";
+  const tpd = () => new Response(JSON.stringify({error: {
+    message: "Rate limit reached on tokens per day (TPD): Limit 200000, Used 199803, Requested 1089. Please try again in 6m25.344s.",
+  }}), {status: 429, headers: {"Retry-After": "385", "x-ratelimit-remaining-tokens": "0"}});
+  for (const capDuring of ["generate", "solve"]) {
+    const primary = fakeGroq([], 200), fallback = fakeGroq([], 300);
+    const calls = [], failoverLogs = [];
+    const options = {root, env: rerunEnv, date, log: m => failoverLogs.push(m),
+      wait: async () => assert.fail("neither model should wait on a daily limit"),
+      fetchImpl: async (url, request) => {
+        const body = requestBody(request);
+        const stage = body.messages[0].content.startsWith("Independently answer") ? "solve" : "generate";
+        assert.equal(body.reasoning_effort, "low");
+        assert.equal(body.include_reasoning, false);
+        calls.push([body.model, stage]);
+        if (body.model === primaryModel) {
+          if (capDuring === "generate" || primary.calls.length === 3) return tpd();
+          return primary.fetchImpl(url, request);
+        }
+        assert.equal(body.model, fallbackModel);
+        if (capDuring === "solve" && fallback.calls.length === 2) return tpd();
+        return fallback.fetchImpl(url, request);
+      }};
+    const expectedModels = capDuring === "generate" ? Array(3).fill(fallbackModel) : [primaryModel, fallbackModel];
+    assert.equal(await main(options), expectedModels.length);
+    assert.deepEqual(calls, capDuring === "generate" ? [
+      [primaryModel, "generate"],
+      ...expectedModels.flatMap(model => [[model, "generate"], [model, "solve"]]),
+    ] : [
+      [primaryModel, "generate"], [primaryModel, "solve"],
+      [primaryModel, "generate"], [primaryModel, "solve"],
+      [fallbackModel, "generate"], [fallbackModel, "solve"], [fallbackModel, "generate"],
+    ]);
+    const published = Array.from(read()[id]);
+    assert.deepEqual(published.map(set => set.model), expectedModels);
+    assert.ok(published.every(set => CaseQuiz.validateCaseSet(lesson, set)));
+    assert.deepEqual(failoverLogs.filter(m => m.startsWith("Validated quiz case set ")),
+      published.map(set => `Validated quiz case set ${set.set_id}; model=${set.model}`));
+    assert.match(failoverLogs.join("\n"), /switching to openai\/gpt-oss-20b for generation and re-solve/);
+    if (capDuring === "solve") assert.match(failoverLogs.join("\n"), /daily token limit for openai\/gpt-oss-20b; stopping quiz generation/);
+  }
+  console.log("Groq daily limit: switch both stages once, record pack provenance, and preserve completed packs if both models cap out: OK");
   const oldIds = read()[id].map(s => s.set_id);
   const fresh = fakeGroq(["explanations"], 10);
   const explanationLogs = [];
