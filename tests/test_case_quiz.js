@@ -48,6 +48,18 @@ assert.equal(CaseQuiz.rejectReason({...individual, stem_vi: reportedEvents.stem_
 assert.equal(CaseQuiz.rejectReason({...individual, stem_en: reportedEvents.stem_en, stem_vi: reportedEvents.stem_vi,
   options: [{...individual.options[0], en: "This patient's incidence is 10.9 events per 1000 person-years."}, ...individual.options.slice(1)]
 }, stareeGround), "projection", "a keyed option cannot personalize the group rate");
+const critique = {...individual,
+  stem_en: "A 75-year-old woman asks about atorvastatin. Why can't this trial predict her personal risk of a primary cardiovascular event?",
+  stem_vi: "Một phụ nữ 75 tuổi hỏi về atorvastatin. Vì sao không thể dự đoán nguy cơ biến cố tim mạch chính của bệnh nhân này từ thử nghiệm?",
+  options: [{en: "The trial reports a group incidence rate, not an individual prediction.",
+    vi: "Thử nghiệm báo cáo tỷ lệ của nhóm, không phải là dự đoán cá nhân."}, ...individual.options.slice(1)],
+};
+assert.equal(CaseQuiz.rejectReason(critique, stareeGround), "", "a critique can teach the limit of group estimates");
+assert.equal(CaseQuiz.rejectReason({...critique, options: individual.options}, stareeGround), "projection",
+  "a critique stem does not excuse a keyed option that fails to state the limitation");
+assert.equal(CaseQuiz.rejectReason({...critique, options: [{...critique.options[0],
+  en: "The trial cannot predict her personal risk, but this patient's incidence is 10.9 events per 1000 person-years."
+}, ...critique.options.slice(1)]}, stareeGround), "projection", "a limitation does not excuse a later personalized estimate");
 const cohort = {...reportedEvents, options: options(["412 participants", "297 participants", "500 participants", "600 participants"]),
   stem_en: "A cohort of 5000 adults aged 70 or older, with no prior cardiovascular disease, were randomized to receive atorvastatin 40 mg daily or placebo. How many participants would you expect to experience a primary cardiovascular event in the placebo group after 5.9 years?",
   stem_vi: "Một nhóm 5000 người 70 tuổi trở lên, không có bệnh tim mạch trước đây, được chia ngẫu nhiên để nhận atorvastatin 40 mg/ngày hoặc giả dược. Bạn sẽ dự đoán số lượng bệnh nhân có sự kiện tim mạch chính trong nhóm giả dược sau 5.9 năm?",

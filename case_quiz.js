@@ -256,19 +256,33 @@ const CaseQuiz = (() => {
     en: /\b(?:hypothetical|suppose|imagine|if)\b.*\bhow many\b/,
     vi: /\b(?:gia dinh|gia su|neu)\b.*\bbao nhieu\b/,
   };
+  const PROJECTION_LIMIT = {
+    en: /\b(?:(?:cannot|can t|(?:does|do|did|could) not|is unable to) (?:\w+ ){0,8}(?:predict|estimate|project|determine|tell|establish)|not (?:an? )?(?:individual|personal|patient specific) (?:risk|prediction|estimate))\b/,
+    vi: /\b(?:(?:khong the|khong du de|khong dung de) (?:\w+ ){0,8}(?:du doan|uoc tinh|ngoai suy|xac dinh)|khong phai (?:la )?(?:nguy co|du doan|uoc tinh) ca nhan)\b/,
+  };
+  const CONTRAST = {en: /\b(?:but|however|yet|nevertheless)\b/, vi: /\b(?:nhung|tuy nhien|tuy vay|song)\b/};
+
+  function projectionClauses(value, lang) {
+    return value.split(STUDY_CLAUSE).flatMap(clause => claimText(clause)[lang].split(CONTRAST[lang]));
+  }
 
   function projectsGroupResult(item) {
     const correct = item.options[KEYS.indexOf(item.answer)];
     return CLAIM_LANGUAGES.some(lang => {
-      const stem = claimText(item['stem_' + lang])[lang];
-      const key = claimText(correct[lang])[lang];
+      const stemClauses = projectionClauses(item['stem_' + lang], lang);
+      const keyClauses = projectionClauses(correct[lang], lang);
+      const limit = clause => PROJECTION_LIMIT[lang].test(clause);
+      const stem = stemClauses.filter(c => !limit(c)).join(' ');
+      const key = keyClauses.filter(c => !limit(c)).join(' ');
+      if (stemClauses.some(limit) && !keyClauses.some(limit) &&
+          stemClauses.some(c => limit(c) && isProjection(c, lang))) return true;
       const result = ENDPOINT_CONTEXT[lang].test(stem + ' ' + key) || EFFECT_CONTEXT[lang].test(stem + ' ' + key) ||
         /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(stem + ' ' + key);
       return result && (PERSONAL_RISK[lang].test(key) ||
         COHORT[lang].test(stem) && (isProjection(stem, lang) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
         isProjection(stem, lang) && PERSONAL[lang].test(stem) ||
         FUTURE_EVENT[lang].test(stem) && PATIENT[lang].test(stem) ||
-        isProjection(key, lang) && (COHORT[lang].test(key) || PERSONAL[lang].test(key) || PATIENT[lang].test(stem)));
+        isProjection(key, lang) && (COHORT[lang].test(key) || PERSONAL[lang].test(key) || PATIENT[lang].test(stemClauses.join(' '))));
     });
   }
 
