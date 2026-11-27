@@ -86,6 +86,11 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
     assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
     assert.match(system, /in option text or explanations \(never say "Answer A"\)/);
     assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);
+    assert.match(system, /All four options must be distinct in each language/);
+    assert.match(system, /If any stem, option, or explanation includes "40 mg", cite \[1\]/);
+    assert.match(system, /\[2\] gives "hazard ratio 0\.70"\. Use the reported estimate, not a percentage derived from it/);
+    assert.match(system, /Do not offer its CI bounds 0\.61 or 0\.82 as distractors/);
+    assert.match(system, /"0\.70" and "reported hazard ratio 0\.70" are the same answer, not distinct options/);
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     assert.equal(system.includes(philosophy), !repair, "only initial case generation includes the full philosophy");
     if (!repair) {
@@ -167,6 +172,22 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
         q.explanation_en += " The finding was in community-dwelling adults.";
         assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "claims");
         Object.assign(submitted[n - 1], {explanation_en: q.explanation_en, excerpt: [2, 1]});
+      }
+      if (["option-dose-completion", "explanation-dose-completion"].includes(faults[round]) && n === 1) {
+        if (faults[round] === "option-dose-completion") {
+          q.options = q.options.map((option, i) => i !== 1 ? option : {
+            en: "More events with atorvastatin 40 mg once daily",
+            vi: "Nhiều biến cố hơn với atorvastatin 40 mg/ngày",
+          });
+        } else {
+          q.explanation_en += " The atorvastatin regimen was 40 mg once daily.";
+          q.explanation_vi += " Phác đồ atorvastatin là 40 mg/ngày.";
+        }
+        assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}),
+          faults[round] === "option-dose-completion" ? "dose" : "numbers");
+        const expected = submitted[n - 1];
+        if (faults[round] === "option-dose-completion") expected.options = expected.options.map((option, i) => i === 1 ? q.options[i] : option);
+        Object.assign(expected, {explanation_en: q.explanation_en, explanation_vi: q.explanation_vi, excerpt: [2, 1]});
       }
       if (faults[round] === "log-explanation" && n === 1 && !repaired) {
         q.explanation_en = "The source reports fewer primary cardiovascular events. ".repeat(7) + "A final unsupported figure is 30%.";
@@ -287,7 +308,8 @@ const quiet = () => {};
   assert.ok(!diagnostics.includes(env.GROQ_API_KEY));
   assert.doesNotMatch(diagnostics, /gsk_another_credential|DO NOT LOG THE FULL BODY|x{401}/);
   assert.equal(upstreamLogs.filter(m => m.includes("token budget:")).length, 7, "count every actual HTTP attempt");
-  assert.equal(upstreamLogs.filter(m => !m.includes("token budget:")).length, 8);
+  assert.equal(upstreamLogs.filter(m => m.includes("rate limits:")).length, 6, "every HTTP response logs quota data");
+  assert.equal(upstreamLogs.filter(m => !/token budget:|rate limits:/.test(m)).length, 8);
   assert.match(upstreamLogs.at(-1), /rejected: \{"upstream":6\}/);
   assert.equal(fs.readFileSync(setPath, "utf8"), before, "upstream failures leave previously published sets intact");
   let time = 0;
@@ -323,7 +345,7 @@ const quiet = () => {};
   for (const capDuring of ["generate", "solve"]) {
     const primary = fakeGroq([], 200), fallback = fakeGroq([], 300);
     const calls = [], failoverLogs = [];
-    const options = {root, env: rerunEnv, date, log: m => failoverLogs.push(m),
+    const options = {root, env: {...rerunEnv, GROQ_FALLBACK_MODELS: fallbackModel}, date, log: m => failoverLogs.push(m),
       wait: async () => assert.fail("neither model should wait on a daily limit"),
       fetchImpl: async (url, request) => {
         const body = requestBody(request);
@@ -358,6 +380,54 @@ const quiet = () => {};
     if (capDuring === "solve") assert.match(failoverLogs.join("\n"), /daily token limit for openai\/gpt-oss-20b; stopping quiz generation/);
   }
   console.log("Groq daily limit: switch both stages once, record pack provenance, and preserve completed packs if both models cap out: OK");
+  const thirdModel = "qwen/qwen3.8-27b";
+  const primaryWithHeaders = fakeGroq([], 480), third = fakeGroq([], 490);
+  const quotaCalls = [], quotaLogs = [];
+  assert.equal(await main({root, env: rerunEnv, date, log: m => quotaLogs.push(m),
+    wait: async () => assert.fail("known daily shortages and daily 429s should switch without waiting"),
+    fetchImpl: async (url, request) => {
+      const body = requestBody(request);
+      quotaCalls.push(body.model);
+      if (body.model === fallbackModel) return tpd();
+      if (body.model === thirdModel) {
+        assert.equal(body.reasoning_effort, "low");
+        assert.equal(body.reasoning_format, "hidden");
+        assert.equal("include_reasoning" in body, false);
+        return third.fetchImpl(url, request);
+      }
+      assert.equal(body.model, primaryModel);
+      const response = await primaryWithHeaders.fetchImpl(url, request);
+      return {...response, headers: new Headers({
+        "x-ratelimit-remaining-tokens": "8000", "x-ratelimit-reset-tokens": "1ms",
+        "x-ratelimit-remaining-requests": "41", "x-ratelimit-reset-requests": "23h59m",
+        "x-ratelimit-remaining-tokens-day": "4500", "x-ratelimit-reset-tokens-day": "23h",
+        "x-ratelimit-remaining-requests-minute": "5", "x-ratelimit-reset-requests-minute": "57s",
+      })};
+    },
+  }), 3);
+  assert.deepEqual(quotaCalls, [primaryModel, primaryModel, fallbackModel, thirdModel, thirdModel, thirdModel, thirdModel]);
+  assert.deepEqual(Array.from(read()[id], set => set.model), [primaryModel, thirdModel, thirdModel]);
+  assert.match(quotaLogs.join("\n"), /skipped for openai\/gpt-oss-120b: known daily quota cannot cover one set/);
+  const loggedQuota = quotaLogs.find(m => m.includes("rate limits:") && m.includes(primaryModel));
+  assert.deepEqual(JSON.parse(loggedQuota.slice(loggedQuota.indexOf("{"))), {
+    requestsDay: {remaining: 41, limit: null, reset: "23h59m"},
+    tokensMinute: {remaining: 8000, limit: null, reset: "1ms"},
+    tokensDay: {remaining: 4500, limit: null, reset: "23h"},
+    requestsMinute: {remaining: 5, limit: null, reset: "57s"},
+    retryAfterSeconds: null,
+  });
+  assert.ok(quotaLogs.some(m => m.includes("rate limits:") && m.includes("HTTP 429")));
+  console.log("Groq quota: log day/minute headers, skip a model short on known daily tokens, and publish with the third model: OK");
+  for (const model of [primaryModel, fallbackModel, thirdModel]) {
+    const cleanRun = fakeGroq([], 500);
+    const budgetLogs = [];
+    assert.equal(await main({root, env: {...rerunEnv, GROQ_MODEL: model}, date, fetchImpl: cleanRun.fetchImpl,
+      log: m => budgetLogs.push(m)}), 3);
+    assert.ok(Array.from(read()[id]).every(set => set.model === model));
+    const estimated = cleanRun.calls.reduce((total, call) => total + call.estimated, 0);
+    assert.ok(budgetLogs.some(m => m.endsWith(`model=${model}; model total=${estimated}; running total=${estimated}`)));
+    console.log(`Groq first-pass three-set estimate, ${model}: ${estimated} tokens across ${cleanRun.calls.length} calls`);
+  }
   const oldIds = read()[id].map(s => s.set_id);
   const fresh = fakeGroq(["explanations"], 10);
   const explanationLogs = [];
@@ -432,7 +502,8 @@ const quiet = () => {};
   assert.equal(await main({root, env: rerunEnv, date, fetchImpl: countMock.fetchImpl, log: quiet}), 3);
   assert.deepEqual(countMock.calls[1].slots, [1, 2, 3], "a missing enrollment count doesn't require a repair");
   assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, excerpts[1]]);
-  for (const [fault, background] of [["effects-completion", excerpts[1]], ["claims-completion", excerpts[0]]]) {
+  for (const [fault, background] of [["effects-completion", excerpts[1]], ["claims-completion", excerpts[0]],
+    ["option-dose-completion", excerpts[0]], ["explanation-dose-completion", excerpts[0]]]) {
     const mock = fakeGroq([fault], 70);
     assert.equal(await main({root, env: rerunEnv, date, fetchImpl: mock.fetchImpl, log: quiet}), 3);
     assert.deepEqual(mock.calls[1].slots, [1, 2, 3], "a grounding failure resolved by the second citation doesn't require a repair");

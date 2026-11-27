@@ -100,7 +100,9 @@ class EvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual([entry["cron"] for entry in trigger["schedule"]], [
             "7 17 * * *", "43 18 * * *", "11 20 * * *", "37 21 * * *",
             "53 22 * * *", "17 23 * * *", "43 23 * * *",
+            "29 0 * * *", "3 2 * * *", "29 4 * * *", "3 7 * * *",
         ])
+        self.assertNotIn("push", trigger)
         self.assertEqual(trigger["workflow_dispatch"]["inputs"]["regenerate_quiz_sets"]["default"], "false")
 
     def test_current_vietnam_lesson_skips_source_fetch_in_early_and_late_slots(self):
@@ -116,7 +118,7 @@ class EvidenceWorkflowTests(unittest.TestCase):
         with patch.multiple("fetch_daily_ebm", BRIEFINGS_JS_PATH=bundle, ROTATION_STATE_PATH=rotation), \
                 patch("crawl_cardiology_news.refresh_guideline_briefing",
                       side_effect=AssertionError("already-current lessons must not fetch sources")):
-            for slot in (early, early.replace(hour=6, minute=43)):
+            for slot in (early, early.replace(hour=6, minute=43), early.replace(hour=14, minute=3)):
                 with patch("fetch_daily_ebm._now_vn", return_value=slot):
                     result = refresh_today_briefing()
                     self.assertTrue(result["already_up_to_date"])
@@ -125,7 +127,6 @@ class EvidenceWorkflowTests(unittest.TestCase):
 
     def test_daily_refresh_validates_changed_lesson_before_commit(self):
         workflow = self.workflow("daily_refresh")
-        self.assertEqual(workflow["on"]["push"]["branches"], ["main"])
         steps = workflow["jobs"]["refresh-daily-pillar"]["steps"]
         build, = [i for i, step in enumerate(steps) if "--refresh-if-needed" in step.get("run", "")]
         gate, = [i for i, step in enumerate(steps) if "pipeline.validate_lesson" in step.get("run", "")]

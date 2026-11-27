@@ -12,6 +12,7 @@ const TOKENS_PER_QUESTION = 850, PRIOR_STEM_LIMIT = 24, PRIOR_STEM_CHARS = 100;
 const RESOLVE_TOKENS = 768;
 const RUN_BUDGET_MS = 14 * 60_000, REQUEST_TIMEOUT_MS = 45_000;
 const PRIMARY_MODEL = 'openai/gpt-oss-120b', FALLBACK_MODEL = 'openai/gpt-oss-20b';
+const THIRD_MODEL = 'qwen/qwen3.8-27b';
 const DAILY_LIMIT = Symbol('daily token limit');
 const {CASE_SET_VERSION, CASES_PER_SET} = CaseQuiz;
 
@@ -29,7 +30,27 @@ function todayLesson(data, date) {
   return lesson && lesson.quiz_mode === 'source_excerpt' && CaseQuiz.grounding(lesson).excerpts.length ? lesson : null;
 }
 
-function systemPrompt(pmid, philosophy, count, repairing) {
+function sourceExamples(excerpts) {
+  const examples = [];
+  const dose = /\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|g|mL|mmol|IU)(?![\p{L}\p{N}])/iu;
+  const doseIndex = excerpts.findIndex(excerpt => dose.test(excerpt));
+  if (doseIndex >= 0) {
+    const strength = excerpts[doseIndex].match(dose)[0];
+    examples.push(`If any stem, option, or explanation includes "${strength}", cite [${doseIndex + 1}] for it. If another excerpt contains the result, cite the result excerpt first and the regimen excerpt second.`);
+  }
+  const ratio = /\b((?:hazard|risk|odds) ratio|relative risk|HR|RR|OR)[,:=]?\s+(\d+(?:[.,]\d+)?)(?:[;,]\s*(?:\d+%\s+)?(?:confidence interval(?:\s*\[CI\])?|CI)[,\s:]+(\d+(?:[.,]\d+)?)\s*(?:to|[-–])\s*(\d+(?:[.,]\d+)?))?/i;
+  const ratios = excerpts.map((excerpt, i) => ({match: excerpt.match(ratio), i})).filter(entry => entry.match);
+  const result = ratios.find(({match}) => match[3]) || ratios[0];
+  if (result) {
+    const [, measure, estimate, lower, upper] = result.match;
+    examples.push(`[${result.i + 1}] gives "${measure} ${estimate}". Use the reported estimate, not a percentage derived from it.`);
+    if (lower && upper) examples.push(`Do not offer its CI bounds ${lower} or ${upper} as distractors.`);
+    examples.push(`"${estimate}" and "reported ${measure} ${estimate}" are the same answer, not distinct options.`);
+  }
+  return examples.length ? `Examples from today's excerpts: ${examples.join(' ')} ` : '';
+}
+
+function systemPrompt(pmid, philosophy, count, repairing, examples = '') {
   return (repairing ? '' : `Owner's tutoring philosophy (adapt to a static quiz):\n${philosophy}\n\n`) +
     `Return {"questions":[…]} with exactly ${count} bilingual clinical application case questions (${repairing ?
       'only the requested replacements, in the given order' : 'no theory questions'}). ` +
@@ -43,6 +64,8 @@ function systemPrompt(pmid, philosophy, count, repairing) {
     'Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt, except fictional patient characteristics such as age or baseline measurements in the stem. Do not calculate differences, convert HR or RR to percentages (e.g. 30% from HR 0.70), or round. ' +
     'Do not repeat any prior stem. Never use the keyed estimate’s confidence limits or other figures from the excerpt reporting the keyed estimate as distractors. Use qualitative distractors instead and explain why the correct reasoning follows from the cited excerpt. ' +
     'Provide exactly 4 options. Do not prefix or mention option letters in option text or explanations (never say "Answer A"); only the answer field contains the letter key. Require exactly one defensible answer and use qualitative distractors when needed. ' +
+    'All four options must be distinct in each language, and each Vietnamese option must mean the same as its English counterpart. Cite the excerpt containing any dose used in the stem, options, or explanations. ' +
+    examples +
     `Fields: type ("case"), pmid ("${pmid}"), excerpt (integer or array of two distinct integers), stem_vi, stem_en, ` +
     'options (four objects with vi and en), answer ("A"-"D"), explanation_vi, explanation_en. ' +
     'Set "excerpt" to the 1-based integer index from the excerpt labels ("excerpt":2 for [2], or "excerpt":[1,3] for [1] and [3]). Do not include a quote field or repeat the source text. ' +
@@ -58,49 +81,83 @@ function redactError(value, key, limit = 400) {
 }
 
 const estimatePromptTokens = bytes => Math.ceil(bytes / 3);
+const modelChain = env => [...new Set([
+  (env.GROQ_MODEL || '').trim() || PRIMARY_MODEL,
+  ...(env.GROQ_FALLBACK_MODELS?.trim() || `${FALLBACK_MODEL},${THIRD_MODEL}`).split(',').map(model => model.trim()).filter(Boolean),
+])];
+const DAILY_LIMIT_MESSAGE = /\b(?:tokens per day|requests per day|TPD|RPD)\b/i;
+const QUOTA_HEADERS = {
+  requestsDay: 'requests',
+  tokensMinute: 'tokens',
+  tokensDay: 'tokens-day',
+  requestsMinute: 'requests-minute',
+};
 
 function durationMs(text) {
-  if (!/^\s*(?:\d+(?:\.\d+)?(?:ms|s|m|h)\s*)+$/i.test(text || '')) return 0;
-  const units = {ms: 1, s: 1000, m: 60_000, h: 3_600_000};
-  return [...text.toLowerCase().matchAll(/(\d+(?:\.\d+)?)(ms|s|m|h)/g)].reduce((sum, [, n, u]) => sum + Number(n) * units[u], 0);
+  if (!/^\s*(?:\d+(?:\.\d+)?(?:ms|s|m|h|d)\s*)+$/i.test(text || '')) return 0;
+  const units = {ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000};
+  return [...text.toLowerCase().matchAll(/(\d+(?:\.\d+)?)(ms|s|m|h|d)/g)].reduce((sum, [, n, u]) => sum + Number(n) * units[u], 0);
+}
+
+function quotaHeaders(response) {
+  const header = name => response.headers?.get?.(name);
+  const count = value => /^\d+$/.test(value ?? '') ? Number(value) : null;
+  return {
+    ...Object.fromEntries(Object.entries(QUOTA_HEADERS).map(([window, suffix]) => {
+      const reset = header('x-ratelimit-reset-' + suffix);
+      return [window, {
+        remaining: count(header('x-ratelimit-remaining-' + suffix)),
+        limit: count(header('x-ratelimit-limit-' + suffix)),
+        reset: durationMs(reset) ? reset : null,
+      }];
+    })),
+    retryAfterSeconds: count(header('retry-after')),
+  };
 }
 
 function rateGate(now, wait, budgetMs) {
   const deadline = now() + budgetMs;
-  let blockedUntil = 0, resetAt = 0, remaining = Infinity, capacity = 0, observedAt = 0;
+  let blockedUntil = 0, observedAt = 0;
   const estimates = new Map();
+  const quota = {};
+  const active = window => quota[window] && (!quota[window].resetAt || quota[window].resetAt > now()) ? quota[window] : {};
   return {
     timeLeft: () => deadline - now(),
     reset() {
-      blockedUntil = resetAt = capacity = observedAt = 0;
-      remaining = Infinity;
+      blockedUntil = observedAt = 0;
       estimates.clear();
+      for (const window of Object.keys(quota)) delete quota[window];
     },
-    observe(response, stage, message = '') {
-      const header = name => response.headers?.get?.(name);
-      const reset = durationMs(header('x-ratelimit-reset-tokens'));
-      const tokens = header('x-ratelimit-remaining-tokens');
-      if (reset && tokens != null && /^\d+$/.test(tokens)) {
-        observedAt = now();
-        resetAt = observedAt + reset;
-        remaining = Number(tokens);
-        capacity = Number(header('x-ratelimit-limit-tokens')) || 0;
+    dailyShortage(tokens, requests) {
+      return (active('tokensDay').remaining ?? Infinity) < tokens ||
+        (active('requestsDay').remaining ?? Infinity) < requests;
+    },
+    observe(headers, status, stage, message = '') {
+      for (const window of Object.keys(QUOTA_HEADERS)) {
+        const {remaining, limit, reset} = headers[window];
+        if (remaining === null) continue;
+        const delay = durationMs(reset);
+        quota[window] = {remaining, limit, resetAt: delay ? now() + delay : 0};
+        if (window === 'tokensMinute') observedAt = now();
       }
-      if (response.status === 429) {
+      if (status === 429 && !DAILY_LIMIT_MESSAGE.test(message)) {
         const requested = Number(message.match(/\bRequested\s+(\d+)/i)?.[1]);
         if (requested) estimates.set(stage, Math.max(estimates.get(stage) || 0, requested));
         const hint = message.match(/try again in\s+((?:\d+(?:\.\d+)?(?:ms|s|m|h)\s*)+)/i)?.[1];
-        const retry = Math.max(Number(header('retry-after')) * 1000 || 0, durationMs(hint));
-        blockedUntil = now() + (retry || reset || 20_000);
+        const retry = Math.max(headers.retryAfterSeconds * 1000, durationMs(hint));
+        blockedUntil = now() + (retry || durationMs(headers.tokensMinute.reset) || 20_000);
       }
     },
     async ready(stage, bytes) {
       const time = now();
       const estimate = Math.max(estimatePromptTokens(bytes), estimates.get(stage) || 0);
+      const {remaining = Infinity, limit: capacity = 0, resetAt = 0} = active('tokensMinute');
       const deficit = estimate - remaining - (time - observedAt) * capacity / 60_000;
       const tokenWait = deficit > 0 && resetAt > time
         ? Math.min(resetAt - time, capacity ? deficit * 60_000 / capacity : Infinity) : 0;
-      const delay = Math.ceil(Math.max(blockedUntil - time, tokenWait));
+      const requests = active('requestsMinute');
+      const requestWait = requests.remaining === 0 && requests.resetAt ? requests.resetAt - time : 0;
+      const delay = Math.ceil(Math.max(blockedUntil - time, tokenWait, requestWait));
       if (delay >= deadline - time) return false;
       if (delay > 0) await wait(delay);
       return now() < deadline;
@@ -108,17 +165,30 @@ function rateGate(now, wait, budgetMs) {
   };
 }
 
-async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage) {
+function groqBody(model, system, user, maxTokens) {
   const body = {model, temperature: 0.7, max_tokens: maxTokens, response_format: {type: 'json_object'},
     messages: [{role: 'system', content: system + '\nReply with a single JSON object.'}, {role: 'user', content: user}]};
   if ([PRIMARY_MODEL, FALLBACK_MODEL].includes(model)) Object.assign(body, {reasoning_effort: 'low', include_reasoning: false});
+  if (model === THIRD_MODEL) Object.assign(body, {reasoning_effort: 'low', reasoning_format: 'hidden'});
+  return body;
+}
+
+async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage, setEstimate) {
+  const body = groqBody(model, system, user, maxTokens);
+  const safeModel = redactError(model, key);
   let jsonRetry = false;
   for (let limited = 0; limited < 4;) {
     const payload = JSON.stringify(body), bytes = Buffer.byteLength(payload);
-    if (!await gate.ready(stage, bytes)) return null;
     const estimated = estimatePromptTokens(bytes) + maxTokens;
+    if (gate.dailyShortage(setEstimate ?? estimated, setEstimate ? 2 : 1)) {
+      log(`Groq ${stage} skipped for ${safeModel}: known daily quota cannot cover ${setEstimate ? 'one set' : 'the request'} (estimated ${setEstimate ?? estimated} tokens).`);
+      return DAILY_LIMIT;
+    }
+    if (!await gate.ready(stage, bytes)) return null;
     tokens.total += estimated;
-    log(`Groq ${stage} token budget: estimated=${estimated} (prompt≈${estimated - maxTokens}, completion cap=${maxTokens}); running total=${tokens.total}`);
+    const modelTotal = (tokens.byModel.get(model) || 0) + estimated;
+    tokens.byModel.set(model, modelTotal);
+    log(`Groq ${stage} token budget: estimated=${estimated} (prompt≈${estimated - maxTokens}, completion cap=${maxTokens}); model=${safeModel}; model total=${modelTotal}; running total=${tokens.total}`);
     const report = (status, message) => log(`Groq ${stage} request failed (${status}, model=${redactError(model, key)}, ` +
       `request_bytes=${bytes}, max_tokens=${maxTokens}): ${redactError(message, key) || 'No error message'}`);
     let response;
@@ -130,13 +200,15 @@ async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, ma
       report('no HTTP response', [error?.message, error?.cause?.code].filter(Boolean).join(' — '));
       return null;
     }
+    const quota = quotaHeaders(response);
+    log(`Groq ${stage} rate limits: model=${safeModel}; HTTP ${response.status}; ${JSON.stringify(quota)}`);
     if (!response.ok) {
       let error;
       try { error = (await response.json())?.error; } catch (_) {}
       const message = typeof error?.message === 'string' ? error.message : '';
       report(`HTTP ${response.status}`, message || response.statusText);
-      if (response.status === 429 && /\b(?:tokens per day|TPD)\b/i.test(message)) return DAILY_LIMIT;
-      gate.observe(response, stage, message);
+      gate.observe(quota, response.status, stage, message);
+      if (response.status === 429 && DAILY_LIMIT_MESSAGE.test(message)) return DAILY_LIMIT;
       if (response.status === 429) { limited++; continue; }
       if (response.status === 400 && !jsonRetry &&
           (error?.code === 'json_validate_failed' || /\bfailed to generate JSON\b/i.test(message))) {
@@ -146,7 +218,7 @@ async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, ma
       }
       return null;
     }
-    gate.observe(response, stage);
+    gate.observe(quota, response.status, stage);
     try {
       const data = await response.json();
       const choice = data.choices?.[0];
@@ -308,9 +380,14 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
     const repairing = attempt > 0;
     const prior = [...seen.en, ...items.filter(Boolean).map(i => i.stem_en)]
       .slice(-PRIOR_STEM_LIMIT).map(s => s.slice(0, PRIOR_STEM_CHARS));
-    const generated = await groq(options, systemPrompt(ground.pmid, options.philosophy, pending.length, repairing),
-      `${header}\n` + (repairing ? `REPAIR SLOTS: ${JSON.stringify(pending.map(({slot, reason}) => ({slot: slot + 1, reason})))}\n` : '') +
-      `PRIOR STEMS (do not repeat): ${JSON.stringify(prior)}`, pending.length * TOKENS_PER_QUESTION, 'case');
+    const system = systemPrompt(ground.pmid, options.philosophy, pending.length, repairing, options.examples);
+    const user = `${header}\n` + (repairing ? `REPAIR SLOTS: ${JSON.stringify(pending.map(({slot, reason}) => ({slot: slot + 1, reason})))}\n` : '') +
+      `PRIOR STEMS (do not repeat): ${JSON.stringify(prior)}`;
+    const maxTokens = pending.length * TOKENS_PER_QUESTION;
+    const estimatedSolve = estimatePromptTokens(Buffer.byteLength(header)) + maxTokens + RESOLVE_TOKENS + TOKENS_PER_QUESTION;
+    const setEstimate = repairing ? undefined :
+      estimatePromptTokens(Buffer.byteLength(JSON.stringify(groqBody(options.model, system, user, maxTokens)))) + maxTokens + estimatedSolve;
+    const generated = await groq(options, system, user, maxTokens, 'case', setEstimate);
     if (generated === DAILY_LIMIT) return {problem: 'daily-limit'};
     if (!generated) return {problem: 'upstream'};
     const questions = generated.questions;
@@ -365,25 +442,27 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
 }
 
 async function buildSets(lesson, existing, options) {
-  const {log, gate} = options;
+  const {log, gate, models} = options;
   const ground = CaseQuiz.grounding(lesson);
   const excerpts = ground.excerpts.slice(0, 8);
+  const examples = sourceExamples(excerpts);
   const header = `SOURCE (PMID ${ground.pmid}, ${ground.kind}): ${ground.title}\nEXCERPTS:\n` +
     excerpts.map((e, i) => `[${i + 1}] ${e}`).join('\n');
   const sets = existing.slice(), reasons = {};
   const seen = Object.fromEntries(['en', 'vi'].map(l => [l, new Set(sets.flatMap(s => s.items.map(i => stemKey(i['stem_' + l]))))]));
+  let modelIndex = 0;
   for (let round = 0; round < MAX_ROUNDS && sets.length < SETS_PER_LESSON && gate.timeLeft() > 0; round++) {
-    const {model} = options;
-    const {items, problem} = await buildCaseSet(ground, excerpts, header, seen, options);
+    const model = models[modelIndex];
+    const {items, problem} = await buildCaseSet(ground, excerpts, header, seen, {...options, model, examples});
     if (problem) {
       reasons[problem] = (reasons[problem] || 0) + 1;
       if (problem === 'daily-limit') {
-        if (model !== PRIMARY_MODEL) {
+        const nextModel = models[++modelIndex];
+        if (!nextModel) {
           log(`Groq daily token limit for ${redactError(model, options.key)}; stopping quiz generation.`);
           break;
         }
-        log(`Groq daily token limit for ${model}; switching to ${FALLBACK_MODEL} for generation and re-solve.`);
-        options.model = FALLBACK_MODEL;
+        log(`Groq daily token limit for ${redactError(model, options.key)}; switching to ${redactError(nextModel, options.key)} for generation and re-solve.`);
         gate.reset();
         round--;
       }
@@ -411,7 +490,6 @@ async function main({root = ROOT, env = process.env, fetchImpl = globalThis.fetc
   now = Date.now, wait = sleep, budgetMs = RUN_BUDGET_MS} = {}) {
   const key = (env.GROQ_API_KEY || '').trim();
   if (!key) { log('GROQ_API_KEY not set; quiz sets unchanged.'); return 0; }
-  const model = (env.GROQ_MODEL || '').trim() || PRIMARY_MODEL;
   const out = path.join(root, 'data', 'quiz_sets.js');
   const lesson = todayLesson(loadScript(path.join(root, 'data', 'briefings.js'), 'EBM_BRIEFINGS_DATA'), date);
   if (!lesson) { log(`No source-excerpt lesson for ${date}; quiz sets unchanged.`); return 0; }
@@ -427,7 +505,7 @@ async function main({root = ROOT, env = process.env, fetchImpl = globalThis.fetc
     return 0;
   }
   const philosophy = fs.readFileSync(path.join(ROOT, 'docs', 'quiz_philosophy.md'), 'utf8');
-  const sets = await buildSets(lesson, existing, {key, model, fetchImpl, log, philosophy, tokens: {total: 0},
+  const sets = await buildSets(lesson, existing, {key, models: modelChain(env), fetchImpl, log, philosophy, tokens: {total: 0, byModel: new Map()},
     gate: rateGate(now, wait, budgetMs)});
   const publishable = sets.length ? sets : valid;
   const added = sets.length - existing.length;
