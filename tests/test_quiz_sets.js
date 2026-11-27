@@ -30,7 +30,7 @@ const requestBody = options => {
   return body;
 };
 
-function fakeGroq(faults = [], roundOffset = 0) {
+function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
   const calls = [];
   let round = -1, questions, submitted, repaired = 0;
   const prefixes = ["A. ", "(B) ", "C) ", "D: "];
@@ -39,6 +39,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
     assert.equal(url, "https://api.groq.com/openai/v1/chat/completions");
     assert.equal(options.headers.Authorization, "Bearer test-only-placeholder");
     const [system, user] = body.messages.map(m => m.content);
+    const estimated = Math.ceil(Buffer.byteLength(options.body) / 3) + body.max_tokens;
     if (system.startsWith("Independently answer")) {
       assert.ok(!user.includes('"answer"'), "independent re-solve never sees the key");
       assert.match(system, /ONLY its cited excerpt/);
@@ -65,16 +66,15 @@ function fakeGroq(faults = [], roundOffset = 0) {
         batch.map(q => [].concat(q.excerpt).map(n => `[${n}]`).join(", ")));
       const cited = [...new Set(batch.flatMap(q => q.excerpt))];
       assert.deepEqual(user.split("\n\nQUESTIONS:\n")[0],
-        "EXCERPTS:\n" + cited.map(n => `[${n}] ${lesson.quiz_source_texts[lesson.primary_source.pmid][n - 1]}`).join("\n"));
+        "EXCERPTS:\n" + cited.map(n => `[${n}] ${source.quiz_source_texts[pmid][n - 1]}`).join("\n"));
       assert.ok(!user.match(/^[A-D]\. (?:\([A-D]\)|[A-D][.)])/m), "the solver sees only one option letter");
-      calls.push({mode: "solve", slots});
+      calls.push({mode: "solve", slots, estimated});
       return reply({
         answers: batch.map((q, i) => faults[round] === "repair" && repaired === 1 && slots[i] === 1 ? "D" : q.answer),
         explanations: batch.map((q, i) => faults[round] === "explanations" && !repaired
           ? [{en: false, vi: true}, {en: true, vi: false}, {en: true}][slots[i] - 1] : {en: true, vi: true}),
       });
     }
-    assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
     assert.match(system, /Set "excerpt" to the 1-based integer index/);
     assert.match(system, /put the excerpt that supports the key finding in the correct option first/);
     assert.match(system, /Do not include a quote field/);
@@ -82,6 +82,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
     assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
     assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
+    assert.equal(system.includes(philosophy), !repair, "only initial case generation includes the full philosophy");
     if (!repair) {
       repaired = 0;
       submitted = [];
@@ -90,7 +91,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
     } else repaired++;
     const requested = repair && JSON.parse(repair);
     const slots = requested ? requested.map(p => p.slot) : [1, 2, 3];
-    calls.push({mode: repair ? "repair" : "generate", slots});
+    calls.push({mode: repair ? "repair" : "generate", slots, estimated});
     assert.equal(body.max_tokens, slots.length * 850);
     const prior = JSON.parse(user.split("PRIOR STEMS (do not repeat): ").at(-1));
     assert.ok(prior.length <= 24 && prior.every(s => s.length <= 100));
@@ -101,7 +102,10 @@ function fakeGroq(faults = [], roundOffset = 0) {
       delete q.quote;
       if (faults[round] === "theory") q.type = "theory";
       if (faults[round] === "repair" && !repaired) {
-        if (n === 1) q.explanation_en = "The abstract reports a hazard ratio of 9.98.";
+        if (n === 1) {
+          q.explanation_en = "The abstract reports a hazard ratio of 9.98.";
+          q.options[0] = {en: "Fewer primary cardiovascular events. ".repeat(7) + "End of the rejected option.", vi: q.options[0].vi};
+        }
         if (n === 2) q.options[1] = q.options[0];
       }
       if (faults[round] === "explanations" && !repaired && n < 3) {
@@ -121,6 +125,38 @@ function fakeGroq(faults = [], roundOffset = 0) {
       if (faults[round] === "count" && repaired) {
         q.excerpt = ["[2]", "E1"];
         submitted[n - 1].excerpt = [2, 1];
+      }
+      if (["completion", "partial", "ambiguous"].includes(faults[round]) && !repaired) {
+        if (n === 1) {
+          q.stem_en = "An older adult who meets STAREE eligibility asks what the study reported for atorvastatin 40 mg daily versus placebo.";
+          q.stem_vi = "Một người cao tuổi đủ tiêu chí STAREE hỏi kết quả của atorvastatin 40 mg/ngày so với giả dược.";
+          q.explanation_en = "The hazard ratio for primary cardiovascular events was 0.70 with atorvastatin 40 mg daily versus placebo.";
+          q.explanation_vi = "Tỉ số nguy cơ của biến cố tim mạch chính là 0,70 với atorvastatin 40 mg/ngày so với giả dược.";
+          if (faults[round] === "completion") {
+            q.explanation_en += " The finding was in community-dwelling adults.";
+            q.explanation_vi += " Kết quả này ghi nhận ở người sống tại cộng đồng.";
+            assert.deepEqual(CaseQuiz.unsupportedClaims({...q, quote: caseQuote}), ["community_dwelling"]);
+          }
+          if (faults[round] === "partial") q.stem_en += " She asks specifically about the 40 mg strength.";
+          Object.assign(submitted[n - 1], {
+            stem_en: q.stem_en, stem_vi: q.stem_vi, explanation_en: q.explanation_en, explanation_vi: q.explanation_vi,
+            excerpt: faults[round] === "ambiguous" ? 2 : [2, 1],
+          });
+        }
+        if (n === 2) q.explanation_en = "The study reported a 30% reduction in primary cardiovascular events.";
+      }
+      if (["count-completion", "effects-completion"].includes(faults[round]) && n === 1) {
+        q.explanation_en = "The trial included 9971 participants and reported fewer primary cardiovascular events with atorvastatin.";
+        if (faults[round] === "effects-completion") {
+          q.stem_en += " The trial included 9971 participants.";
+          assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "effects");
+        }
+        Object.assign(submitted[n - 1], {stem_en: q.stem_en, explanation_en: q.explanation_en, excerpt: [2, 3]});
+      }
+      if (faults[round] === "claims-completion" && n === 1) {
+        q.explanation_en += " The finding was in community-dwelling adults.";
+        assert.equal(CaseQuiz.rejectReason({...q, quote: caseQuote}, {pmid, excerpts: [caseQuote]}), "claims");
+        Object.assign(submitted[n - 1], {explanation_en: q.explanation_en, excerpt: [2, 1]});
       }
       return q;
     });
@@ -166,6 +202,17 @@ const quiet = () => {};
     ["generate", 1, 2, 3], ["solve", 1, 2], ["repair", 3], ["solve", 3],
   ]);
   assert.ok(logs.some(m => /Rejected case item 1: numbers; stem=.+; value=\["9\.98"\]/.test(m)));
+  const numericRejection = logs.find(m => m.startsWith("Rejected case item 1: numbers;"));
+  const evidence = JSON.parse(numericRejection.split("; evidence=")[1]);
+  assert.equal(evidence.excerpt, 2);
+  assert.equal(evidence.answer, "A");
+  assert.equal(evidence.keyedOption.en, "Fewer primary cardiovascular events. ".repeat(7) + "End of the rejected option.");
+  assert.equal(evidence.keyedOption.vi, course(1).items.find(q => q.type === "case").options[0].vi);
+  let expectedTotal = 0;
+  assert.deepEqual(logs.flatMap(m => {
+    const tokens = m.match(/token budget: estimated=(\d+).*running total=(\d+)$/);
+    return tokens ? [tokens.slice(1).map(Number)] : [];
+  }), g.calls.map(({estimated}) => [estimated, expectedTotal += estimated]));
   assert.ok(logs.some(m => /Rejected case item 2: options; stem=.+; value=.*"duplicate":\[1,2\].*"value":"/.test(m)));
   assert.ok(logs.some(m => /Rejected case item 1: resolve; stem=.+; value=\{"expected":"A","got":"D"\}/.test(m)));
   assert.ok(logs.some(m => m.includes('"excerpt":"2.5"') && m.includes("case item 1: quote")));
@@ -226,7 +273,8 @@ const quiet = () => {};
   assert.match(diagnostics, /no HTTP response[^\n]+: fetch failed for \[REDACTED\] — ENOTFOUND/);
   assert.ok(!diagnostics.includes(env.GROQ_API_KEY));
   assert.doesNotMatch(diagnostics, /gsk_another_credential|DO NOT LOG THE FULL BODY|x{401}/);
-  assert.equal(upstreamLogs.length, 8);
+  assert.equal(upstreamLogs.filter(m => m.includes("token budget:")).length, 7, "count every actual HTTP attempt");
+  assert.equal(upstreamLogs.filter(m => !m.includes("token budget:")).length, 8);
   assert.match(upstreamLogs.at(-1), /rejected: \{"upstream":6\}/);
   assert.equal(fs.readFileSync(setPath, "utf8"), before, "upstream failures leave previously published sets intact");
   let time = 0;
@@ -262,7 +310,7 @@ const quiet = () => {};
     "forced regeneration replaces today's sets even when all three already validate");
   assert.deepEqual(fresh.calls.slice(0, 4).map(({mode, slots}) => [mode, ...slots]),
     [["generate", 1, 2, 3], ["solve", 1, 2, 3], ["repair", 1, 2, 3], ["solve", 1, 2, 3]]);
-  assert.deepEqual(explanationLogs.filter(m => m.includes(": explanation;")).map(m => m.replace(/; stem=.*; value=/, ": ")), [
+  assert.deepEqual(explanationLogs.filter(m => m.includes(": explanation;")).map(m => m.split("; evidence=")[0].replace(/; stem=.*; value=/, ": ")), [
     'Rejected case item 1: explanation: ["en"]',
     'Rejected case item 2: explanation: ["vi"]',
     'Rejected case item 3: explanation: ["vi"]',
@@ -284,5 +332,36 @@ const quiet = () => {};
   assert.equal(await main({root, env, date: nextDate, fetchImpl: offline, log: quiet}), 0);
   assert.deepEqual(Array.from(read()[id], s => s.set_id), Array.from(newIds), "regeneration does not rewrite prior lessons");
   console.log("Daily rebuild: forced replacement, valid fallback, and invalid set removal: OK");
+  for (const [fault, expectedSlots] of [["completion", [1, 3]], ["partial", [1, 3]], ["ambiguous", [3]]]) {
+    assert.match(excerpts[0], /40 mg once daily/);
+    assert.match(caseQuote, /hazard ratio, 0\.70/);
+    const source = fault === "completion" ? lesson : {...lesson, quiz_source_texts: {[pmid]:
+      [...lesson.quiz_source_texts[pmid], fault === "partial" ? "Participants received atorvastatin 40 mg."
+        : "Participants in the atorvastatin arm received 40 mg once daily."]}};
+    publishLessons([source]);
+    const mock = fakeGroq([fault], 50, source);
+    const rejections = [];
+    assert.equal(await main({root, env: rerunEnv, date, fetchImpl: mock.fetchImpl, log: m => rejections.push(m)}), 3);
+    assert.deepEqual(mock.calls.slice(1, 3).map(({mode, slots}) => [mode, ...slots]), [
+      ["solve", ...expectedSlots], ["repair", ...[1, 2, 3].filter(n => !expectedSlots.includes(n))],
+    ], "only grounded items reach the solver; only failed slots reach repair");
+    const items = read()[id][0].items;
+    if (fault !== "ambiguous") assert.deepEqual(Array.from(items[0].quotes), [caseQuote, excerpts[0]]);
+    else assert.equal(items[0].quote, caseQuote, "ambiguous item is replaced, not auto-completed");
+    assert.ok(rejections.some(m => /Rejected case item 2: numbers;.*value=\["30"\]/.test(m)));
+  }
+  publishLessons([lesson]);
+  const countMock = fakeGroq(["count-completion"], 60);
+  assert.equal(await main({root, env: rerunEnv, date, fetchImpl: countMock.fetchImpl, log: quiet}), 3);
+  assert.deepEqual(countMock.calls[1].slots, [1, 2, 3], "a missing enrollment count doesn't require a repair");
+  assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, excerpts[1]]);
+  for (const [fault, background] of [["effects-completion", excerpts[1]], ["claims-completion", excerpts[0]]]) {
+    const mock = fakeGroq([fault], 70);
+    assert.equal(await main({root, env: rerunEnv, date, fetchImpl: mock.fetchImpl, log: quiet}), 3);
+    assert.deepEqual(mock.calls[1].slots, [1, 2, 3], "a grounding failure resolved by the second citation doesn't require a repair");
+    assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, background]);
+  }
+  console.log("Citation completion: qualifying population and enrollment count also complete after claims or effects failures: OK");
+  console.log("Citation completion: STAREE population and regimen supported; partial matches ignored; absent 30% and true ambiguity rejected: OK");
   console.log("Case-only generation: three cases per set, selective repairs, independent re-solve, no-key theory fallback: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));
