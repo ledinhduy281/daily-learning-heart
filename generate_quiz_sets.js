@@ -28,7 +28,7 @@ function todayLesson(data, date) {
 }
 
 function systemPrompt(pmid, philosophy, count, repairing) {
-  return `Owner's tutoring philosophy (adapt to a static quiz):\n${philosophy}\n\n` +
+  return (repairing ? '' : `Owner's tutoring philosophy (adapt to a static quiz):\n${philosophy}\n\n`) +
     `Return {"questions":[…]} with exactly ${count} bilingual clinical application case questions (${repairing ?
       'only the requested replacements, in the given order' : 'no theory questions'}). ` +
     'Each item must require applying the study or guideline to a short fictional patient vignette or clinical decision, not verbatim recall. ' +
@@ -46,13 +46,15 @@ function systemPrompt(pmid, philosophy, count, repairing) {
     'Use standard Vietnamese medical terminology. Do not refer to option letters or claim human review.';
 }
 
-function redactError(value, key) {
+function redactError(value, key, limit = 400) {
   return (typeof value === 'string' ? value : '')
     .split(key).join('[REDACTED]')
     .replace(/\b(?:Bearer\s+[^\s"'<>]+|gsk_[\w-]+)/gi, '[REDACTED]')
     .replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029]+/g, ' ')
-    .trim().slice(0, 400);
+    .trim().slice(0, limit);
 }
+
+const estimatePromptTokens = bytes => Math.ceil(bytes / 3);
 
 function durationMs(text) {
   if (!/^\s*(?:\d+(?:\.\d+)?(?:ms|s|m|h)\s*)+$/i.test(text || '')) return 0;
@@ -86,7 +88,7 @@ function rateGate(now, wait, budgetMs) {
     },
     async ready(stage, bytes) {
       const time = now();
-      const estimate = Math.max(Math.ceil(bytes / 3), estimates.get(stage) || 0);
+      const estimate = Math.max(estimatePromptTokens(bytes), estimates.get(stage) || 0);
       const deficit = estimate - remaining - (time - observedAt) * capacity / 60_000;
       const tokenWait = deficit > 0 && resetAt > time
         ? Math.min(resetAt - time, capacity ? deficit * 60_000 / capacity : Infinity) : 0;
@@ -98,7 +100,7 @@ function rateGate(now, wait, budgetMs) {
   };
 }
 
-async function groq({key, model, fetchImpl, log, gate}, system, user, maxTokens, stage) {
+async function groq({key, model, fetchImpl, log, gate, tokens}, system, user, maxTokens, stage) {
   const body = {model, temperature: 0.7, max_tokens: maxTokens, response_format: {type: 'json_object'},
     messages: [{role: 'system', content: system + '\nReply with a single JSON object.'}, {role: 'user', content: user}]};
   if (model.startsWith('openai/gpt-oss')) Object.assign(body, {reasoning_effort: 'low', include_reasoning: false});
@@ -106,6 +108,9 @@ async function groq({key, model, fetchImpl, log, gate}, system, user, maxTokens,
   for (let limited = 0; limited < 4;) {
     const payload = JSON.stringify(body), bytes = Buffer.byteLength(payload);
     if (!await gate.ready(stage, bytes)) return null;
+    const estimated = estimatePromptTokens(bytes) + maxTokens;
+    tokens.total += estimated;
+    log(`Groq ${stage} token budget: estimated=${estimated} (prompt≈${estimated - maxTokens}, completion cap=${maxTokens}); running total=${tokens.total}`);
     const report = (status, message) => log(`Groq ${stage} request failed (${status}, model=${redactError(model, key)}, ` +
       `request_bytes=${bytes}, max_tokens=${maxTokens}): ${redactError(message, key) || 'No error message'}`);
     let response;
@@ -207,6 +212,30 @@ function candidateFor(item, excerpts) {
   return candidate;
 }
 
+function groundFor(candidate, ground) {
+  return {...ground, title: '', excerpts: CaseQuiz.citedExcerpts(candidate)};
+}
+
+function completeCitation(candidate, ground) {
+  const {quote, excerpt, ...fields} = candidate;
+  if (!quote || CaseQuiz.unsupportedClaims(candidate).length) return null;
+  const missingNumbers = CaseQuiz.unsupportedNumbers(candidate, groundFor(candidate, ground));
+  const missingCounts = new Set(missingNumbers.map(n => 'result figure ' + n));
+  if (CaseQuiz.unsupportedCaseEffects(candidate).some(reason => !missingCounts.has(reason))) return null;
+  const missingDoses = CaseQuiz.unsupportedDoses(candidate);
+  let completion = null;
+  for (const [index, background] of ground.excerpts.entries()) {
+    if (background === quote) continue;
+    const expanded = {...fields, excerpt: [excerpt, index + 1], quotes: [quote, background]};
+    const numbers = CaseQuiz.unsupportedNumbers(expanded, groundFor(expanded, ground));
+    const doses = CaseQuiz.unsupportedDoses(expanded);
+    if (!missingNumbers.some(n => !numbers.includes(n)) && !missingDoses.some(d => !doses.includes(d))) continue;
+    if (completion) return null;
+    completion = expanded;
+  }
+  return completion && !CaseQuiz.rejectReason(completion, groundFor(completion, ground)) ? completion : null;
+}
+
 function rejectedOptions(item) {
   const {answer, options} = item || {};
   if (!Array.isArray(options) || options.length !== 4) return {count: options?.length, options};
@@ -245,7 +274,11 @@ function logRejected(options, phase, slot, reason, item, ground, received) {
     explanation: () => received,
   };
   options.log(`Rejected ${phase} item ${slot + 1}: ${reason}; stem=${clipped(item?.stem_en || item?.stem_vi).slice(0, 120) || '(missing)'}; ` +
-    `value=${clipped(values[reason]?.()).slice(0, 220) || '(missing)'}`);
+    `value=${clipped(values[reason]?.()).slice(0, 220) || '(missing)'}; evidence=${redactError(JSON.stringify({
+      excerpt: item?.excerpt ?? null, answer: item?.answer ?? null,
+      keyedOption: ['A', 'B', 'C', 'D'].includes(item?.answer) ? item?.options?.['ABCD'.indexOf(item.answer)] ?? null : null,
+      ...(reason === 'options' || reason === 'dose' ? {options: item?.options ?? null} : {}),
+    }), options.key, Infinity)}`);
 }
 
 async function buildCaseSet(ground, excerpts, header, seen, options) {
@@ -274,11 +307,15 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
         continue;
       }
       const item = questions[i];
-      const candidate = candidateFor(item, excerpts);
-      const reason = !candidate ? 'quote' : item.type !== 'case' ? 'shape' :
-        CaseQuiz.rejectReason(candidate, {...ground, title: '', excerpts: CaseQuiz.citedExcerpts(candidate)}) ||
-        (['en', 'vi'].some(l => seen[l].has(stemKey(candidate['stem_' + l])) ||
-          items.some(q => q && stemKey(q['stem_' + l]) === stemKey(candidate['stem_' + l]))) ? 'duplicate' : '');
+      let candidate = candidateFor(item, excerpts);
+      let reason = !candidate ? 'quote' : item.type !== 'case' ? 'shape' :
+        CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
+      if (reason === 'numbers' || reason === 'dose') {
+        const completed = completeCitation(candidate, ground);
+        if (completed) { candidate = completed; reason = ''; }
+      }
+      if (!reason && ['en', 'vi'].some(l => seen[l].has(stemKey(candidate['stem_' + l])) ||
+          items.some(q => q && stemKey(q['stem_' + l]) === stemKey(candidate['stem_' + l])))) reason = 'duplicate';
       if (reason) {
         logRejected(options, 'case', slot, reason, candidate || item, ground);
         rejected.push({slot, reason});
@@ -288,7 +325,7 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
       }
     }
     if (candidates.length) {
-      const result = await resolveItems(items, excerpts, options, candidates);
+      const result = await resolveItems(items, ground.excerpts, options, candidates);
       if (result.problem) return result;
       for (const rejection of result.rejected) {
         logRejected(options, 'case', rejection.slot, rejection.reason, items[rejection.slot], ground, rejection.got);
@@ -350,7 +387,8 @@ async function main({root = ROOT, env = process.env, fetchImpl = globalThis.fetc
     return 0;
   }
   const philosophy = fs.readFileSync(path.join(ROOT, 'docs', 'quiz_philosophy.md'), 'utf8');
-  const sets = await buildSets(lesson, existing, {key, model, fetchImpl, log, philosophy, gate: rateGate(now, wait, budgetMs)});
+  const sets = await buildSets(lesson, existing, {key, model, fetchImpl, log, philosophy, tokens: {total: 0},
+    gate: rateGate(now, wait, budgetMs)});
   const publishable = sets.length ? sets : valid;
   const added = sets.length - existing.length;
   if (!added && valid.length === previous.length) return 0;
