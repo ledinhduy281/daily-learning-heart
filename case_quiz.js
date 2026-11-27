@@ -561,7 +561,7 @@ const CaseQuiz = (() => {
       const skill = state.skills[item.skill];
       if (!state.used.includes(state.index)) {
         state.used.push(state.index);
-        const evidence = item.quote ?? JSON.stringify([...item.quotes].sort());
+        const evidence = citedExcerpts(item)[0];
         if (correct && !state.attempts && !skill.checks.some(c => c.index === state.index || c.evidence === evidence)) {
           skill.checks.push({index: state.index, evidence});
           if (skill.checks.length >= 2) skill.level = item.type === 'case' ? 4 : 3;

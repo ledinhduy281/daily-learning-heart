@@ -42,6 +42,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
     if (system.startsWith("Independently answer")) {
       assert.ok(!user.includes('"answer"'), "independent re-solve never sees the key");
       assert.match(system, /ONLY its cited excerpt/);
+      assert.match(system, /the first must support the key finding in the correct option/);
       assert.match(system, /Cardiovascular events are not cardiovascular mortality/);
       assert.match(system, /exact clinical endpoint, population, effect direction, comparator, magnitude and time frame/);
       assert.match(system, /supported as written in BOTH languages/);
@@ -75,6 +76,7 @@ function fakeGroq(faults = [], roundOffset = 0) {
     }
     assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
     assert.match(system, /Set "excerpt" to the 1-based integer index/);
+    assert.match(system, /put the excerpt that supports the key finding in the correct option first/);
     assert.match(system, /Do not include a quote field/);
     assert.match(system, /Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt/);
     assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
@@ -117,8 +119,8 @@ function fakeGroq(faults = [], roundOffset = 0) {
         else q.excerpt = "E2";
       }
       if (faults[round] === "count" && repaired) {
-        q.excerpt = ["E1", "[2]"];
-        submitted[n - 1].excerpt = [1, 2];
+        q.excerpt = ["[2]", "E1"];
+        submitted[n - 1].excerpt = [2, 1];
       }
       return q;
     });
@@ -154,7 +156,7 @@ const quiet = () => {};
     assert.ok(!CaseQuiz.validateCaseSet(lesson, {...set, items: set.items.map(q => ({...q, type: "theory"}))}));
     assert.ok(set.items.every(q => CaseQuiz.citedExcerpts(q).includes(caseQuote)), "the cited index yields the exact source text");
   }
-  assert.deepEqual(JSON.parse(JSON.stringify(sets[2].items[2].quotes)), [excerpts[0], caseQuote]);
+  assert.deepEqual(JSON.parse(JSON.stringify(sets[2].items[2].quotes)), [caseQuote, excerpts[0]]);
   assert.ok(!Object.hasOwn(sets[2].items[2], "quote"), "a dual citation stores both exact excerpts");
   assert.ok(sets[0].items.every(q => q.quote === caseQuote), "the single-excerpt artifact shape is unchanged");
   assert.ok(!fs.readFileSync(setPath, "utf8").includes(env.GROQ_API_KEY));
