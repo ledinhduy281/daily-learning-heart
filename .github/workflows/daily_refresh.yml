@@ -11,16 +11,17 @@ on:
     - cron: '53 22 * * *'
     - cron: '17 23 * * *'
     - cron: '43 23 * * *'
+    # Vietnam quota catch-ups: 07:29, 09:03, 11:29, and 14:03.
+    - cron: '29 0 * * *'
+    - cron: '3 2 * * *'
+    - cron: '29 4 * * *'
+    - cron: '3 7 * * *'
   workflow_dispatch:
     inputs:
       regenerate_quiz_sets:
         description: 'Rebuild today’s clinical quiz sets instead of reusing valid sets'
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths: ['.github/workflows/daily_refresh.yml']
-
 permissions:
   contents: write
 
@@ -68,6 +69,7 @@ jobs:
           TZ: Asia/Ho_Chi_Minh
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          GROQ_FALLBACK_MODELS: ${{ vars.GROQ_FALLBACK_MODELS }}
           REGENERATE_QUIZ_SETS: ${{ inputs.regenerate_quiz_sets }}
         run: |
           node generate_quiz_sets.js
