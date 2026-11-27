@@ -5,14 +5,14 @@ import os
 import shutil
 import subprocess
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fetch_daily_ebm import PILLARS, get_pillar_for_date, refresh_today_briefing
 from focused_lessons import GATE_START_DATE
-from recent_lessons import build_recent_templates
+from recent_lessons import build_recent_lesson, build_recent_templates
 from pipeline import lesson_generation
 from pipeline.validate_lesson import _read_bundle
 
@@ -94,6 +94,34 @@ class EvidenceWorkflowTests(unittest.TestCase):
         (step,) = deploy["steps"]
         self.assertEqual(step["uses"], "actions/deploy-pages@v4")
         self.assertEqual(step["with"]["artifact_name"], "${{ needs.build.outputs.artifact_name }}")
+
+    def test_daily_refresh_schedules_start_after_vietnam_midnight_with_catchups(self):
+        trigger = self.workflow("daily_refresh")["on"]
+        self.assertEqual([entry["cron"] for entry in trigger["schedule"]], [
+            "7 17 * * *", "43 18 * * *", "11 20 * * *", "37 21 * * *",
+            "53 22 * * *", "17 23 * * *", "43 23 * * *",
+        ])
+        self.assertEqual(trigger["workflow_dispatch"]["inputs"]["regenerate_quiz_sets"]["default"], "false")
+
+    def test_current_vietnam_lesson_skips_source_fetch_in_early_and_late_slots(self):
+        vn = timezone(timedelta(hours=7))
+        early = datetime(2026, 11, 27, 0, 7, tzinfo=vn)
+        today = early.date()
+        lesson = build_recent_lesson(get_pillar_for_date(today), today.isoformat())
+        bundle = self.root / "briefings.js"
+        rotation = self.root / "rotation_state.json"
+        bundle.write_text("window.EBM_BRIEFINGS_DATA = " + json.dumps({"briefings": [lesson]}) + ";")
+        rotation.write_text(json.dumps({"last_updated": today.isoformat()}))
+        before = (bundle.read_bytes(), rotation.read_bytes())
+        with patch.multiple("fetch_daily_ebm", BRIEFINGS_JS_PATH=bundle, ROTATION_STATE_PATH=rotation), \
+                patch("crawl_cardiology_news.refresh_guideline_briefing",
+                      side_effect=AssertionError("already-current lessons must not fetch sources")):
+            for slot in (early, early.replace(hour=6, minute=43)):
+                with patch("fetch_daily_ebm._now_vn", return_value=slot):
+                    result = refresh_today_briefing()
+                    self.assertTrue(result["already_up_to_date"])
+                    self.assertEqual(result["briefing"]["date"], today.isoformat())
+        self.assertEqual((bundle.read_bytes(), rotation.read_bytes()), before)
 
     def test_daily_refresh_validates_changed_lesson_before_commit(self):
         workflow = self.workflow("daily_refresh")
