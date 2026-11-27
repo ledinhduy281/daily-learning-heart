@@ -404,47 +404,55 @@ async function buildCaseSet(ground, excerpts, header, seen, options) {
       continue;
     }
     if (count !== pending.length) options.log(`Groq case response count: expected ${pending.length}, got ${count}.`);
-    const candidates = [];
-    const rejected = [];
     const surplus = count > pending.length;
-    let nextSlot = 0;
-    for (const item of questions) {
-      if (nextSlot === pending.length) break;
-      const {slot} = pending[nextSlot];
-      let candidate = candidateFor(item, excerpts);
-      let reason = !candidate ? 'quote' : item.type !== 'case' ? 'shape' :
-        CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
-      if (reason === 'citation-order') {
-        candidate = orderedCitations(candidate);
-        reason = CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
+    let cursor = 0;
+    do {
+      const candidates = [];
+      const rejected = [];
+      let nextSlot = 0;
+      while (cursor < count && nextSlot < pending.length) {
+        const item = questions[cursor++];
+        const {slot} = pending[nextSlot];
+        let candidate = candidateFor(item, excerpts);
+        let reason = !candidate ? 'quote' : item.type !== 'case' ? 'shape' :
+          CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
+        if (reason === 'citation-order') {
+          candidate = orderedCitations(candidate);
+          reason = CaseQuiz.rejectReason(candidate, groundFor(candidate, ground));
+        }
+        if (['numbers', 'stem-numbers', 'dose', 'claims', 'effects'].includes(reason)) {
+          const completed = completeCitation(candidate, ground);
+          if (completed) { candidate = completed; reason = ''; }
+        }
+        if (!reason && ['en', 'vi'].some(l => seen[l].has(stemKey(candidate['stem_' + l])) ||
+            items.some(q => q && stemKey(q['stem_' + l]) === stemKey(candidate['stem_' + l])))) reason = 'duplicate';
+        if (reason) {
+          logRejected(options, 'case', slot, reason, candidate || item, ground);
+          if (!surplus) rejected.push({slot, reason});
+        } else {
+          items[slot] = candidate;
+          candidates.push(slot);
+        }
+        if (!surplus || !reason) nextSlot++;
       }
-      if (['numbers', 'stem-numbers', 'dose', 'claims', 'effects'].includes(reason)) {
-        const completed = completeCitation(candidate, ground);
-        if (completed) { candidate = completed; reason = ''; }
+      rejected.push(...pending.slice(nextSlot).map(({slot, reason}) => ({slot, reason: surplus && reason || 'count'})));
+      if (candidates.length) {
+        const result = await resolveItems(items, ground.excerpts, options, candidates);
+        if (result.problem) return result;
+        for (const rejection of result.rejected) {
+          logRejected(options, 'case', rejection.slot, rejection.reason, items[rejection.slot], ground, rejection.got);
+          items[rejection.slot] = null;
+          rejected.push(rejection);
+        }
       }
-      if (!reason && ['en', 'vi'].some(l => seen[l].has(stemKey(candidate['stem_' + l])) ||
-          items.some(q => q && stemKey(q['stem_' + l]) === stemKey(candidate['stem_' + l])))) reason = 'duplicate';
-      if (reason) {
-        logRejected(options, 'case', slot, reason, candidate || item, ground);
-        if (!surplus) rejected.push({slot, reason});
-      } else {
-        items[slot] = candidate;
-        candidates.push(slot);
-      }
-      if (!surplus || !reason) nextSlot++;
-    }
-    rejected.push(...pending.slice(nextSlot).map(({slot}) => ({slot, reason: 'count'})));
-    if (candidates.length) {
-      const result = await resolveItems(items, ground.excerpts, options, candidates);
-      if (result.problem) return result;
-      for (const rejection of result.rejected) {
-        logRejected(options, 'case', rejection.slot, rejection.reason, items[rejection.slot], ground, rejection.got);
-        items[rejection.slot] = null;
-        rejected.push(rejection);
-      }
-    }
-    if (!rejected.length) return {items};
-    pending = rejected.sort((a, b) => a.slot - b.slot);
+      if (!rejected.length) return {items};
+      rejected.sort((a, b) => a.slot - b.slot);
+      if (surplus) {
+        const verified = candidates.map(slot => items[slot]).filter(Boolean);
+        pending.forEach(({slot}, i) => { items[slot] = verified[i] || null; });
+        pending = pending.slice(verified.length).map(({slot}, i) => ({...rejected[i], slot}));
+      } else pending = rejected;
+    } while (surplus && cursor < count);
   }
   return {problem: pending[0]?.reason};
 }
