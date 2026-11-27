@@ -76,6 +76,9 @@ function fakeGroq(faults = [], roundOffset = 0) {
     assert.ok(system.includes(philosophy), "the complete committed philosophy is embedded");
     assert.match(system, /Set "excerpt" to the 1-based integer index/);
     assert.match(system, /Do not include a quote field/);
+    assert.match(system, /Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt/);
+    assert.match(system, /Do not calculate differences, convert HR or RR to percentages \(e\.g\. 30% from HR 0\.70\), or round/);
+    assert.match(system, /exactly 4 options\. Do not prefix or mention option letters in option text/);
     const repair = user.match(/^REPAIR SLOTS: (.*)$/m)?.[1];
     if (!repair) {
       repaired = 0;

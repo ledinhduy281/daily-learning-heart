@@ -36,7 +36,9 @@ function systemPrompt(pmid, philosophy, count, repairing) {
     'Keep the vignette and explanations brief. Cite one excerpt if it suffices, or two from this source when both are needed. Preserve the exact clinical outcome, population and qualifiers in both languages; ' +
     'The vignette patient must fit the population for the cited result. Never transfer a subgroup estimate to another group or turn a relative change into an absolute risk. ' +
     'do not substitute mortality for events, or infer an outcome, subgroup effect, or recommendation not stated there. Never invent a dose. ' +
+    'Every number in a stem, option, or explanation must appear exactly as written in a cited excerpt. Do not calculate differences, convert HR or RR to percentages (e.g. 30% from HR 0.70), or round. ' +
     'Do not repeat any prior stem. Build plausible distractors and explain why the correct reasoning follows from the cited excerpt. ' +
+    'Provide exactly 4 options. Do not prefix or mention option letters in option text; only the answer field contains the letter key. Use qualitative distractors when needed. ' +
     `Fields: type ("case"), pmid ("${pmid}"), excerpt (integer or array of two distinct integers), stem_vi, stem_en, ` +
     'options (four objects with vi and en), answer ("A"-"D"), explanation_vi, explanation_en. ' +
     'Set "excerpt" to the 1-based integer index from the excerpt labels ("excerpt":2 for [2], or "excerpt":[1,3] for [1] and [3]). Do not include a quote field or repeat the source text. ' +
