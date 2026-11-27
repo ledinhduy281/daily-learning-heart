@@ -263,11 +263,8 @@ const CaseQuiz = (() => {
     en: /\b(?:(?:cannot|can t|(?:does|do|did|could) not|is unable to) (?:\w+ ){0,8}(?:predict|estimate|project|determine|tell|establish)|not (?:an? )?(?:individual|personal|patient specific) (?:risk|prediction|estimate))\b/,
     vi: /\b(?:(?:khong the|khong du de|khong dung de) (?:\w+ ){0,8}(?:du doan|uoc tinh|ngoai suy|xac dinh)|khong phai (?:la )?(?:nguy co|du doan|uoc tinh) ca nhan)\b/,
   };
-  const CONTRAST = {en: /\b(?:but|however|yet|nevertheless)\b/, vi: /\b(?:nhung|tuy nhien|tuy vay|song)\b/};
-
   function projectionClauses(value, lang) {
-    return value.split(/[!?;]|\.(?!\d)|(?<!\d),|,(?!\d)/)
-      .flatMap(clause => claimText(clause)[lang].split(CONTRAST[lang]));
+    return value.split(/[!?;\r\n\u2028\u2029]|\.(?!\d)/).map(clause => claimText(clause)[lang]);
   }
 
   function projectsGroupResult(item) {

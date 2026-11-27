@@ -55,18 +55,22 @@ const critique = {...individual,
     vi: "Thử nghiệm báo cáo tỷ lệ của nhóm, không phải là dự đoán cá nhân."}, ...individual.options.slice(1)],
 };
 assert.equal(CaseQuiz.rejectReason(critique, stareeGround), "", "a critique can teach the limit of group estimates");
+assert.equal(CaseQuiz.rejectReason({...critique,
+  stem_en: "A 75-year-old woman asks about atorvastatin. Why is it that this trial cannot, on its own, predict her personal risk?",
+  options: [{...critique.options[0], en: "The trial cannot, on its own, predict her personal risk."}, ...critique.options.slice(1)],
+}, stareeGround), "", "commas around an aside do not break a limitation");
 assert.equal(CaseQuiz.rejectReason({...critique, options: individual.options}, stareeGround), "projection",
   "a critique stem does not excuse a keyed option that fails to state the limitation");
 assert.equal(CaseQuiz.rejectReason({...critique, options: [{...critique.options[0],
-  en: "The trial cannot predict her personal risk, but this patient's incidence is 10.9 events per 1000 person-years."
+  en: "The trial cannot predict her personal risk; but this patient's incidence is 10.9 events per 1000 person-years."
 }, ...critique.options.slice(1)]}, stareeGround), "projection", "a limitation does not excuse a later personalized estimate");
 for (const [lang, key] of [
-  ["en", "The trial cannot predict her personal risk, this patient's incidence is 10.9 events per 1000 person-years."],
-  ["vi", "Thử nghiệm không thể dự đoán nguy cơ cá nhân, tỷ lệ ở bệnh nhân này là 10,9 trên 1000 người-năm."],
+  ["en", "The trial cannot predict her personal risk. This patient's incidence is 10.9 events per 1000 person-years."],
+  ["vi", "Thử nghiệm không thể dự đoán nguy cơ cá nhân. Tỷ lệ ở bệnh nhân này là 10,9 trên 1000 người-năm."],
 ]) {
   assert.equal(CaseQuiz.rejectReason({...critique,
     options: [{...critique.options[0], [lang]: key}, ...critique.options.slice(1)]
-  }, stareeGround), "projection", "a comma-separated limitation does not exempt a prediction in " + lang);
+  }, stareeGround), "projection", "a separate limitation sentence does not exempt a prediction in " + lang);
 }
 const cohort = {...reportedEvents, options: options(["412 participants", "297 participants", "500 participants", "600 participants"]),
   stem_en: "A cohort of 5000 adults aged 70 or older, with no prior cardiovascular disease, were randomized to receive atorvastatin 40 mg daily or placebo. How many participants would you expect to experience a primary cardiovascular event in the placebo group after 5.9 years?",
