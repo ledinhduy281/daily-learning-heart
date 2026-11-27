@@ -303,5 +303,45 @@ for (const _ of local.items) {
 }
 assert.equal(localState().stage, "mastered");
 assert.equal(localState().skills[0].level, 3, "spaced repeats and final checks never confer independent mastery");
+const dualSource = {...lesson, id: "dual-citation-demo"};
+const cases = payload.items.filter(q => q.type === "case").slice(0, 3);
+const {quote: outcome, ...dualFields} = cases[0];
+const regimen = lesson.quiz_source_texts[dualFields.pmid].find(text => text.includes("40 mg once daily"));
+dualSource.generated_quiz = {version: CaseQuiz.CASE_SET_VERSION, set_id: "dual-pack",
+  items: [{...dualFields, quotes: [outcome, regimen]}, ...cases.slice(1)]};
+const dualCourse = ClinicalQuiz.sourceCourse(dualSource);
+const dualIndex = dualCourse.items.findIndex(q => q.quotes);
+assert.ok(dualIndex >= 0, "a published dual-cited case reaches the Socratic course");
+const dualKey = tutor.sessionKey(2, dualSource);
+let dualState = {...CaseQuiz.startCourse(dualCourse), index: dualIndex};
+const dualPanel = {};
+const dualQuestion = CaseQuiz.courseQuestion(dualCourse, dualState, "en");
+const dualWrong = dualQuestion.options.find(o => o.key !== dualQuestion.correct_key).key;
+for (let attempt = 1; attempt <= 2; attempt++) {
+  dualState = CaseQuiz.courseTurn(dualCourse, dualState, "answer", dualWrong, "en");
+  tutor.store[dualKey] = {course: dualState};
+  tutor.renderCourse(dualSource, dualCourse, dualPanel, false);
+  if (attempt === 1) assert.doesNotMatch(dualPanel.innerHTML, /<blockquote>/);
+  else assert.deepEqual([...dualPanel.innerHTML.matchAll(/<blockquote>(.*?)<\/blockquote>/g)].map(m => m[1]),
+    [outcome, regimen].map(text => `“${escape(text)}”`));
+}
+console.log("Dual citations: both verbatim quotes reveal on the second miss: OK");
+const dualItem = dualCourse.items[dualIndex];
+const outcomeItem = {...dualItem, quote: outcome, quotes: undefined};
+const regimenOptions = ["Atorvastatin once daily", "Atorvastatin twice daily", "No atorvastatin in either arm", "Regimen not reported"];
+const regimenItem = {...outcomeItem, quote: regimen, options: regimenOptions.map(en => ({en, vi: en}))};
+const enrollment = lesson.quiz_source_texts[dualFields.pmid].find(text => text.includes("9971"));
+const creditCourse = {...dualCourse, items: [dualItem, outcomeItem, regimenItem,
+  {...regimenItem, quote: undefined, quotes: [regimen, enrollment]}]};
+let creditState = CaseQuiz.startCourse(creditCourse);
+for (const _ of creditCourse.items) {
+  const answer = CaseQuiz.courseQuestion(creditCourse, creditState, "en").correct_key;
+  creditState = CaseQuiz.courseTurn(creditCourse, creditState, "answer", answer, "en");
+  creditState = CaseQuiz.courseTurn(creditCourse, creditState, "next", undefined, "en");
+}
+assert.deepEqual(creditState.skills[dualItem.skill].checks.map(c => [c.index, c.evidence]), [[0, outcome], [2, regimen]],
+  "a background excerpt can earn credit as primary evidence elsewhere, but adding context to a seen answer cannot");
+assert.equal(creditState.skills[dualItem.skill].level, 4);
+console.log("Dual-citation skill credit: distinct primary evidence counts; added background does not: OK");
 console.log("Socratic quiz: strict schema, independent checks, hints, spaced review, assessment, bilingual rendering, and resume: OK");
 console.log("Offline Socratic theory: no cross-question answer disclosures in bundled lessons, delayed reveal, spaced review, and final without AI: OK");

@@ -44,6 +44,33 @@ assert.equal(CaseQuiz.rejectReason({...rateWithAnswer, stem_en: kase.stem_en + "
   stem_vi: kase.stem_vi + " Bà được truyền amiodarone 1 mg/phút."}, rateGround), "", "a translated rate unit is the same rate");
 assert.equal(CaseQuiz.rejectReason({...rateWithAnswer, stem_en: kase.stem_en + " She received a 1 mg bolus of amiodarone."}, rateGround),
   "dose", "a bolus is not the quoted infusion rate");
+const regimen = lesson.quiz_source_texts[pmid].find(t => t.includes("40 mg once daily"));
+const dailyDose = {...kase, quote: regimen, explanation_en: "The trial used the reported regimen.",
+  explanation_vi: "Nghiên cứu sử dụng liều được báo cáo.", options: options(["The reported trial regimen", "An alternative regimen", "No regimen", "Unknown regimen"]),
+  stem_vi: kase.stem_vi + " Bà hỏi về atorvastatin 40\u202fmg/ngày."};
+for (const dose of ["40 mg once daily", "40 mg daily", "40 mg per day", "40 mg"]) {
+  assert.equal(CaseQuiz.rejectReason({...dailyDose, stem_en: kase.stem_en + " She asks about atorvastatin " + dose + "."},
+    CaseQuiz.grounding(lesson)), "", dose);
+}
+for (const dose of ["80 mg daily", "40 mg/kg/day", "40 mg twice daily", "40 mg/min"]) {
+  assert.equal(CaseQuiz.rejectReason({...dailyDose, stem_en: kase.stem_en + " She asks about atorvastatin " + dose + "."},
+    CaseQuiz.grounding(lesson)), "dose", dose);
+}
+const {quote: _regimen, ...dailyFields} = dailyDose;
+const combinedCase = {...dailyFields, quotes: [regimen, quote], explanation_en: "Atorvastatin 40 mg once daily lowered primary cardiovascular events (HR 0.70).",
+  explanation_vi: "Atorvastatin 40 mg/ngày làm giảm biến cố tim mạch chính (HR 0.70)."};
+const combinedGround = CaseQuiz.grounding(lesson);
+assert.equal(CaseQuiz.rejectReason(combinedCase, combinedGround), "", "the STAREE regimen and outcome are grounded together");
+assert.equal(CaseQuiz.rejectReason({...combinedCase, explanation_en: combinedCase.explanation_en + " The study enrolled 9971 participants."},
+  combinedGround), "numbers", "the uncited enrollment excerpt cannot ground a number");
+assert.equal(CaseQuiz.rejectReason({...combinedCase, explanation_en: combinedCase.explanation_en + " It lowered cardiovascular mortality."},
+  combinedGround), "claims", "neither cited excerpt supports mortality");
+for (const quotes of [[regimen, regimen], [regimen, quote, combinedGround.excerpts[1]], [regimen, quote.replace("0.70", "0.72")]]) {
+  assert.equal(CaseQuiz.rejectReason({...combinedCase, quotes}, combinedGround), "quote");
+}
+const otherPmid = "99999999";
+const crossSourceLesson = {...lesson, quiz_source_texts: {[pmid]: [regimen], [otherPmid]: [quote]}};
+assert.equal(CaseQuiz.rejectReason(combinedCase, CaseQuiz.grounding(crossSourceLesson)), "quote");
 const stagesQuote = quote + " Heart failure stages B and C were included.";
 assert.equal(CaseQuiz.rejectReason({...kase, quote: stagesQuote, explanation_en: "Heart failure stages B and C both fit; the hazard ratio was 0.70."},
   {...CaseQuiz.grounding(lesson), excerpts: [stagesQuote]}), "", "grounded clinical stage letters are not option references");
@@ -177,6 +204,10 @@ const scopedCase = {...withdrawnRenalCase, quote: scopedQuote,
   explanation_vi: "Hạ huyết áp tích cực làm tăng 42% nguy cơ suy giảm eGFR ≥30% (RR 1.42).",
 };
 assert.equal(CaseQuiz.rejectReason(scopedCase, scopedGround), "effects", "a CKD-only result cannot answer a non-CKD vignette");
+const {quote: _scoped, ...scopedFields} = scopedCase;
+const otherSubgroup = "Among patients without CKD, the analysis investigated a different outcome, cardiovascular events.";
+assert.equal(CaseQuiz.rejectReason({...scopedFields, quotes: [scopedQuote, otherSubgroup]},
+  {...scopedGround, excerpts: [scopedQuote, otherSubgroup]}), "effects", "another cited excerpt cannot transfer a CKD-only figure to non-CKD patients");
 assert.equal(CaseQuiz.rejectReason({...scopedCase,
   stem_en: scopedCase.stem_en.replace(" without chronic kidney disease", ""),
   stem_vi: scopedCase.stem_vi.replace(" không có bệnh thận mạn", ""),
