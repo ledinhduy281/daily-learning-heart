@@ -221,17 +221,16 @@ function completeCitation(candidate, ground) {
   if (!quote) return null;
   const missingNumbers = CaseQuiz.unsupportedNumbers(candidate, groundFor(candidate, ground));
   const missingDoses = CaseQuiz.unsupportedDoses(candidate);
+  if (!missingNumbers.length && !missingDoses.length) return null;
   let completion = null;
   for (const [index, background] of ground.excerpts.entries()) {
     if (background === quote) continue;
     const expanded = {...fields, excerpt: [excerpt, index + 1], quotes: [quote, background]};
-    const numbers = CaseQuiz.unsupportedNumbers(expanded, groundFor(expanded, ground));
-    const doses = CaseQuiz.unsupportedDoses(expanded);
-    if (!missingNumbers.some(n => !numbers.includes(n)) && !missingDoses.some(d => !doses.includes(d))) continue;
+    if (CaseQuiz.rejectReason(expanded, groundFor(expanded, ground))) continue;
     if (completion) return null;
     completion = expanded;
   }
-  return completion && !CaseQuiz.rejectReason(completion, groundFor(completion, ground)) ? completion : null;
+  return completion;
 }
 
 function rejectedOptions(item) {

@@ -126,7 +126,7 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
         q.excerpt = ["[2]", "E1"];
         submitted[n - 1].excerpt = [2, 1];
       }
-      if (["completion", "ambiguous"].includes(faults[round]) && !repaired) {
+      if (["completion", "partial", "ambiguous"].includes(faults[round]) && !repaired) {
         if (n === 1) {
           q.stem_en = "An older adult who meets STAREE eligibility asks what the study reported for atorvastatin 40 mg daily versus placebo.";
           q.stem_vi = "Một người cao tuổi đủ tiêu chí STAREE hỏi kết quả của atorvastatin 40 mg/ngày so với giả dược.";
@@ -137,9 +137,10 @@ function fakeGroq(faults = [], roundOffset = 0, source = lesson) {
             q.explanation_vi += " Kết quả này ghi nhận ở người sống tại cộng đồng.";
             assert.deepEqual(CaseQuiz.unsupportedClaims({...q, quote: caseQuote}), ["community_dwelling"]);
           }
+          if (faults[round] === "partial") q.stem_en += " She asks specifically about the 40 mg strength.";
           Object.assign(submitted[n - 1], {
             stem_en: q.stem_en, stem_vi: q.stem_vi, explanation_en: q.explanation_en, explanation_vi: q.explanation_vi,
-            excerpt: faults[round] === "completion" ? [2, 1] : 2,
+            excerpt: faults[round] === "ambiguous" ? 2 : [2, 1],
           });
         }
         if (n === 2) q.explanation_en = "The study reported a 30% reduction in primary cardiovascular events.";
@@ -322,11 +323,12 @@ const quiet = () => {};
   assert.equal(await main({root, env, date: nextDate, fetchImpl: offline, log: quiet}), 0);
   assert.deepEqual(Array.from(read()[id], s => s.set_id), Array.from(newIds), "regeneration does not rewrite prior lessons");
   console.log("Daily rebuild: forced replacement, valid fallback, and invalid set removal: OK");
-  for (const [fault, expectedSlots] of [["completion", [1, 3]], ["ambiguous", [3]]]) {
+  for (const [fault, expectedSlots] of [["completion", [1, 3]], ["partial", [1, 3]], ["ambiguous", [3]]]) {
     assert.match(excerpts[0], /40 mg once daily/);
     assert.match(caseQuote, /hazard ratio, 0\.70/);
     const source = fault === "completion" ? lesson : {...lesson, quiz_source_texts: {[pmid]:
-      [...lesson.quiz_source_texts[pmid], "Participants in the atorvastatin arm received 40 mg once daily."]}};
+      [...lesson.quiz_source_texts[pmid], fault === "partial" ? "Participants received atorvastatin 40 mg."
+        : "Participants in the atorvastatin arm received 40 mg once daily."]}};
     publishLessons([source]);
     const mock = fakeGroq([fault], 50, source);
     const rejections = [];
@@ -335,7 +337,7 @@ const quiet = () => {};
       ["solve", ...expectedSlots], ["repair", ...[1, 2, 3].filter(n => !expectedSlots.includes(n))],
     ], "only grounded items reach the solver; only failed slots reach repair");
     const items = read()[id][0].items;
-    if (fault === "completion") assert.deepEqual(Array.from(items[0].quotes), [caseQuote, excerpts[0]]);
+    if (fault !== "ambiguous") assert.deepEqual(Array.from(items[0].quotes), [caseQuote, excerpts[0]]);
     else assert.equal(items[0].quote, caseQuote, "ambiguous item is replaced, not auto-completed");
     assert.ok(rejections.some(m => /Rejected case item 2: numbers;.*value=\["30"\]/.test(m)));
   }
@@ -344,6 +346,6 @@ const quiet = () => {};
   assert.equal(await main({root, env: rerunEnv, date, fetchImpl: countMock.fetchImpl, log: quiet}), 3);
   assert.deepEqual(countMock.calls[1].slots, [1, 2, 3], "a missing enrollment count doesn't require a repair");
   assert.deepEqual(Array.from(read()[id][0].items[0].quotes), [caseQuote, excerpts[1]]);
-  console.log("Citation completion: STAREE regimen appended after the HR excerpt; absent 30% and ambiguous matches rejected: OK");
+  console.log("Citation completion: STAREE population and regimen supported; partial matches ignored; absent 30% and true ambiguity rejected: OK");
   console.log("Case-only generation: three cases per set, selective repairs, independent re-solve, no-key theory fallback: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));
