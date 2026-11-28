@@ -150,6 +150,14 @@ class FocusedLessonTests(unittest.TestCase):
                 self.assertIn(notice, answer)
                 self.assertNotIn("\n\n", answer)
 
+    def test_pasted_questions_do_not_redirect_to_an_unavailable_archive_quiz(self):
+        payload = read_bundle(app.BRIEFINGS_JS_PATH)
+        briefing = next(b for b in payload["briefings"] if b["id"] == "ebm-2026-11-23-p8-main")
+        question = "Which is true of myosin inhibition?\nA. Alpha\nB. Beta\nC. Gamma\nD. Delta"
+        answer, _ = app._compose_deterministic_ebm_answer(question, [briefing], [], "en")
+        self.assertIn("No source-supported questions are available for this lesson.", answer)
+        self.assertNotIn("Use the lesson quiz", answer)
+
     def test_every_pillar_has_a_traceable_match_and_archive_mismatch_is_removed(self):
         payload = read_bundle(app.BRIEFINGS_JS_PATH)
         for lesson in lessons.build_focused_templates(app.PILLARS).values():

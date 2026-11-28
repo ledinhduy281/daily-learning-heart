@@ -1,0 +1,10 @@
+{
+  "en": {
+    "mechanism": ["Underexpansion is not malapposition: the former describes an inadequate stent lumen area; the latter means struts are not in contact with the vessel wall."],
+    "pitfalls": ["An absolute benefit requires a baseline risk, a time horizon and a relevant population; a pooled relative risk alone does not provide an NNT."]
+  },
+  "vi": {
+    "mechanism": ["Stent nở không đủ và áp thành kém là hai vấn đề khác nhau: diện tích lòng stent có thể chưa đủ hoặc mắt stent không tiếp xúc thành mạch."],
+    "pitfalls": ["Để tính lợi ích tuyệt đối cần nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu. Không suy ra NNT từ một RR đơn độc."]
+  }
+}

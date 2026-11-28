@@ -1,5 +1,7 @@
 import copy
+import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import recent_lessons
@@ -97,6 +99,159 @@ class RecentLessonTests(unittest.TestCase):
         answer, _ = app._compose_deterministic_ebm_answer(query, [guideline], [], "en")
         self.assertIn("no quiz until a physician", answer)
         self.assertNotIn("Use the lesson quiz", answer)
+
+    def test_local_chat_reads_both_pci_teaching_blocks(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        sections = json.loads((Path(__file__).parent / "fixtures" / "chat_teaching_sections.json").read_text())
+        for lang, notes in sections.items():
+            lesson["teaching"][lang].update(notes)
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, evidence in (
+            ("en", "How many patients were included in the intracoronary imaging-guided PCI meta-analysis?", r"24[ ,]634"),
+            ("en", "How many patients did the PCI meta-analysis include?", r"24[ ,]634"),
+            ("en", "How many patients did the meta-analysis include in trials evaluating imaging guidance to prevent stent thrombosis?", r"24[ ,]634"),
+            ("vi", "Phân tích gộp PCI hướng dẫn bằng hình ảnh nội mạch gồm bao nhiêu bệnh nhân?", r"24\.634"),
+            ("en", "What is the difference between stent underexpansion and malapposition?", r"Underexpansion is not malapposition"),
+            ("vi", "Stent nở chưa đủ và áp thành không hoàn toàn khác nhau như thế nào?", r"nở không đủ và áp thành kém"),
+            ("en", "How many patients need to be treated to prevent one target lesion failure?", "does not provide an NNT"),
+            ("vi", "Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?", "Không suy ra NNT"),
+            ("vi", "Có bao nhiêu bệnh nhân cần được điều trị để ngăn một biến cố (NNT)?", "Không suy ra NNT"),
+            ("en", "How can absolute benefit be derived from the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
+            ("en", "How do I calculate absolute benefit using the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
+            ("vi", "Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
+            ("en", "What was the relative risk of target lesion failure?", r"target lesion failure[: (]+RR 0\.72"),
+            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?", r"thất bại tổn thương đích[, (]+RR 0,72"),
+            ("en", "What was the mean follow-up in the intracoronary imaging-guided PCI meta-analysis?", r"22 months"),
+            ("vi", "Thời gian theo dõi trung bình trong phân tích gộp PCI là bao lâu?", r"22 tháng"),
+        ):
+            with self.subTest(lang=lang, question=question):
+                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                self.assertRegex(answer, evidence)
+                self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+
+    def test_local_chat_can_find_reported_absolute_event_rates(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, evidence in (
+            ("en", "What was the reported absolute risk of serious adverse events in STAREE?", "Serious adverse events were 2.7% in each group"),
+            ("vi", "STAREE báo cáo nguy cơ tuyệt đối của biến cố bất lợi nghiêm trọng là bao nhiêu?", "Biến cố bất lợi nghiêm trọng là 2,7% ở mỗi nhóm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                self.assertIn(evidence, answer)
+
+    def test_local_chat_returns_conversion_requirements_and_reported_rr(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, requirement, estimate in (
+            ("en", "How can absolute benefit be calculated using a relative risk of target lesion failure?", "requires a baseline risk", "RR 0.72"),
+            ("en", "How can absolute benefit for target lesion failure be calculated using the pooled relative risk?", "requires a baseline risk", "RR 0.72"),
+            ("en", "How do I calculate absolute benefit for target lesion failure in patients with complex lesions using the pooled relative risk?", "requires a baseline risk", "RR 0.72"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối của thất bại tổn thương đích?", "cần biết nguy cơ nền", "RR 0,72"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối cho thất bại tổn thương đích từ nguy cơ tương đối gộp?", "cần biết nguy cơ nền", "RR 0,72"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối cho tử vong do tim từ nguy cơ tương đối gộp?", "cần biết nguy cơ nền", "0,73"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(requirement, answer)
+                self.assertIn(estimate, answer)
+                self.assertIn(lesson["teaching"][lang]["limits"][0], answer)
+
+    def test_local_chat_preserves_study_limits_for_subgroup_conversions(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, requirement in (
+            ("en", "How do I calculate absolute benefit for complex lesions using the pooled relative risk?", "requires a baseline risk"),
+            ("vi", "Tính lợi ích tuyệt đối ở nhóm tổn thương phức tạp từ nguy cơ tương đối gộp như thế nào?", "cần biết nguy cơ nền"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(requirement, answer)
+                self.assertIn(lesson["teaching"][lang]["limits"][0], answer)
+
+    def test_local_chat_matches_the_requested_risk_endpoint(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")
+        for lang, question, expected in (
+            ("en", "What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?", "kidney failure (RR 0.97"),
+            ("vi", "Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?", "suy thận (RR 0,97"),
+            ("en", "How do I calculate absolute benefit using a relative risk of 0.97 for kidney failure?", "kidney failure (RR 0.97"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối 0,97 cho suy thận?", "suy thận (RR 0,97"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
+                self.assertNotRegex(answer, r"RR 0[.,]85")
+        for lang, question, expected in (
+            ("en", "How do I calculate absolute benefit using the relative risk of 30% or greater eGFR decline?", "RR 1.42"),
+            ("en", "What was the relative risk of 30% or higher eGFR decline?", "RR 1.42"),
+            ("en", "What was the relative risk of 30% or greater eGFR decline in the study?", "RR 1.42"),
+            ("vi", "Tỉ số nguy cơ cho các biến cố tim mạch là bao nhiêu?", "RR 0,85"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
+        answer, _ = app._compose_deterministic_ebm_answer(
+            "How do I calculate absolute benefit using the relative risk of a 30% or greater reduction in cardiovascular events?\nA. First\nB. Second\nC. Third\nD. Fourth",
+            [lesson], [], "en",
+        )
+        self.assertNotIn("RR 1.42", answer)
+        for lang, question in (
+            ("en", "What were the risk ratios for cardiovascular events and kidney failure?"),
+            ("vi", "Tỉ số nguy cơ của biến cố tim mạch và suy thận là bao nhiêu?"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertRegex(answer, r"RR 0[.,]85")
+                self.assertRegex(answer, r"RR 0[.,]97")
+
+    def test_local_chat_finds_total_enrollment_before_arm_counts(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "43020520")
+        for lang, question in (
+            ("en", "How many participants were included in the BPROAD cognitive ancillary study?"),
+            ("en", "How many BPROAD cognitive study participants were randomized across both groups?"),
+            ("en", "How many BPROAD cognitive study participants were assigned to treatment overall?"),
+            ("vi", "Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?"),
+            ("vi", "BPROAD có bao nhiêu người được phân vào cả hai nhóm?"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn("12 434", answer)
+                self.assertNotIn("6219", answer)
+        for lang, question, expected in (
+            ("en", "How many BPROAD participants received intensive treatment?", "6219 participants in the intensive group"),
+            ("en", "How many BPROAD participants were assigned to the intensive group in total?", "6219 participants in the intensive group"),
+            ("vi", "BPROAD có bao nhiêu người được phân vào nhóm điều trị tích cực?", "6219 người ở nhóm tích cực"),
+            ("vi", "BPROAD tổng cộng có bao nhiêu người được phân vào nhóm điều trị tích cực?", "6219 người ở nhóm tích cực"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
+        poet = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42663314")
+        for lang, question, expected in (
+            ("en", "How many patients were assigned to the tailored arm in POET II?", "255 tailored"),
+            ("vi", "POET II có bao nhiêu người được phân vào nhóm điều chỉnh?", "255 điều chỉnh"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [poet], [], lang)
+                self.assertIn(expected, answer)
+
+    def test_local_chat_keeps_reported_absolute_and_relative_risk_together(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")
+        for lang, question, rr, absolute in (
+            ("en", "What was the absolute risk reduction and relative risk of cardiovascular events from intensive blood pressure lowering?", "RR 0.85", "4.3 events per 1000 person-years"),
+            ("en", "What absolute risk reduction and relative risk of cardiovascular events did the authors calculate?", "RR 0.85", "4.3 events per 1000 person-years"),
+            ("vi", "Mức giảm nguy cơ tuyệt đối và nguy cơ tương đối của biến cố tim mạch khi hạ huyết áp tích cực là bao nhiêu?", "RR 0,85", "4,3 biến cố/1000 người-năm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(rr, answer)
+                self.assertIn(absolute, answer)
 
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]

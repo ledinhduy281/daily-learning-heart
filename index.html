@@ -3452,6 +3452,7 @@
       font-family: var(--font-sans);
       font-size: 16px;
       outline: none;
+      resize: none;
     }
     .chat-text-input:focus {
       border-color: var(--color-primary-deep);
@@ -4763,7 +4764,7 @@
     </div>
 
     <form class="chat-input-form" id="chatInputForm">
-      <input type="text" id="chatInputField" class="chat-text-input" placeholder="Hỏi về Guideline 08–11/2026, RCT, liều thuốc, chống chỉ định..." autocomplete="off">
+      <textarea rows="1" id="chatInputField" class="chat-text-input" placeholder="Hỏi về Guideline 08–11/2026, RCT, liều thuốc, chống chỉ định..." autocomplete="off"></textarea>
       <button type="submit" class="btn btn-primary-green" id="btnSendChat" style="padding: 9px 14px;" aria-label="Gửi câu hỏi">
         <i class="fa-solid fa-paper-plane"></i>
       </button>
@@ -7990,6 +7991,12 @@
           this.sendQuestion(q);
         });
 
+        Dom.chatInputField.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+          e.preventDefault();
+          Dom.chatInputForm.requestSubmit();
+        });
+
         Dom.chatInputForm.addEventListener("submit", (e) => {
           e.preventDefault();
           const q = (Dom.chatInputField.value || "").trim();
@@ -8625,7 +8632,7 @@
         }
       },
 
-      extractPastedMcqOptions(query) {
+      parsePastedMcq(query) {
         const q = String(query || "").trim();
         if (!q || q.length < 12) return null;
         const patPunct = /(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+([\s\S]+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|$)/g;
@@ -8636,7 +8643,9 @@
           const val = m[2].replace(/\s+/g, " ").trim();
           if (val && !opts[k]) opts[k] = val;
         }
-        if (["A", "B", "C", "D"].every((k) => Boolean(opts[k]))) return opts;
+        if (["A", "B", "C", "D"].every((k) => Boolean(opts[k]))) {
+          return { question: q.slice(0, q.search(patPunct)).trim(), options: opts };
+        }
 
         const patNl = /(?:^|\n)\s*([ABCD])\s*\n\s*([\s\S]+?)(?=(?:\n\s*[ABCD]\s*\n)|$)/g;
         const optsNl = {};
@@ -8645,7 +8654,9 @@
           const val = m[2].replace(/\s+/g, " ").trim();
           if (val && !optsNl[k]) optsNl[k] = val;
         }
-        if (["A", "B", "C", "D"].every((k) => Boolean(optsNl[k]))) return optsNl;
+        if (["A", "B", "C", "D"].every((k) => Boolean(optsNl[k]))) {
+          return { question: q.slice(0, q.search(patNl)).trim(), options: optsNl };
+        }
         return null;
       },
 
@@ -8715,8 +8726,6 @@
         const steps = ge.steps || [];
         const trials = primary.landmark_trials || [];
         const pearls = primary.pearls || [];
-        const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
-
         const seen = new Set();
         const sources = [];
         [...pubmedHits, ...(primary.pubmed_anchors || [])].forEach((src) => {
@@ -8729,7 +8738,99 @@
 
         const wantsDetail = this.wantsDetailedExplanation(query);
         const effLevel = (vNorm === "detailed" || (vNorm === "medium" && wantsDetail)) ? "detailed" : vNorm;
-        const mcqOpts = this.extractPastedMcqOptions(query);
+        const pasted = this.parsePastedMcq(query);
+        const mcqOpts = pasted?.options;
+        if (pasted && ["single_source", "single_guideline"].includes(primary.lesson_format)) {
+          const awaiting = primary.quiz_status === "awaiting_physician_excerpts";
+          const available = SocraticTutor.hasQuiz(primary);
+          const notice = isEn
+            ? "Local chat does not grade pasted questions. " + (awaiting
+              ? "This guideline lesson has no quiz until a physician enters its recommendation lines."
+              : available ? "Use the lesson quiz for answers linked to source excerpts."
+              : "No source-supported questions are available for this lesson.")
+            : "Chat cục bộ không chấm câu hỏi dán vào. " + (awaiting
+              ? "Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
+              : available ? "Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+              : "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.");
+          const notes = primary.teaching?.[lang] || {};
+          const stem = SearchRanking.normalize(pasted.question).replace(/\s+/g, " ");
+          const explicitNnt = /\b(?:nnt|number needed to treat)\b/.test(stem);
+          const enrolled = !explicitNnt && /\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
+          const armEnrollment = enrolled
+            && !/\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b/.test(stem)
+            && /\b(?:arm|group|nhom)\b|\b(?:received|assigned to|randomi[sz]ed to|duoc phan vao|duoc dieu tri) (?!(?:treatment|therapy|dieu tri)(?: (?:overall|in total|noi chung))?(?:[?.!,;]|$))\w/.test(stem);
+          const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
+          const absoluteTerms = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/;
+          const absoluteRisk = absoluteTerms.test(stem);
+          const riskTerms = /\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b/g;
+          const relativeRisk = Boolean(stem.match(riskTerms));
+          const conversion = /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b/.test(stem)
+            || (/\b(?:calculat(?:e|ed|ing)|tinh)\b/.test(stem)
+              && new RegExp(/\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?(?:pooled |reported )?/.source + riskTerms.source).test(stem));
+          const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
+          const riskEstimate = relativeRisk
+            && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
+          const endpointPattern = / (?:of|for|cua|cho) (?:the |a |an |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)/.source;
+          const endpointMatch = stem.match(new RegExp(riskTerms.source + /(?: (?:of )?\d+(?:[.,]\d+)?)?/.source + endpointPattern))
+            || (absoluteBenefit && stem.match(new RegExp(absoluteTerms.source + endpointPattern)));
+          const endpointEnd = new RegExp(/\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|in (?:the|this) (?:study|trial|paper|analysis|meta-analysis)|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) /.source + "(?=" + riskTerms.source + ")");
+          let endpointText = endpointMatch?.[1]?.split(endpointEnd)[0] || "";
+          if (!/^\d/.test(endpointText)) endpointText = endpointText.split(/\bin\b/)[0];
+          const endpoints = endpointText
+            .split(/(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b/)
+            .map(p => p.trim().replace(/^(?:the|a|an|cac) /, "").replace(/\btu vong do tim\b/g, "tu vong tim"))
+            .filter(Boolean);
+          const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);
+          if ((absoluteBenefit || (endpoints.length && riskEstimate)) && !enrolled && !nnt && !followUp
+              && primary.lesson_format === "single_source") {
+            const phrase = text => ` ${SearchRanking.normalize(text).replace(/[^a-z0-9%]+/g, " ").trim()} `;
+            const matchesEndpoint = (paragraph, endpoint) => {
+              const clean = phrase(paragraph);
+              if (clean.includes(phrase(endpoint))) return true;
+              const threshold = endpoint.match(/^(\d+(?:[.,]\d+)?%) (?:or (?:greater|higher|more)|tro len) (.+)$/);
+              if (!threshold) return false;
+              const subject = (threshold[2].match(/[a-z]+/g) || []).filter(word => !["in", "of", "the", "cua", "o"].includes(word));
+              return clean.includes(phrase(threshold[1])) && subject.length
+                && subject.every(word => clean.includes(phrase(word)) || clean.includes(phrase(word + "s")));
+            };
+            const findings = (notes.findings || []).filter(p => endpoints.some(endpoint => matchesEndpoint(p, endpoint)));
+            if (absoluteBenefit) {
+              findings.push(...(notes.limits || []));
+              findings.unshift(isEn
+                ? "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, a time horizon and a relevant population for the same outcome."
+                : "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu.");
+            }
+            return { markdown: [notice, ...findings].join("\n\n"), sources: primary.pubmed_anchors || [] };
+          }
+          const preferred = enrolled ? (armEnrollment ? [notes.findings] : [notes.design, notes.findings])
+            : nnt || absoluteBenefit ? [notes.pitfalls, notes.limits]
+            : followUp ? [notes.design, notes.findings] : riskEstimate ? [notes.findings] : [];
+          const sections = preferred.some(section => section?.length) ? preferred : Object.values(notes);
+          const trialCount = /\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b/.test(stem);
+          const enrollmentQuery = trialCount ? (isEn ? "trials studies rct rcts" : "thu nghiem nghien cuu rct")
+            : (isEn ? "patients participants adults individuals people enrolled included" : "benh nhan nguoi tuyen dua vao");
+          const enrollmentUnit = trialCount
+            ? /(?:randomi[sz]ed )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)/
+            : /(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)/;
+          const armContext = armEnrollment
+            ? /(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)/.source
+            : "";
+          const enrollmentPattern = new RegExp(/\b\d+(?:[., ]\d{3})*\s+/.source + enrollmentUnit.source + /\b/.source + armContext);
+          const evidenceQuery = enrolled ? (armEnrollment ? stem : enrollmentQuery) : nnt ? "NNT" : absoluteBenefit
+            ? (isEn ? "absolute benefit baseline risk" : "loi ich tuyet doi nguy co nen")
+            : followUp ? (isEn ? "follow up" : "theo doi trung binh")
+            : riskEstimate ? stem.replace(riskTerms, "rr") : stem;
+          const ranked = sections.filter(Array.isArray).flatMap(section => section
+            .filter(paragraph => !enrolled || primary.lesson_format !== "single_source"
+              || enrollmentPattern.test(SearchRanking.normalize(paragraph)))
+            .map(paragraph => ({ section, paragraph, score: SearchRanking.score({ snippet: paragraph }, evidenceQuery) })))
+            .filter(result => result.score > 0)
+            .sort((a, b) => (enrolled ? Number(b.section === notes.design) - Number(a.section === notes.design) : 0)
+              || b.score - a.score);
+          const best = ranked[0];
+          const excerpt = best?.score > 0 ? (effLevel === "detailed" ? best.section.join("\n\n") : best.paragraph) : "";
+          return { markdown: excerpt ? `${notice}\n\n${excerpt}` : notice, sources: primary.pubmed_anchors || [] };
+        }
 
         // 1) Pasted Multiple-Choice -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
         if (mcqOpts) {
@@ -8802,6 +8903,7 @@
             && !l.includes("[END OF PART"));
 
         const qStop = new Set(["được", "mức", "nào", "chính", "khuyến", "cáo", "lâm", "sàng", "áp", "dụng", "bệnh", "nhân", "sao", "chi", "tiết", "and", "with", "what", "how", "when"]);
+        const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
         const filteredTokens = tokens.filter((t) => !qStop.has(t));
         const matchTokens = filteredTokens.length ? filteredTokens : tokens;
 
@@ -9308,6 +9410,10 @@
         if (b?.lesson_format === "single_source" && b.quiz_mode === "source_excerpt" &&
             (!set || set.version === CaseQuiz.CASE_SET_VERSION)) return ClinicalQuiz.sourceCourse(b);
         return null;
+      },
+
+      hasQuiz(b) {
+        return Boolean(this.courseFor(b) || ClinicalQuiz.hasSourceItems(b) || this.quizSets.available(b).length);
       },
 
       courseAction(action, value) {
