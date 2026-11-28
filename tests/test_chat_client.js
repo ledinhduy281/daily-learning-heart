@@ -68,6 +68,18 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, explanation);
     assert.ok(pci.teaching[lang].mechanism.some(paragraph => markdown.includes(paragraph)), markdown);
   }
+  for (const [lang, question, evidence] of [
+    ['en', 'How many patients need to be treated to prevent one target lesion failure?', /does not (?:provide an NNT|give the detail needed to calculate NNT)/],
+    ['vi', 'Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?', /Không suy ra NNT|không cho đủ chi tiết để tính NNT/],
+    ['en', 'What was the relative risk of target lesion failure?', /RR 0\.72 \(95% CI, 0\.61–0\.85\)/],
+    ['vi', 'Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?', /RR 0,72 \(KTC 95% 0,61–0,85\)/]
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, lang
+    );
+    assert.match(markdown, evidence);
+    assert.doesNotMatch(markdown, /24[.,]634|\*\*[A-D]\*\*/);
+  }
   const guideline = {lesson_format: 'single_source', quiz_status: 'awaiting_physician_excerpts'};
   const {markdown} = await chat.composeClientDeterministicAnswer(
     'Which is correct?\nA. First\nB. Second\nC. Third\nD. Fourth', guideline, [], null, 'en'

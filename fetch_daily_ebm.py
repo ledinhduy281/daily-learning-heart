@@ -1932,22 +1932,34 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
         " ", normalize(question),
     )
-    groups = search_terms(stem)
+    nnt = re.search(
+        r"\b(?:nnt|number needed to treat|how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
+        r"|(?:can dieu tri|dieu tri) bao nhieu .+\b(?:de ngan|de phong|de tranh))\b", stem
+    )
+    enrollment = re.search(
+        r"\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)"
+        r"(?:[?!.]*$|.*\b(?:included|enrolled|recruited|randomized|randomised)\b))", stem
+    )
+    risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
+    risk_estimate = re.search(risk_pattern, stem) and not re.search(
+        r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
+    )
+    query = "nnt" if nnt else re.sub(risk_pattern, "rr", stem) if risk_estimate else stem
+    groups = search_terms(query)
     if not groups:
         return ""
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
     if any(contains(stem, phrase) for phrase in contraindications):
         groups.append(contraindications)
-    study_size = re.search(
-        r"\b(?:sample size|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)"
-        r"|co mau|bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu))\b", stem
-    )
 
     passages = []
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            sections = [notes["design"]] if study_size else [notes[key] for key in DEPTH_SECTIONS if key in notes]
+            preferred = ("pitfalls", "limits") if nnt else ("design",) if enrollment else ("findings",) if risk_estimate else ()
+            sections = [notes[key] for key in preferred if notes.get(key)]
+            sections = sections or [notes[key] for key in DEPTH_SECTIONS if key in notes]
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
