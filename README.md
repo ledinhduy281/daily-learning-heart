@@ -75,7 +75,7 @@ After merging the workflow changes:
 3. Save the script. In the editor select **installEvidenceTrigger**, click **Run** once, and authorize it. Confirm an hourly time-driven trigger for **dispatchStaleHeartSnapshots_** under **Triggers**. This does not require replacing the existing web app deployment or changing its URL.
 4. Check **Executions** in Apps Script and the repository **Actions** tab after the next run between 00:00 and 06:00 UTC. A healthy day may have no watchdog dispatch because both snapshots are current. If the log reports HTTP 401 or 403, check the token's expiration and repository permissions.
 
-The trigger checks the public Pages evidence date in UTC and the pillar rotation date on `main` in Vietnam time. It checks once an hour from 00:00 through 05:59 UTC and requests only missing or stale workflows. At most 24 URL Fetch calls per day are made by this trigger, within the free Apps Script quota. A watchdog dispatch that finds evidence already on `main` can repair a stale Pages deployment without re-ingesting the data.
+The trigger checks once an hour from 00:00 through 05:59 UTC (07:00–12:59 Vietnam time). It checks the public Pages evidence date in UTC and the pillar rotation date on `main` in Vietnam time. If the rotation is current but today's public quiz file has fewer than three sets, it also requests a quiz top-up. The watchdog skips the pillar refresh while a run is active or its status cannot be checked, and limits its own pillar dispatches to three attempts per Vietnam day. A watchdog dispatch that finds evidence already on `main` can repair a stale Pages deployment without re-ingesting the data.
 
 | Layer | What it does |
 | --- | --- |
