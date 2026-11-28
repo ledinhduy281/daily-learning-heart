@@ -8748,11 +8748,14 @@
               : "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.");
           const notes = primary.teaching?.[lang] || {};
           const stem = SearchRanking.normalize(pasted.question).replace(/\s+/g, " ");
-          const enrolled = /\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
-          const nnt = /\b(?:nnt|number needed to treat|how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:can dieu tri|dieu tri) bao nhieu .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
-          const absoluteBenefit = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
+          const explicitNnt = /\b(?:nnt|number needed to treat)\b/.test(stem);
+          const enrolled = !explicitNnt && /\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
+          const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
+          const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
           const riskTerms = /\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b/g;
-          const riskEstimate = Boolean(stem.match(riskTerms))
+          const relativeRisk = Boolean(stem.match(riskTerms));
+          const absoluteBenefit = absoluteRisk && relativeRisk && /\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b/.test(stem);
+          const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
           const preferred = enrolled ? [notes.design] : nnt || absoluteBenefit ? [notes.pitfalls, notes.limits]
             : riskEstimate ? [notes.findings] : [];

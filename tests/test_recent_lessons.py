@@ -147,6 +147,7 @@ class RecentLessonTests(unittest.TestCase):
         for lang, question, evidence in (
             ("en", "How many patients need to be treated to prevent one target lesion failure?", "does not provide an NNT"),
             ("vi", "Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?", "Không suy ra NNT"),
+            ("vi", "Có bao nhiêu bệnh nhân cần được điều trị để ngăn một biến cố (NNT)?", "Không suy ra NNT"),
             ("en", "How can absolute benefit be derived from the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
             ("vi", "Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
             ("en", "What was the relative risk of target lesion failure?", "RR 0.72 (95% CI, 0.61–0.85)"),
@@ -156,6 +157,18 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertIn(evidence, answer)
                 self.assertNotRegex(answer, r"24[.,]634|\*\*[A-D]\*\*")
+
+    def test_local_chat_can_find_reported_absolute_event_rates(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, evidence in (
+            ("en", "What was the reported absolute risk of serious adverse events in STAREE?", "Serious adverse events were 2.7% in each group"),
+            ("vi", "STAREE báo cáo nguy cơ tuyệt đối của biến cố bất lợi nghiêm trọng là bao nhiêu?", "Biến cố bất lợi nghiêm trọng là 2,7% ở mỗi nhóm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                self.assertIn(evidence, answer)
 
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]

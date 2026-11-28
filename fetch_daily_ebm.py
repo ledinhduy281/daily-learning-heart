@@ -1928,20 +1928,26 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
 
 def _focused_question_excerpt(question, primary, lang, level):
     stem = " ".join(normalize(question).split())
-    enrolled = re.search(
-        r"\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
+    explicit_nnt = re.search(r"\b(?:nnt|number needed to treat)\b", stem)
+    enrolled = not explicit_nnt and re.search(
+        r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
+        r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)"
         r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
         r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
-    nnt = re.search(
-        r"\b(?:nnt|number needed to treat|how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
-        r"|(?:can dieu tri|dieu tri) bao nhieu .+\b(?:de ngan|de phong|de tranh))\b", stem
+    nnt = explicit_nnt or re.search(
+        r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
+        r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
     )
-    absolute_benefit = re.search(
+    absolute_risk = re.search(
         r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
     )
     risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
-    risk_estimate = re.search(risk_pattern, stem) and not re.search(
+    relative_risk = re.search(risk_pattern, stem)
+    absolute_benefit = absolute_risk and relative_risk and re.search(
+        r"\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b", stem
+    )
+    risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
     query = re.sub(
