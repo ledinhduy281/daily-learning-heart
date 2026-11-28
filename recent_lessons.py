@@ -47,6 +47,7 @@ MECHANISM_LABELS = {
     "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
     "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
     "attr-cm-gene-silencer-ma": ("Vì sao TTR lắng đọng làm tổn thương tim", "How transthyretin damages the heart"),
+    "bproad-intensive-bp-cognition": ("Huyết áp và não: cơ chế", "Blood pressure and the brain"),
     "poet-ii-response-tailored-antibiotics": ("Cơ sở sinh lý bệnh", "Pathophysiology"),
     "staree-atorvastatin-older-adults": ("Vì sao hạ LDL-C có thể giảm biến cố tim mạch",
                                         "Why lowering LDL-C can reduce cardiovascular events"),
