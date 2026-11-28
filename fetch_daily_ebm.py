@@ -2000,9 +2000,13 @@ def _focused_question_excerpt(question, primary, lang, level):
         )
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
+    single_source = primary.get("lesson_format") == "single_source"
+    other_language = "en" if lang == "vi" else "vi"
+    requested_notes = primary["teaching"].get(lang)
+    languages = ((lang,) if requested_notes else (other_language,)) if single_source else (lang, other_language)
     if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):
-        if primary.get("lesson_format") == "single_source":
-            notes = primary["teaching"][lang]
+        if single_source:
+            notes = primary["teaching"].get(languages[0]) or {}
             excerpts = [p for p in notes.get("findings", []) if any(matches_endpoint(p, endpoint) for endpoint in endpoints)]
             if absolute_benefit:
                 requirement = (
@@ -2059,8 +2063,7 @@ def _focused_question_excerpt(question, primary, lang, level):
         groups.append(contraindications)
 
     passages = []
-    single_source = primary.get("lesson_format") == "single_source"
-    for language in (lang, "en" if lang == "vi" else "vi"):
+    for language in languages:
         notes = primary["teaching"].get(language)
         if not notes:
             continue
@@ -2099,8 +2102,6 @@ def _focused_question_excerpt(question, primary, lang, level):
                     }
                     if hits:
                         passages.append((hits, sentence, paragraph, section, priority, is_source_reading))
-        if passages and single_source:
-            break
 
     if not passages:
         return ""

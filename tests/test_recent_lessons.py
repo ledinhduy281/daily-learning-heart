@@ -308,9 +308,12 @@ class RecentLessonTests(unittest.TestCase):
                         question + suffix, [lesson], [], lang, verbosity="short",
                     )
                     self.assertRegex(answer, estimate)
+        lesson["teaching"]["en"] = {"design": ["No enrollment count was reported here."]}
+        question = "How many trials were included in the PCI meta-analysis?"
+        self.assertEqual(app._focused_question_excerpt(question, lesson, "en", "short"), "")
         del lesson["teaching"]["en"]
         answer, _ = app._compose_deterministic_ebm_answer(
-            "How many trials were included in the PCI meta-analysis?", [lesson], [], "en", verbosity="short",
+            question, [lesson], [], "en", verbosity="short",
         )
         self.assertRegex(answer, r"\b28 thử nghiệm\b")
 
