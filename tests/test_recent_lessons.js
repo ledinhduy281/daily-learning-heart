@@ -84,6 +84,10 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   }
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  if (lesson.primary_source.id === "attr-cm-gene-silencer-ma") {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Vì sao TTR lắng đọng làm tổn thương tim</h3>" : "<h3>How transthyretin damages the heart</h3>"), lesson.id);
+    assert.doesNotMatch(walkthrough, /angiography|chụp mạch/i, lesson.id);
+  }
   if (lesson === afPci) {
     const heading = isVi ? "Vì sao cần cân bằng huyết khối và chảy máu" : "Why thrombosis and bleeding must be balanced";
     assert.ok(walkthrough.includes(`<h3>${heading}</h3>`));

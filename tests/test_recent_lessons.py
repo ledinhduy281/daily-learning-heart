@@ -109,6 +109,24 @@ class RecentLessonTests(unittest.TestCase):
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
 
+    def test_attr_cm_walkthrough_keeps_depth_and_its_own_mechanism_heading(self):
+        lesson = build_recent_lesson(PILLARS[7], "2026-11-29")
+        self.assertEqual(lesson["primary_source"]["pmid"], "42669065")
+        validate_lesson(lesson, PILLARS[7], "2026-11-29")
+        for lang, field, heading in (("vi", "part1_vi_markdown", "Vì sao TTR lắng đọng làm tổn thương tim"),
+                                     ("en", "part2_en_markdown", "How transthyretin damages the heart")):
+            with self.subTest(lang=lang):
+                self.assertEqual(tuple(lesson["teaching"][lang]), recent_lessons.DEPTH_SECTIONS)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {heading}\n", block_a)
+                self.assertNotRegex(lesson[field], r"(?i)angiograph|chụp mạch")
+                for key in recent_lessons.BLOCK_A_SECTIONS:
+                    for paragraph in lesson["teaching"][lang][key]:
+                        self.assertIn(paragraph, block_a)
+                        self.assertNotIn(paragraph, block_b)
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+
     def test_recorded_walkthrough_rejects_partial_and_mismatched_depth(self):
         pillar, day = PILLARS[2], "2026-11-28"
         lesson = build_recent_lesson(pillar, day)
