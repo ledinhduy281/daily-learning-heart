@@ -23,7 +23,9 @@ const templates = Object.values(bundle.focused_lessons);
 assert.equal(templates.length, 10);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
-const lessons = [...templates, datedPci];
+const datedBproad = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-25-p10-focused");
+assert.ok(datedBproad.teaching.vi.mechanism.length);
+const lessons = [...templates, datedPci, datedBproad];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
 for (const lesson of lessons) for (const isVi of [true, false]) {
@@ -47,6 +49,18 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  if (source.pmid === "43020520" || source.pmid === "42747372") {
+    const headings = [
+      isVi ? "Nguồn này nói gì" : "What this source says",
+      source.pmid === "43020520"
+        ? (isVi ? "Huyết áp và não: cơ chế" : "Blood pressure and the brain")
+        : (isVi ? "Vì sao chụp mạch có thể bỏ sót vấn đề" : "What angiography can miss"),
+      isVi ? "Bằng chứng đã thay đổi cách nghĩ ra sao" : "How evidence changed the question",
+      isVi ? "Áp dụng qua một ca giả định" : "Applying the evidence to a teaching case",
+      isVi ? "Những bẫy khi áp dụng" : "Pitfalls in application",
+    ];
+    assert.deepEqual([...walkthrough.matchAll(/<h3>(.*?)<\/h3>/g)].map(match => match[1]), headings);
+  }
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
     assert.ok(notes[key].every(p => !blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key} stays in Block A`);
@@ -59,6 +73,12 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   context.renderPearls(lesson, isVi);
   assert.ok(notes.pearls.every(p => Dom.pearlsStackDeck.innerHTML.includes(p)), lesson.id);
 }
+const mechanismHeading = mechanism => context.renderTeachingSections({
+  ...datedBproad,
+  primary_source: { ...datedBproad.primary_source, section_labels: { en: { mechanism } } }
+}, false, "source_summary");
+assert.match(mechanismHeading(""), /<h3>Mechanism<\/h3>/);
+assert.match(mechanismHeading("<unsafe>"), /<h3>&lt;unsafe&gt;<\/h3>/);
 assert.equal(context.renderSourceExcerpt({ kind: "pubmed_abstract", pmid: "1", url: "https://evil.example/", text: "x" }, true), "");
 const physician = context.renderSourceExcerpt({ kind: "physician_entered", pmid: "42661420", text: "Line",
   url: "https://pubmed.ncbi.nlm.nih.gov/42661420/", class: "I", level: "A", locator: "Table 3" }, false);
