@@ -1949,9 +1949,8 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
         r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
     )
-    absolute_risk = re.search(
-        r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
-    )
+    absolute_pattern = r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b"
+    absolute_risk = re.search(absolute_pattern, stem)
     risk_pattern = r"\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b"
     relative_risk = re.search(risk_pattern, stem)
     conversion = re.search(r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b", stem) or (
@@ -1962,12 +1961,20 @@ def _focused_question_excerpt(question, primary, lang, level):
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
-    endpoint_match = re.search(
-        risk_pattern + r" (?:(?:of )?\d+(?:[.,]\d+)? )?(?:of|for|cua|cho) (?:the )?([a-z][^?.!;]*)",
-        stem,
-    )
-    endpoint_text = re.split(r"\b(?:in|with|from|after|among|under|reported|did|was|were|khi|sau|o|voi|la|bao nhieu)\b", endpoint_match[1], maxsplit=1)[0] if endpoint_match else ""
-    endpoints = [p.strip() for p in re.split(r",|\b(?:and|or|va|hoac)\b", endpoint_text) if p.strip()]
+    endpoint_pattern = r" (?:of|for|cua|cho) (?:the |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)"
+    endpoint_match = re.search(risk_pattern + r"(?: (?:of )?\d+(?:[.,]\d+)?)?" + endpoint_pattern, stem)
+    if not endpoint_match and absolute_benefit:
+        endpoint_match = re.search(absolute_pattern + endpoint_pattern, stem)
+    endpoint_text = re.split(
+        r"\b(?:in|with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
+        r"|khi|sau|o|voi|la|bao nhieu|tu|dua vao|dung)\b", endpoint_match[1], maxsplit=1,
+    )[0] if endpoint_match else ""
+    endpoints = []
+    for value in re.split(r"(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b", endpoint_text):
+        endpoint = re.sub(r"^(?:the|cac) ", "", value.strip())
+        if endpoint:
+            threshold = re.match(r"\d+(?:[.,]\d+)?% (?:or (?:greater|higher|more)|tro len)\b", endpoint)
+            endpoints.append(threshold[0] if threshold else endpoint)
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
     if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):

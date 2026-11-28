@@ -8750,7 +8750,8 @@
             && !/\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b/.test(stem)
             && /\b(?:arm|group|nhom)\b|\b(?:received|assigned to|randomi[sz]ed to|duoc phan vao|duoc dieu tri) (?!(?:treatment|therapy|dieu tri)(?: (?:overall|in total|noi chung))?(?:[?.!,;]|$))\w/.test(stem);
           const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
-          const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
+          const absoluteTerms = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/;
+          const absoluteRisk = absoluteTerms.test(stem);
           const riskTerms = /\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b/g;
           const relativeRisk = Boolean(stem.match(riskTerms));
           const conversion = /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b/.test(stem)
@@ -8759,10 +8760,15 @@
           const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
-          const endpointPattern = new RegExp(riskTerms.source + / (?:(?:of )?\d+(?:[.,]\d+)? )?(?:of|for|cua|cho) (?:the )?([a-z][^?.!;]*)/.source);
-          const endpoints = stem.match(endpointPattern)?.[1]
-            .split(/\b(?:in|with|from|after|among|under|reported|did|was|were|khi|sau|o|voi|la|bao nhieu)\b/)[0]
-            .split(/,|\b(?:and|or|va|hoac)\b/).map(p => p.trim()).filter(Boolean) || [];
+          const endpointPattern = / (?:of|for|cua|cho) (?:the |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)/.source;
+          const endpointMatch = stem.match(new RegExp(riskTerms.source + /(?: (?:of )?\d+(?:[.,]\d+)?)?/.source + endpointPattern))
+            || (absoluteBenefit && stem.match(new RegExp(absoluteTerms.source + endpointPattern)));
+          const endpoints = endpointMatch?.[1]
+            ?.split(/\b(?:in|with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|khi|sau|o|voi|la|bao nhieu|tu|dua vao|dung)\b/)[0]
+            .split(/(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b/)
+            .map(p => p.trim().replace(/^(?:the|cac) /, ""))
+            .map(p => p.match(/^\d+(?:[.,]\d+)?% (?:or (?:greater|higher|more)|tro len)\b/)?.[0] || p)
+            .filter(Boolean) || [];
           const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);
           if ((absoluteBenefit || (endpoints.length && riskEstimate)) && !enrolled && !nnt && !followUp
               && primary.lesson_format === "single_source") {

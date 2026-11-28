@@ -148,7 +148,9 @@ class RecentLessonTests(unittest.TestCase):
         lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
         for lang, question, requirement, estimate in (
             ("en", "How can absolute benefit be calculated using a relative risk of target lesion failure?", "requires a baseline risk", "RR 0.72"),
+            ("en", "How can absolute benefit for target lesion failure be calculated using the pooled relative risk?", "requires a baseline risk", "RR 0.72"),
             ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối của thất bại tổn thương đích?", "cần biết nguy cơ nền", "RR 0,72"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối cho thất bại tổn thương đích từ nguy cơ tương đối gộp?", "cần biết nguy cơ nền", "RR 0,72"),
         ):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
@@ -180,6 +182,13 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
                 self.assertIn(expected, answer)
                 self.assertNotRegex(answer, r"RR 0[.,]85")
+        for lang, question, expected in (
+            ("en", "How do I calculate absolute benefit using the relative risk of 30% or greater eGFR decline?", "RR 1.42"),
+            ("vi", "Tỉ số nguy cơ cho các biến cố tim mạch là bao nhiêu?", "RR 0,85"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
         for lang, question in (
             ("en", "What were the risk ratios for cardiovascular events and kidney failure?"),
             ("vi", "Tỉ số nguy cơ của biến cố tim mạch và suy thận là bao nhiêu?"),
