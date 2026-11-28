@@ -23,6 +23,9 @@ const templates = Object.values(bundle.focused_lessons);
 assert.equal(templates.length, 10);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
+const laac = bundle.focused_lessons["6"];
+assert.equal(laac.primary_source.pmid, "43018508");
+assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
 const lessons = [...templates, datedPci];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
@@ -45,6 +48,12 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   const notes = lesson.teaching[isVi ? "vi" : "en"];
   const walkthrough = Dom.evolutionPipelineRow.innerHTML;
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
+  if (lesson === laac) {
+    assert.deepEqual(Object.keys(notes), [...blockAKeys, "design", "findings", "limits", "pearls"]);
+    const mechanismHeading = isVi ? "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ" : "How appendage closure changes risk";
+    assert.ok(walkthrough.includes(`<h3>${mechanismHeading}</h3>`));
+    assert.doesNotMatch(walkthrough, /What angiography can miss|Vì sao chụp mạch có thể bỏ sót vấn đề/);
+  }
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
