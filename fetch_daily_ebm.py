@@ -1959,10 +1959,10 @@ def _focused_question_excerpt(question, primary, lang, level):
     )
     if enrolled:
         trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
-        query = ("trials studies" if lang == "en" else "thu nghiem nghien cuu") if trials else (
+        query = ("trials studies rct rcts" if lang == "en" else "thu nghiem nghien cuu rct") if trials else (
             "patients participants" if lang == "en" else "benh nhan nguoi"
         )
-        enrollment_unit = r"(?:(?:randomized|ngau nhien) )?(?:[ar]cts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
+        enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|benh nhan|nguoi)"
         )
         enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b")

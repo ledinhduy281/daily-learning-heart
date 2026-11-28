@@ -8758,10 +8758,10 @@
             : followUp ? [notes.design, notes.findings] : riskEstimate ? [notes.findings] : [];
           const sections = preferred.some(section => section?.length) ? preferred : Object.values(notes);
           const trialCount = /\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b/.test(stem);
-          const enrollmentQuery = trialCount ? (isEn ? "trials studies" : "thu nghiem nghien cuu")
+          const enrollmentQuery = trialCount ? (isEn ? "trials studies rct rcts" : "thu nghiem nghien cuu rct")
             : (isEn ? "patients participants" : "benh nhan nguoi");
           const enrollmentPattern = trialCount
-            ? /\b\d+(?:[., ]\d{3})*\s+(?:(?:randomized|ngau nhien) )?(?:[ar]cts?|trials?|studies|thu nghiem|nghien cuu)\b/
+            ? /\b\d+(?:[., ]\d{3})*\s+(?:randomi[sz]ed )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)\b/
             : /\b\d+(?:[., ]\d{3})*\s+(?:patients?|participants?|benh nhan|nguoi)\b/;
           const evidenceQuery = enrolled ? enrollmentQuery : nnt ? "NNT" : absoluteBenefit
             ? (isEn ? "absolute benefit baseline risk" : "loi ich tuyet doi nguy co nen")
