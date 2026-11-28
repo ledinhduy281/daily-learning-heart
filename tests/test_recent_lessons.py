@@ -50,14 +50,10 @@ class RecentLessonTests(unittest.TestCase):
             with self.subTest(lang=lang):
                 notes = lesson["teaching"][lang]
                 block_a, block_b = lesson[field].split("## Block B")
-                heading = "Vì sao chụp mạch có thể bỏ sót vấn đề" if lang == "vi" else "What angiography can miss"
-                self.assertIn(f"### {heading}\n", block_a)
                 for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
                                            (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
                     for key in keys:
-                        label = (lesson["primary_source"]["section_labels"][lang].get(key)
-                                 or recent_lessons.SECTION_LABELS[lang][key])
-                        self.assertIn(f"### {label}\n", block)
+                        self.assertIn(f"### {recent_lessons.SECTION_LABELS[lang][key]}\n", block)
                         for paragraph in notes[key]:
                             self.assertIn(paragraph, block)
                             self.assertNotIn(paragraph, other)
@@ -86,14 +82,6 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertIn("https://pubmed.ncbi.nlm.nih.gov/43020520/", block_b)
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
-        broken = copy.deepcopy(lesson)
-        broken["primary_source"]["section_labels"]["en"]["mechanism"] = ["Mechanism"]
-        with self.assertRaisesRegex(ValueError, "Invalid walkthrough section labels"):
-            validate_lesson(broken, pillar, day, recorded=True)
-        del lesson["primary_source"]["section_labels"]
-        self.assertIn("### Mechanism\n", recent_lessons.recent_markdown(lesson, "en"))
-        with self.assertRaisesRegex(ValueError, "Markdown does not match"):
-            validate_lesson(lesson, pillar, day, recorded=True)
 
     def test_recorded_walkthrough_rejects_partial_and_mismatched_depth(self):
         pillar, day = PILLARS[2], "2026-11-28"
@@ -105,6 +93,32 @@ class RecentLessonTests(unittest.TestCase):
             del lesson["teaching"]["en"][key]
         with self.assertRaisesRegex(ValueError, "must have matching sections"):
             validate_lesson(lesson, pillar, day, recorded=True)
+
+    def test_left_atrial_appendage_closure_walkthrough_keeps_depth_in_block_a(self):
+        lesson = build_recent_lesson(PILLARS[5], "2026-12-01")
+        self.assertEqual(lesson["primary_source"]["pmid"], "43018508")
+        self.assertEqual(lesson["primary_source"]["doi"], "10.1016/j.jacc.2026.09.033")
+        for lang, field, mechanism in (
+            ("vi", "part1_vi_markdown", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"),
+            ("en", "part2_en_markdown", "How appendage closure changes risk"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                self.assertEqual(tuple(notes), recent_lessons.DEPTH_SECTIONS)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {mechanism}\n", block_a)
+                self.assertNotIn(recent_lessons.SECTION_LABELS[lang]["mechanism"], block_a)
+                for key in recent_lessons.BLOCK_A_SECTIONS[1:]:
+                    self.assertGreaterEqual(len(notes[key]), 2, key)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
+        self.assertTrue(lesson["quiz_items"])
 
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:

@@ -6881,13 +6881,16 @@
     }
 
     function renderTeachingSections(briefing, isVi, block) {
-      const lang = isVi ? "vi" : "en";
-      const notes = briefing.teaching?.[lang];
+      const notes = briefing.teaching?.[isVi ? "vi" : "en"];
       if (!notes) return "";
-      const overrides = briefing.primary_source?.section_labels?.[lang];
+      const sourceId = briefing.primary_source?.id;
       const sections = block === "source_summary" ? [
         ["summary", "Nguồn này nói gì", "What this source says"],
-        ["mechanism", "Cơ chế", "Mechanism"],
+        sourceId === "laac-high-risk-af-ipd-ma"
+          ? ["mechanism", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"]
+          : sourceId === "bproad-intensive-bp-cognition"
+          ? ["mechanism", "Huyết áp và não: cơ chế", "Blood pressure and the brain"]
+          : ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
         ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
         ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
         ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],
@@ -6905,7 +6908,7 @@
         ["interpretation", "Có thể và không thể suy rộng", "What to apply and what not to extrapolate"],
       ];
       return sections.filter(([key]) => notes[key]?.length).map(([key, vi, en]) =>
-        `<h3>${escapeHtml(overrides?.[key] || (isVi ? vi : en))}</h3>${notes[key].map(p => `<p>${escapeHtml(p)}</p>`).join("")}`
+        `<h3>${isVi ? vi : en}</h3>${notes[key].map(p => `<p>${escapeHtml(p)}</p>`).join("")}`
       ).join("");
     }
 

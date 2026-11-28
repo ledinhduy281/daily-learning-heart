@@ -25,6 +25,9 @@ const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p
 assert.ok(datedPci.teaching.vi.mechanism.length);
 const datedBproad = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-25-p10-focused");
 assert.ok(datedBproad.teaching.vi.mechanism.length);
+const laac = bundle.focused_lessons["6"];
+assert.equal(laac.primary_source.pmid, "43018508");
+assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
 const lessons = [...templates, datedPci, datedBproad];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
@@ -47,6 +50,12 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   const notes = lesson.teaching[isVi ? "vi" : "en"];
   const walkthrough = Dom.evolutionPipelineRow.innerHTML;
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
+  if (lesson === laac) {
+    assert.deepEqual(Object.keys(notes), [...blockAKeys, "design", "findings", "limits", "pearls"]);
+    const mechanismHeading = isVi ? "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ" : "How appendage closure changes risk";
+    assert.ok(walkthrough.includes(`<h3>${mechanismHeading}</h3>`));
+    assert.doesNotMatch(walkthrough, /What angiography can miss|Vì sao chụp mạch có thể bỏ sót vấn đề/);
+  }
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
   if (source.pmid === "43020520" || source.pmid === "42747372") {
@@ -73,12 +82,6 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   context.renderPearls(lesson, isVi);
   assert.ok(notes.pearls.every(p => Dom.pearlsStackDeck.innerHTML.includes(p)), lesson.id);
 }
-const mechanismHeading = mechanism => context.renderTeachingSections({
-  ...datedBproad,
-  primary_source: { ...datedBproad.primary_source, section_labels: { en: { mechanism } } }
-}, false, "source_summary");
-assert.match(mechanismHeading(""), /<h3>Mechanism<\/h3>/);
-assert.match(mechanismHeading("<unsafe>"), /<h3>&lt;unsafe&gt;<\/h3>/);
 assert.equal(context.renderSourceExcerpt({ kind: "pubmed_abstract", pmid: "1", url: "https://evil.example/", text: "x" }, true), "");
 const physician = context.renderSourceExcerpt({ kind: "physician_entered", pmid: "42661420", text: "Line",
   url: "https://pubmed.ncbi.nlm.nih.gov/42661420/", class: "I", level: "A", locator: "Table 3" }, false);

@@ -18,8 +18,7 @@ from focused_teaching import PEARL_SECTIONS, SECTION_KEYS
 from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 from recent_lessons import (
-    BLOCK_A_SECTIONS, BLOCK_B_SECTIONS, DEPTH_SECTIONS, RECENT_LESSON_VERSION,
-    RECENT_START_DATE, SECTIONS as RECENT_SECTIONS,
+    DEPTH_SECTIONS, RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS,
     SOURCE_KINDS, SOURCE_WINDOW_DAYS, WINDOW_DAYS_BY_VERSION,
     build_recent_lesson, citation_url, is_recent, recent_markdown,
 )
@@ -130,21 +129,13 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
              and lesson.get("content_source") == "recent_source_rotation" and lesson.get("model_used") == "none",
              "Lesson does not match the scheduled pillar and date")
     source = lesson.get("primary_source") or {}
-    _require(set(source) - {"section_labels"} ==
-             {"id", "kind", "label", "name", "journal", "online_date", "pmid", "doi", "url", "window_days"}
+    _require(set(source) == {"id", "kind", "label", "name", "journal", "online_date", "pmid", "doi", "url", "window_days"}
              and source["kind"] in SOURCE_KINDS
              and source["window_days"] == WINDOW_DAYS_BY_VERSION[lesson["lesson_version"]]
              and isinstance(source["pmid"], str) and re.fullmatch(r"[1-9][0-9]{0,8}", source["pmid"])
              and isinstance(source["doi"], str) and source["doi"].startswith("10.")
              and source["url"] == citation_url(source),
              "Block A and Block B must cite exactly one primary source")
-    labels = source.get("section_labels", {})
-    _require(isinstance(labels, dict) and labels.keys() <= {"vi", "en"}
-             and all(isinstance(overrides, dict) and overrides.keys() <= set(BLOCK_A_SECTIONS + BLOCK_B_SECTIONS)
-                     and all(isinstance(label, str) and label.strip() and "\n" not in label and "\r" not in label
-                             for label in overrides.values())
-                     for overrides in labels.values()),
-             "Invalid walkthrough section labels")
     _recorded_wording(source, ("name", "journal"))
     edition = lesson.get("curated_edition_date")
     _require(isinstance(edition, str) and RECENT_START_DATE <= edition <= lesson_date

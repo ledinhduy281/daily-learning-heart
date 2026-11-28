@@ -31,12 +31,12 @@ SOURCE_LABELS = {
 }
 SECTION_LABELS = {
     "vi": {"summary": "Nguồn này hỏi gì và kết luận gì", "design": "Thiết kế và cách đọc",
-           "mechanism": "Cơ chế",
+           "mechanism": "Vì sao chụp mạch có thể bỏ sót vấn đề",
            "evidence_shift": "Bằng chứng đã thay đổi cách nghĩ ra sao",
            "application": "Áp dụng qua một ca giả định", "pitfalls": "Những bẫy khi áp dụng",
            "findings": "Kết quả chính", "limits": "Giới hạn áp dụng", "pearls": "Điểm cần nhớ khi đi buồng"},
     "en": {"summary": "What this source asks and concludes", "design": "Design and how to read it",
-           "mechanism": "Mechanism",
+           "mechanism": "What angiography can miss",
            "evidence_shift": "How evidence changed the question",
            "application": "Applying the evidence to a teaching case", "pitfalls": "Pitfalls in application",
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
@@ -49,12 +49,10 @@ SECTION_LABELS = {
 PHYSICIAN_LINES = {}
 
 
-def _source(pid, slug, kind, pmid, doi, name, journal, online_date, title, quiz=(), copyright="", label="",
-            section_labels=None):
+def _source(pid, slug, kind, pmid, doi, name, journal, online_date, title, quiz=(), copyright="", label=""):
     return dict(pillar_id=pid, id=slug, kind=kind, pmid=pmid, doi=doi, name=name, journal=journal,
                 online_date=online_date, title=title, quiz=quiz, copyright=copyright, label=label,
-                physician_lines=tuple(PHYSICIAN_LINES.get(slug, ())),
-                section_labels=section_labels)
+                physician_lines=tuple(PHYSICIAN_LINES.get(slug, ())))
 
 
 SOURCES = {s["pillar_id"]: s for s in (
@@ -80,8 +78,6 @@ SOURCES = {s["pillar_id"]: s for s in (
             "Intracoronary Imaging-Guided Percutaneous Coronary Intervention: An Updated Meta-Analysis of Randomized Trials",
             "J Am Coll Cardiol", "2026-09-16",
             ("PCI hướng dẫn bằng hình ảnh nội mạch vành: phân tích gộp cập nhật", "Intracoronary imaging-guided PCI: updated meta-analysis of randomized trials"),
-            section_labels={"vi": {"mechanism": "Vì sao chụp mạch có thể bỏ sót vấn đề"},
-                            "en": {"mechanism": "What angiography can miss"}},
             quiz=(
                 "A total of [[28]] RCTs met the inclusion criteria, comprising 24,634 patients (mean age 64.8 years; 75.9% male) with a mean follow-up of 22 months.",
                 "ICI-guided PCI reduced target lesion failure (relative risk [RR]: [[0.72]]; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
@@ -143,8 +139,6 @@ SOURCES = {s["pillar_id"]: s for s in (
             "Effect of intensive blood pressure control on cognitive outcomes and brain structures in adults with type 2 diabetes: prespecified analysis of secondary outcomes of BPROAD randomised controlled trial",
             "BMJ", "2026-11-12",
             ("Hạ huyết áp tích cực và nhận thức ở người đái tháo đường type 2 (BPROAD)", "Intensive blood pressure control and cognition in type 2 diabetes (BPROAD)"),
-            section_labels={"vi": {"mechanism": "Huyết áp và não: cơ chế"},
-                            "en": {"mechanism": "Blood pressure and the brain"}},
             quiz=(
                 "Participants were randomly assigned to receive intensive treatment targeting SBP <[[120]] mm Hg or standard treatment targeting SBP <140 mm Hg for up to five years.",
                 "After one year, mean SBP was [[121.6]] mm Hg in the intensive treatment group and 133.2 mm Hg in the standard treatment group.",
@@ -228,13 +222,16 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
-    overrides = source.get("section_labels", {}).get(lang, {})
+    if source["id"] == "laac-high-risk-af-ipd-ma":
+        labels = {**labels, "mechanism": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"
+                                         if lang == "vi" else "How appendage closure changes risk")}
+    elif source["id"] == "bproad-intensive-bp-cognition":
+        labels = {**labels, "mechanism": "Huyết áp và não: cơ chế" if lang == "vi" else "Blood pressure and the brain"}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
     def sections(keys):
-        return "".join(f"\n\n### {overrides.get(key) or labels[key]}\n\n" + "\n\n".join(notes[key])
-                       for key in keys if key in notes)
+        return "".join(f"\n\n### {labels[key]}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
 
     a = "Nguồn chính" if lang == "vi" else "Primary source"
     b = "Đọc kỹ cùng nguồn" if lang == "vi" else "Close reading of the same source"
@@ -250,8 +247,6 @@ def build_recent_lesson(pillar, date_str):
     pid = pillar["id"]
     source = SOURCES[pid]
     public = {key: source[key] for key in ("id", "kind", "label", "name", "journal", "online_date", "pmid", "doi")}
-    if source.get("section_labels"):
-        public["section_labels"] = source["section_labels"]
     excerpts = source_excerpts(source)
     lesson = {
         "id": f"ebm-{date_str}-p{pid}-focused",
