@@ -225,6 +225,9 @@ def recent_markdown(lesson, lang):
     if source["id"] == "poet-ii-response-tailored-antibiotics":
         mechanism = "Cơ sở sinh lý bệnh" if lang == "vi" else "Pathophysiology"
         labels = {**labels, "mechanism": mechanism}
+    elif source["id"] == "laac-high-risk-af-ipd-ma":
+        labels = {**labels, "mechanism": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"
+                                         if lang == "vi" else "How appendage closure changes risk")}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
