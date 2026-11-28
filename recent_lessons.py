@@ -47,6 +47,7 @@ MECHANISM_LABELS = {
     "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
     "af-pci-antithrombotic-ipd-nma": ("Vì sao cần cân bằng huyết khối và chảy máu", "Why thrombosis and bleeding must be balanced"),
     "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
+    "intensive-bp-ckd-ma": ("Vì sao huyết áp thấp hơn bảo vệ tim nhưng làm eGFR giảm", "Why lower pressure protects the heart yet lowers eGFR"),
     "attr-cm-gene-silencer-ma": ("Vì sao TTR lắng đọng làm tổn thương tim", "How transthyretin damages the heart"),
     "bproad-intensive-bp-cognition": ("Huyết áp và não: cơ chế", "Blood pressure and the brain"),
     "poet-ii-response-tailored-antibiotics": ("Cơ sở sinh lý bệnh", "Pathophysiology"),

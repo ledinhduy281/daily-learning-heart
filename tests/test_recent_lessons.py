@@ -208,6 +208,27 @@ class RecentLessonTests(unittest.TestCase):
                     self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
         self.assertTrue(lesson["quiz_items"])
 
+    def test_intensive_bp_ckd_walkthrough_keeps_depth_in_block_a(self):
+        lesson = build_recent_lesson(PILLARS[0], "2026-11-26")
+        self.assertEqual(lesson["primary_source"]["pmid"], "42842238")
+        self.assertEqual(lesson["primary_source"]["doi"], "10.1001/jamacardio.2026.4445")
+        for lang, field, mechanism in (("vi", "part1_vi_markdown", "Vì sao huyết áp thấp hơn bảo vệ tim nhưng làm eGFR giảm"),
+                                       ("en", "part2_en_markdown", "Why lower pressure protects the heart yet lowers eGFR")):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                self.assertEqual(tuple(notes), recent_lessons.DEPTH_SECTIONS)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {mechanism}\n", block_a)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+        self.assertTrue(lesson["quiz_items"])
+
     def test_staree_walkthrough_keeps_trial_results_distinct(self):
         lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
         self.assertEqual(lesson["primary_source"]["pmid"], "42670961")
