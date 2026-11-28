@@ -8,7 +8,7 @@ Câu hỏi của trụ cột bệnh mạch vành hôm nay: ở người đã có
 
 Nguồn chính là phân tích gộp của Bangalore và cộng sự trên JACC: 28 thử nghiệm ngẫu nhiên với 24.634 người bệnh. Trung bình giữa các thử nghiệm, chiến lược hướng dẫn bằng hình ảnh nội mạch cho kết cục tốt hơn, nhưng mức lợi ích không nhất thiết giống nhau ở mọi tổn thương hay quy trình. Vấn đề cần hiểu là hình ảnh đã thay đổi quyết định nào, quyết định đó sửa được vấn đề gì, và dữ liệu có đủ sát với tình huống đang bàn hay không.
 
-## mechanism
+## mechanism: Vì sao chụp mạch có thể bỏ sót vấn đề
 
 Chụp mạch cho thấy hình bóng của cột thuốc cản quang trong lòng mạch, rất hữu ích để định vị chỗ hẹp và theo dõi dòng chảy. Nhưng hình chiếu có thể bị chồng nhánh, thu ngắn đoạn mạch hoặc che khuất mức độ tổn thương lệch tâm; đoạn trông như “mạch tham chiếu bình thường” cũng có thể mang mảng xơ vữa lan tỏa. Biết lòng mạch còn thông trên ảnh cuối không đồng nghĩa với biết stent đã nở đủ, hai đầu đã nằm ở vị trí thích hợp, hay có tổn thương ở mép stent.
 
@@ -74,7 +74,7 @@ Today’s coronary-disease question is whether adding intracoronary imaging impr
 
 Bangalore and colleagues’ updated meta-analysis in JACC is the primary source: 28 randomized trials with 24,634 patients. Imaging guidance improved pooled outcomes, but that does not mean every lesion or procedural protocol yields the same benefit. The practical questions are which decision the image changes, which mechanical problem that decision addresses, and how closely the evidence matches the case under discussion.
 
-## mechanism
+## mechanism: What angiography can miss
 
 Angiography depicts the silhouette of contrast inside the lumen. It localizes stenoses and shows flow, but overlapping branches, foreshortening and eccentric disease can obscure anatomy. An apparently normal reference segment may itself have diffuse plaque. A patent lumen on the final angiogram does not by itself establish adequate stent expansion, appropriate landing zones or the absence of an edge problem.
 

@@ -43,9 +43,13 @@ class RecentLessonTests(unittest.TestCase):
         for pillar in PILLARS:
             validate_lesson(templates[str(pillar["id"])], pillar, RECENT_EDITION_DATE, fallback=True)
 
-    def test_intracoronary_imaging_walkthrough_keeps_depth_in_block_a(self):
-        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
-        self.assertEqual(lesson["primary_source"]["pmid"], "42747372")
+    def test_recorded_walkthroughs_keep_depth_in_block_a(self):
+        for pillar, date, pmid in ((PILLARS[0], "2026-11-26", "42842238"), (PILLARS[2], "2026-11-28", "42747372")):
+            with self.subTest(pmid=pmid):
+                self._assert_block_a_depth(build_recent_lesson(pillar, date), pmid)
+
+    def _assert_block_a_depth(self, lesson, pmid):
+        self.assertEqual(lesson["primary_source"]["pmid"], pmid)
         for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
             with self.subTest(lang=lang):
                 notes = lesson["teaching"][lang]
@@ -53,7 +57,8 @@ class RecentLessonTests(unittest.TestCase):
                 for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
                                            (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
                     for key in keys:
-                        self.assertIn(f"### {recent_lessons.SECTION_LABELS[lang][key]}\n", block)
+                        label = lesson.get("section_headings", {}).get(lang, {}).get(key) or recent_lessons.SECTION_LABELS[lang][key]
+                        self.assertIn(f"### {label}\n", block)
                         for paragraph in notes[key]:
                             self.assertIn(paragraph, block)
                             self.assertNotIn(paragraph, other)

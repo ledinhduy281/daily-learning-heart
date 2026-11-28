@@ -158,6 +158,12 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
                          for paragraphs in sections.values()) and 2 <= len(sections["pearls"]) <= 5,
                  f"Incomplete {lang} walkthrough")
     _require(notes["vi"].keys() == notes["en"].keys(), "Vietnamese and English walkthroughs must have matching sections")
+    headings = lesson.get("section_headings")
+    _require(headings is None or isinstance(headings, dict) and set(headings) == {"vi", "en"}
+             and headings["vi"].keys() == headings["en"].keys() and headings["vi"].keys() <= notes["vi"].keys()
+             and all(isinstance(title, str) and title.strip() and "\n" not in title
+                     for lang in ("vi", "en") for title in headings[lang].values()),
+             "Section headings must name walkthrough sections in both languages")
     excerpts = lesson.get("source_excerpts")
     _require(isinstance(excerpts, list), "Invalid source excerpts")
     for excerpt in excerpts:
