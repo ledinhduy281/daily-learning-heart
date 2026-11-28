@@ -1927,42 +1927,12 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
 
 
 def _focused_question_excerpt(question, primary, lang, level):
-    stem = " ".join(normalize(question).split())
-    explicit_nnt = re.search(r"\b(?:nnt|number needed to treat)\b", stem)
-    enrolled = not explicit_nnt and re.search(
-        r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
-        r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)"
-        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
-        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
-    )
-    nnt = explicit_nnt or re.search(
-        r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
-        r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
-    )
-    absolute_risk = re.search(
-        r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
-    )
-    risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
-    relative_risk = re.search(risk_pattern, stem)
-    absolute_benefit = absolute_risk and relative_risk and re.search(
-        r"\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b", stem
-    )
-    risk_estimate = relative_risk and not re.search(
-        r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
-    )
-    query = re.sub(
+    stem = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
-        " ", stem,
+        " ", normalize(question),
     )
-    if not enrolled:
-        if nnt:
-            query = "nnt"
-        elif absolute_benefit:
-            query = "absolute benefit baseline risk" if lang == "en" else "loi ich tuyet doi nguy co nen"
-        elif risk_estimate:
-            query = re.sub(risk_pattern, "rr", query)
-    groups = search_terms(query)
+    groups = search_terms(stem)
     if not groups:
         return ""
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
@@ -1973,9 +1943,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            preferred = ("design",) if enrolled else ("pitfalls", "limits") if nnt or absolute_benefit else ("findings",) if risk_estimate else ()
-            sections = [notes[key] for key in preferred if notes.get(key)]
-            sections = sections or [notes[key] for key in DEPTH_SECTIONS if key in notes]
+            sections = [notes[key] for key in DEPTH_SECTIONS if key in notes]
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
@@ -2059,25 +2027,19 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        if primary.get("lesson_format") in {"single_guideline", "single_source"}:
-            excerpt = _focused_question_excerpt(question, primary, lang, eff_level) if primary.get("teaching") else ""
+        if primary.get("lesson_format") in {"single_guideline", "single_source"} and primary.get("teaching"):
+            excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
             if primary.get("quiz_status") == "awaiting_physician_excerpts":
                 notice = (
                     "Local chat does not grade pasted questions. This guideline lesson has no quiz until a physician enters its recommendation lines."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
                 )
-            elif validated_source_items(primary):
+            else:
                 notice = (
                     "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
-                )
-            else:
-                notice = (
-                    "Local chat does not grade pasted questions. No source-supported questions are available for this lesson."
-                    if is_en else
-                    "Chat cục bộ không chấm câu hỏi dán vào. Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
                 )
             return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([

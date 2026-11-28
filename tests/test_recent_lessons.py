@@ -128,48 +128,6 @@ class RecentLessonTests(unittest.TestCase):
         self.assertIn("no quiz until a physician", answer)
         self.assertNotIn("Use the lesson quiz", answer)
 
-    def test_local_chat_reads_both_pci_teaching_blocks(self):
-        import fetch_daily_ebm as app
-        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
-        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
-        for lang, question, section in (
-            ("en", "How many patients were included in the intracoronary imaging-guided PCI meta-analysis?", "design"),
-            ("en", "How many patients did the PCI meta-analysis include?", "design"),
-            ("en", "How many patients did the meta-analysis include in trials evaluating imaging guidance to prevent stent thrombosis?", "design"),
-            ("vi", "Phân tích gộp PCI hướng dẫn bằng hình ảnh nội mạch gồm bao nhiêu bệnh nhân?", "design"),
-            ("en", "What is the difference between stent underexpansion and malapposition?", "mechanism"),
-            ("vi", "Stent nở chưa đủ và áp thành không hoàn toàn khác nhau như thế nào?", "mechanism"),
-        ):
-            with self.subTest(lang=lang, section=section):
-                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
-                paragraph = lesson["teaching"][lang][section][0 if section == "design" else 2]
-                self.assertIn(paragraph, answer)
-        for lang, question, evidence in (
-            ("en", "How many patients need to be treated to prevent one target lesion failure?", "does not provide an NNT"),
-            ("vi", "Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?", "Không suy ra NNT"),
-            ("vi", "Có bao nhiêu bệnh nhân cần được điều trị để ngăn một biến cố (NNT)?", "Không suy ra NNT"),
-            ("en", "How can absolute benefit be derived from the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
-            ("vi", "Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
-            ("en", "What was the relative risk of target lesion failure?", "RR 0.72 (95% CI, 0.61–0.85)"),
-            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?", "RR 0,72 (KTC 95% 0,61–0,85)"),
-        ):
-            with self.subTest(lang=lang, question=question):
-                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
-                self.assertIn(evidence, answer)
-                self.assertNotRegex(answer, r"24[.,]634|\*\*[A-D]\*\*")
-
-    def test_local_chat_can_find_reported_absolute_event_rates(self):
-        import fetch_daily_ebm as app
-        lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
-        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
-        for lang, question, evidence in (
-            ("en", "What was the reported absolute risk of serious adverse events in STAREE?", "Serious adverse events were 2.7% in each group"),
-            ("vi", "STAREE báo cáo nguy cơ tuyệt đối của biến cố bất lợi nghiêm trọng là bao nhiêu?", "Biến cố bất lợi nghiêm trọng là 2,7% ở mỗi nhóm"),
-        ):
-            with self.subTest(lang=lang):
-                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
-                self.assertIn(evidence, answer)
-
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")
