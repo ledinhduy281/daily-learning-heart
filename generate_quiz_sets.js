@@ -508,6 +508,11 @@ function writeSets(file, store) {
 
 async function main({root = ROOT, env = process.env, fetchImpl = globalThis.fetch, log = console.log, date = vnDate(),
   now = Date.now, wait = sleep, budgetMs = RUN_BUDGET_MS} = {}) {
+  const pausedDate = (env.QUIZ_GENERATION_PAUSED_DATE || '').trim();
+  if (pausedDate && pausedDate === date) {
+    log(`Quiz generation paused for Vietnam date ${date}; quiz sets unchanged.`);
+    return 0;
+  }
   const key = (env.GROQ_API_KEY || '').trim();
   if (!key) { log('GROQ_API_KEY not set; quiz sets unchanged.'); return 0; }
   const out = path.join(root, 'data', 'quiz_sets.js');
