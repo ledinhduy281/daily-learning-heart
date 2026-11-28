@@ -364,6 +364,71 @@ const quiet = () => {};
     stem_vi: "Một bệnh nhân có tiền sử nhồi máu cơ tim, với đột quỵ là kết cục, hỏi PCI hướng dẫn bằng hình ảnh nội mạch so với PCI hướng dẫn bằng chụp mạch.",
   }), "endpoint", "a history filter cannot cross the comma into the outcome");
 
+  const lad = {
+    ...pciCase,
+    stem_en: "A 70-year-old man with stable angina undergoes PCI for a de novo lesion in the left anterior descending artery. According to the meta-analysis, what relative risk of target lesion failure does intracoronary imaging guidance provide compared with angiography guidance?",
+    stem_vi: "Một bệnh nhân nam 70 tuổi bị đau thắt ngực ổn định được PCI cho tổn thương mới ở động mạch liên thất trước. Theo phân tích gộp, nguy cơ tương đối của thất bại tổn thương đích khi hướng dẫn bằng hình ảnh nội mạch so với chụp mạch là bao nhiêu?",
+    explanation_en: "The meta-analysis reported a lower risk of target lesion failure (RR 0.72) with intracoronary imaging compared with angiography guidance.",
+    explanation_vi: "Phân tích gộp ghi nhận nguy cơ thất bại tổn thương đích thấp hơn (RR 0,72) khi hướng dẫn bằng hình ảnh nội mạch so với chụp mạch.",
+  };
+  assert.equal(verdict(lad), "", "a fictional LAD vignette can ask for the pooled estimate");
+  for (const [lang, phrase] of [["en", "for patients like him"], ["en", "for patients like her"],
+    ["en", "in a patient like this"], ["vi", "đối với bệnh nhân như anh ấy"],
+    ["vi", "đối với bệnh nhân như ông ấy"], ["vi", "ở bệnh nhân này"]]) {
+    const stem = "stem_" + lang, explanation = "explanation_" + lang;
+    assert.equal(verdict({...lad, [stem]: lad[stem].replace("?", " " + phrase + "?")}), "projection", phrase);
+    assert.equal(verdict({...lad, [explanation]: lad[explanation].replace(/\.$/, " " + phrase + ".")}), "projection", phrase);
+    assert.equal(verdict({...lad, options: [{...lad.options[0], [lang]: lad.options[0][lang] + " " + phrase}, ...lad.options.slice(1)]}),
+      "projection", phrase);
+  }
+  const limitationEn = " The pooled result is not an individual estimate for patients like him.";
+  const limitationVi = " Từ kết quả gộp không thể ước tính nguy cơ ở bệnh nhân này.";
+  assert.equal(verdict({...lad, explanation_en: lad.explanation_en + limitationEn, explanation_vi: lad.explanation_vi + limitationVi}),
+    "", "a pooled result can be followed by an explicit personalized-risk caveat");
+  assert.equal(verdict({...lad,
+    explanation_en: lad.explanation_en + limitationEn.replace(".", ", but the RR for patients like him is 0.72."),
+  }), "projection", "a caveat does not excuse a subsequent individualized claim");
+
+  const withImaging = {
+    ...cardiacMortality,
+    stem_en: "A 72-year-old female with a history of cardiovascular disease will undergo PCI with or without intracoronary imaging guidance. What relative risk for cardiac mortality did the study report?",
+    stem_vi: "Bệnh nhân nữ 72 tuổi, tiền sử bệnh tim mạch, sẽ được PCI có hoặc không có hướng dẫn bằng hình ảnh nội mạch. Nghiên cứu báo cáo RR cho tử vong tim là bao nhiêu?",
+    options: [{en: "RR 0.73", vi: "RR 0,73"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(withImaging), "comparator", "the live case substituted with-or-without imaging for angiography");
+  for (const [field, search, replacement] of [
+    ["stem_en", "angiography-guided PCI", "PCI with no imaging guidance"],
+    ["stem_vi", "PCI hướng dẫn bằng chụp mạch", "PCI không có hướng dẫn bằng hình ảnh nội mạch"],
+    ["explanation_en", "angiography-guided PCI", "PCI without imaging"],
+  ]) {
+    assert.equal(verdict({...cardiacMortality, [field]: cardiacMortality[field].replace(search, replacement)}), "comparator");
+  }
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("angiography-guided PCI", "angiography-guided PCI without imaging"),
+    stem_vi: cardiacMortality.stem_vi.replace("PCI hướng dẫn bằng chụp mạch", "PCI hướng dẫn bằng chụp mạch không dùng hình ảnh nội mạch"),
+  }), "", "explicit angiography guidance may clarify that no intracoronary imaging was used");
+  for (const [field, search, replacement] of [
+    ["stem_vi", "tử vong tim", "tử vong tim mạch"],
+    ["explanation_vi", "tử vong tim", "tử vong tim mạch"],
+    ["explanation_en", "cardiac mortality", "cardiovascular mortality"],
+  ]) {
+    assert.equal(verdict({...cardiacMortality, [field]: cardiacMortality[field].replace(search, replacement)}), "endpoint");
+  }
+  assert.equal(verdict({...cardiacMortality, options: [{en: "Reduces cardiac mortality", vi: "Giảm tử vong tim mạch"}, ...pciCase.options.slice(1)]}),
+    "endpoint", "cardiovascular mortality is not the Vietnamese equivalent of cardiac mortality");
+  const cardiovascularMortality = {
+    ...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("cardiac mortality", "cardiovascular mortality"),
+    explanation_en: cardiacMortality.explanation_en.replace("cardiac mortality", "cardiovascular mortality"),
+    stem_vi: cardiacMortality.stem_vi.replace("tử vong tim", "tử vong tim mạch"),
+    explanation_vi: cardiacMortality.explanation_vi.replace("tử vong tim", "tử vong tim mạch"),
+    options: [{en: "Reduces cardiovascular mortality", vi: "Giảm tử vong tim mạch"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(cardiovascularMortality), "endpoint", "bilingual agreement does not ground a different endpoint");
+  const cardiovascularQuote = pciQuote.replace("cardiac mortality", "cardiovascular mortality");
+  assert.equal(CaseQuiz.rejectReason({...cardiovascularMortality, quote: cardiovascularQuote}, {...pciGround, excerpts: [cardiovascularQuote]}),
+    "", "cardiovascular mortality passes when the cited excerpt actually names it");
+
   const mortality = {...pciCase,
     stem_en: "A 66-year-old patient is scheduled for PCI. What is the relative risk for all-cause mortality with imaging guidance compared with angiography?",
     stem_vi: "Bệnh nhân 66 tuổi được lên kế hoạch PCI. Nguy cơ tương đối về tử vong toàn nguyên khi hướng dẫn bằng hình ảnh nội mạch so với chụp mạch là bao nhiêu?",
