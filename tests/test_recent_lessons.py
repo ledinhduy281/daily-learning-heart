@@ -134,6 +134,8 @@ class RecentLessonTests(unittest.TestCase):
         options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
         for lang, question, section in (
             ("en", "How many patients were included in the intracoronary imaging-guided PCI meta-analysis?", "design"),
+            ("en", "How many patients did the PCI meta-analysis include?", "design"),
+            ("en", "How many patients did the meta-analysis include in trials evaluating imaging guidance to prevent stent thrombosis?", "design"),
             ("vi", "Phân tích gộp PCI hướng dẫn bằng hình ảnh nội mạch gồm bao nhiêu bệnh nhân?", "design"),
             ("en", "What is the difference between stent underexpansion and malapposition?", "mechanism"),
             ("vi", "Stent nở chưa đủ và áp thành không hoàn toàn khác nhau như thế nào?", "mechanism"),
@@ -145,6 +147,8 @@ class RecentLessonTests(unittest.TestCase):
         for lang, question, evidence in (
             ("en", "How many patients need to be treated to prevent one target lesion failure?", "does not provide an NNT"),
             ("vi", "Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?", "Không suy ra NNT"),
+            ("en", "How can absolute benefit be derived from the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
+            ("vi", "Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
             ("en", "What was the relative risk of target lesion failure?", "RR 0.72 (95% CI, 0.61–0.85)"),
             ("vi", "Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?", "RR 0,72 (KTC 95% 0,61–0,85)"),
         ):

@@ -8747,15 +8747,19 @@
               : available ? "Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
               : "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.");
           const notes = primary.teaching?.[lang] || {};
-          const stem = SearchRanking.normalize(pasted.question);
+          const stem = SearchRanking.normalize(pasted.question).replace(/\s+/g, " ");
+          const enrolled = /\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
           const nnt = /\b(?:nnt|number needed to treat|how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:can dieu tri|dieu tri) bao nhieu .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
-          const enrollment = /\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)(?:[?!.]*$|.*\b(?:included|enrolled|recruited|randomized|randomised)\b))/.test(stem);
-          const riskEstimate = /\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b/.test(stem)
+          const absoluteBenefit = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
+          const riskTerms = /\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b/g;
+          const riskEstimate = Boolean(stem.match(riskTerms))
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
-          const preferred = nnt ? [notes.pitfalls, notes.limits]
-            : enrollment ? [notes.design] : riskEstimate ? [notes.findings] : [];
+          const preferred = enrolled ? [notes.design] : nnt || absoluteBenefit ? [notes.pitfalls, notes.limits]
+            : riskEstimate ? [notes.findings] : [];
           const sections = preferred.some(section => section?.length) ? preferred : Object.values(notes);
-          const evidenceQuery = nnt ? "NNT" : riskEstimate ? stem.replace(/\b(?:relative risk|risk ratio|nguy co tuong doi|ti so nguy co)\b/g, "rr") : stem;
+          const evidenceQuery = enrolled ? stem : nnt ? "NNT" : absoluteBenefit
+            ? (isEn ? "absolute benefit baseline risk" : "loi ich tuyet doi nguy co nen")
+            : riskEstimate ? stem.replace(riskTerms, "rr") : stem;
           const ranked = sections.filter(Array.isArray).flatMap(section => section.map(paragraph => ({
             section, paragraph, score: SearchRanking.score({ snippet: paragraph }, evidenceQuery)
           }))).sort((a, b) => b.score - a.score);

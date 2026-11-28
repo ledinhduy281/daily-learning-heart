@@ -1927,25 +1927,35 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
 
 
 def _focused_question_excerpt(question, primary, lang, level):
-    stem = re.sub(
-        r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
-        r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
-        " ", normalize(question),
+    stem = " ".join(normalize(question).split())
+    enrolled = re.search(
+        r"\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
+        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
     nnt = re.search(
         r"\b(?:nnt|number needed to treat|how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
         r"|(?:can dieu tri|dieu tri) bao nhieu .+\b(?:de ngan|de phong|de tranh))\b", stem
     )
-    enrollment = re.search(
-        r"\b(?:sample size|co mau|(?:gom|co|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
-        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)"
-        r"(?:[?!.]*$|.*\b(?:included|enrolled|recruited|randomized|randomised)\b))", stem
+    absolute_benefit = re.search(
+        r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
     )
     risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
     risk_estimate = re.search(risk_pattern, stem) and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
-    query = "nnt" if nnt else re.sub(risk_pattern, "rr", stem) if risk_estimate else stem
+    query = re.sub(
+        r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
+        r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
+        " ", stem,
+    )
+    if not enrolled:
+        if nnt:
+            query = "nnt"
+        elif absolute_benefit:
+            query = "absolute benefit baseline risk" if lang == "en" else "loi ich tuyet doi nguy co nen"
+        elif risk_estimate:
+            query = re.sub(risk_pattern, "rr", query)
     groups = search_terms(query)
     if not groups:
         return ""
@@ -1957,7 +1967,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            preferred = ("pitfalls", "limits") if nnt else ("design",) if enrollment else ("findings",) if risk_estimate else ()
+            preferred = ("design",) if enrolled else ("pitfalls", "limits") if nnt or absolute_benefit else ("findings",) if risk_estimate else ()
             sections = [notes[key] for key in preferred if notes.get(key)]
             sections = sections or [notes[key] for key in DEPTH_SECTIONS if key in notes]
         else:

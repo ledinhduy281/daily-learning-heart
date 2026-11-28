@@ -71,6 +71,8 @@ async function checkFocusedPastedQuestions() {
   for (const [lang, question, evidence] of [
     ['en', 'How many patients need to be treated to prevent one target lesion failure?', /does not (?:provide an NNT|give the detail needed to calculate NNT)/],
     ['vi', 'Cần điều trị bao nhiêu bệnh nhân để ngăn một thất bại tổn thương đích?', /Không suy ra NNT|không cho đủ chi tiết để tính NNT/],
+    ['en', 'How can absolute benefit be derived from the relative risk of target lesion failure?', /baseline risk, a time horizon and a relevant population/],
+    ['vi', 'Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?', /nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu/],
     ['en', 'What was the relative risk of target lesion failure?', /RR 0\.72 \(95% CI, 0\.61–0\.85\)/],
     ['vi', 'Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?', /RR 0,72 \(KTC 95% 0,61–0,85\)/]
   ]) {
@@ -79,6 +81,16 @@ async function checkFocusedPastedQuestions() {
     );
     assert.match(markdown, evidence);
     assert.doesNotMatch(markdown, /24[.,]634|\*\*[A-D]\*\*/);
+  }
+  for (const question of [
+    'How many patients did the PCI meta-analysis include?',
+    'How many patients did the meta-analysis include in trials evaluating imaging guidance to prevent stent thrombosis?'
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, 'en'
+    );
+    assert.match(markdown, /24,634/);
+    assert.doesNotMatch(markdown, /NNT/);
   }
   const guideline = {lesson_format: 'single_source', quiz_status: 'awaiting_physician_excerpts'};
   const {markdown} = await chat.composeClientDeterministicAnswer(
