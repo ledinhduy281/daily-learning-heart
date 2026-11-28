@@ -4,11 +4,11 @@
 
 ## summary
 
+Kết luận của phân tích gộp: ở người bệnh suy tim, ARNI so với RAASi đơn thuần có nguy cơ suy giảm chức năng thận thấp hơn (RR 0,83; KTC 95% 0,71–0,96), nhưng nguy cơ hạ huyết áp có triệu chứng cao hơn (RR 1,54; KTC 95% 1,35–1,76).
+
 Câu hỏi lâm sàng: ở người bệnh suy tim đã có chỉ định tim mạch phù hợp, việc thay thuốc ức chế hệ renin–angiotensin–aldosterone (RAASi) đơn thuần bằng thuốc ức chế thụ thể angiotensin và neprilysin (ARNI) thay đổi nguy cơ suy giảm chức năng thận như thế nào? Và nếu huyết áp là yếu tố giới hạn dung nạp, lợi ích về thận cần được đọc cùng nguy cơ nào? Đây là so sánh hai chiến lược ức chế RAAS, không phải so sánh với không điều trị.
 
 Nguồn chính là tổng quan hệ thống và phân tích gộp của Travlos và cộng sự trên ESC Heart Failure: 15 thử nghiệm ngẫu nhiên, 31.574 người bệnh suy tim. Đây là nghiên cứu tổng hợp, không phải hướng dẫn mới. Phân tích chủ yếu dựa trên sacubitril/valsartan nhưng cũng gồm các thử nghiệm omapatrilat, một thuốc cũ ức chế cả men chuyển và neprilysin, không còn dùng trên lâm sàng. Các thử nghiệm đó cung cấp bằng chứng gián tiếp về cơ chế phối hợp, không phải bằng chứng trực tiếp về sacubitril/valsartan.
-
-Kết luận của phân tích gộp: so với RAASi đơn thuần ở người bệnh suy tim, ARNI đi kèm nguy cơ suy giảm chức năng thận thấp hơn nhưng nguy cơ hạ huyết áp có triệu chứng cao hơn.
 
 ## mechanism
 
@@ -68,11 +68,11 @@ Khi chuyển sang ARNI, theo dõi huyết áp có triệu chứng; lo ngại v�
 
 ## summary
 
+The meta-analysis concluded that in heart failure, ARNI vs RAASi alone was associated with a lower risk of worsening kidney function (RR 0.83; 95% CI 0.71–0.96) but a higher risk of symptomatic hypotension (RR 1.54; 95% CI 1.35–1.76).
+
 Clinical question: in a patient with heart failure and an appropriate cardiac indication, how does replacing a renin–angiotensin–aldosterone system inhibitor (RAASi) alone with an angiotensin receptor–neprilysin inhibitor (ARNI) change the risk of worsening kidney function? If blood pressure limits tolerability, what harm belongs alongside the kidney benefit? This compares two strategies involving RAAS inhibition, not treatment versus no treatment.
 
 The primary source is the systematic review and meta-analysis by Travlos and colleagues in ESC Heart Failure: 15 randomized trials involving 31,574 people with heart failure. This is an evidence synthesis, not a new guideline. Most trials studied sacubitril/valsartan, but the review also included omapatrilat, an older combined ACE and neprilysin inhibitor no longer in clinical use. Those trials provide indirect evidence about the combined strategy, not direct evidence about sacubitril/valsartan.
-
-The meta-analysis concluded that, compared with RAASi alone in heart failure, ARNI was associated with a lower risk of worsening kidney function but a higher risk of symptomatic hypotension.
 
 ## mechanism
 
