@@ -1945,7 +1945,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     risk_pattern = r"\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b"
     relative_risk = re.search(risk_pattern, stem)
     absolute_benefit = absolute_risk and relative_risk and re.search(
-        r"\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b", stem
+        r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|calculat(?:e|ed|ing)|suy ra|tinh tu|quy doi)\b", stem
     )
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem

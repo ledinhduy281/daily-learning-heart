@@ -8750,7 +8750,8 @@
           const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
           const riskTerms = /\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b/g;
           const relativeRisk = Boolean(stem.match(riskTerms));
-          const absoluteBenefit = absoluteRisk && relativeRisk && /\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b/.test(stem);
+          const absoluteBenefit = absoluteRisk && relativeRisk
+            && /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|calculat(?:e|ed|ing)|suy ra|tinh tu|quy doi)\b/.test(stem);
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
           const endpoint = stem.match(/\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co) (?:of|for|cua) (?:the )?([^?.!,;]+)/)?.[1]

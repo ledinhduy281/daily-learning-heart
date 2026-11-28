@@ -165,6 +165,18 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertIn("12 434", answer)
                 self.assertNotIn("6219", answer)
 
+    def test_local_chat_keeps_reported_absolute_and_relative_risk_together(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")
+        for lang, question, rr, absolute in (
+            ("en", "What was the absolute risk reduction and relative risk of cardiovascular events from intensive blood pressure lowering?", "RR 0.85", "4.3 events per 1000 person-years"),
+            ("vi", "Mức giảm nguy cơ tuyệt đối và nguy cơ tương đối của biến cố tim mạch khi hạ huyết áp tích cực là bao nhiêu?", "RR 0,85", "4,3 biến cố/1000 người-năm"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(rr, answer)
+                self.assertIn(absolute, answer)
+
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")
