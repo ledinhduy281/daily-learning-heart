@@ -35,7 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
-from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, build_recent_lesson, build_recent_templates
+from recent_lessons import DEPTH_SECTIONS, RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1943,7 +1943,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            sections = [notes[key] for key in RECENT_SECTIONS]
+            sections = [notes[key] for key in DEPTH_SECTIONS if key in notes]
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))

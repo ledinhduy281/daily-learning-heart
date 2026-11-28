@@ -19,8 +19,11 @@ vm.runInContext(html.slice(html.indexOf("    function formatFullDdMmYyyy("), htm
 slice("renderGuidelineRefBox", "renderPearls");
 slice("renderPearls", "renderSources");
 
-const lessons = Object.values(bundle.focused_lessons);
-assert.equal(lessons.length, 10);
+const templates = Object.values(bundle.focused_lessons);
+assert.equal(templates.length, 10);
+const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
+assert.ok(datedPci.teaching.vi.mechanism.length);
+const lessons = [...templates, datedPci];
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
 for (const lesson of lessons) for (const isVi of [true, false]) {
   const source = lesson.primary_source;
@@ -37,7 +40,14 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
     assert.ok(html.includes(source.online_date.split("-").reverse().join("/")));
   }
   const notes = lesson.teaching[isVi ? "vi" : "en"];
-  assert.ok(notes.summary.every(p => Dom.evolutionPipelineRow.innerHTML.includes(context.escapeHtml(p))));
+  const walkthrough = Dom.evolutionPipelineRow.innerHTML;
+  const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
+  const hasDepth = Boolean(notes.mechanism);
+  assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  for (const key of hasDepth ? blockAKeys : ["summary"]) {
+    assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
+    assert.ok(notes[key].every(p => !blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key} stays in Block A`);
+  }
   for (const key of ["design", "findings", "limits"]) {
     assert.ok(notes[key].every(p => blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
   }

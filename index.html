@@ -6875,6 +6875,10 @@
       if (!notes) return "";
       const sections = block === "source_summary" ? [
         ["summary", "Nguồn này nói gì", "What this source says"],
+        ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
+        ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
+        ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
+        ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],
       ] : block === "source_reading" ? [
         ["design", "Thiết kế và phạm vi", "Design and scope"],
         ["findings", "Kết quả và số liệu", "Findings and numbers"],
@@ -6888,8 +6892,8 @@
         ["findings", "Kết quả thực sự cho thấy gì", "What the results actually showed"],
         ["interpretation", "Có thể và không thể suy rộng", "What to apply and what not to extrapolate"],
       ];
-      return sections.map(([key, vi, en]) =>
-        `<h3>${isVi ? vi : en}</h3>${(notes[key] || []).map(p => `<p>${escapeHtml(p)}</p>`).join("")}`
+      return sections.filter(([key]) => notes[key]?.length).map(([key, vi, en]) =>
+        `<h3>${isVi ? vi : en}</h3>${notes[key].map(p => `<p>${escapeHtml(p)}</p>`).join("")}`
       ).join("");
     }
 

@@ -41,6 +41,36 @@ class RecentLessonTests(unittest.TestCase):
         for pillar in PILLARS:
             validate_lesson(templates[str(pillar["id"])], pillar, RECENT_EDITION_DATE, fallback=True)
 
+    def test_intracoronary_imaging_walkthrough_keeps_depth_in_block_a(self):
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        self.assertEqual(lesson["primary_source"]["pmid"], "42747372")
+        for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        self.assertIn(f"### {recent_lessons.SECTION_LABELS[lang][key]}\n", block)
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn(excerpt["text"], block_b)
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+
+    def test_recorded_walkthrough_rejects_partial_and_mismatched_depth(self):
+        pillar, day = PILLARS[2], "2026-11-28"
+        lesson = build_recent_lesson(pillar, day)
+        del lesson["teaching"]["en"]["mechanism"]
+        with self.assertRaisesRegex(ValueError, "Incomplete en walkthrough"):
+            validate_lesson(lesson, pillar, day, recorded=True)
+        for key in recent_lessons.BLOCK_A_SECTIONS[2:]:
+            del lesson["teaching"]["en"][key]
+        with self.assertRaisesRegex(ValueError, "must have matching sections"):
+            validate_lesson(lesson, pillar, day, recorded=True)
+
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:
             lesson = build_recent_lesson(pillar, "2026-11-26")
