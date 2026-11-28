@@ -404,6 +404,12 @@ const quiet = () => {};
     options: [{en: "RR 0.73", vi: "RR 0,73"}, ...pciCase.options.slice(1)],
   };
   assert.equal(verdict(withImaging), "comparator", "the live case substituted with-or-without imaging for angiography");
+  for (const modality of ["ICI", "IVUS", "OCT", "IVUS/OCT"]) {
+    for (const [field, term] of [["stem_en", "intracoronary imaging"], ["stem_vi", "hình ảnh nội mạch"]]) {
+      assert.equal(verdict({...cardiacMortality, [field]: withImaging[field].replace(term, modality)}),
+        "comparator", field + " with-or-without " + modality + " is not an angiography comparator");
+    }
+  }
   for (const [field, search, replacement] of [
     ["stem_en", "angiography-guided PCI", "PCI with no imaging guidance"],
     ["stem_vi", "PCI hướng dẫn bằng chụp mạch", "PCI không có hướng dẫn bằng hình ảnh nội mạch"],

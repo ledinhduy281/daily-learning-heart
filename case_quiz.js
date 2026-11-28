@@ -243,14 +243,18 @@ const CaseQuiz = (() => {
       return PCI_VIGNETTE[lang].test(words) ? words.replace(PCI_HISTORY[lang], '') : words;
     });
   }
+  const PCI_IMAGING_TERMS = {
+    en: '(?:(?:intracoronary |intravascular )?imaging|ici|ivus|oct)',
+    vi: '(?:hinh anh(?: noi mach)?|ici|ivus|oct)',
+  };
   const PCI_GUIDANCE = [
     {en: wholeWords('angiograph(?:y|ic)'), vi: wholeWords('chup (?:dong )?mach(?: vanh)?')},
-    {en: wholeWords('(?:intracoronary )?imaging|ici|ivus|oct'), vi: wholeWords('hinh anh(?: noi mach)?|ici|ivus|oct')},
+    {en: wholeWords(PCI_IMAGING_TERMS.en), vi: wholeWords(PCI_IMAGING_TERMS.vi)},
   ];
   const PCI_BAD_TRANSLATION = wholeWords('nhieu anh|angiograph(?:y|ic)|chi dinh noi mach|chi dan noi mach');
   const PCI_WITH_OR_WITHOUT_IMAGING = {
-    en: wholeWords('with or without (?:intracoronary |intravascular )?imaging'),
-    vi: wholeWords('co (?:hoac|hay|va) khong(?: co)? (?:huong dan bang )?hinh anh'),
+    en: wholeWords('with or without ' + PCI_IMAGING_TERMS.en),
+    vi: wholeWords('co (?:hoac|hay|va) khong(?: co)? (?:huong dan bang )?' + PCI_IMAGING_TERMS.vi),
   };
   const PCI_NO_IMAGING = {
     en: wholeWords('(?:no|without) (?:intracoronary |intravascular )?imaging|(?:not |non )imaging guided'),
