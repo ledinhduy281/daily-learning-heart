@@ -6,6 +6,26 @@ const SearchRanking = require('../search_ranking');
 
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 const object = html.slice(html.indexOf('    const EbmChat = {') + '    const EbmChat = '.length, html.indexOf('    window.EbmChat = EbmChat;')).trim().replace(/;$/, '');
+function checkMultilineComposer() {
+  assert.match(html, /<textarea\b[^>]*\bid="chatInputField"/);
+  const start = object.indexOf('        Dom.chatInputField.addEventListener("keydown"');
+  const end = object.indexOf('        document.addEventListener("keydown"', start);
+  const node = () => ({addEventListener(event, handler) {this[event] = handler;}});
+  const field = node(), form = node(), sent = [];
+  form.requestSubmit = () => form.submit({preventDefault() {}});
+  vm.runInNewContext(`(function () { ${object.slice(start, end)} })`, {
+    Dom: {chatInputField: field, chatInputForm: form}
+  }).call({sendQuestion: query => sent.push(query)});
+
+  field.value = 'How many patients were included in the PCI meta-analysis?\nA\n1\nB\n2\nC\n3\nD\n4';
+  const event = {key: 'Enter', preventDefault() {}};
+  field.keydown({...event, shiftKey: true});
+  field.keydown({...event, isComposing: true});
+  assert.deepEqual(sent, []);
+  field.keydown(event);
+  assert.deepEqual(sent, [field.value]);
+}
+
 async function checkFocusedPastedQuestions() {
   const window = {};
   vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'), 'utf8'), {window});
@@ -106,7 +126,7 @@ async function checkCancellation(button, lang, serverAvailable) {
   const Dom = {
     btnCloseChat: node(), btnExpandChat: node(), btnNewChat: node(), btnNewChatFromDrawer: node(),
     btnClearChat: node(), btnSendChat: {}, chatQuickPrompts: node(), chatInputForm: node(),
-    chatInputField: {focus() {}}, chatMessagesList: messages, chatHistoryList: node()
+    chatInputField: {...node(), focus() {}}, chatMessagesList: messages, chatHistoryList: node()
   };
   const requests = [], toasts = [];
   let saved;
@@ -271,6 +291,7 @@ async function checkWithoutAbortSignalAny() {
 }
 
 (async () => {
+  checkMultilineComposer();
   await checkFocusedPastedQuestions();
   for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'device_cap', 'invalid_device', 'abort', 'no_crypto', 'hash_failure']) await check(mode);
   console.log('Browser chat proxy checks passed (success, unset, HTTP/network/JSON/empty/rejected/timeout fallback).');
