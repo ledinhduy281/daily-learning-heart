@@ -35,7 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
-from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, build_recent_lesson, build_recent_templates
+from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1927,12 +1927,50 @@ def _first_clean_sentence(text: str, max_len: int = 420) -> str:
 
 
 def _focused_question_excerpt(question, primary, lang, level):
-    stem = re.sub(
+    stem = " ".join(normalize(question).split())
+    explicit_nnt = re.search(r"\b(?:nnt|number needed to treat)\b", stem)
+    enrolled = not explicit_nnt and re.search(
+        r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
+        r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)"
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
+        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
+    )
+    nnt = explicit_nnt or re.search(
+        r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
+        r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
+    )
+    absolute_risk = re.search(
+        r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
+    )
+    risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
+    relative_risk = re.search(risk_pattern, stem)
+    absolute_benefit = absolute_risk and relative_risk and re.search(
+        r"\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b", stem
+    )
+    risk_estimate = relative_risk and not re.search(
+        r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
+    )
+    follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
+    query = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
-        " ", normalize(question),
+        " ", stem,
     )
-    groups = search_terms(stem)
+    if enrolled:
+        trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
+        query = ("trials studies" if lang == "en" else "thu nghiem nghien cuu") if trials else (
+            "patients participants" if lang == "en" else "benh nhan nguoi benh"
+        )
+    else:
+        if nnt:
+            query = "nnt"
+        elif absolute_benefit:
+            query = "absolute benefit baseline risk" if lang == "en" else "loi ich tuyet doi nguy co nen"
+        elif follow_up:
+            query = "follow up" if lang == "en" else "theo doi trung binh"
+        elif risk_estimate:
+            query = re.sub(risk_pattern, "rr", query)
+    groups = search_terms(query)
     if not groups:
         return ""
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
@@ -1943,7 +1981,16 @@ def _focused_question_excerpt(question, primary, lang, level):
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            sections = [notes[key] for key in RECENT_SECTIONS]
+            if enrolled:
+                preferred = ("design", "findings")
+            elif nnt or absolute_benefit:
+                preferred = ("pitfalls", "limits")
+            elif follow_up:
+                preferred = ("design", "findings")
+            else:
+                preferred = ("findings",) if risk_estimate else ()
+            sections = [notes[key] for key in preferred if notes.get(key)]
+            sections = sections or notes.values()
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
@@ -2027,19 +2074,25 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        if primary.get("lesson_format") in {"single_guideline", "single_source"} and primary.get("teaching"):
-            excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
+        if primary.get("lesson_format") in {"single_guideline", "single_source"}:
+            excerpt = _focused_question_excerpt(question, primary, lang, eff_level) if primary.get("teaching") else ""
             if primary.get("quiz_status") == "awaiting_physician_excerpts":
                 notice = (
                     "Local chat does not grade pasted questions. This guideline lesson has no quiz until a physician enters its recommendation lines."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
                 )
-            else:
+            elif validated_source_items(primary):
                 notice = (
                     "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+                )
+            else:
+                notice = (
+                    "Local chat does not grade pasted questions. No source-supported questions are available for this lesson."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
                 )
             return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([
