@@ -1962,10 +1962,10 @@ def _focused_question_excerpt(question, primary, lang, level):
     if enrolled:
         trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
         query = ("trials studies rct rcts" if lang == "en" else "thu nghiem nghien cuu rct") if trials else (
-            "patients participants" if lang == "en" else "benh nhan nguoi"
+            "patients participants adults individuals people enrolled included" if lang == "en" else "benh nhan nguoi tuyen dua vao"
         )
         enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
-            r"(?:patients?|participants?|benh nhan|nguoi)"
+            r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
         enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b")
     else:
@@ -2009,23 +2009,23 @@ def _focused_question_excerpt(question, primary, lang, level):
                 if enrollment_pattern and primary.get("lesson_format") == "single_source":
                     if not enrollment_pattern.search(normalize(paragraph)):
                         continue
+                priority = int(bool(enrolled and section is notes.get("design")))
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
                     clean = normalize(sentence)
                     hits = {
                         i for i, aliases in enumerate(groups)
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
                     }
-                    passages.append((hits, sentence, paragraph, section))
+                    if hits:
+                        passages.append((hits, sentence, paragraph, section, priority))
 
     if not passages:
         return ""
     frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
     weights = [1 / frequency if frequency else 0 for frequency in frequencies]
-    hits, sentence, paragraph, section = max(
-        passages, key=lambda row: sum(weights[i] for i in sorted(row[0]))
+    _, sentence, paragraph, section, _ = max(
+        passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])))
     )
-    if not hits:
-        return ""
     if level == "short":
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
         start = max(0, sentences.index(sentence) - 1)

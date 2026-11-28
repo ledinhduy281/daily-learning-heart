@@ -108,6 +108,17 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, evidence);
     assert.doesNotMatch(markdown, /RR 0[.,]85/);
   }
+  const bproad = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '43020520');
+  for (const [lang, question] of [
+    ['en', 'How many participants were included in the BPROAD cognitive ancillary study?'],
+    ['vi', 'Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?']
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, bproad, [], null, lang
+    );
+    assert.match(markdown, /12 434/);
+    assert.doesNotMatch(markdown, /6219/);
+  }
   const staree = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42670961');
   for (const [lang, question, evidence] of [
     ['en', 'What was the reported absolute risk of serious adverse events in STAREE?', /Serious adverse events were 2\.7% in each group/],

@@ -153,6 +153,18 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertIn(expected, answer)
                 self.assertNotRegex(answer, r"RR 0[.,]85")
 
+    def test_local_chat_finds_total_enrollment_before_arm_counts(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "43020520")
+        for lang, question in (
+            ("en", "How many participants were included in the BPROAD cognitive ancillary study?"),
+            ("vi", "Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn("12 434", answer)
+                self.assertNotIn("6219", answer)
+
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")
