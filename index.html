@@ -6887,7 +6887,9 @@
         ["summary", "Nguồn này nói gì", "What this source says"],
         briefing.primary_source?.id === "intracoronary-imaging-pci-ma"
           ? ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"]
-          : ["mechanism", "Cơ chế và bối cảnh lâm sàng", "Mechanism and clinical context"],
+          : briefing.primary_source?.id === "laac-high-risk-af-ipd-ma"
+            ? ["mechanism", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"]
+            : ["mechanism", "Cơ chế và bối cảnh lâm sàng", "Mechanism and clinical context"],
         ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
         ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
         ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],
