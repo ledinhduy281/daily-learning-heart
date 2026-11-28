@@ -93,6 +93,32 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                             for p in notes[key]), minimum)
 
+    def test_left_atrial_appendage_closure_walkthrough_keeps_depth_in_block_a(self):
+        lesson = build_recent_lesson(PILLARS[5], "2026-12-01")
+        self.assertEqual(lesson["primary_source"]["pmid"], "43018508")
+        self.assertEqual(lesson["primary_source"]["doi"], "10.1016/j.jacc.2026.09.033")
+        for lang, field, mechanism in (
+            ("vi", "part1_vi_markdown", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"),
+            ("en", "part2_en_markdown", "How appendage closure changes risk"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                self.assertEqual(tuple(notes), recent_lessons.DEPTH_SECTIONS)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {mechanism}\n", block_a)
+                self.assertNotIn(recent_lessons.SECTION_LABELS[lang]["mechanism"], block_a)
+                for key in recent_lessons.BLOCK_A_SECTIONS[1:]:
+                    self.assertGreaterEqual(len(notes[key]), 2, key)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
+        self.assertTrue(lesson["quiz_items"])
+
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:
             lesson = build_recent_lesson(pillar, "2026-11-26")
