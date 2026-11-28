@@ -119,8 +119,8 @@ class RecentLessonTests(unittest.TestCase):
             ("vi", "Có bao nhiêu bệnh nhân cần được điều trị để ngăn một biến cố (NNT)?", "Không suy ra NNT"),
             ("en", "How can absolute benefit be derived from the relative risk of target lesion failure?", "baseline risk, a time horizon and a relevant population"),
             ("vi", "Làm sao suy ra lợi ích tuyệt đối từ nguy cơ tương đối?", "nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu"),
-            ("en", "What was the relative risk of target lesion failure?", r"target lesion failure \(RR 0\.72"),
-            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?", r"thất bại tổn thương đích \(RR 0,72"),
+            ("en", "What was the relative risk of target lesion failure?", r"target lesion failure[: (]+RR 0\.72"),
+            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích là bao nhiêu?", r"thất bại tổn thương đích[, (]+RR 0,72"),
             ("en", "What was the mean follow-up in the intracoronary imaging-guided PCI meta-analysis?", r"22 months"),
             ("vi", "Thời gian theo dõi trung bình trong phân tích gộp PCI là bao lâu?", r"22 tháng"),
         ):

@@ -1951,6 +1951,7 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
+    enrollment_pattern = None
     query = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
@@ -1959,8 +1960,12 @@ def _focused_question_excerpt(question, primary, lang, level):
     if enrolled:
         trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
         query = ("trials studies" if lang == "en" else "thu nghiem nghien cuu") if trials else (
-            "patients participants" if lang == "en" else "benh nhan nguoi benh"
+            "patients participants" if lang == "en" else "benh nhan nguoi"
         )
+        enrollment_unit = r"(?:(?:randomized|ngau nhien) )?(?:[ar]cts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
+            r"(?:patients?|participants?|benh nhan|nguoi)"
+        )
+        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b")
     else:
         if nnt:
             query = "nnt"
@@ -1996,6 +2001,9 @@ def _focused_question_excerpt(question, primary, lang, level):
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
             for paragraph in section:
+                if enrollment_pattern and primary.get("lesson_format") == "single_source":
+                    if not enrollment_pattern.search(normalize(paragraph)):
+                        continue
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
                     clean = normalize(sentence)
                     hits = {
@@ -2004,6 +2012,8 @@ def _focused_question_excerpt(question, primary, lang, level):
                     }
                     passages.append((hits, sentence, paragraph, section))
 
+    if not passages:
+        return ""
     frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
     weights = [1 / frequency if frequency else 0 for frequency in frequencies]
     hits, sentence, paragraph, section = max(
