@@ -193,6 +193,22 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertIn(evidence, answer)
 
+    def test_local_chat_distinguishes_af_pci_major_bleeding_from_ischemic_composite(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[3], "2026-11-29")
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, expected in (
+            ("en", "What was the hazard ratio for major bleeding with DOAC plus P2Y12 compared with VKA plus DAPT?",
+             "0.48"),
+            ("vi", "HR của chảy máu nặng theo TIMI với DOAC cộng P2Y12 so với VKA cộng DAPT là bao nhiêu?",
+             "0,48"),
+        ):
+            with self.subTest(lang=lang):
+                answer, sources = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                self.assertIn(expected, answer)
+                self.assertNotRegex(answer, r"1[.,]16")
+                self.assertEqual(sources[0]["pmid"], "42669062")
+
     def test_local_chat_returns_conversion_requirements_and_reported_rr(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[2], "2026-11-28")

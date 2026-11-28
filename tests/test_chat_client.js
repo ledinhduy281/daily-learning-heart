@@ -220,6 +220,18 @@ async function checkFocusedPastedQuestions() {
     );
     assert.match(markdown, evidence);
   }
+  const afPci = bundle.focused_lessons['4'];
+  for (const [lang, question, expected] of [
+    ['en', 'What was the hazard ratio for major bleeding with DOAC plus P2Y12 compared with VKA plus DAPT?', '0.48'],
+    ['vi', 'HR của chảy máu nặng theo TIMI với DOAC cộng P2Y12 so với VKA cộng DAPT là bao nhiêu?', '0,48']
+  ]) {
+    const {markdown, sources} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, afPci, [], null, lang
+    );
+    assert.ok(markdown.includes(expected), markdown);
+    assert.doesNotMatch(markdown, /1[.,]16/);
+    assert.equal(sources[0].pmid, '42669062');
+  }
   const guideline = {lesson_format: 'single_source', quiz_status: 'awaiting_physician_excerpts'};
   const {markdown} = await chat.composeClientDeterministicAnswer(
     'Which is correct?\nA. First\nB. Second\nC. Third\nD. Fourth', guideline, [], null, 'en'
