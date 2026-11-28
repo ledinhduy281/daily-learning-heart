@@ -43,8 +43,17 @@ SECTION_LABELS = {
 }
 
 
+MECHANISM_LABELS = {
+    "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
+    "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
+}
+
+
 def section_label(lang, key, source=None):
-    if key == "mechanism" and source and source.get("id") != "intracoronary-imaging-pci-ma":
+    if key == "mechanism" and source:
+        pair = MECHANISM_LABELS.get(source.get("id"))
+        if pair:
+            return pair[0 if lang == "vi" else 1]
         return "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical rationale"
     return SECTION_LABELS[lang][key]
 
