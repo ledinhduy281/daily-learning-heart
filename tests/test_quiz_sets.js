@@ -388,6 +388,14 @@ const quiet = () => {};
   assert.equal(verdict({...lad,
     explanation_en: lad.explanation_en + limitationEn.replace(".", ", but the RR for patients like him is 0.72."),
   }), "projection", "a caveat does not excuse a subsequent individualized claim");
+  for (const [lang, claim] of [
+    ["en", " Although this is not an individual estimate, for patients like him the RR is 0.72."],
+    ["vi", " Mặc dù đây không phải là ước tính cá nhân, ở bệnh nhân này RR là 0,72."],
+  ]) {
+    const field = "explanation_" + lang;
+    assert.equal(verdict({...lad, [field]: lad[field] + claim}), "projection",
+      "a concessive clause does not exempt the personalized estimate in the main clause");
+  }
 
   const withImaging = {
     ...cardiacMortality,

@@ -436,15 +436,30 @@ const CaseQuiz = (() => {
     vi: /\b(?:doi voi|o|cho|ap dung cho) (?:(?:mot )?benh nhan nhu (?:anh ay|ong ay|ba ay|co ay|nguoi nay|the nay|vay)|benh nhan nay)\b/,
   };
   const APPLICATION_CONTRAST = {
-    en: /\b(?:but|however|nevertheless|yet)\b/,
-    vi: /\b(?:nhung|tuy nhien|the nhung|du vay)\b/,
+    en: /\b(?:but|however|nevertheless|yet|although|even though|though)\b/,
+    vi: /\b(?:the nhung|nhung|tuy nhien|du vay|mac du|tuy rang)\b/,
+  };
+  const LEADING_CONCESSION = {
+    en: /^(?:although|even though|though)\b/,
+    vi: /^(?:mac du|tuy rang)\b/,
   };
   const APPLICATION_RESULT = {
     en: /\b(?:reported|found|result|estimate|pooled|apply|applies|applied|lower|higher|fewer|reduc\w*|increas\w*|what|how|whether)\b/,
     vi: /\b(?:bao cao|ghi nhan|ket qua|uoc tinh|phan tich gop|ap dung|thap hon|cao hon|giam|tang|bao nhieu|the nao|lieu)\b/,
   };
+  const PROJECTION_SENTENCE_BREAK = /[!?;\r\n\u2028\u2029]|\.(?!\d)/;
   function projectionClauses(value, lang) {
-    return value.split(/[!?;\r\n\u2028\u2029]|\.(?!\d)/).map(clause => claimText(clause)[lang]);
+    return value.split(PROJECTION_SENTENCE_BREAK).map(clause => claimText(clause)[lang]);
+  }
+
+  function applicationClauses(value, lang) {
+    return value.split(PROJECTION_SENTENCE_BREAK).flatMap(sentence => {
+      const words = claimText(sentence)[lang];
+      const comma = sentence.search(/,(?!\d)/);
+      if (comma < 0 || !LEADING_CONCESSION[lang].test(words)) return words.split(APPLICATION_CONTRAST[lang]);
+      return [sentence.slice(0, comma), sentence.slice(comma + 1)]
+        .flatMap(clause => claimText(clause)[lang].split(APPLICATION_CONTRAST[lang]));
+    });
   }
 
   function projectsGroupResult(item) {
@@ -459,10 +474,10 @@ const CaseQuiz = (() => {
           stemClauses.some(c => limit(c) && isProjection(c, lang))) return true;
       const resultContext = clause => ENDPOINT_CONTEXT[lang].test(clause) || EFFECT_CONTEXT[lang].test(clause) ||
         /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(clause);
-      const applies = (clauses, keyed = false) => clauses.flatMap(clause => clause.split(APPLICATION_CONTRAST[lang]))
+      const applies = (value, keyed = false) => applicationClauses(value, lang)
         .some(clause => !limit(clause) && VIGNETTE_APPLICATION[lang].test(clause) &&
           (keyed || resultContext(clause) || APPLICATION_RESULT[lang].test(clause)));
-      if (applies(stemClauses) || applies(keyClauses, true) || applies(projectionClauses(item['explanation_' + lang], lang))) return true;
+      if (applies(item['stem_' + lang]) || applies(correct[lang], true) || applies(item['explanation_' + lang])) return true;
       const result = resultContext(stem + ' ' + key);
       return result && (PERSONAL_RISK[lang].test(key) ||
         COHORT[lang].test(stem) && (isProjection(stem, lang) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
