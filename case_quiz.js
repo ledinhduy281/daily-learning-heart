@@ -182,7 +182,7 @@ const CaseQuiz = (() => {
     ];
   }
 
-  const PCI_ENDPOINTS = Object.entries({
+  const PCI_ENDPOINT_TERMS = Object.entries({
     lesion_failure: ['target lesion failure|tlf', 'that bai ton thuong (?:dich|muc tieu)|tlf'],
     vessel_failure: ['target vessel failure|tvf', 'that bai mach (?:dich|muc tieu)|tvf'],
     lesion_revascularization: ['target lesion revasculari[sz]ation|tlr', 'tai (?:thong|tuoi mau|can thiep) ton thuong (?:dich|muc tieu)|tlr'],
@@ -194,9 +194,18 @@ const CaseQuiz = (() => {
     stroke: ['stroke', 'dot quy|tai bien mach mau nao'],
     sudden_death: ['sudden cardiac death', 'dot tu tim|tu vong tim dot ngot'],
     non_st_infarction: ['non st elevation myocardial infarction|nstemi', 'nhoi mau co tim khong st chenh len|nstemi'],
-  }).map(([name, [en, vi]]) => [name, {en: wholeWords(en), vi: wholeWords(vi)}]);
-  const pciEndpoints = (field, lang) => {
-    const words = claimText(field)[lang];
+  });
+  const PCI_ENDPOINTS = PCI_ENDPOINT_TERMS.map(([name, [en, vi]]) => [name, {en: wholeWords(en), vi: wholeWords(vi)}]);
+  const PCI_HISTORY = Object.fromEntries([
+    ['en', 0, '(?:history of|prior|previous|past)', 'and|or'],
+    ['vi', 1, '(?:tien su(?: mac)?|(?:da )?tung (?:bi|mac))', 'va|hoac'],
+  ].map(([lang, column, prefix, joiner]) => {
+    const endpoint = '(?:' + PCI_ENDPOINT_TERMS.map(([, terms]) => terms[column]).join('|') + ')';
+    return [lang, wholeWords(prefix + ' ' + endpoint + '(?: (?:' + joiner + ') ' + endpoint + ')*', 'g')];
+  }));
+  const pciEndpoints = (field, lang, isStem = false) => {
+    const normalized = claimText(field)[lang];
+    const words = isStem ? normalized.replace(PCI_HISTORY[lang], ' ') : normalized;
     const found = new Set(PCI_ENDPOINTS.filter(([, patterns]) => patterns[lang].test(words)).map(([name]) => name));
     if (found.has('sudden_death')) found.delete('cardiac_death');
     if (found.has('non_st_infarction')) found.delete('infarction');
@@ -227,8 +236,8 @@ const CaseQuiz = (() => {
       }
     }
     const key = item.options[KEYS.indexOf(item.answer)];
-    const fields = [key, ...['stem', 'explanation'].map(name => ({en: item[name + '_en'], vi: item[name + '_vi']}))];
-    const named = fields.map(({en, vi}) => [pciEndpoints(en, 'en'), pciEndpoints(vi, 'vi')]);
+    const fields = [key, ...['stem', 'explanation'].map(name => ({en: item[name + '_en'], vi: item[name + '_vi'], isStem: name === 'stem'}))];
+    const named = fields.map(({en, vi, isStem}) => [pciEndpoints(en, 'en', isStem), pciEndpoints(vi, 'vi', isStem)]);
     const expected = new Set(named.flatMap(([en]) => [...en]));
     if (named.some(([en, vi]) => !sameSet(en, vi)) || [...expected].some(endpoint => !results.has(endpoint))) return 'endpoint';
     for (const [index, field] of fields.entries()) {
@@ -236,7 +245,7 @@ const CaseQuiz = (() => {
       if (names.size && !sameSet(names, expected)) return 'endpoint';
       for (const lang of CLAIM_LANGUAGES) {
         for (const clause of field[lang].split(STUDY_CLAUSE)) {
-          const local = pciEndpoints(clause, lang);
+          const local = pciEndpoints(clause, lang, field.isStem);
           const targets = local.size ? local : expected;
           const figures = effectFigures(clause).filter(figure => /^(?:rr|hr|or) /.test(figure));
           if (targets.size && figures.some(figure => ![...targets].some(name => results.get(name)?.includes(figure)))) return 'endpoint';

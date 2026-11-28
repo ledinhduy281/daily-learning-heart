@@ -314,6 +314,20 @@ const quiet = () => {};
   assert.equal(verdict({...vessel, stem_vi: vessel.stem_vi.replace("Hướng dẫn bằng hình ảnh nội mạch", "Chỉ định nội mạch")}), "comparator");
   assert.equal(verdict({...vessel, quote: pci.quiz_source_texts["42747372"][0]}), "endpoint", "a population-only citation does not support the named endpoint");
 
+  const cardiacMortality = {
+    ...pciCase,
+    stem_en: "A patient with a history of myocardial infarction asks how imaging-guided PCI affects cardiac mortality compared with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân có tiền sử nhồi máu cơ tim hỏi PCI hướng dẫn bằng hình ảnh nội mạch ảnh hưởng thế nào đến tử vong tim so với PCI hướng dẫn bằng chụp mạch.",
+    explanation_en: "Imaging-guided PCI reduced cardiac mortality (RR 0.73) compared with angiography-guided PCI.",
+    explanation_vi: "PCI hướng dẫn bằng hình ảnh nội mạch giảm tử vong tim (RR 0,73) so với PCI hướng dẫn bằng chụp mạch.",
+    options: [{en: "Reduces cardiac mortality", vi: "Giảm tử vong tim"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(cardiacMortality), "", "a prior MI is vignette background, even in the same sentence as the question");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("affects cardiac mortality", "affects myocardial infarction"),
+    stem_vi: cardiacMortality.stem_vi.replace("đến tử vong tim", "đến nhồi máu cơ tim"),
+  }), "endpoint", "MI in the question still has to match the keyed result");
+
   const mortality = {...pciCase,
     stem_en: "A 66-year-old patient is scheduled for PCI. What is the relative risk for all-cause mortality with imaging guidance compared with angiography?",
     stem_vi: "Bệnh nhân 66 tuổi được lên kế hoạch PCI. Nguy cơ tương đối về tử vong toàn nguyên khi hướng dẫn bằng hình ảnh nội mạch so với chụp mạch là bao nhiêu?",
