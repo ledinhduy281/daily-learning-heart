@@ -1961,26 +1961,41 @@ def _focused_question_excerpt(question, primary, lang, level):
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
-    endpoint_pattern = r" (?:of|for|cua|cho) (?:the |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)"
+    endpoint_pattern = r" (?:of|for|cua|cho) (?:the |a |an |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)"
     endpoint_match = re.search(risk_pattern + r"(?: (?:of )?\d+(?:[.,]\d+)?)?" + endpoint_pattern, stem)
     if not endpoint_match and absolute_benefit:
         endpoint_match = re.search(absolute_pattern + endpoint_pattern, stem)
     endpoint_text = re.split(
-        r"\b(?:in|with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
-        r"|khi|sau|o|voi|la|bao nhieu|tu|dua vao|dung)\b", endpoint_match[1], maxsplit=1,
+        r"\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
+        r"|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
+        endpoint_match[1], maxsplit=1,
     )[0] if endpoint_match else ""
-    endpoints = []
-    for value in re.split(r"(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b", endpoint_text):
-        endpoint = re.sub(r"^(?:the|cac) ", "", value.strip())
-        if endpoint:
-            threshold = re.match(r"\d+(?:[.,]\d+)?% (?:or (?:greater|higher|more)|tro len)\b", endpoint)
-            endpoints.append(threshold[0] if threshold else endpoint)
+    if not re.match(r"\d", endpoint_text):
+        endpoint_text = re.split(r"\bin\b", endpoint_text, maxsplit=1)[0]
+    endpoints = [
+        re.sub(r"\btu vong do tim\b", "tu vong tim", re.sub(r"^(?:the|a|an|cac) ", "", value.strip()))
+        for value in re.split(r"(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b", endpoint_text)
+        if value.strip()
+    ]
+    threshold_pattern = r"(\d+(?:[.,]\d+)?%) (?:or (?:greater|higher|more)|tro len)\b"
+
+    def matches_endpoint(paragraph, endpoint):
+        clean = normalize(paragraph)
+        if contains(clean, endpoint):
+            return True
+        threshold = re.fullmatch(threshold_pattern + r" (.+)", endpoint)
+        if not threshold:
+            return False
+        subject = [word for word in re.findall(r"[a-z]+", threshold[2]) if word not in {"in", "of", "the", "cua", "o"}]
+        return contains(clean, threshold[1]) and bool(subject) and all(
+            contains(clean, word) or contains(clean, word + "s") for word in subject
+        )
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
     if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):
         if primary.get("lesson_format") == "single_source":
             notes = primary["teaching"][lang]
-            excerpts = [p for p in notes.get("findings", []) if any(contains(normalize(p), endpoint) for endpoint in endpoints)]
+            excerpts = [p for p in notes.get("findings", []) if any(matches_endpoint(p, endpoint) for endpoint in endpoints)]
             if absolute_benefit:
                 requirement = (
                     "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, "
@@ -1989,7 +2004,7 @@ def _focused_question_excerpt(question, primary, lang, level):
                     "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, "
                     "cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu."
                 )
-                excerpts = [requirement, *(excerpts or notes.get("limits", []))]
+                excerpts = [requirement, *excerpts, *notes.get("limits", [])]
             return "\n\n".join(excerpts)
     query = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"

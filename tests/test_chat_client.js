@@ -41,14 +41,17 @@ async function checkFocusedPastedQuestions() {
   for (const [lang, question, requirement, estimate] of [
     ['en', 'How can absolute benefit be calculated using a relative risk of target lesion failure?', /requires a baseline risk/, /RR 0\.72/],
     ['en', 'How can absolute benefit for target lesion failure be calculated using the pooled relative risk?', /requires a baseline risk/, /RR 0\.72/],
+    ['en', 'How do I calculate absolute benefit for target lesion failure in patients with complex lesions using the pooled relative risk?', /requires a baseline risk/, /RR 0\.72/],
     ['vi', 'Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối của thất bại tổn thương đích?', /cần biết nguy cơ nền/, /RR 0,72/],
-    ['vi', 'Làm sao tính lợi ích tuyệt đối cho thất bại tổn thương đích từ nguy cơ tương đối gộp?', /cần biết nguy cơ nền/, /RR 0,72/]
+    ['vi', 'Làm sao tính lợi ích tuyệt đối cho thất bại tổn thương đích từ nguy cơ tương đối gộp?', /cần biết nguy cơ nền/, /RR 0,72/],
+    ['vi', 'Làm sao tính lợi ích tuyệt đối cho tử vong do tim từ nguy cơ tương đối gộp?', /cần biết nguy cơ nền/, /0,73/]
   ]) {
     const {markdown, sources} = await chat.composeClientDeterministicAnswer(
       `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, lang
     );
     assert.match(markdown, requirement);
     assert.match(markdown, estimate);
+    assert.ok(markdown.includes(pci.teaching[lang].limits[0]), markdown);
     assert.equal(sources[0].pmid, '42747372');
   }
   for (const [lang, question, requirement] of [
@@ -125,6 +128,7 @@ async function checkFocusedPastedQuestions() {
   const ckd = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42842238');
   for (const [lang, question, evidence] of [
     ['en', 'How do I calculate absolute benefit using the relative risk of 30% or greater eGFR decline?', /RR 1\.42/],
+    ['en', 'What was the relative risk of 30% or higher eGFR decline?', /RR 1\.42/],
     ['vi', 'Tỉ số nguy cơ cho các biến cố tim mạch là bao nhiêu?', /RR 0,85/]
   ]) {
     const {markdown} = await chat.composeClientDeterministicAnswer(
@@ -132,6 +136,11 @@ async function checkFocusedPastedQuestions() {
     );
     assert.match(markdown, evidence);
   }
+  const wrongThreshold = await chat.composeClientDeterministicAnswer(
+    'How do I calculate absolute benefit using the relative risk of a 30% or greater reduction in cardiovascular events?\nA. First\nB. Second\nC. Third\nD. Fourth',
+    ckd, [], null, 'en'
+  );
+  assert.doesNotMatch(wrongThreshold.markdown, /RR 1\.42/);
   for (const [lang, question, evidence] of [
     ['en', 'What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?', /kidney failure \(RR 0\.97/],
     ['vi', 'Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?', /suy thận \(RR 0,97/],

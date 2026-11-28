@@ -8760,22 +8760,32 @@
           const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
-          const endpointPattern = / (?:of|for|cua|cho) (?:the |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)/.source;
+          const endpointPattern = / (?:of|for|cua|cho) (?:the |a |an |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)/.source;
           const endpointMatch = stem.match(new RegExp(riskTerms.source + /(?: (?:of )?\d+(?:[.,]\d+)?)?/.source + endpointPattern))
             || (absoluteBenefit && stem.match(new RegExp(absoluteTerms.source + endpointPattern)));
-          const endpoints = endpointMatch?.[1]
-            ?.split(/\b(?:in|with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|khi|sau|o|voi|la|bao nhieu|tu|dua vao|dung)\b/)[0]
+          const endpointEnd = new RegExp(/\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) /.source + "(?=" + riskTerms.source + ")");
+          let endpointText = endpointMatch?.[1]?.split(endpointEnd)[0] || "";
+          if (!/^\d/.test(endpointText)) endpointText = endpointText.split(/\bin\b/)[0];
+          const endpoints = endpointText
             .split(/(?<!\d),|,(?!\d)|\b(?:and|va|hoac|or(?! (?:greater|higher|more)\b))\b/)
-            .map(p => p.trim().replace(/^(?:the|cac) /, ""))
-            .map(p => p.match(/^\d+(?:[.,]\d+)?% (?:or (?:greater|higher|more)|tro len)\b/)?.[0] || p)
-            .filter(Boolean) || [];
+            .map(p => p.trim().replace(/^(?:the|a|an|cac) /, "").replace(/\btu vong do tim\b/g, "tu vong tim"))
+            .filter(Boolean);
           const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);
           if ((absoluteBenefit || (endpoints.length && riskEstimate)) && !enrolled && !nnt && !followUp
               && primary.lesson_format === "single_source") {
-            const phrase = text => ` ${SearchRanking.normalize(text).replace(/[^a-z0-9]+/g, " ").trim()} `;
-            const findings = (notes.findings || []).filter(p => endpoints.some(endpoint => phrase(p).includes(phrase(endpoint))));
+            const phrase = text => ` ${SearchRanking.normalize(text).replace(/[^a-z0-9%]+/g, " ").trim()} `;
+            const matchesEndpoint = (paragraph, endpoint) => {
+              const clean = phrase(paragraph);
+              if (clean.includes(phrase(endpoint))) return true;
+              const threshold = endpoint.match(/^(\d+(?:[.,]\d+)?%) (?:or (?:greater|higher|more)|tro len) (.+)$/);
+              if (!threshold) return false;
+              const subject = (threshold[2].match(/[a-z]+/g) || []).filter(word => !["in", "of", "the", "cua", "o"].includes(word));
+              return clean.includes(phrase(threshold[1])) && subject.length
+                && subject.every(word => clean.includes(phrase(word)) || clean.includes(phrase(word + "s")));
+            };
+            const findings = (notes.findings || []).filter(p => endpoints.some(endpoint => matchesEndpoint(p, endpoint)));
             if (absoluteBenefit) {
-              if (!findings.length) findings.push(...(notes.limits || []));
+              findings.push(...(notes.limits || []));
               findings.unshift(isEn
                 ? "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, a time horizon and a relevant population for the same outcome."
                 : "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu.");
