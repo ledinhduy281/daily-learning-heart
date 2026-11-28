@@ -113,7 +113,9 @@ async function checkFocusedPastedQuestions() {
   const ckd = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42842238');
   for (const [lang, question, evidence] of [
     ['en', 'What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?', /kidney failure \(RR 0\.97/],
-    ['vi', 'Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?', /suy thận \(RR 0,97/]
+    ['vi', 'Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?', /suy thận \(RR 0,97/],
+    ['en', 'How do I calculate absolute benefit using a relative risk of 0.97 for kidney failure?', /kidney failure \(RR 0\.97/],
+    ['vi', 'Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối 0,97 cho suy thận?', /suy thận \(RR 0,97/]
   ]) {
     const {markdown} = await chat.composeClientDeterministicAnswer(
       `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, ckd, [], null, lang

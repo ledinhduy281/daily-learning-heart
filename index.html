@@ -8759,7 +8759,8 @@
           const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
-          const endpoints = stem.match(/\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co) (?:of|for|cua) (?:the )?([^?.!;]+)/)?.[1]
+          const endpointPattern = new RegExp(riskTerms.source + / (?:(?:of )?\d+(?:[.,]\d+)? )?(?:of|for|cua|cho) (?:the )?([a-z][^?.!;]*)/.source);
+          const endpoints = stem.match(endpointPattern)?.[1]
             .split(/\b(?:in|with|from|after|among|under|reported|did|was|were|khi|sau|o|voi|la|bao nhieu)\b/)[0]
             .split(/,|\b(?:and|or|va|hoac)\b/).map(p => p.trim()).filter(Boolean) || [];
           const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);

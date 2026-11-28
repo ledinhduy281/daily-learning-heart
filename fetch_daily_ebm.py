@@ -1962,7 +1962,10 @@ def _focused_question_excerpt(question, primary, lang, level):
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
-    endpoint_match = re.search(risk_pattern + r" (?:of|for|cua) (?:the )?([^?.!;]+)", stem)
+    endpoint_match = re.search(
+        risk_pattern + r" (?:(?:of )?\d+(?:[.,]\d+)? )?(?:of|for|cua|cho) (?:the )?([a-z][^?.!;]*)",
+        stem,
+    )
     endpoint_text = re.split(r"\b(?:in|with|from|after|among|under|reported|did|was|were|khi|sau|o|voi|la|bao nhieu)\b", endpoint_match[1], maxsplit=1)[0] if endpoint_match else ""
     endpoints = [p.strip() for p in re.split(r",|\b(?:and|or|va|hoac)\b", endpoint_text) if p.strip()]
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)

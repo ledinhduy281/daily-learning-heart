@@ -161,6 +161,8 @@ class RecentLessonTests(unittest.TestCase):
         for lang, question, expected in (
             ("en", "What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?", "kidney failure (RR 0.97"),
             ("vi", "Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?", "suy thận (RR 0,97"),
+            ("en", "How do I calculate absolute benefit using a relative risk of 0.97 for kidney failure?", "kidney failure (RR 0.97"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối 0,97 cho suy thận?", "suy thận (RR 0,97"),
         ):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
