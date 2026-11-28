@@ -2031,19 +2031,25 @@ def _compose_deterministic_ebm_answer(
 
     # 1) Pasted Multiple-Choice Mode -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
     if mcq_opts:
-        if primary.get("lesson_format") in {"single_guideline", "single_source"} and primary.get("teaching"):
-            excerpt = _focused_question_excerpt(question, primary, lang, eff_level)
+        if primary.get("lesson_format") in {"single_guideline", "single_source"}:
+            excerpt = _focused_question_excerpt(question, primary, lang, eff_level) if primary.get("teaching") else ""
             if primary.get("quiz_status") == "awaiting_physician_excerpts":
                 notice = (
                     "Local chat does not grade pasted questions. This guideline lesson has no quiz until a physician enters its recommendation lines."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
                 )
-            else:
+            elif validated_source_items(primary):
                 notice = (
                     "Local chat does not grade pasted questions. Use the lesson quiz for answers linked to source excerpts."
                     if is_en else
                     "Chat cục bộ không chấm câu hỏi dán vào. Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+                )
+            else:
+                notice = (
+                    "Local chat does not grade pasted questions. No source-supported questions are available for this lesson."
+                    if is_en else
+                    "Chat cục bộ không chấm câu hỏi dán vào. Bài này chưa có câu hỏi đối chiếu được với nguồn gốc."
                 )
             return (f"{notice}\n\n{excerpt}" if excerpt else notice), sources
         evid_blob = " ".join([

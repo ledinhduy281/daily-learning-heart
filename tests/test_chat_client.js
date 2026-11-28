@@ -3,6 +3,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const {webcrypto, createHash} = require('node:crypto');
 const SearchRanking = require('../search_ranking');
+const ClinicalQuiz = require('../clinical_mcq');
+const CaseQuiz = require('../case_quiz');
 
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 const object = html.slice(html.indexOf('    const EbmChat = {') + '    const EbmChat = '.length, html.indexOf('    window.EbmChat = EbmChat;')).trim().replace(/;$/, '');
@@ -29,9 +31,12 @@ function checkMultilineComposer() {
 async function checkFocusedPastedQuestions() {
   const window = {};
   vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'), 'utf8'), {window});
+  vm.runInNewContext(fs.readFileSync(require.resolve('../data/quiz_sets.js'), 'utf8'), {window});
   const bundle = window.EBM_BRIEFINGS_DATA;
   const pci = bundle.briefings.find(b => b.id === 'ebm-2026-11-28-p3-focused');
-  const chat = vm.runInNewContext(`(${object})`, {SearchRanking});
+  const sandbox = vm.createContext({window, SearchRanking, ClinicalQuiz, CaseQuiz});
+  vm.runInContext(html.slice(html.indexOf('    const SocraticTutor = {'), html.indexOf('    window.SocraticTutor = SocraticTutor;')), sandbox);
+  const chat = vm.runInContext(`(${object})`, sandbox);
   const live = [{pmid: '1', title: 'Unrelated live result'}];
   for (const [lang, question, count, notice] of [
     ['en', 'How many patients were included in the intracoronary imaging-guided PCI meta-analysis?',
@@ -45,6 +50,7 @@ async function checkFocusedPastedQuestions() {
         `${question}\n${options}`, pci, live, null, lang
       );
       assert.ok(markdown.startsWith(notice));
+      assert.match(markdown, /Use the lesson quiz|Dùng bài trắc nghiệm/);
       assert.ok(markdown.includes(count));
       assert.doesNotMatch(markdown, /\*\*[A-D]\*\*|12,452|17,235|13,845/);
       assert.equal(sources.length, 1);
@@ -67,6 +73,18 @@ async function checkFocusedPastedQuestions() {
     'Which is correct?\nA. First\nB. Second\nC. Third\nD. Fourth', guideline, [], null, 'en'
   );
   assert.match(markdown, /no quiz until a physician enters its recommendation lines/);
+  const archive = bundle.briefings.find(b => b.id === 'ebm-2026-11-23-p8-main');
+  assert.equal(archive.lesson_format, 'single_guideline');
+  for (const [lang, notice] of [
+    ['en', 'No source-supported questions are available for this lesson.'],
+    ['vi', 'Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.']
+  ]) {
+    const reply = await chat.composeClientDeterministicAnswer(
+      'Which is true of myosin inhibition?\nA. Alpha\nB. Beta\nC. Gamma\nD. Delta', archive, [], null, lang
+    );
+    assert.ok(reply.markdown.includes(notice));
+    assert.doesNotMatch(reply.markdown, /Use the lesson quiz|Dùng bài trắc nghiệm/);
+  }
 }
 
 async function check(mode) {

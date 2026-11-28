@@ -8736,13 +8736,16 @@
         const mcqOpts = pasted?.options;
         if (pasted && ["single_source", "single_guideline"].includes(primary.lesson_format)) {
           const awaiting = primary.quiz_status === "awaiting_physician_excerpts";
+          const available = SocraticTutor.hasQuiz(primary);
           const notice = isEn
             ? "Local chat does not grade pasted questions. " + (awaiting
               ? "This guideline lesson has no quiz until a physician enters its recommendation lines."
-              : "Use the lesson quiz for answers linked to source excerpts.")
+              : available ? "Use the lesson quiz for answers linked to source excerpts."
+              : "No source-supported questions are available for this lesson.")
             : "Chat cục bộ không chấm câu hỏi dán vào. " + (awaiting
               ? "Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
-              : "Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn.");
+              : available ? "Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn."
+              : "Bài này chưa có câu hỏi đối chiếu được với nguồn gốc.");
           const notes = primary.teaching?.[lang] || {};
           const studySize = /\b(?:sample size|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)|co mau|bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu))\b/
             .test(SearchRanking.normalize(pasted.question));
@@ -9333,6 +9336,10 @@
         if (b?.lesson_format === "single_source" && b.quiz_mode === "source_excerpt" &&
             (!set || set.version === CaseQuiz.CASE_SET_VERSION)) return ClinicalQuiz.sourceCourse(b);
         return null;
+      },
+
+      hasQuiz(b) {
+        return Boolean(this.courseFor(b) || ClinicalQuiz.hasSourceItems(b) || this.quizSets.available(b).length);
       },
 
       courseAction(action, value) {
