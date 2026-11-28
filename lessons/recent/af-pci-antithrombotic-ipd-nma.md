@@ -22,9 +22,9 @@ Trước phân tích này, các thử nghiệm cho thấy DOAC cộng thuốc �
 
 Phân tích gộp đối chiếu bốn phối hợp để xem kết cục có thay đổi theo thuốc chống đông, số thuốc kháng tiểu cầu và giai đoạn sau PCI hay không. Ở một năm, với VKA + DAPT làm tham chiếu, HR của tử vong tim mạch, nhồi máu cơ tim hoặc đột quỵ với DOAC + P2Y12 là 1,16 (KTC 95% 0,97–1,41). KTC cắt qua 1 nên không có khác biệt có ý nghĩa thống kê cho so sánh này; đồng thời KTC vẫn tương thích với một mức tăng nguy cơ có thể đáng kể. Đây không phải bằng chứng tương đương.
 
-Khi tách giai đoạn sớm bằng phân tích mốc 14 ngày, nhồi máu cơ tim và huyết khối stent xác định hoặc có khả năng xảy ra nhiều hơn ở nhóm DOAC + P2Y12 hoặc VKA + một thuốc kháng tiểu cầu. Riêng với kết cục chảy máu nặng theo TIMI, tỷ số nguy cơ tức thời (HR) của DOAC + P2Y12 so với VKA + DAPT là 0,48 (KTC 95% 0,38–0,65).
+Phân tích mốc 14 ngày không ấn định ngày ngừng aspirin sau PCI. Ở giai đoạn sớm, nhồi máu cơ tim và huyết khối stent xác định hoặc có khả năng xảy ra nhiều hơn ở nhóm DOAC + P2Y12 hoặc VKA + một thuốc kháng tiểu cầu. Riêng với kết cục chảy máu nặng theo TIMI, tỷ số nguy cơ tức thời (HR) của DOAC + P2Y12 so với VKA + DAPT là 0,48 (KTC 95% 0,38–0,65).
 
-Mốc phân tích không phải mốc đổi thuốc. Chuyển dịch trong thực hành là đặt hai câu hỏi cạnh nhau: lợi ích về chảy máu của phác đồ là gì, và liệu kết cục gộp cả năm có che khuất tín hiệu mạch vành sớm không? Bài báo không ban hành khuyến cáo Class/Level.
+Chuyển dịch trong thực hành là đặt hai câu hỏi cạnh nhau: lợi ích về chảy máu của phác đồ là gì, và liệu kết cục gộp cả năm có che khuất tín hiệu mạch vành sớm không? Bài báo không ban hành khuyến cáo Class/Level.
 
 ## application
 
@@ -86,9 +86,9 @@ Before this analysis, randomized trials showed less bleeding with DOAC plus a P2
 
 The pooled analysis compared four combinations to examine the anticoagulant, antiplatelet intensity, and timing after PCI. At one year, with VKA plus DAPT as the reference, the hazard ratio (HR) for cardiovascular death, myocardial infarction, or stroke with DOAC plus a P2Y12 inhibitor was 1.16 (95% CI 0.97–1.41). The interval crosses 1, so this comparison was not statistically significant, but the interval still permits a potentially important increase in hazard. It does not establish equivalence.
 
-In a 14-day landmark analysis, early myocardial infarction and definite or probable stent thrombosis were more frequent with DOAC plus a P2Y12 inhibitor or VKA plus single antiplatelet therapy. For the separate safety outcome of TIMI major bleeding, the hazard ratio (HR) with DOAC plus a P2Y12 inhibitor compared with VKA plus DAPT was 0.48 (95% CI 0.38–0.65).
+The 14-day landmark analysis does not set an aspirin stop date after PCI. Early myocardial infarction and definite or probable stent thrombosis were more frequent with DOAC plus a P2Y12 inhibitor or VKA plus single antiplatelet therapy. For the separate safety outcome of TIMI major bleeding, the hazard ratio (HR) with DOAC plus a P2Y12 inhibitor compared with VKA plus DAPT was 0.48 (95% CI 0.38–0.65).
 
-The landmark is not a stop date. The shift in clinical reasoning is to ask two questions together: what is the bleeding benefit of the regimen, and might the full-year composite obscure a signal of early coronary harm? The paper does not issue a recommendation Class or Level of Evidence.
+The shift in clinical reasoning is to ask two questions together: what is the bleeding benefit of the regimen, and might the full-year composite obscure a signal of early coronary harm? The paper does not issue a recommendation Class or Level of Evidence.
 
 ## application
 

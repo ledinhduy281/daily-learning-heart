@@ -232,6 +232,10 @@ class RecentLessonTests(unittest.TestCase):
              ("0.48", "stent thrombosis")),
             ("vi", "Phân tích mốc 14 ngày ghi nhận gì về huyết khối stent sớm, và HR chảy máu nặng theo TIMI là bao nhiêu?",
              ("0,48", "huyết khối stent")),
+            ("en", "Can the 14-day landmark analysis be used as an aspirin stop date?",
+             ("does not set an aspirin stop date",)),
+            ("vi", "Phân tích mốc 14 ngày về huyết khối stent có ấn định ngày ngừng aspirin không?",
+             ("không ấn định ngày ngừng aspirin",)),
         ):
             with self.subTest(lang=lang):
                 answer, sources = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
