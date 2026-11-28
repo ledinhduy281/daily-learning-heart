@@ -21,6 +21,9 @@ slice("renderPearls", "renderSources");
 
 const templates = Object.values(bundle.focused_lessons);
 assert.equal(templates.length, 10);
+const arni = bundle.focused_lessons["5"];
+assert.equal(arni.primary_source.pmid, "43012096");
+for (const lang of ["vi", "en"]) assert.ok(arni.teaching[lang].mechanism.length);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
 const poet = bundle.focused_lessons[7];
@@ -35,6 +38,9 @@ for (const [lang, heading] of [["vi", "Cơ sở sinh lý bệnh"], ["en", "Patho
 const laac = bundle.focused_lessons["6"];
 assert.equal(laac.primary_source.pmid, "43018508");
 assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
+const pillar9 = bundle.focused_lessons["9"];
+assert.equal(pillar9.primary_source.pmid, "42910416");
+assert.ok(pillar9.teaching.vi.mechanism.length);
 const lessons = [...templates, datedPci];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
@@ -56,6 +62,9 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   }
   const notes = lesson.teaching[isVi ? "vi" : "en"];
   const walkthrough = Dom.evolutionPipelineRow.innerHTML;
+  if (lesson === arni) {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"));
+  }
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
   if (lesson === laac) {
     assert.deepEqual(Object.keys(notes), [...blockAKeys, "design", "findings", "limits", "pearls"]);
@@ -65,6 +74,10 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   }
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  if (lesson === pillar9) {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"), lesson.id);
+    assert.ok(!walkthrough.includes("What angiography can miss") && !walkthrough.includes("Vì sao chụp mạch"), lesson.id);
+  }
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
     assert.ok(notes[key].every(p => !blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key} stays in Block A`);
