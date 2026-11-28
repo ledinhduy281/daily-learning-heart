@@ -225,13 +225,18 @@ class RecentLessonTests(unittest.TestCase):
         options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
         for lang, question, expected in (
             ("en", "What was the hazard ratio for major bleeding with DOAC plus P2Y12 compared with VKA plus DAPT?",
-             "0.48"),
+             ("0.48",)),
             ("vi", "HR của chảy máu nặng theo TIMI với DOAC cộng P2Y12 so với VKA cộng DAPT là bao nhiêu?",
-             "0,48"),
+             ("0,48",)),
+            ("en", "What was the hazard ratio for TIMI major bleeding and what happened to early stent thrombosis?",
+             ("0.48", "stent thrombosis")),
+            ("vi", "Phân tích mốc 14 ngày ghi nhận gì về huyết khối stent sớm, và HR chảy máu nặng theo TIMI là bao nhiêu?",
+             ("0,48", "huyết khối stent")),
         ):
             with self.subTest(lang=lang):
                 answer, sources = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
-                self.assertIn(expected, answer)
+                for evidence in expected:
+                    self.assertIn(evidence, answer)
                 self.assertNotRegex(answer, r"1[.,]16")
                 self.assertEqual(sources[0]["pmid"], "42669062")
 
