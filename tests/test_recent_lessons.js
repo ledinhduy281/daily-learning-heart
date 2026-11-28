@@ -29,6 +29,9 @@ for (const lang of ["vi", "en"]) assert.ok(afPci.teaching[lang].mechanism.length
 const laac = bundle.focused_lessons["6"];
 assert.equal(laac.primary_source.pmid, "43018508");
 assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
+const pillar9 = bundle.focused_lessons["9"];
+assert.equal(pillar9.primary_source.pmid, "42910416");
+assert.ok(pillar9.teaching.vi.mechanism.length);
 const lessons = [...templates, datedPci];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
@@ -63,6 +66,10 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
     const heading = isVi ? "Vì sao cần cân bằng huyết khối và chảy máu" : "Why thrombosis and bleeding must be balanced";
     assert.ok(walkthrough.includes(`<h3>${heading}</h3>`));
     assert.doesNotMatch(walkthrough, /What angiography can miss|Vì sao chụp mạch có thể bỏ sót vấn đề/);
+  }
+  if (lesson === pillar9) {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"), lesson.id);
+    assert.ok(!walkthrough.includes("What angiography can miss") && !walkthrough.includes("Vì sao chụp mạch"), lesson.id);
   }
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
