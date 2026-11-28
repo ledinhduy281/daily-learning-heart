@@ -1935,13 +1935,20 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"|how many (?:\w+ ){0,3}(?:patients?|participants?|people|trials?|studies|rcts?) "
         r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|joined|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
-    cohort_scope = re.search(
-        r"\b(\w+) (?:substudy|subgroup|ancillary study)\b|\b(?:nghien cuu phu|phan nhom) (?:ve )?(\w+)\b",
-        stem,
-    ) if enrolled else None
-    qualifier = next((word for word in cohort_scope.groups() if word), "") if cohort_scope else ""
-    if qualifier in {"the", "a", "this", "that", "cua", "nay"}:
-        qualifier = ""
+    cohort_pattern = re.compile(
+        r"\b(\w+) (?:substudy|subgroup|ancillary study)\b"
+        r"|\b(?:nghien cuu phu|phan nhom) (?:ve )?(nhan thuc|\w+)\b"
+    )
+
+    def cohort_qualifier(match):
+        word = match[1] or match[2]
+        if word in {"the", "a", "this", "that", "cua", "nay"}:
+            return ""
+        return re.sub(r"(?<=\w{4})(?:ions?|ive)$", "", word)
+
+    scope = cohort_pattern.search(stem) if enrolled else None
+    qualifier = cohort_qualifier(scope) if scope else ""
+    qualifier_pattern = re.compile(rf"\b{re.escape(qualifier)}(?:ions?|ive)?\b") if qualifier else None
     arm_enrollment = (
         enrolled
         and not re.search(r"\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b", stem)
@@ -2031,8 +2038,6 @@ def _focused_question_excerpt(question, primary, lang, level):
         )
         if arm_enrollment:
             query = stem
-        elif qualifier:
-            query += f" {qualifier}"
         enrollment_unit = r"(?:randomi[sz]ed (?:controlled )?)?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
@@ -2046,7 +2051,7 @@ def _focused_question_excerpt(question, primary, lang, level):
             r"mot|hai|ba|bon|nam|sau|bay|tam|chin|muoi)"
         )
         enrollment_count = rf"\b{number}\s+{enrollment_unit}\b{arm_context}"
-        if qualifier:
+        if qualifier and not arm_enrollment:
             enrollment_count += r"|\bn\s*=\s*\d+"
         enrollment_pattern = re.compile(enrollment_count)
     else:
@@ -2072,6 +2077,12 @@ def _focused_question_excerpt(question, primary, lang, level):
         notes = primary["teaching"].get(language)
         if not notes:
             continue
+        arm_scope_in_design = arm_enrollment and qualifier and any(
+            cohort_qualifier(match) == qualifier
+            for paragraph in notes.get("design", ())
+            for match in cohort_pattern.finditer(normalize(paragraph))
+            if re.search(r"\b(?:included in this|duoc dua vao)\b", normalize(paragraph)[:match.start()])
+        )
         if single_source:
             if enrolled:
                 preferred = ("findings",) if arm_enrollment else ("design", "findings")
@@ -2097,15 +2108,16 @@ def _focused_question_excerpt(question, primary, lang, level):
                     clean = normalize(sentence)
                     if single_source and trials and not enrollment_pattern.search(clean):
                         continue
-                    if single_source and qualifier and not (
-                        contains(clean, qualifier) and enrollment_pattern.search(clean)
-                    ):
+                    scoped_count = single_source and qualifier_pattern and (
+                        qualifier_pattern.search(clean) or arm_scope_in_design
+                    ) and enrollment_pattern.search(clean)
+                    if single_source and qualifier_pattern and not scoped_count:
                         continue
                     hits = {
                         i for i, aliases in enumerate(groups)
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
                     }
-                    if hits:
+                    if hits or (scoped_count and not arm_enrollment):
                         passages.append((hits, sentence, paragraph, section, priority, is_source_reading))
 
     if not passages:

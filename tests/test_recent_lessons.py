@@ -294,6 +294,21 @@ class RecentLessonTests(unittest.TestCase):
                     self.assertIn("n=605", answer)
                     self.assertNotRegex(answer, r"12[ ,](?:434|821)")
 
+    def test_chat_matches_alternate_qualifier_wording_and_keeps_study_arm_counts(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for question, expected in (
+            ("How many people joined BPROAD's cognition substudy?", "12 434"),
+            ("How many participants were assigned to the intensive arm in BPROAD's cognition substudy?", "6219 participants in the intensive group"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(question=question, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], "en", verbosity="short",
+                    )
+                    self.assertIn(expected, answer)
+                    self.assertNotIn("n=862", answer)
+
     def test_chat_returns_trial_counts_in_the_requested_language(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
