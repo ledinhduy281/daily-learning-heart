@@ -2130,6 +2130,12 @@ def _focused_question_excerpt(question, primary, lang, level):
 
     if not passages:
         return ""
+    if single_source:
+        source_hits = {hit for hits, *_, source_priority in passages if source_priority == 2 for hit in hits}
+        passages = [
+            row for row in passages
+            if row[-1] != 1 or not row[0].issubset(source_hits)
+        ]
     frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
     weights = [1 / frequency if frequency else 0 for frequency in frequencies]
     _, sentence, paragraph, section, *_ = max(

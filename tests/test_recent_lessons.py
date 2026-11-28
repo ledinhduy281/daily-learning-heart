@@ -367,6 +367,24 @@ class RecentLessonTests(unittest.TestCase):
             self.assertIn("Six trials with 10,634 patients were pooled", answer)
             self.assertNotIn("Gộp 6 thử nghiệm", answer)
 
+    def test_chat_keeps_pci_mortality_results_ahead_of_overlapping_abstract(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, expected in (
+            ("en", "PCI imaging all-cause mortality?", "all-cause mortality 0.82"),
+            ("en", "cardiac mortality?", "cardiac mortality 0.73"),
+            ("en", "PCI imaging cardiac mortality?", "cardiac mortality 0.73"),
+            ("en", "What was the effect of intravascular imaging-guided PCI on all-cause mortality?", "all-cause mortality 0.82"),
+            ("vi", "PCI hình ảnh nội mạch tử vong mọi nguyên nhân?", "tử vong do mọi nguyên nhân 0,82"),
+            ("vi", "tử vong tim?", "tử vong tim 0,73"),
+        ):
+            with self.subTest(question=question):
+                answer, _ = app._compose_deterministic_ebm_answer(
+                    question, [lesson], [], lang, verbosity="short",
+                )
+                self.assertIn(expected, answer)
+                self.assertNotRegex(answer, r"0[.,]72")
+
     def test_local_chat_can_find_reported_absolute_event_rates(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
