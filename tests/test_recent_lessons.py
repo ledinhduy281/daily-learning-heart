@@ -166,6 +166,7 @@ class RecentLessonTests(unittest.TestCase):
         lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "43020520")
         for lang, question in (
             ("en", "How many participants were included in the BPROAD cognitive ancillary study?"),
+            ("en", "How many BPROAD cognitive study participants were randomized across both groups?"),
             ("vi", "Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?"),
         ):
             with self.subTest(lang=lang):
@@ -178,6 +179,14 @@ class RecentLessonTests(unittest.TestCase):
         ):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
+        poet = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42663314")
+        for lang, question, expected in (
+            ("en", "How many patients were assigned to the tailored arm in POET II?", "255 tailored"),
+            ("vi", "POET II có bao nhiêu người được phân vào nhóm điều chỉnh?", "255 điều chỉnh"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [poet], [], lang)
                 self.assertIn(expected, answer)
 
     def test_local_chat_keeps_reported_absolute_and_relative_risk_together(self):

@@ -132,6 +132,7 @@ async function checkFocusedPastedQuestions() {
   const bproad = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '43020520');
   for (const [lang, question] of [
     ['en', 'How many participants were included in the BPROAD cognitive ancillary study?'],
+    ['en', 'How many BPROAD cognitive study participants were randomized across both groups?'],
     ['vi', 'Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?']
   ]) {
     const {markdown} = await chat.composeClientDeterministicAnswer(
@@ -150,6 +151,16 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, evidence);
   }
   const staree = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42670961');
+  const poet = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42663314');
+  for (const [lang, question, evidence] of [
+    ['en', 'How many patients were assigned to the tailored arm in POET II?', /255 tailored/],
+    ['vi', 'POET II có bao nhiêu người được phân vào nhóm điều chỉnh?', /255 điều chỉnh/]
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, poet, [], null, lang
+    );
+    assert.match(markdown, evidence);
+  }
   for (const [lang, question, evidence] of [
     ['en', 'What was the reported absolute risk of serious adverse events in STAREE?', /Serious adverse events were 2\.7% in each group/],
     ['vi', 'STAREE báo cáo nguy cơ tuyệt đối của biến cố bất lợi nghiêm trọng là bao nhiêu?', /Biến cố bất lợi nghiêm trọng là 2,7% ở mỗi nhóm/]

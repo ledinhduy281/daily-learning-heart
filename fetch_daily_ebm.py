@@ -1935,7 +1935,11 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
         r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
-    arm_enrollment = enrolled and re.search(r"\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b", stem)
+    arm_enrollment = (
+        enrolled
+        and not re.search(r"\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|overall|in total|ca hai nhom|tong cong|tong so)\b", stem)
+        and re.search(r"\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b", stem)
+    )
     nnt = explicit_nnt or re.search(
         r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
         r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
@@ -1977,8 +1981,11 @@ def _focused_question_excerpt(question, primary, lang, level):
         enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
-        arm_suffix = r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom)" if arm_enrollment else ""
-        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_suffix}")
+        arm_context = (
+            r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom"
+            r"|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)"
+        ) if arm_enrollment else ""
+        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_context}")
     else:
         if nnt:
             query = "nnt"

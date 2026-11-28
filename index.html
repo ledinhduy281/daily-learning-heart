@@ -8746,7 +8746,9 @@
           const stem = SearchRanking.normalize(pasted.question).replace(/\s+/g, " ");
           const explicitNnt = /\b(?:nnt|number needed to treat)\b/.test(stem);
           const enrolled = !explicitNnt && /\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
-          const armEnrollment = enrolled && /\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b/.test(stem);
+          const armEnrollment = enrolled
+            && !/\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|overall|in total|ca hai nhom|tong cong|tong so)\b/.test(stem)
+            && /\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b/.test(stem);
           const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
           const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
           const riskTerms = /\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b/g;
@@ -8777,8 +8779,10 @@
           const enrollmentUnit = trialCount
             ? /(?:randomi[sz]ed )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)/
             : /(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)/;
-          const armSuffix = armEnrollment ? /(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom)/.source : "";
-          const enrollmentPattern = new RegExp(/\b\d+(?:[., ]\d{3})*\s+/.source + enrollmentUnit.source + /\b/.source + armSuffix);
+          const armContext = armEnrollment
+            ? /(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)/.source
+            : "";
+          const enrollmentPattern = new RegExp(/\b\d+(?:[., ]\d{3})*\s+/.source + enrollmentUnit.source + /\b/.source + armContext);
           const evidenceQuery = enrolled ? (armEnrollment ? stem : enrollmentQuery) : nnt ? "NNT" : absoluteBenefit
             ? (isEn ? "absolute benefit baseline risk" : "loi ich tuyet doi nguy co nen")
             : followUp ? (isEn ? "follow up" : "theo doi trung binh")
