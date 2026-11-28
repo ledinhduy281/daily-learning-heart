@@ -747,6 +747,290 @@ window.EBM_QUIZ_SETS = {
      }
     ]
    }
+  ],
+  "ebm-2026-11-28-p3-focused": [
+   {
+    "version": 3,
+    "set_id": "2026-11-28-cases-0ecf6ddaef3e",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân nam 68 tuổi, có bệnh mạch vành ổn định, được đưa vào can thiệp PCI. Bác sĩ quyết định sử dụng hướng dẫn bằng hình ảnh nội mạch (ICI) thay vì chỉ dùng chụp động mạch. Theo kết quả của nghiên cứu, việc sử dụng ICI sẽ ảnh hưởng như thế nào tới nguy cơ tử vong tim so với PCI dựa trên chụp động mạch?",
+      "stem_en": "A 68-year-old male patient with stable coronary artery disease undergoes PCI. The physician chooses intracoronary imaging-guided (ICI) PCI instead of angiography-guided PCI. According to the study, how does using ICI affect cardiac mortality risk compared with angiography-guided PCI?",
+      "explanation_vi": "Kết quả meta‑phân tích cho thấy ICI‑guided PCI giảm tử vong tim (RR: 0.73). Do đó đáp án đúng là giảm nguy cơ.",
+      "explanation_en": "The meta‑analysis reported that ICI‑guided PCI reduced cardiac mortality (RR: 0.73). Hence the correct answer is that it reduces the risk.",
+      "options": [
+       {
+        "vi": "giảm nguy cơ tử vong tim",
+        "en": "reduces cardiac mortality risk"
+       },
+       {
+        "vi": "không thay đổi nguy cơ tử vong tim",
+        "en": "no change in cardiac mortality risk"
+       },
+       {
+        "vi": "tăng nguy cơ tử vông tim",
+        "en": "increases cardiac mortality risk"
+       },
+       {
+        "vi": "có tác động không xác định",
+        "en": "effect is uncertain"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân 72 tuổi nữ, tiểu đường, được chỉ định PCI cho một tổn thương mạch vành. Bác sĩ muốn biết liệu việc sử dụng ICI‑guided PCI có giảm khả năng tái can thiệp mạch mục tiêu (target lesion revascularization) so với PCI dựa trên chụp động mạch không?",
+      "stem_en": "A 72-year-old female with diabetes is scheduled for PCI of a coronary lesion. The physician wonders if intracoronary imaging-guided PCI reduces the need for target lesion revascularization compared with angiography-guided PCI. What does the study report?",
+      "explanation_vi": "Meta‑phân tích cho thấy ICI‑guided PCI giảm tái can thiệp mạch mục tiêu (RR: 0.69). Vì vậy đáp án đúng là giảm khả năng tái can thiệp.",
+      "explanation_en": "The meta‑analysis showed that ICI‑guided PCI reduced target lesion revascularization (RR: 0.69). Thus the correct answer is that it reduces the need.",
+      "options": [
+       {
+        "vi": "giảm khả năng tái can thiệp mạch mục tiêu",
+        "en": "reduces target lesion revascularization"
+       },
+       {
+        "vi": "không ảnh hưởng đến khả năng tái can thiệp",
+        "en": "has no effect on target lesion revascularization"
+       },
+       {
+        "vi": "tăng khả năng tái can thiệp mạch mục tiêu",
+        "en": "increases target lesion revascularization"
+       },
+       {
+        "vi": "có ảnh hưởng không rõ ràng",
+        "en": "effect is unclear"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân 65 tuổi nam, không có tiền sử bệnh tim, được thực hiện PCI. Bác sĩ cân nhắc việc dùng ICI‑guided PCI để giảm nguy cơ nhồi máu cơ tim (MI) so với PCI dựa trên chụp động mạch. Theo dữ liệu nghiên cứu, ICI‑guided PCI có ảnh hưởng gì tới nguy cơ MI?",
+      "stem_en": "A 65-year-old male without prior cardiac history undergoes PCI. The physician considers using ICI‑guided PCI to lower myocardial infarction (MI) risk compared with angiography-guided PCI. What does the study indicate about the effect on MI risk?",
+      "explanation_vi": "Kết quả cho thấy ICI‑guided PCI giảm MI (RR: 0.86). Do đó đáp án đúng là giảm nguy cơ MI.",
+      "explanation_en": "The results indicated that ICI‑guided PCI reduced MI (RR: 0.86). Hence the correct answer is that it reduces MI risk.",
+      "options": [
+       {
+        "vi": "giảm nguy cơ MI",
+        "en": "reduces MI risk"
+       },
+       {
+        "vi": "không thay đổi nguy cơ MI",
+        "en": "no change in MI risk"
+       },
+       {
+        "vi": "tăng nguy cơ MI",
+        "en": "increases MI risk"
+       },
+       {
+        "vi": "không có dữ liệu đủ",
+        "en": "insufficient data"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "version": 3,
+    "set_id": "2026-11-28-cases-2d55fba8862b",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân nam 68 tuổi có bệnh mạch vành ổn định đang chuẩn bị thực hiện PCI. Bác sĩ cân nhắc sử dụng chỉ đạo bằng hình ảnh nội mạch (ICI) so với chỉ đạo bằng chụp mạch. Theo nghiên cứu, ICI‑guided PCI sẽ giảm nguy cơ gì so với angiography‑guided PCI?",
+      "stem_en": "A 68‑year‑old male with stable coronary artery disease is scheduled for PCI. The physician considers using intracoronary imaging‑guided PCI (ICI) versus angiography‑guided PCI. According to the study, ICI‑guided PCI reduces the risk of which outcome compared with angiography‑guided PCI?",
+      "explanation_vi": "Nghiên cứu cho thấy ICI‑guided PCI giảm nguy cơ thất bại mạch mục tiêu (RR: 0.72) so với chỉ đạo bằng chụp mạch, trong khi các kết quả khác không được báo cáo trong đoạn trích này.",
+      "explanation_en": "The study reported that ICI‑guided PCI reduced target lesion failure (RR: 0.72) compared with angiography‑guided PCI, and the other outcomes are not mentioned in this excerpt.",
+      "options": [
+       {
+        "vi": "tái can thiệp mạch mục tiêu",
+        "en": "target lesion failure"
+       },
+       {
+        "vi": "đột quỵ não",
+        "en": "stroke"
+       },
+       {
+        "vi": "đau tim cấp tính không có ST chênh lên",
+        "en": "non‑ST‑elevation myocardial infarction"
+       },
+       {
+        "vi": "đột tử tim",
+        "en": "sudden cardiac death"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Bệnh nhân nam 70 tuổi có bệnh mạch vành ổn định đang chuẩn bị can thiệp mạch vành bằng PCI. Bác sĩ đang cân nhắc sử dụng chỉ định nội mạch (ICI) so với chỉ định bằng nhiễu ảnh. Theo nghiên cứu, ICI‑guided PCI sẽ ảnh hưởng như thế nào đến tử vong tim mạch?",
+      "stem_en": "A 70-year-old male with stable coronary artery disease is scheduled for PCI. The physician is considering intracoronary imaging (ICI) guidance versus angiography guidance. According to the study, how does ICI‑guided PCI affect cardiac mortality?",
+      "explanation_vi": "Kết quả từ [2] cho thấy ICI‑guided PCI giảm tử vong tim mạch với RR 0.73, chứng tỏ giảm nguy cơ so với chỉ định bằng nhiễu ảnh.",
+      "explanation_en": "Excerpt [2] reports that ICI‑guided PCI reduced cardiac mortality (RR 0.73) compared with angiography‑guided PCI, indicating a lower risk.",
+      "options": [
+       {
+        "vi": "Giảm tử vong tim mạch",
+        "en": "Reduces cardiac mortality"
+       },
+       {
+        "vi": "Không ảnh hưởng đến tử vong tim mạch",
+        "en": "No effect on cardiac mortality"
+       },
+       {
+        "vi": "Tăng tử vong tim mạch",
+        "en": "Increases cardiac mortality"
+       },
+       {
+        "vi": "Giảm tử vong tim mạch nhưng không có ý nghĩa thống kê",
+        "en": "Reduces cardiac mortality but not statistically significant"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Bệnh nữ 66 tuổi có tiểu đường và bệnh mạch vành đang được lên kế hoạch PCI. Bác sĩ muốn biết ICI‑guided PCI sẽ ảnh hưởng như thế nào đến tỷ lệ tái can thiệp mạch mục tiêu?",
+      "stem_en": "A 66-year-old female with diabetes and coronary artery disease is planned for PCI. The physician wants to know how ICI‑guided PCI impacts target lesion revascularization rates.",
+      "explanation_vi": "Theo [2], ICI‑guided PCI giảm tái can thiệp mạch mục tiêu với RR 0.69, cho thấy giảm nguy cơ so với chỉ định bằng nhiễu ảnh.",
+      "explanation_en": "Excerpt [2] shows that ICI‑guided PCI reduced target lesion revascularization (RR 0.69) compared with angiography‑guided PCI, indicating a lower risk.",
+      "options": [
+       {
+        "vi": "Giảm tỷ lệ tái can thiệp mạch mục tiêu",
+        "en": "Reduces target lesion revascularization"
+       },
+       {
+        "vi": "Không thay đổi tỷ lệ tái can thiệp mạch mục tiêu",
+        "en": "No change in target lesion revascularization"
+       },
+       {
+        "vi": "Tăng tỷ lệ tái can thiệp mạch mục tiêu",
+        "en": "Increases target lesion revascularization"
+       },
+       {
+        "vi": "Giảm tỷ lệ tái can thiệp mạch mục tiêu nhưng không có ý nghĩa thống kê",
+        "en": "Reduces target lesion revascularization but not statistically significant"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   },
+   {
+    "version": 3,
+    "set_id": "2026-11-28-cases-578468bfab23",
+    "model": "openai/gpt-oss-120b",
+    "items": [
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân nam 66 tuổi không có tiền sử tim mạch được lên kế hoạch thực hiện PCI. Bác sĩ đang cân nhắc sử dụng chỉ dẫn nội mạch (ICI) so với chỉ dẫn angiography. Theo nghiên cứu, ICI‑guided PCI đã giảm nguy cơ thất bại tổn thương mục tiêu như thế nào?",
+      "stem_en": "A 66-year-old male patient with no prior cardiac history is scheduled for PCI. The physician is considering intracoronary imaging‑guided (ICI) PCI versus angiography‑guided PCI. According to the study, how did ICI‑guided PCI affect the risk of target lesion failure?",
+      "explanation_vi": "Kết quả từ trích đoạn [2] cho biết ICI‑guided PCI giảm thất bại tổn thương mục tiêu với relative risk 0.72, do đó đây là đáp án đúng. Các lựa chọn khác không phản ánh kết quả được báo cáo.",
+      "explanation_en": "Excerpt [2] reports that ICI‑guided PCI reduced target lesion failure with a relative risk of 0.72, making this the correct answer. The other options do not reflect the reported finding.",
+      "options": [
+       {
+        "vi": "RR = 0.72",
+        "en": "RR = 0.72"
+       },
+       {
+        "vi": "Không có sự khác biệt đáng kể",
+        "en": "No significant difference"
+       },
+       {
+        "vi": "Tăng nguy cơ (RR > 1)",
+        "en": "Increased risk (RR > 1)"
+       },
+       {
+        "vi": "Kết quả không được báo cáo",
+        "en": "Result not reported"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân nữ 70 tuổi có bệnh tim mạch ổn định dự định thực hiện PCI. Bác sĩ muốn biết liệu chỉ dẫn nội mạch có ảnh hưởng đến tỷ lệ tử vong tim so với chỉ dẫn angiography không?",
+      "stem_en": "A 70-year-old female with stable coronary artery disease is scheduled for PCI. The physician wants to know whether intracoronary imaging guidance affects cardiac mortality compared with angiography guidance.",
+      "explanation_vi": "Theo trích đoạn [2], ICI‑guided PCI giảm tử vong tim với relative risk 0.73. Vì vậy đáp án đúng là RR = 0.73. Các đáp án khác không đúng với dữ liệu báo cáo.",
+      "explanation_en": "Excerpt [2] indicates that ICI‑guided PCI reduced cardiac mortality with a relative risk of 0.73. Hence the correct answer is RR = 0.73. The other options do not match the reported data.",
+      "options": [
+       {
+        "vi": "RR = 0.73",
+        "en": "RR = 0.73"
+       },
+       {
+        "vi": "RR = 1.00 (không thay đổi)",
+        "en": "RR = 1.00 (no change)"
+       },
+       {
+        "vi": "RR > 1 (tăng nguy cơ)",
+        "en": "RR > 1 (increased risk)"
+       },
+       {
+        "vi": "Không có dữ liệu về tử vong tim",
+        "en": "No data on cardiac mortality"
+       }
+      ],
+      "ai_generated": true
+     },
+     {
+      "type": "case",
+      "pmid": "42747372",
+      "quote": "ICI-guided PCI reduced target lesion failure (relative risk [RR]: 0.72; 95% CI: 0.61-0.85; I2 = 61%), cardiac mortality (RR: 0.73; 0.58-0.91; I2 = 5%), myocardial infarction (RR: 0.86; 0.75-0.97; I2 = 0%), target vessel revascularization (RR: 0.69; 95% CI: 0.57-0.83, I2 = 41%), stent thrombosis (RR: 0.55; 95% CI: 0.40-0.76; I2 = 0%), and all-cause mortality (RR: 0.82; 95% CI: 0.70-0.96; I2 = 0%) compared with angiography-guided PCI.",
+      "answer": "A",
+      "stem_vi": "Một bệnh nhân nam 66 tuổi không có tiền sử tim mạch dự định thực hiện PCI. Đội ngũ đang cân nhắc sử dụng hình ảnh nội mạch. Theo siêu phân tích, nguy cơ tương đối về tử vong toàn nguyên so với PCI chỉ dựa vào chụp động mạch là bao nhiêu?",
+      "stem_en": "A 66-year-old man without prior cardiac events is planned for PCI. The team considers using intracoronary imaging. According to the meta‑analysis, what is the relative risk for all‑cause mortality with intracoronary imaging‑guided PCI compared to angiography‑guided PCI?",
+      "explanation_vi": "Nghiên cứu báo cáo nguy cơ tương đối 0.82 cho tử vong toàn nguyên khi sử dụng hướng dẫn bằng hình ảnh nội mạch (trích [2]).",
+      "explanation_en": "The study reports a relative risk of 0.82 for all‑cause mortality with intracoronary imaging guidance (excerpt [2]).",
+      "options": [
+       {
+        "vi": "RR 0.82",
+        "en": "RR 0.82"
+       },
+       {
+        "vi": "RR 0.95",
+        "en": "RR 0.95"
+       },
+       {
+        "vi": "RR 1.00",
+        "en": "RR 1.00"
+       },
+       {
+        "vi": "Không có sự khác biệt",
+        "en": "No difference"
+       }
+      ],
+      "ai_generated": true
+     }
+    ]
+   }
   ]
  }
 };
