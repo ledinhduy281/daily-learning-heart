@@ -1942,7 +1942,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     absolute_risk = re.search(
         r"\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b", stem
     )
-    risk_pattern = r"\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b"
+    risk_pattern = r"\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b"
     relative_risk = re.search(risk_pattern, stem)
     absolute_benefit = absolute_risk and relative_risk and re.search(
         r"\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b", stem
@@ -1950,6 +1950,8 @@ def _focused_question_excerpt(question, primary, lang, level):
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
+    endpoint_match = re.search(risk_pattern + r" (?:of|for|cua) (?:the )?([^?.!,;]+)", stem)
+    endpoint = re.split(r"\b(?:in|with|from|after|among|under|reported|khi|sau|o|voi|la|bao nhieu)\b", endpoint_match[1], maxsplit=1)[0].strip() if endpoint_match else ""
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
     query = re.sub(
@@ -2001,6 +2003,9 @@ def _focused_question_excerpt(question, primary, lang, level):
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
             for paragraph in section:
+                if endpoint and risk_estimate and not (enrolled or nnt or absolute_benefit or follow_up):
+                    if primary.get("lesson_format") == "single_source" and not contains(normalize(paragraph), endpoint):
+                        continue
                 if enrollment_pattern and primary.get("lesson_format") == "single_source":
                     if not enrollment_pattern.search(normalize(paragraph)):
                         continue

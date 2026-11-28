@@ -141,6 +141,18 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertIn(evidence, answer)
 
+    def test_local_chat_matches_the_requested_risk_endpoint(self):
+        import fetch_daily_ebm as app
+        lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")
+        for lang, question, expected in (
+            ("en", "What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?", "kidney failure (RR 0.97"),
+            ("vi", "Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?", "suy thận (RR 0,97"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
+                self.assertNotRegex(answer, r"RR 0[.,]85")
+
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")

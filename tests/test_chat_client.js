@@ -97,6 +97,17 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, /24[ ,]634/);
     assert.doesNotMatch(markdown, /NNT/);
   }
+  const ckd = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42842238');
+  for (const [lang, question, evidence] of [
+    ['en', 'What was the relative risk of kidney failure from intensive blood pressure lowering in CKD?', /kidney failure \(RR 0\.97/],
+    ['vi', 'Nguy cơ tương đối của suy thận khi hạ huyết áp tích cực ở CKD là bao nhiêu?', /suy thận \(RR 0,97/]
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, ckd, [], null, lang
+    );
+    assert.match(markdown, evidence);
+    assert.doesNotMatch(markdown, /RR 0[.,]85/);
+  }
   const staree = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42670961');
   for (const [lang, question, evidence] of [
     ['en', 'What was the reported absolute risk of serious adverse events in STAREE?', /Serious adverse events were 2\.7% in each group/],

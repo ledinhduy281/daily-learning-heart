@@ -8748,11 +8748,13 @@
           const enrolled = !explicitNnt && /\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
           const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
           const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
-          const riskTerms = /\b(?:relative risk|risk ratio|rr|nguy co tuong doi|ti so nguy co)\b/g;
+          const riskTerms = /\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b/g;
           const relativeRisk = Boolean(stem.match(riskTerms));
           const absoluteBenefit = absoluteRisk && relativeRisk && /\b(?:derive|convert|from|based on|suy ra|tinh tu|dua vao)\b/.test(stem);
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
+          const endpoint = stem.match(/\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co) (?:of|for|cua) (?:the )?([^?.!,;]+)/)?.[1]
+            .split(/\b(?:in|with|from|after|among|under|reported|khi|sau|o|voi|la|bao nhieu)\b/)[0].trim();
           const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);
           const preferred = enrolled ? [notes.design, notes.findings] : nnt || absoluteBenefit ? [notes.pitfalls, notes.limits]
             : followUp ? [notes.design, notes.findings] : riskEstimate ? [notes.findings] : [];
@@ -8768,8 +8770,15 @@
             : followUp ? (isEn ? "follow up" : "theo doi trung binh")
             : riskEstimate ? stem.replace(riskTerms, "rr") : stem;
           const ranked = sections.filter(Array.isArray).flatMap(section => section
-            .filter(paragraph => !enrolled || primary.lesson_format !== "single_source"
-              || enrollmentPattern.test(SearchRanking.normalize(paragraph)))
+            .filter(paragraph => {
+              if (primary.lesson_format !== "single_source") return true;
+              const text = SearchRanking.normalize(paragraph);
+              if (enrolled) return enrollmentPattern.test(text);
+              if (endpoint && riskEstimate && !nnt && !absoluteBenefit && !followUp) {
+                return (` ${text.replace(/[^a-z0-9]+/g, " ")} `).includes(` ${endpoint.replace(/[^a-z0-9]+/g, " ")} `);
+              }
+              return true;
+            })
             .map(paragraph => ({ section, paragraph, score: SearchRanking.score({ snippet: paragraph }, evidenceQuery) })))
             .sort((a, b) => b.score - a.score);
           const best = ranked[0];
