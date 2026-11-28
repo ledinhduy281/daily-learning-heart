@@ -2,9 +2,42 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const {webcrypto, createHash} = require('node:crypto');
+const SearchRanking = require('../search_ranking');
 
 const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
 const object = html.slice(html.indexOf('    const EbmChat = {') + '    const EbmChat = '.length, html.indexOf('    window.EbmChat = EbmChat;')).trim().replace(/;$/, '');
+async function checkFocusedPastedQuestions() {
+  const window = {};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../data/briefings.js'), 'utf8'), {window});
+  const bundle = window.EBM_BRIEFINGS_DATA;
+  const pci = bundle.briefings.find(b => b.id === 'ebm-2026-11-28-p3-focused');
+  const chat = vm.runInNewContext(`(${object})`, {SearchRanking});
+  const live = [{pmid: '1', title: 'Unrelated live result'}];
+  for (const [lang, question, count, notice] of [
+    ['en', 'How many patients were included in the intracoronary imaging-guided PCI meta-analysis?',
+      '24,634', 'Local chat does not grade pasted questions.'],
+    ['vi', 'Phân tích gộp PCI hướng dẫn bằng hình ảnh nội mạch gồm bao nhiêu bệnh nhân?',
+      '24.634', 'Chat cục bộ không chấm câu hỏi dán vào.']
+  ]) {
+    for (const options of ['A. 12,452\nB. 24,634\nC. 17,235\nD. 13,845',
+      'A\n17,235\nB\n13,845\nC\n12,452\nD\n24,634']) {
+      const {markdown, sources} = await chat.composeClientDeterministicAnswer(
+        `${question}\n${options}`, pci, live, null, lang
+      );
+      assert.ok(markdown.startsWith(notice));
+      assert.ok(markdown.includes(count));
+      assert.doesNotMatch(markdown, /\*\*[A-D]\*\*|12,452|17,235|13,845/);
+      assert.equal(sources.length, 1);
+      assert.equal(sources[0].pmid, '42747372');
+    }
+  }
+  const guideline = {lesson_format: 'single_source', quiz_status: 'awaiting_physician_excerpts'};
+  const {markdown} = await chat.composeClientDeterministicAnswer(
+    'Which is correct?\nA. First\nB. Second\nC. Third\nD. Fourth', guideline, [], null, 'en'
+  );
+  assert.match(markdown, /no quiz until a physician enters its recommendation lines/);
+}
+
 async function check(mode) {
   const calls = [], messages = [], timers = [];
   let removed = false, cleared = false, refreshed = 0;
@@ -238,6 +271,7 @@ async function checkWithoutAbortSignalAny() {
 }
 
 (async () => {
+  await checkFocusedPastedQuestions();
   for (const mode of ['ok', 'unset', 'http', 'network', 'json', 'empty', 'rejected', 'device_cap', 'invalid_device', 'abort', 'no_crypto', 'hash_failure']) await check(mode);
   console.log('Browser chat proxy checks passed (success, unset, HTTP/network/JSON/empty/rejected/timeout fallback).');
   await checkCancellation('btnNewChat', 'en', true);

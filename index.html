@@ -8619,7 +8619,7 @@
         }
       },
 
-      extractPastedMcqOptions(query) {
+      parsePastedMcq(query) {
         const q = String(query || "").trim();
         if (!q || q.length < 12) return null;
         const patPunct = /(?:^|\n|\s)(?:\*\*)?([ABCD])(?:\*\*)?\s*[\.\)\:\-]\s+([\s\S]+?)(?=(?:\n|\s+)(?:\*\*)?[ABCD](?:\*\*)?\s*[\.\)\:\-]\s+|$)/g;
@@ -8630,7 +8630,9 @@
           const val = m[2].replace(/\s+/g, " ").trim();
           if (val && !opts[k]) opts[k] = val;
         }
-        if (["A", "B", "C", "D"].every((k) => Boolean(opts[k]))) return opts;
+        if (["A", "B", "C", "D"].every((k) => Boolean(opts[k]))) {
+          return { question: q.slice(0, q.search(patPunct)).trim(), options: opts };
+        }
 
         const patNl = /(?:^|\n)\s*([ABCD])\s*\n\s*([\s\S]+?)(?=(?:\n\s*[ABCD]\s*\n)|$)/g;
         const optsNl = {};
@@ -8639,7 +8641,9 @@
           const val = m[2].replace(/\s+/g, " ").trim();
           if (val && !optsNl[k]) optsNl[k] = val;
         }
-        if (["A", "B", "C", "D"].every((k) => Boolean(optsNl[k]))) return optsNl;
+        if (["A", "B", "C", "D"].every((k) => Boolean(optsNl[k]))) {
+          return { question: q.slice(0, q.search(patNl)).trim(), options: optsNl };
+        }
         return null;
       },
 
@@ -8709,8 +8713,6 @@
         const steps = ge.steps || [];
         const trials = primary.landmark_trials || [];
         const pearls = primary.pearls || [];
-        const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
-
         const seen = new Set();
         const sources = [];
         [...pubmedHits, ...(primary.pubmed_anchors || [])].forEach((src) => {
@@ -8723,7 +8725,27 @@
 
         const wantsDetail = this.wantsDetailedExplanation(query);
         const effLevel = (vNorm === "detailed" || (vNorm === "medium" && wantsDetail)) ? "detailed" : vNorm;
-        const mcqOpts = this.extractPastedMcqOptions(query);
+        const pasted = this.parsePastedMcq(query);
+        const mcqOpts = pasted?.options;
+        if (pasted && ["single_source", "single_guideline"].includes(primary.lesson_format)) {
+          const awaiting = primary.quiz_status === "awaiting_physician_excerpts";
+          const notice = isEn
+            ? "Local chat does not grade pasted questions. " + (awaiting
+              ? "This guideline lesson has no quiz until a physician enters its recommendation lines."
+              : "Use the lesson quiz for answers linked to source excerpts.")
+            : "Chat cục bộ không chấm câu hỏi dán vào. " + (awaiting
+              ? "Bài guideline này chưa có quiz cho đến khi bác sĩ nhập dòng khuyến cáo."
+              : "Dùng bài trắc nghiệm của bài học để đối chiếu đáp án với nguồn.");
+          const notes = primary.teaching?.[lang] || {};
+          const sections = primary.lesson_format === "single_source"
+            ? [notes.design, notes.findings, notes.limits] : Object.values(notes);
+          const ranked = sections.filter(Array.isArray).flatMap(section => section.map(paragraph => ({
+            section, paragraph, score: SearchRanking.score({ snippet: paragraph }, pasted.question)
+          }))).sort((a, b) => b.score - a.score);
+          const best = ranked[0];
+          const excerpt = best?.score > 0 ? (effLevel === "detailed" ? best.section.join("\n\n") : best.paragraph) : "";
+          return { markdown: excerpt ? `${notice}\n\n${excerpt}` : notice, sources: primary.pubmed_anchors || [] };
+        }
 
         // 1) Pasted Multiple-Choice -> respects short (1 sentence), medium (2-3 sentences), detailed (structured breakdown)
         if (mcqOpts) {
@@ -8796,6 +8818,7 @@
             && !l.includes("[END OF PART"));
 
         const qStop = new Set(["được", "mức", "nào", "chính", "khuyến", "cáo", "lâm", "sàng", "áp", "dụng", "bệnh", "nhân", "sao", "chi", "tiết", "and", "with", "what", "how", "when"]);
+        const tokens = this.expandQueryTokens(query).filter((t) => t.length >= 3);
         const filteredTokens = tokens.filter((t) => !qStop.has(t));
         const matchTokens = filteredTokens.length ? filteredTokens : tokens;
 
