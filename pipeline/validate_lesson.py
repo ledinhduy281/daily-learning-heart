@@ -18,7 +18,8 @@ from focused_teaching import PEARL_SECTIONS, SECTION_KEYS
 from pipeline.lesson_generation import CURATED, CURATED_LABELS, LICENSED, _append_markdown
 from pipeline.lesson_sources import LICENSES
 from recent_lessons import (
-    RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS, SOURCE_KINDS, SOURCE_WINDOW_DAYS, WINDOW_DAYS_BY_VERSION,
+    DEPTH_SECTIONS, RECENT_LESSON_VERSION, RECENT_START_DATE, SECTIONS as RECENT_SECTIONS,
+    SOURCE_KINDS, SOURCE_WINDOW_DAYS, WINDOW_DAYS_BY_VERSION,
     build_recent_lesson, citation_url, is_recent, recent_markdown,
 )
 
@@ -151,11 +152,12 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
              "The walkthrough must match the primary source")
     for lang in ("vi", "en"):
         sections = notes[lang]
-        _require(isinstance(sections, dict) and set(sections) == set(RECENT_SECTIONS)
-                 and all(isinstance(sections[key], list) and sections[key]
-                         and all(isinstance(p, str) and p.strip() and "\n" not in p for p in sections[key])
-                         for key in RECENT_SECTIONS) and 2 <= len(sections["pearls"]) <= 5,
+        _require(isinstance(sections, dict) and sections.keys() in (set(RECENT_SECTIONS), set(DEPTH_SECTIONS))
+                 and all(isinstance(paragraphs, list) and paragraphs
+                         and all(isinstance(p, str) and p.strip() and "\n" not in p for p in paragraphs)
+                         for paragraphs in sections.values()) and 2 <= len(sections["pearls"]) <= 5,
                  f"Incomplete {lang} walkthrough")
+    _require(notes["vi"].keys() == notes["en"].keys(), "Vietnamese and English walkthroughs must have matching sections")
     excerpts = lesson.get("source_excerpts")
     _require(isinstance(excerpts, list), "Invalid source excerpts")
     for excerpt in excerpts:

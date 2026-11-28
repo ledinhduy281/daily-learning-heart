@@ -14,7 +14,10 @@ WINDOW_DAYS_BY_VERSION = {5: 92}
 SOURCE_WINDOW_DAYS = WINDOW_DAYS_BY_VERSION[RECENT_LESSON_VERSION]
 SOURCE_KINDS = ("guideline", "systematic_review_meta_analysis", "landmark_rct",
                 "real_world_cohort_registry", "expert_consensus")
-SECTIONS = ("summary", "design", "findings", "limits", "pearls")
+BLOCK_A_SECTIONS = ("summary", "mechanism", "evidence_shift", "application", "pitfalls")
+BLOCK_B_SECTIONS = ("design", "findings", "limits")
+SECTIONS = ("summary", *BLOCK_B_SECTIONS, "pearls")
+DEPTH_SECTIONS = (*BLOCK_A_SECTIONS, *BLOCK_B_SECTIONS, "pearls")
 DIRECTORY = Path(__file__).with_name("lessons") / "recent"
 NEJM = "Copyright © 2026 Massachusetts Medical Society."
 
@@ -28,8 +31,14 @@ SOURCE_LABELS = {
 }
 SECTION_LABELS = {
     "vi": {"summary": "Nguồn này hỏi gì và kết luận gì", "design": "Thiết kế và cách đọc",
+           "mechanism": "Vì sao chụp mạch có thể bỏ sót vấn đề",
+           "evidence_shift": "Bằng chứng đã thay đổi cách nghĩ ra sao",
+           "application": "Áp dụng qua một ca giả định", "pitfalls": "Những bẫy khi áp dụng",
            "findings": "Kết quả chính", "limits": "Giới hạn áp dụng", "pearls": "Điểm cần nhớ khi đi buồng"},
     "en": {"summary": "What this source asks and concludes", "design": "Design and how to read it",
+           "mechanism": "What angiography can miss",
+           "evidence_shift": "How evidence changed the question",
+           "application": "Applying the evidence to a teaching case", "pitfalls": "Pitfalls in application",
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
 }
 
@@ -153,7 +162,7 @@ def load_recent_teaching(slug):
     for index in range(0, len(languages), 2):
         lang, body = languages[index:index + 2]
         preamble, *parts = re.split(r"^## ([a-z_]+)\s*\n", body, flags=re.M)
-        if preamble.strip() or tuple(parts[::2]) != SECTIONS or lang in notes:
+        if preamble.strip() or tuple(parts[::2]) not in (SECTIONS, DEPTH_SECTIONS) or lang in notes:
             raise ValueError(f"Invalid editorial sections in {path.name} ({lang})")
         notes[lang] = {
             key: text.strip().splitlines() if key == "pearls"
@@ -162,6 +171,8 @@ def load_recent_teaching(slug):
         }
     if set(notes) != {"pmid", "vi", "en"}:
         raise ValueError(f"{path.name} must have Vietnamese and English sections")
+    if notes["vi"].keys() != notes["en"].keys():
+        raise ValueError(f"{path.name} must have matching Vietnamese and English sections")
     return notes
 
 
@@ -215,12 +226,12 @@ def recent_markdown(lesson, lang):
                else "Curated from the cited source — not yet physician-reviewed")
 
     def sections(keys):
-        return "".join(f"\n\n### {labels[key]}\n\n" + "\n\n".join(notes[key]) for key in keys)
+        return "".join(f"\n\n### {labels[key]}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
 
     a = "Nguồn chính" if lang == "vi" else "Primary source"
     b = "Đọc kỹ cùng nguồn" if lang == "vi" else "Close reading of the same source"
-    body = f"## Block A — {a}\n\n{citation_line(source, lang)}\n\n*{curated}*" + sections(("summary",))
-    body += f"\n\n## Block B — {b}\n\n{citation_line(source, lang)}\n\n*{curated}*" + sections(("design", "findings", "limits"))
+    body = f"## Block A — {a}\n\n{citation_line(source, lang)}\n\n*{curated}*" + sections(BLOCK_A_SECTIONS)
+    body += f"\n\n## Block B — {b}\n\n{citation_line(source, lang)}\n\n*{curated}*" + sections(BLOCK_B_SECTIONS)
     body += "".join(excerpt_markdown(excerpt, lang) for excerpt in lesson["source_excerpts"])
     body += f"\n\n## {labels['pearls']}\n\n" + "\n".join(f"- {pearl}" for pearl in notes["pearls"])
     return f"{body}\n\n*{lesson[f'disclaimer_{lang}']}*"
