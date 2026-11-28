@@ -21,6 +21,9 @@ slice("renderPearls", "renderSources");
 
 const templates = Object.values(bundle.focused_lessons);
 assert.equal(templates.length, 10);
+const arni = bundle.focused_lessons["5"];
+assert.equal(arni.primary_source.pmid, "43012096");
+for (const lang of ["vi", "en"]) assert.ok(arni.teaching[lang].mechanism.length);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
 const datedBproad = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-25-p10-focused");
@@ -52,6 +55,9 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   }
   const notes = lesson.teaching[isVi ? "vi" : "en"];
   const walkthrough = Dom.evolutionPipelineRow.innerHTML;
+  if (lesson === arni) {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"));
+  }
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
   if (lesson === laac) {
     assert.deepEqual(Object.keys(notes), [...blockAKeys, "design", "findings", "limits", "pearls"]);

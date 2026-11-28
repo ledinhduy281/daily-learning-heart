@@ -36,8 +36,35 @@ async function checkFocusedPastedQuestions() {
   const bundle = window.EBM_BRIEFINGS_DATA;
   const pci = bundle.briefings.find(b => b.id === 'ebm-2026-11-28-p3-focused');
   const sandbox = vm.createContext({window, SearchRanking, ClinicalQuiz, CaseQuiz});
+  vm.runInContext(html.slice(html.indexOf('    const CHAT_SYNONYMS = {'), html.indexOf('    const CARDIO_DRUG_MAP = {')), sandbox);
   vm.runInContext(html.slice(html.indexOf('    const SocraticTutor = {'), html.indexOf('    window.SocraticTutor = SocraticTutor;')), sandbox);
   const chat = vm.runInContext(`(${object})`, sandbox);
+  const arni = bundle.focused_lessons['5'];
+  for (const [lang, question, benefit, harm] of [
+    ['vi', 'ARNI meta-analysis kết luận gì', /suy giảm chức năng thận thấp hơn/, /hạ huyết áp có triệu chứng cao hơn/],
+    ['en', 'What did the ARNI meta-analysis conclude?', /lower risk of worsening kidney function/, /higher risk of symptomatic hypotension/]
+  ]) {
+    for (const verbosity of ['short', 'medium']) {
+      const {markdown, sources} = await chat.composeClientDeterministicAnswer(question, arni, [], null, lang, verbosity);
+      assert.match(markdown, benefit);
+      assert.match(markdown, harm);
+      assert.equal(sources[0].pmid, '43012096');
+    }
+  }
+  for (const [lang, question, kidney, hypotension] of [
+    ['vi', 'Tỷ số nguy cơ suy giảm chức năng thận và hạ huyết áp với ARNI là bao nhiêu?',
+      /suy giảm chức năng thận thấp hơn \(RR 0,83; KTC 95% 0,71–0,96\)/,
+      /hạ huyết áp có triệu chứng cao hơn \(RR 1,54; KTC 95% 1,35–1,76\)/],
+    ['en', 'What were the risk ratios for kidney function and hypotension with ARNI?',
+      /worsening kidney function \(RR 0\.83; 95% CI 0\.71–0\.96\)/,
+      /symptomatic hypotension \(RR 1\.54; 95% CI 1\.35–1\.76\)/]
+  ]) {
+    for (const verbosity of ['short', 'medium']) {
+      const {markdown} = await chat.composeClientDeterministicAnswer(question, arni, [], null, lang, verbosity);
+      assert.match(markdown, kidney);
+      assert.match(markdown, hypotension);
+    }
+  }
   for (const [lang, question, requirement, estimate] of [
     ['en', 'How can absolute benefit be calculated using a relative risk of target lesion failure?', /requires a baseline risk/, /RR 0\.72/],
     ['en', 'How can absolute benefit for target lesion failure be calculated using the pooled relative risk?', /requires a baseline risk/, /RR 0\.72/],

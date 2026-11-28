@@ -120,6 +120,27 @@ class RecentLessonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must have matching sections"):
             validate_lesson(lesson, pillar, day, recorded=True)
 
+    def test_arni_walkthrough_is_published_in_the_pillar_five_fallback(self):
+        pillar, day = PILLARS[4], "2026-11-30"
+        lesson = build_recent_lesson(pillar, day)
+        validate_lesson(lesson, pillar, day)
+        data = Path(__file__).resolve().parents[1] / "data" / "briefings.js"
+        bundle = json.loads(data.read_text(encoding="utf-8").split("window.EBM_BRIEFINGS_DATA = ", 1)[1].strip().removesuffix(";"))
+        template = bundle["focused_lessons"]["5"]
+        self.assertEqual(template, build_recent_lesson(pillar, RECENT_EDITION_DATE))
+        self.assertEqual(lesson["primary_source"]["pmid"], "43012096")
+        self.assertEqual(lesson["source_excerpts"], template["source_excerpts"])
+        for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
+            with self.subTest(lang=lang):
+                block_a, block_b = lesson[field].split("## Block B")
+                labels = {**recent_lessons.SECTION_LABELS[lang], "mechanism":
+                          "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical rationale"}
+                for key in recent_lessons.BLOCK_A_SECTIONS:
+                    self.assertIn(f"### {labels[key]}\n", block_a)
+                    for paragraph in lesson["teaching"][lang][key]:
+                        self.assertIn(paragraph, block_a)
+                        self.assertNotIn(paragraph, block_b)
+
     def test_left_atrial_appendage_closure_walkthrough_keeps_depth_in_block_a(self):
         lesson = build_recent_lesson(PILLARS[5], "2026-12-01")
         self.assertEqual(lesson["primary_source"]["pmid"], "43018508")
