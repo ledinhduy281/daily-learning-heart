@@ -128,6 +128,21 @@ class RecentLessonTests(unittest.TestCase):
         self.assertIn("no quiz until a physician", answer)
         self.assertNotIn("Use the lesson quiz", answer)
 
+    def test_local_chat_reads_both_pci_teaching_blocks(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, section in (
+            ("en", "How many patients were included in the intracoronary imaging-guided PCI meta-analysis?", "design"),
+            ("vi", "Phân tích gộp PCI hướng dẫn bằng hình ảnh nội mạch gồm bao nhiêu bệnh nhân?", "design"),
+            ("en", "What is the difference between stent underexpansion and malapposition?", "mechanism"),
+            ("vi", "Stent nở chưa đủ và áp thành không hoàn toàn khác nhau như thế nào?", "mechanism"),
+        ):
+            with self.subTest(lang=lang, section=section):
+                answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                paragraph = lesson["teaching"][lang][section][0 if section == "design" else 2]
+                self.assertIn(paragraph, answer)
+
     def test_gate_rejects_stale_or_extra_sources(self):
         pillar = PILLARS[1]
         lesson = build_recent_lesson(pillar, "2026-11-26")

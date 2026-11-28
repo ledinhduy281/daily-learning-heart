@@ -51,6 +51,17 @@ async function checkFocusedPastedQuestions() {
       assert.equal(sources[0].pmid, '42747372');
     }
   }
+  const mechanism = [
+    ['en', 'What is the difference between stent underexpansion and malapposition?', /underexpansion[^.]+stent/i],
+    ['vi', 'Stent nở chưa đủ và áp thành không hoàn toàn khác nhau như thế nào?', /nở không đủ và áp thành kém/i]
+  ];
+  for (const [lang, question, explanation] of mechanism) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, lang
+    );
+    assert.match(markdown, explanation);
+    assert.ok(pci.teaching[lang].mechanism.some(paragraph => markdown.includes(paragraph)), markdown);
+  }
   const guideline = {lesson_format: 'single_source', quiz_status: 'awaiting_physician_excerpts'};
   const {markdown} = await chat.composeClientDeterministicAnswer(
     'Which is correct?\nA. First\nB. Second\nC. Third\nD. Fourth', guideline, [], null, 'en'

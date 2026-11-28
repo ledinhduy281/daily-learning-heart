@@ -1938,12 +1938,16 @@ def _focused_question_excerpt(question, primary, lang, level):
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
     if any(contains(stem, phrase) for phrase in contraindications):
         groups.append(contraindications)
+    study_size = re.search(
+        r"\b(?:sample size|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies)"
+        r"|co mau|bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu))\b", stem
+    )
 
     passages = []
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
-            sections = [notes[key] for key in DEPTH_SECTIONS if key in notes]
+            sections = [notes["design"]] if study_size else [notes[key] for key in DEPTH_SECTIONS if key in notes]
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
