@@ -155,6 +155,18 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertIn(requirement, answer)
                 self.assertIn(estimate, answer)
 
+    def test_local_chat_preserves_study_limits_for_subgroup_conversions(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, requirement in (
+            ("en", "How do I calculate absolute benefit for complex lesions using the pooled relative risk?", "requires a baseline risk"),
+            ("vi", "Tính lợi ích tuyệt đối ở nhóm tổn thương phức tạp từ nguy cơ tương đối gộp như thế nào?", "cần biết nguy cơ nền"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(requirement, answer)
+                self.assertIn(lesson["teaching"][lang]["limits"][0], answer)
+
     def test_local_chat_matches_the_requested_risk_endpoint(self):
         import fetch_daily_ebm as app
         lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")

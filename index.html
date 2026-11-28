@@ -8755,7 +8755,7 @@
           const relativeRisk = Boolean(stem.match(riskTerms));
           const conversion = /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b/.test(stem)
             || (/\b(?:calculat(?:e|ed|ing)|tinh)\b/.test(stem)
-              && new RegExp(/\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?/.source + riskTerms.source).test(stem));
+              && new RegExp(/\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?(?:pooled |reported )?/.source + riskTerms.source).test(stem));
           const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
@@ -8768,9 +8768,12 @@
               && primary.lesson_format === "single_source") {
             const phrase = text => ` ${SearchRanking.normalize(text).replace(/[^a-z0-9]+/g, " ").trim()} `;
             const findings = (notes.findings || []).filter(p => endpoints.some(endpoint => phrase(p).includes(phrase(endpoint))));
-            if (absoluteBenefit) findings.unshift(isEn
-              ? "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, a time horizon and a relevant population for the same outcome."
-              : "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu.");
+            if (absoluteBenefit) {
+              if (!findings.length) findings.push(...(notes.limits || []));
+              findings.unshift(isEn
+                ? "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, a time horizon and a relevant population for the same outcome."
+                : "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu.");
+            }
             return { markdown: [notice, ...findings].join("\n\n"), sources: primary.pubmed_anchors || [] };
           }
           const preferred = enrolled ? (armEnrollment ? [notes.findings] : [notes.design, notes.findings])

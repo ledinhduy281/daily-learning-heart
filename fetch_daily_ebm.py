@@ -1956,7 +1956,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     relative_risk = re.search(risk_pattern, stem)
     conversion = re.search(r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b", stem) or (
         re.search(r"\b(?:calculat(?:e|ed|ing)|tinh)\b", stem)
-        and re.search(r"\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?" + risk_pattern, stem)
+        and re.search(r"\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?(?:pooled |reported )?" + risk_pattern, stem)
     )
     absolute_benefit = absolute_risk and relative_risk and conversion
     risk_estimate = relative_risk and not re.search(
@@ -1972,8 +1972,8 @@ def _focused_question_excerpt(question, primary, lang, level):
     enrollment_pattern = None
     if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):
         if primary.get("lesson_format") == "single_source":
-            findings = primary["teaching"][lang].get("findings", [])
-            excerpts = [p for p in findings if any(contains(normalize(p), endpoint) for endpoint in endpoints)]
+            notes = primary["teaching"][lang]
+            excerpts = [p for p in notes.get("findings", []) if any(contains(normalize(p), endpoint) for endpoint in endpoints)]
             if absolute_benefit:
                 requirement = (
                     "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, "
@@ -1982,7 +1982,7 @@ def _focused_question_excerpt(question, primary, lang, level):
                     "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, "
                     "cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu."
                 )
-                excerpts.insert(0, requirement)
+                excerpts = [requirement, *(excerpts or notes.get("limits", []))]
             return "\n\n".join(excerpts)
     query = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"

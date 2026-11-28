@@ -49,6 +49,16 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, estimate);
     assert.equal(sources[0].pmid, '42747372');
   }
+  for (const [lang, question, requirement] of [
+    ['en', 'How do I calculate absolute benefit for complex lesions using the pooled relative risk?', /requires a baseline risk/],
+    ['vi', 'Tính lợi ích tuyệt đối ở nhóm tổn thương phức tạp từ nguy cơ tương đối gộp như thế nào?', /cần biết nguy cơ nền/]
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, lang
+    );
+    assert.match(markdown, requirement);
+    assert.ok(markdown.includes(pci.teaching[lang].limits[0]), markdown);
+  }
   for (const lang of ['en', 'vi']) Object.assign(pci.teaching[lang], teachingSections[lang]);
   const live = [{pmid: '1', title: 'Unrelated live result'}];
   for (const [lang, question, count, notice] of [
