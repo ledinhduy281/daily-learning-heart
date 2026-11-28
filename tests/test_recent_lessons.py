@@ -181,6 +181,7 @@ class RecentLessonTests(unittest.TestCase):
         for lang, question in (
             ("en", "How many participants were included in the BPROAD cognitive ancillary study?"),
             ("en", "How many BPROAD cognitive study participants were randomized across both groups?"),
+            ("en", "How many BPROAD cognitive study participants were assigned to treatment overall?"),
             ("vi", "Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?"),
             ("vi", "BPROAD có bao nhiêu người được phân vào cả hai nhóm?"),
         ):

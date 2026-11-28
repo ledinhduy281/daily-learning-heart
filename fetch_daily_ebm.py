@@ -1938,7 +1938,12 @@ def _focused_question_excerpt(question, primary, lang, level):
     arm_enrollment = (
         enrolled
         and not re.search(r"\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b", stem)
-        and re.search(r"\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b", stem)
+        and re.search(
+            r"\b(?:arm|group|nhom)\b|"
+            r"\b(?:received|assigned to|randomi[sz]ed to|duoc phan vao|duoc dieu tri) "
+            r"(?!(?:treatment|therapy|dieu tri)(?: (?:overall|in total|noi chung))?(?:[?.!,;]|$))\w",
+            stem,
+        )
     )
     nnt = explicit_nnt or re.search(
         r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
