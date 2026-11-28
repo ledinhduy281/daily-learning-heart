@@ -216,6 +216,26 @@ const quiet = () => {};
   assert.equal(await main({root, env: {}, date, log: quiet}), 0, "no key: nothing to do");
   assert.ok(!fs.existsSync(setPath));
 
+  const pauseWorkflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/daily_refresh.yml"), "utf8");
+  const pauseConfig = pauseWorkflow.match(/^\s*QUIZ_GENERATION_PAUSED_DATE:\s*\$\{\{\s*vars\.QUIZ_GENERATION_PAUSED_DATE\s*\|\|\s*'([^']+)'\s*\}\}\s*$/m);
+  assert.ok(pauseConfig, "the daily refresh defaults the pause date when the repo variable is unset");
+  const defaultPauseDate = pauseConfig[1];
+  assert.equal(defaultPauseDate, "2026-11-28");
+  const effectivePauseDate = repoValue => repoValue || defaultPauseDate;
+  const pausedEnv = {...env, QUIZ_GENERATION_PAUSED_DATE: effectivePauseDate("")};
+  const beforePause = fs.existsSync(setPath) ? fs.readFileSync(setPath, "utf8") : null;
+  for (const regenerate of [false, true]) {
+    const pauseLogs = [];
+    const paused = {...pausedEnv};
+    if (regenerate) paused.REGENERATE_QUIZ_SETS = "true";
+    let pauseCalls = 0;
+    assert.equal(await main({root, env: paused, date: defaultPauseDate, log: m => pauseLogs.push(m),
+      fetchImpl: async () => { pauseCalls++; throw new Error("paused generation must not call Groq"); }}), 0);
+    assert.equal(pauseCalls, 0);
+    assert.match(pauseLogs.join("\n"), new RegExp(`Quiz generation paused for Vietnam date ${defaultPauseDate}`));
+    assert.equal(fs.existsSync(setPath) ? fs.readFileSync(setPath, "utf8") : null, beforePause);
+  }
+
   const arniScope = {window: {}};
   vm.runInNewContext(fs.readFileSync(require.resolve("../data/briefings.js"), "utf8"), arniScope);
   const arni = {...arniScope.window.EBM_BRIEFINGS_DATA.focused_lessons["5"], date, id};
@@ -839,5 +859,16 @@ const quiet = () => {};
   }
   console.log("Citation completion: qualifying population and enrollment count also complete after claims or effects failures: OK");
   console.log("Citation completion: STAREE population and regimen supported; partial matches ignored; absent 30% and true ambiguity rejected: OK");
+  const nov29Lesson = {...lesson, id: "ebm-2026-11-29-p2-focused", date: "2026-11-29"};
+  const nov29Root = path.join(root, "nov29");
+  const nov29Data = path.join(nov29Root, "data");
+  fs.mkdirSync(nov29Data, {recursive: true});
+  fs.writeFileSync(path.join(nov29Data, "briefings.js"),
+    "window.EBM_BRIEFINGS_DATA = " + JSON.stringify({briefings: [nov29Lesson]}) + ";");
+  const nov29Run = fakeGroq([], 0, nov29Lesson);
+  assert.equal(await main({root: nov29Root, env: {...pausedEnv, REGENERATE_QUIZ_SETS: "true"},
+    date: "2026-11-29", fetchImpl: nov29Run.fetchImpl, log: quiet}), 3,
+  "a November 28 pause must not block November 29, including forced regeneration");
+  assert.equal(nov29Run.calls.filter(call => call.mode === "generate").length, 3);
   console.log("Case-only generation: three cases per set, selective repairs, independent re-solve, no-key theory fallback: OK");
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => fs.rmSync(root, {recursive: true, force: true}));
