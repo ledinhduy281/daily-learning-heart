@@ -26,6 +26,8 @@ assert.equal(arni.primary_source.pmid, "43012096");
 for (const lang of ["vi", "en"]) assert.ok(arni.teaching[lang].mechanism.length);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
+const datedBproad = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-25-p10-focused");
+assert.ok(datedBproad.teaching.vi.mechanism.length);
 const poet = bundle.focused_lessons[7];
 assert.equal(poet.primary_source.pmid, "42663314");
 for (const [lang, heading] of [["vi", "Cơ sở sinh lý bệnh"], ["en", "Pathophysiology"]]) {
@@ -46,7 +48,7 @@ for (const staree of [bundle.focused_lessons["2"], datedStaree]) {
   assert.equal(staree.primary_source.pmid, "42670961");
   for (const lang of ["vi", "en"]) assert.ok(staree.teaching[lang].mechanism.length);
 }
-const lessons = [...templates, datedPci, datedStaree];
+const lessons = [...templates, datedPci, datedStaree, datedBproad];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
 for (const lesson of lessons) for (const isVi of [true, false]) {
@@ -79,6 +81,18 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   }
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  if (source.pmid === "43020520" || source.pmid === "42747372") {
+    const headings = [
+      isVi ? "Nguồn này nói gì" : "What this source says",
+      source.pmid === "43020520"
+        ? (isVi ? "Huyết áp và não: cơ chế" : "Blood pressure and the brain")
+        : (isVi ? "Vì sao chụp mạch có thể bỏ sót vấn đề" : "What angiography can miss"),
+      isVi ? "Bằng chứng đã thay đổi cách nghĩ ra sao" : "How evidence changed the question",
+      isVi ? "Áp dụng qua một ca giả định" : "Applying the evidence to a teaching case",
+      isVi ? "Những bẫy khi áp dụng" : "Pitfalls in application",
+    ];
+    assert.deepEqual([...walkthrough.matchAll(/<h3>(.*?)<\/h3>/g)].map(match => match[1]), headings);
+  }
   if (lesson === pillar9) {
     assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"), lesson.id);
     assert.ok(!walkthrough.includes("What angiography can miss") && !walkthrough.includes("Vì sao chụp mạch"), lesson.id);

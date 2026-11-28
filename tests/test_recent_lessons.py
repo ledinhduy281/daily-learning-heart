@@ -62,6 +62,27 @@ class RecentLessonTests(unittest.TestCase):
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
 
+    def test_bproad_walkthrough_expands_block_a_and_keeps_one_primary_source(self):
+        pillar, day = PILLARS[9], "2026-11-25"
+        lesson = build_recent_lesson(pillar, day)
+        self.assertEqual(lesson["primary_source"]["pmid"], "43020520")
+        for lang, field, heading in (
+            ("vi", "part1_vi_markdown", "Huyết áp và não: cơ chế"),
+            ("en", "part2_en_markdown", "Blood pressure and the brain"),
+        ):
+            with self.subTest(lang=lang):
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {heading}\n", block_a)
+                self.assertNotIn(f"### {heading}\n", block_b)
+                for key in recent_lessons.BLOCK_A_SECTIONS:
+                    for paragraph in lesson["teaching"][lang][key]:
+                        self.assertIn(paragraph, block_a)
+                        self.assertNotIn(paragraph, block_b)
+                self.assertIn("https://pubmed.ncbi.nlm.nih.gov/43020520/", block_a)
+                self.assertIn("https://pubmed.ncbi.nlm.nih.gov/43020520/", block_b)
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+
     def test_pillar_9_aortic_surgery_walkthrough_keeps_depth_and_generic_heading(self):
         lesson = build_recent_lesson(PILLARS[8], RECENT_EDITION_DATE)
         self.assertEqual(lesson["primary_source"]["pmid"], "42910416")
@@ -270,6 +291,136 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertRegex(answer, evidence)
                 self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
+
+    def test_direct_chat_prefers_matching_primary_study_findings(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for lang, question, estimate in (
+            ("en", "BPROAD white matter lesions?", "−0.09"),
+            ("vi", "BPROAD tổn thương chất trắng?", "−0,09"),
+        ):
+            for level in ("short", "medium"):
+                with self.subTest(lang=lang, level=level):
+                    answer, sources = app._compose_deterministic_ebm_answer(
+                        question, [lesson], [], lang, verbosity=level,
+                    )
+                    self.assertIn(estimate, answer)
+                    self.assertNotIn("SPRINT MIND", answer)
+                    self.assertEqual([source["pmid"] for source in sources], ["43020520"])
+        answer, _ = app._compose_deterministic_ebm_answer(
+            "What did SPRINT MIND find for probable dementia?", [lesson], [], "en",
+        )
+        self.assertIn("did not significantly reduce probable dementia", answer)
+        answer, _ = app._compose_deterministic_ebm_answer("zzzxxyy", [lesson], [], "en")
+        self.assertEqual(answer, "")
+
+    def test_chat_keeps_substudy_qualifier_in_enrollment_questions(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for lang, question in (
+            ("en", "How many people joined BPROAD's MRI substudy?"),
+            ("en", "How many patients were included in the BPROAD MRI substudy?"),
+            ("vi", "Nghiên cứu phụ MRI của BPROAD gồm bao nhiêu người tham gia?"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(lang=lang, question=question, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], lang, verbosity="short",
+                    )
+                    self.assertIn("n=862", answer)
+                    self.assertIn("n=605", answer)
+                    self.assertNotRegex(answer, r"12[ ,](?:434|821)")
+
+    def test_chat_prefers_primary_excerpts_over_comparison_study_context(self):
+        import fetch_daily_ebm as app
+        lesson = {
+            "lesson_format": "single_source",
+            "teaching": {"en": {"evidence_shift": ["The prior study reported safety outcomes."]}},
+            "source_excerpts": [{"text": "The primary study measured safety outcomes."}],
+        }
+        self.assertEqual(
+            app._focused_question_excerpt("What were the safety outcomes?", lesson, "en", "short"),
+            "The primary study measured safety outcomes.",
+        )
+
+    def test_chat_matches_alternate_qualifier_wording_and_keeps_study_arm_counts(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for question, expected in (
+            ("How many people joined BPROAD's cognition substudy?", "12 434"),
+            ("How many participants were assigned to the intensive arm in BPROAD's cognition substudy?", "6219 participants in the intensive group"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(question=question, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], "en", verbosity="short",
+                    )
+                    self.assertIn(expected, answer)
+                    self.assertNotIn("n=862", answer)
+
+    def test_chat_returns_trial_counts_in_the_requested_language(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, estimate in (
+            ("en", "How many trials were included in the PCI meta-analysis?", r"\b28 trials\b"),
+            ("en", "How many RCTs were included in the PCI meta-analysis?", r"\b28 trials\b"),
+            ("vi", "Phân tích gộp PCI gồm bao nhiêu thử nghiệm?", r"\b28 thử nghiệm\b"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(lang=lang, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], lang, verbosity="short",
+                    )
+                    self.assertRegex(answer, estimate)
+        lesson["teaching"]["en"] = {"design": ["No enrollment count was reported here."]}
+        question = "How many trials were included in the PCI meta-analysis?"
+        self.assertEqual(app._focused_question_excerpt(question, lesson, "en", "short"), "")
+        del lesson["teaching"]["en"]
+        answer, _ = app._compose_deterministic_ebm_answer(
+            question, [lesson], [], "en", verbosity="short",
+        )
+        self.assertRegex(answer, r"\b28 thử nghiệm\b")
+
+    def test_direct_chat_keeps_pci_effect_and_mechanism_answers(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, expected in (
+            ("en", "What was the relative risk of target lesion failure in imaging-guided PCI?", "RR 0.72"),
+            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích trong PCI là bao nhiêu?", "RR 0,72"),
+            ("en", "What is the difference between stent underexpansion and malapposition?", "Underexpansion is not malapposition"),
+        ):
+            with self.subTest(question=question):
+                answer, _ = app._compose_deterministic_ebm_answer(question, [lesson], [], lang)
+                self.assertIn(expected, answer)
+
+    def test_trial_counts_accept_numbers_written_as_words(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[3], "2026-11-25")
+        for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+            answer, _ = app._compose_deterministic_ebm_answer(
+                "How many trials were included in the AF-PCI meta-analysis?" + suffix,
+                [lesson], [], "en", verbosity="short",
+            )
+            self.assertIn("Six trials with 10,634 patients were pooled", answer)
+            self.assertNotIn("Gộp 6 thử nghiệm", answer)
+
+    def test_chat_keeps_pci_mortality_results_ahead_of_overlapping_abstract(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, expected in (
+            ("en", "PCI imaging all-cause mortality?", "all-cause mortality 0.82"),
+            ("en", "cardiac mortality?", "cardiac mortality 0.73"),
+            ("en", "PCI imaging cardiac mortality?", "cardiac mortality 0.73"),
+            ("en", "What was the effect of intravascular imaging-guided PCI on all-cause mortality?", "all-cause mortality 0.82"),
+            ("vi", "PCI hình ảnh nội mạch tử vong mọi nguyên nhân?", "tử vong do mọi nguyên nhân 0,82"),
+            ("vi", "tử vong tim?", "tử vong tim 0,73"),
+        ):
+            with self.subTest(question=question):
+                answer, _ = app._compose_deterministic_ebm_answer(
+                    question, [lesson], [], lang, verbosity="short",
+                )
+                self.assertIn(expected, answer)
+                self.assertNotRegex(answer, r"0[.,]72")
 
     def test_local_chat_can_find_reported_absolute_event_rates(self):
         import fetch_daily_ebm as app
