@@ -148,7 +148,7 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
                                                   "live_crawled_guidelines")),
              "A single-source lesson must not mix in another guideline or study")
     notes = lesson.get("teaching") or {}
-    _require(set(notes) - {"headings"} == {"pmid", "vi", "en"} and notes["pmid"] == source["pmid"],
+    _require(set(notes) == {"pmid", "vi", "en"} and notes["pmid"] == source["pmid"],
              "The walkthrough must match the primary source")
     for lang in ("vi", "en"):
         sections = notes[lang]
@@ -158,12 +158,6 @@ def _validate_recent_lesson(lesson, pillar, lesson_date, *, recorded, fallback):
                          for paragraphs in sections.values()) and 2 <= len(sections["pearls"]) <= 5,
                  f"Incomplete {lang} walkthrough")
     _require(notes["vi"].keys() == notes["en"].keys(), "Vietnamese and English walkthroughs must have matching sections")
-    headings = notes.get("headings", {"vi": {}, "en": {}})
-    _require(isinstance(headings, dict) and set(headings) == {"vi", "en"} and headings["vi"].keys() == headings["en"].keys()
-             and all(isinstance(heading, str) and heading.strip() and "\n" not in heading and key in notes[lang]
-                     for lang in ("vi", "en") for key, heading in headings[lang].items())
-             and ("headings" not in notes or headings["vi"]),
-             "Section headings must be one line per section in both languages")
     excerpts = lesson.get("source_excerpts")
     _require(isinstance(excerpts, list), "Invalid source excerpts")
     for excerpt in excerpts:

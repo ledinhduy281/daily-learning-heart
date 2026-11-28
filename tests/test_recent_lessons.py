@@ -49,14 +49,11 @@ class RecentLessonTests(unittest.TestCase):
         for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
             with self.subTest(lang=lang):
                 notes = lesson["teaching"][lang]
-                labels = {**recent_lessons.SECTION_LABELS[lang], **lesson["teaching"]["headings"][lang]}
-                self.assertEqual(labels["mechanism"], {"vi": "Vì sao chụp mạch có thể bỏ sót vấn đề",
-                                                       "en": "What angiography can miss"}[lang])
                 block_a, block_b = lesson[field].split("## Block B")
                 for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
                                            (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
                     for key in keys:
-                        self.assertIn(f"### {labels[key]}\n", block)
+                        self.assertIn(f"### {recent_lessons.SECTION_LABELS[lang][key]}\n", block)
                         for paragraph in notes[key]:
                             self.assertIn(paragraph, block)
                             self.assertNotIn(paragraph, other)
@@ -65,22 +62,49 @@ class RecentLessonTests(unittest.TestCase):
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
 
-    def test_attr_cm_walkthrough_uses_its_own_block_a_headings(self):
+    def test_pillar_9_aortic_surgery_walkthrough_keeps_depth_and_generic_heading(self):
+        lesson = build_recent_lesson(PILLARS[8], RECENT_EDITION_DATE)
+        self.assertEqual(lesson["primary_source"]["pmid"], "42910416")
+        for lang, field, expected_heading in (
+            ("vi", "part1_vi_markdown", "Cơ chế và bối cảnh lâm sàng"),
+            ("en", "part2_en_markdown", "Mechanism and clinical rationale"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {expected_heading}\n", block_a)
+                self.assertNotIn("chụp mạch", block_a.lower())
+                self.assertNotIn("angiography", block_a.lower())
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        label = recent_lessons.section_label(lang, key, lesson["primary_source"])
+                        self.assertIn(f"### {label}\n", block)
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+
+    def test_attr_cm_walkthrough_keeps_depth_and_its_own_mechanism_heading(self):
         lesson = build_recent_lesson(PILLARS[7], "2026-11-29")
         self.assertEqual(lesson["primary_source"]["pmid"], "42669065")
         validate_lesson(lesson, PILLARS[7], "2026-11-29")
-        for lang, field in (("vi", "part1_vi_markdown"), ("en", "part2_en_markdown")):
+        for lang, field, heading in (("vi", "part1_vi_markdown", "Vì sao TTR lắng đọng làm tổn thương tim"),
+                                     ("en", "part2_en_markdown", "How transthyretin damages the heart")):
             with self.subTest(lang=lang):
                 self.assertEqual(tuple(lesson["teaching"][lang]), recent_lessons.DEPTH_SECTIONS)
-                block_a = lesson[field].split("## Block B")[0]
-                for heading in lesson["teaching"]["headings"][lang].values():
-                    self.assertIn(f"### {heading}\n", block_a)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {heading}\n", block_a)
                 self.assertNotRegex(lesson[field], r"(?i)angiograph|chụp mạch")
+                for key in recent_lessons.BLOCK_A_SECTIONS:
+                    for paragraph in lesson["teaching"][lang][key]:
+                        self.assertIn(paragraph, block_a)
+                        self.assertNotIn(paragraph, block_b)
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
-        lesson["teaching"]["headings"]["en"].pop("mechanism")
-        with self.assertRaisesRegex(ValueError, "Section headings"):
-            validate_lesson(lesson, PILLARS[7], "2026-11-29")
 
     def test_recorded_walkthrough_rejects_partial_and_mismatched_depth(self):
         pillar, day = PILLARS[2], "2026-11-28"
@@ -92,6 +116,32 @@ class RecentLessonTests(unittest.TestCase):
             del lesson["teaching"]["en"][key]
         with self.assertRaisesRegex(ValueError, "must have matching sections"):
             validate_lesson(lesson, pillar, day, recorded=True)
+
+    def test_left_atrial_appendage_closure_walkthrough_keeps_depth_in_block_a(self):
+        lesson = build_recent_lesson(PILLARS[5], "2026-12-01")
+        self.assertEqual(lesson["primary_source"]["pmid"], "43018508")
+        self.assertEqual(lesson["primary_source"]["doi"], "10.1016/j.jacc.2026.09.033")
+        for lang, field, mechanism in (
+            ("vi", "part1_vi_markdown", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"),
+            ("en", "part2_en_markdown", "How appendage closure changes risk"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                self.assertEqual(tuple(notes), recent_lessons.DEPTH_SECTIONS)
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {mechanism}\n", block_a)
+                self.assertNotIn(recent_lessons.SECTION_LABELS[lang]["mechanism"], block_a)
+                for key in recent_lessons.BLOCK_A_SECTIONS[1:]:
+                    self.assertGreaterEqual(len(notes[key]), 2, key)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
+        self.assertTrue(lesson["quiz_items"])
 
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:

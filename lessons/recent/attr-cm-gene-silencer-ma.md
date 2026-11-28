@@ -10,8 +10,6 @@ Nguồn chính là phân tích gộp của Gillmore và cộng sự trên JAMA, 
 
 ## mechanism
 
-### Vì sao TTR lắng đọng làm tổn thương tim
-
 TTR là protein vận chuyển do gan sản xuất là chủ yếu, lưu hành dưới dạng bốn tiểu đơn vị ghép lại (tetramer); nó chở thyroxine và gắn với protein vận chuyển retinol (vitamin A). Bước quyết định của bệnh là tetramer tách ra thành các đơn phân (monomer). Đơn phân dễ gấp sai, kết tập thành sợi amyloid và lắng ở khoảng gian bào của cơ tim. Ở thể hoang dại (ATTRwt), quá trình này xảy ra với protein bình thường, thường ở người cao tuổi; ở thể biến thể di truyền (ATTRv), đột biến gene TTR làm tetramer kém bền hơn.
 
 Sợi amyloid tích tụ làm thành thất dày và cứng nhưng không phải do cơ tim phì đại. Thất trái đổ đầy kém, áp lực đổ đầy tăng, biểu hiện như suy tim với phân suất tống máu bảo tồn; mô dẫn truyền và nhĩ cũng bị thâm nhiễm, góp phần gây rối loạn dẫn truyền và rối loạn nhịp. Vì sợi đã lắng khó được thải đi, mục tiêu điều trị hiện tại là ngăn tạo thêm sợi mới, càng sớm càng tốt, trước khi tổn thương cấu trúc đã quá nặng.
@@ -19,8 +17,6 @@ Sợi amyloid tích tụ làm thành thất dày và cứng nhưng không phải
 Có hai cách can thiệp vào cùng một con đường. Thuốc ổn định TTR gắn vào tetramer, làm nó khó tách thành đơn phân; lượng TTR lưu hành không giảm. Thuốc làm im lặng gene, gồm RNA can thiệp nhỏ (siRNA, như vutrisiran trong HELIOS-B) và oligonucleotide đối nghĩa (ASO, như eplontersen trong CARDIO-TTRansform), làm giảm dịch mã TTR ở tế bào gan, nên giảm lượng nguyên liệu tạo amyloid ngay từ nguồn. Cả hai đều không trực tiếp lấy đi amyloid đã lắng. Vì TTR cũng tham gia vận chuyển vitamin A, giảm TTR kéo theo giảm vitamin A huyết thanh; khi dùng thuốc cần theo hướng dẫn kê đơn của từng sản phẩm về bổ sung vitamin A.
 
 ## evidence_shift
-
-### Từ ổn định TTR đến giảm sản xuất TTR
 
 Trước: thuốc ổn định TTR là lớp thuốc đầu tiên chứng minh lợi ích trên kết cục lâm sàng ở ATTR-CM và trở thành nền điều trị. Vì vậy, khi các thuốc làm im lặng gene vào giai đoạn thử nghiệm pha 3 trên bệnh cơ tim, nhiều người tham gia đã hoặc sẽ dùng thuốc ổn định. Câu hỏi thực tế không còn là “thuốc mới có tốt hơn không điều trị không?” mà là “thuốc mới có thêm lợi ích khi đã có nền điều trị không?”.
 
@@ -82,8 +78,6 @@ Gillmore and colleagues’ meta-analysis in JAMA is the primary source. It poole
 
 ## mechanism
 
-### How transthyretin damages the heart
-
 TTR is a transport protein produced mainly by the liver. It circulates as a tetramer of four subunits, carries thyroxine and binds retinol-binding protein, which carries vitamin A. The key step in disease is dissociation of the tetramer into monomers. Monomers misfold, aggregate into amyloid fibrils and deposit in the myocardial extracellular space. In wild-type disease (ATTRwt), this happens with normal protein, usually in older adults; in hereditary variant disease (ATTRv), a TTR gene mutation makes the tetramer less stable.
 
 Accumulating fibrils make the ventricular walls thick and stiff without true myocyte hypertrophy. Left ventricular filling is impaired and filling pressures rise, producing a picture of heart failure with preserved ejection fraction. Infiltration of the atria and conduction tissue contributes to conduction disease and arrhythmias. Because deposited fibrils are hard to clear, current treatment aims to stop new fibril formation as early as possible, before structural damage becomes advanced.
@@ -91,8 +85,6 @@ Accumulating fibrils make the ventricular walls thick and stiff without true myo
 Two strategies act on the same pathway. TTR stabilizers bind the tetramer and make dissociation into monomers less likely; circulating TTR is not reduced. Gene silencers, including small interfering RNA (siRNA, such as vutrisiran in HELIOS-B) and antisense oligonucleotides (ASO, such as eplontersen in CARDIO-TTRansform), reduce TTR translation in hepatocytes and so reduce the raw material for amyloid at its source. Neither strategy directly removes deposited amyloid. Because TTR also helps transport vitamin A, lowering TTR lowers serum vitamin A; follow each product’s prescribing information on vitamin A supplementation.
 
 ## evidence_shift
-
-### From stabilizing TTR to reducing its production
 
 Before: TTR stabilizers were the first drug class to show benefit on clinical outcomes in ATTR-CM and became background therapy. By the time gene silencers entered phase 3 cardiomyopathy trials, many participants were taking or would start a stabilizer. The practical question was no longer “is the new drug better than no treatment?” but “does the new drug add benefit on top of background therapy?”
 
