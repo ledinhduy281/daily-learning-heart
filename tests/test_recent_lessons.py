@@ -170,6 +170,7 @@ class RecentLessonTests(unittest.TestCase):
             ("en", "How many participants were included in the BPROAD cognitive ancillary study?"),
             ("en", "How many BPROAD cognitive study participants were randomized across both groups?"),
             ("vi", "Nghiên cứu phụ về nhận thức BPROAD gồm bao nhiêu người tham gia?"),
+            ("vi", "BPROAD có bao nhiêu người được phân vào cả hai nhóm?"),
         ):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
@@ -177,7 +178,9 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertNotIn("6219", answer)
         for lang, question, expected in (
             ("en", "How many BPROAD participants received intensive treatment?", "6219 participants in the intensive group"),
+            ("en", "How many BPROAD participants were assigned to the intensive group in total?", "6219 participants in the intensive group"),
             ("vi", "BPROAD có bao nhiêu người được phân vào nhóm điều trị tích cực?", "6219 người ở nhóm tích cực"),
+            ("vi", "BPROAD tổng cộng có bao nhiêu người được phân vào nhóm điều trị tích cực?", "6219 người ở nhóm tích cực"),
         ):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)

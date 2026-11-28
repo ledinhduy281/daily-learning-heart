@@ -8747,7 +8747,7 @@
           const explicitNnt = /\b(?:nnt|number needed to treat)\b/.test(stem);
           const enrolled = !explicitNnt && /\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) (?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b/.test(stem);
           const armEnrollment = enrolled
-            && !/\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|overall|in total|ca hai nhom|tong cong|tong so)\b/.test(stem)
+            && !/\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b/.test(stem)
             && /\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b/.test(stem);
           const nnt = explicitNnt || /\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b/.test(stem);
           const absoluteRisk = /\b(?:absolute (?:benefit|risk(?: reduction)?|effect)|loi ich tuyet doi|(?:giam )?nguy co tuyet doi)\b/.test(stem);
