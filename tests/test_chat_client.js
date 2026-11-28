@@ -157,6 +157,8 @@ async function checkFocusedPastedQuestions() {
     ['en', 'How do I calculate absolute benefit using the relative risk of 30% or greater eGFR decline?', /RR 1\.42/],
     ['en', 'What was the relative risk of 30% or higher eGFR decline?', /RR 1\.42/],
     ['en', 'What was the relative risk of 30% or greater eGFR decline in the study?', /RR 1\.42/],
+    ['en', 'How much did the risk of a 30% or greater eGFR decline increase?', /RR 1\.42/],
+    ['vi', 'Nguy cơ giảm eGFR từ 30% trở lên tăng bao nhiêu?', /RR 1,42/],
     ['vi', 'Tỉ số nguy cơ cho các biến cố tim mạch là bao nhiêu?', /RR 0,85/]
   ]) {
     const {markdown} = await chat.composeClientDeterministicAnswer(
