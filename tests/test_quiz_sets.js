@@ -345,6 +345,24 @@ const quiet = () => {};
     options: [{en: "Fewer myocardial infarctions", vi: "Giảm nhồi máu cơ tim"}, ...pciCase.options.slice(1)],
   };
   assert.equal(verdict(infarctions), "", "plural infarctions in the stem, key and explanation match cited myocardial infarction");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: "A patient asks how imaging-guided PCI affects recurrence of prior MI compared with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân hỏi PCI hướng dẫn bằng hình ảnh nội mạch ảnh hưởng thế nào đến tái phát nhồi máu cơ tim từng mắc so với PCI hướng dẫn bằng chụp mạch.",
+  }), "endpoint", "a recurrence question still names the endpoint");
+  assert.equal(verdict({...infarctions,
+    stem_en: infarctions.stem_en.replace("affects myocardial infarctions", "affects recurrence of a prior MI"),
+    stem_vi: infarctions.stem_vi.replace("đến nhồi máu cơ tim", "đến tái phát nhồi máu cơ tim"),
+  }), "effects", "the pooled MI result does not establish the effect on recurrence");
+  assert.equal(verdict({...infarctions,
+    stem_en: infarctions.stem_en.replace("compared with", "specifically in prior MI patients compared with"),
+  }), "effects", "the pooled MI estimate does not support a prior-MI subgroup");
+  assert.equal(verdict({...infarctions,
+    stem_vi: infarctions.stem_vi.replace("so với", "ở những bệnh nhân có tiền sử nhồi máu cơ tim so với"),
+  }), "effects", "the same unsupported subgroup must also fail in Vietnamese");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: "A patient with prior MI, and stroke as the outcome, asks how imaging-guided PCI compares with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân có tiền sử nhồi máu cơ tim, với đột quỵ là kết cục, hỏi PCI hướng dẫn bằng hình ảnh nội mạch so với PCI hướng dẫn bằng chụp mạch.",
+  }), "endpoint", "a history filter cannot cross the comma into the outcome");
 
   const mortality = {...pciCase,
     stem_en: "A 66-year-old patient is scheduled for PCI. What is the relative risk for all-cause mortality with imaging guidance compared with angiography?",

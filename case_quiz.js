@@ -196,21 +196,42 @@ const CaseQuiz = (() => {
     non_st_infarction: ['non st elevation myocardial infarctions?|nstemis?', 'nhoi mau co tim khong st chenh len|nstemi'],
   });
   const PCI_ENDPOINTS = PCI_ENDPOINT_TERMS.map(([name, [en, vi]]) => [name, {en: wholeWords(en), vi: wholeWords(vi)}]);
-  const PCI_HISTORY = Object.fromEntries([
-    ['en', 0, '(?:history of|prior|previous|past)', 'and|or'],
-    ['vi', 1, '(?:tien su(?: mac)?|(?:da )?tung (?:bi|mac))', 'va|hoac'],
-  ].map(([lang, column, prefix, joiner]) => {
-    const endpoint = '(?:' + PCI_ENDPOINT_TERMS.map(([, terms]) => terms[column]).join('|') + ')';
-    return [lang, wholeWords(prefix + ' ' + endpoint + '(?: (?:' + joiner + ') ' + endpoint + ')*', 'g')];
-  }));
-  const pciEndpoints = (field, lang, isStem = false) => {
-    const normalized = claimText(field)[lang];
-    const words = isStem ? normalized.replace(PCI_HISTORY[lang], ' ') : normalized;
+  const pciHistoryTerms = (lang, prefix) => prefix + ' (?:' +
+    PCI_ENDPOINT_TERMS.map(([, terms]) => terms[lang === 'en' ? 0 : 1]).join('|') + ')';
+  const PCI_HISTORY = {
+    en: new RegExp('(?:^| )(?:with|has|had) (?:an? )?' + pciHistoryTerms('en', '(?:history of|prior|previous|past)') + '$'),
+    vi: new RegExp('(?:^| )co ' + pciHistoryTerms('vi', '(?:tien su(?: mac)?|(?:da )?tung (?:bi|mac))') + '$'),
+  };
+  const PCI_HISTORY_SCOPE = {
+    en: wholeWords('(?:patients|participants|people) (?:with|who had|who have) (?:a )?' +
+      pciHistoryTerms('en', '(?:history of|prior|previous|past)') + '|' +
+      pciHistoryTerms('en', '(?:prior|previous|past)') + ' (?:patients|participants)'),
+    vi: wholeWords('(?:nhung |cac )?(?:benh nhan|nguoi) (?:co )?' +
+      pciHistoryTerms('vi', '(?:tien su(?: mac)?|(?:da )?tung (?:bi|mac))')),
+  };
+  const PCI_RECURRENCE = {en: wholeWords('recurrent|recurrences?|recurs?'), vi: wholeWords('tai phat')};
+  const PCI_VIGNETTE = {
+    en: /^(?:a|an|the|one) (?:\d+ year old )?(?:patient|man|woman|male|female)\b/,
+    vi: /^(?:mot )?benh nhan\b/,
+  };
+  const PCI_STEM_BOUNDARY = {
+    en: /[,;!?]|\.(?!\d)|(?=\b(?:asks?|wonders?|wants? to know|undergoes|is (?:scheduled|planned))\b)/iu,
+    vi: /[,;!?]|\.(?!\d)|(?=(?<!\p{L})(?:hỏi|muốn biết|được lên kế hoạch|chuẩn bị)(?!\p{L}))/iu,
+  };
+  const pciEndpointNames = (words, lang) => {
     const found = new Set(PCI_ENDPOINTS.filter(([, patterns]) => patterns[lang].test(words)).map(([name]) => name));
     if (found.has('sudden_death')) found.delete('cardiac_death');
     if (found.has('non_st_infarction')) found.delete('infarction');
     return found;
   };
+  const pciEndpoints = (field, lang) => pciEndpointNames(claimText(field)[lang], lang);
+
+  function pciStemFragments(stem, lang) {
+    return stem.normalize('NFC').split(PCI_STEM_BOUNDARY[lang]).map(fragment => {
+      const words = claimText(fragment)[lang];
+      return PCI_VIGNETTE[lang].test(words) ? words.replace(PCI_HISTORY[lang], '') : words;
+    });
+  }
   const PCI_GUIDANCE = [
     {en: wholeWords('angiograph(?:y|ic)'), vi: wholeWords('chup (?:dong )?mach(?: vanh)?')},
     {en: wholeWords('(?:intracoronary )?imaging|ici|ivus|oct'), vi: wholeWords('hinh anh(?: noi mach)?|ici|ivus|oct')},
@@ -237,7 +258,12 @@ const CaseQuiz = (() => {
     }
     const key = item.options[KEYS.indexOf(item.answer)];
     const fields = [key, ...['stem', 'explanation'].map(name => ({en: item[name + '_en'], vi: item[name + '_vi'], isStem: name === 'stem'}))];
-    const named = fields.map(({en, vi, isStem}) => [pciEndpoints(en, 'en', isStem), pciEndpoints(vi, 'vi', isStem)]);
+    const fragments = (field, lang, isStem) => isStem ? pciStemFragments(field, lang) : [claimText(field)[lang]];
+    const endpoints = (field, lang, isStem) => new Set(fragments(field, lang, isStem).flatMap(words => [...pciEndpointNames(words, lang)]));
+    const claims = patterns => fields.some(field => CLAIM_LANGUAGES.some(lang =>
+      fragments(field[lang], lang, field.isStem).some(words => patterns[lang].test(words))));
+    if (claims(PCI_HISTORY_SCOPE)) return 'effects';
+    const named = fields.map(({en, vi, isStem}) => [endpoints(en, 'en', isStem), endpoints(vi, 'vi', isStem)]);
     const expected = new Set(named.flatMap(([en]) => [...en]));
     if (named.some(([en, vi]) => !sameSet(en, vi)) || [...expected].some(endpoint => !results.has(endpoint))) return 'endpoint';
     for (const [index, field] of fields.entries()) {
@@ -245,7 +271,7 @@ const CaseQuiz = (() => {
       if (names.size && !sameSet(names, expected)) return 'endpoint';
       for (const lang of CLAIM_LANGUAGES) {
         for (const clause of field[lang].split(STUDY_CLAUSE)) {
-          const local = pciEndpoints(clause, lang, field.isStem);
+          const local = endpoints(clause, lang, field.isStem);
           const targets = local.size ? local : expected;
           const figures = effectFigures(clause).filter(figure => /^(?:rr|hr|or) /.test(figure));
           if (targets.size && figures.some(figure => ![...targets].some(name => results.get(name)?.includes(figure)))) return 'endpoint';
@@ -254,6 +280,7 @@ const CaseQuiz = (() => {
       const en = claimText(field.en).en, vi = claimText(field.vi).vi;
       if (PCI_BAD_TRANSLATION.test(vi) || PCI_GUIDANCE.some(term => term.en.test(en) !== term.vi.test(vi))) return 'comparator';
     }
+    if (claims(PCI_RECURRENCE) && !citedExcerpts(item).some(quote => PCI_RECURRENCE.en.test(claimText(quote).en))) return 'effects';
     return '';
   }
 
