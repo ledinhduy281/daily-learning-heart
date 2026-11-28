@@ -1962,10 +1962,20 @@ def _focused_question_excerpt(question, primary, lang, level):
     endpoints = [p.strip() for p in re.split(r",|\b(?:and|or|va|hoac)\b", endpoint_text) if p.strip()]
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
-    if endpoints and risk_estimate and not (enrolled or nnt or absolute_benefit or follow_up):
+    if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):
         if primary.get("lesson_format") == "single_source":
             findings = primary["teaching"][lang].get("findings", [])
-            return "\n\n".join(p for p in findings if any(contains(normalize(p), endpoint) for endpoint in endpoints))
+            excerpts = [p for p in findings if any(contains(normalize(p), endpoint) for endpoint in endpoints)]
+            if absolute_benefit:
+                requirement = (
+                    "A relative risk alone does not give an absolute benefit. Estimating it requires a baseline risk, "
+                    "a time horizon and a relevant population for the same outcome."
+                    if lang == "en" else
+                    "Không thể suy ra lợi ích tuyệt đối chỉ từ nguy cơ tương đối. Với cùng một kết cục, "
+                    "cần biết nguy cơ nền, thời gian theo dõi và tính tương đồng với quần thể nghiên cứu."
+                )
+                excerpts.insert(0, requirement)
+            return "\n\n".join(excerpts)
     query = re.sub(
         r"\b(which|was|is|are|were|all|following|statement|true|false|correct|one|except|"
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",

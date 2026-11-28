@@ -143,6 +143,18 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertIn(evidence, answer)
 
+    def test_local_chat_returns_conversion_requirements_and_reported_rr(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, requirement, estimate in (
+            ("en", "How can absolute benefit be calculated using a relative risk of target lesion failure?", "requires a baseline risk", "RR 0.72"),
+            ("vi", "Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối của thất bại tổn thương đích?", "cần biết nguy cơ nền", "RR 0,72"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(requirement, answer)
+                self.assertIn(estimate, answer)
+
     def test_local_chat_matches_the_requested_risk_endpoint(self):
         import fetch_daily_ebm as app
         lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")

@@ -35,10 +35,21 @@ async function checkFocusedPastedQuestions() {
   vm.runInNewContext(fs.readFileSync(require.resolve('../data/quiz_sets.js'), 'utf8'), {window});
   const bundle = window.EBM_BRIEFINGS_DATA;
   const pci = bundle.briefings.find(b => b.id === 'ebm-2026-11-28-p3-focused');
-  for (const lang of ['en', 'vi']) Object.assign(pci.teaching[lang], teachingSections[lang]);
   const sandbox = vm.createContext({window, SearchRanking, ClinicalQuiz, CaseQuiz});
   vm.runInContext(html.slice(html.indexOf('    const SocraticTutor = {'), html.indexOf('    window.SocraticTutor = SocraticTutor;')), sandbox);
   const chat = vm.runInContext(`(${object})`, sandbox);
+  for (const [lang, question, requirement, estimate] of [
+    ['en', 'How can absolute benefit be calculated using a relative risk of target lesion failure?', /requires a baseline risk/, /RR 0\.72/],
+    ['vi', 'Làm sao tính lợi ích tuyệt đối với nguy cơ tương đối của thất bại tổn thương đích?', /cần biết nguy cơ nền/, /RR 0,72/]
+  ]) {
+    const {markdown, sources} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, pci, [], null, lang
+    );
+    assert.match(markdown, requirement);
+    assert.match(markdown, estimate);
+    assert.equal(sources[0].pmid, '42747372');
+  }
+  for (const lang of ['en', 'vi']) Object.assign(pci.teaching[lang], teachingSections[lang]);
   const live = [{pmid: '1', title: 'Unrelated live result'}];
   for (const [lang, question, count, notice] of [
     ['en', 'How many patients were included in the intracoronary imaging-guided PCI meta-analysis?',
