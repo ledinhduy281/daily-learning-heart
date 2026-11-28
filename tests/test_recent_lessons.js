@@ -23,6 +23,8 @@ const templates = Object.values(bundle.focused_lessons);
 assert.equal(templates.length, 10);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
+const pillar9 = bundle.focused_lessons["9"];
+assert.ok(pillar9.teaching.vi.mechanism.length);
 const lessons = [...templates, datedPci];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
@@ -47,6 +49,10 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  if (hasDepth && source.id !== "intracoronary-imaging-pci-ma") {
+    assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"), lesson.id);
+    assert.ok(!walkthrough.includes("What angiography can miss") && !walkthrough.includes("Vì sao chụp mạch"), lesson.id);
+  }
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
     assert.ok(notes[key].every(p => !blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key} stays in Block A`);

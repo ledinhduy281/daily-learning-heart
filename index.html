@@ -6883,9 +6883,12 @@
     function renderTeachingSections(briefing, isVi, block) {
       const notes = briefing.teaching?.[isVi ? "vi" : "en"];
       if (!notes) return "";
+      const isPci = briefing.primary_source?.id === "intracoronary-imaging-pci-ma";
       const sections = block === "source_summary" ? [
         ["summary", "Nguồn này nói gì", "What this source says"],
-        ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
+        ["mechanism",
+          isPci ? "Vì sao chụp mạch có thể bỏ sót vấn đề" : "Cơ chế và bối cảnh lâm sàng",
+          isPci ? "What angiography can miss" : "Mechanism and clinical rationale"],
         ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
         ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
         ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],
