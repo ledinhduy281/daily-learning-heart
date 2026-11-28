@@ -8754,9 +8754,16 @@
             && /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|calculat(?:e|ed|ing)|suy ra|tinh tu|quy doi)\b/.test(stem);
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
-          const endpoint = stem.match(/\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co) (?:of|for|cua) (?:the )?([^?.!,;]+)/)?.[1]
-            .split(/\b(?:in|with|from|after|among|under|reported|khi|sau|o|voi|la|bao nhieu)\b/)[0].trim();
+          const endpoints = stem.match(/\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co) (?:of|for|cua) (?:the )?([^?.!;]+)/)?.[1]
+            .split(/\b(?:in|with|from|after|among|under|reported|khi|sau|o|voi|la|bao nhieu)\b/)[0]
+            .split(/,|\b(?:and|or|va|hoac)\b/).map(p => p.trim()).filter(Boolean) || [];
           const followUp = /\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b/.test(stem);
+          if (endpoints.length && riskEstimate && !enrolled && !nnt && !absoluteBenefit && !followUp
+              && primary.lesson_format === "single_source") {
+            const phrase = text => ` ${SearchRanking.normalize(text).replace(/[^a-z0-9]+/g, " ").trim()} `;
+            const findings = (notes.findings || []).filter(p => endpoints.some(endpoint => phrase(p).includes(phrase(endpoint))));
+            return { markdown: [notice, ...findings].join("\n\n"), sources: primary.pubmed_anchors || [] };
+          }
           const preferred = enrolled ? [notes.design, notes.findings] : nnt || absoluteBenefit ? [notes.pitfalls, notes.limits]
             : followUp ? [notes.design, notes.findings] : riskEstimate ? [notes.findings] : [];
           const sections = preferred.some(section => section?.length) ? preferred : Object.values(notes);
@@ -8771,15 +8778,8 @@
             : followUp ? (isEn ? "follow up" : "theo doi trung binh")
             : riskEstimate ? stem.replace(riskTerms, "rr") : stem;
           const ranked = sections.filter(Array.isArray).flatMap(section => section
-            .filter(paragraph => {
-              if (primary.lesson_format !== "single_source") return true;
-              const text = SearchRanking.normalize(paragraph);
-              if (enrolled) return enrollmentPattern.test(text);
-              if (endpoint && riskEstimate && !nnt && !absoluteBenefit && !followUp) {
-                return (` ${text.replace(/[^a-z0-9]+/g, " ")} `).includes(` ${endpoint.replace(/[^a-z0-9]+/g, " ")} `);
-              }
-              return true;
-            })
+            .filter(paragraph => !enrolled || primary.lesson_format !== "single_source"
+              || enrollmentPattern.test(SearchRanking.normalize(paragraph)))
             .map(paragraph => ({ section, paragraph, score: SearchRanking.score({ snippet: paragraph }, evidenceQuery) })))
             .filter(result => result.score > 0)
             .sort((a, b) => (enrolled ? Number(b.section === notes.design) - Number(a.section === notes.design) : 0)

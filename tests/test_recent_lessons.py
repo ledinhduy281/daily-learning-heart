@@ -152,6 +152,14 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
                 self.assertIn(expected, answer)
                 self.assertNotRegex(answer, r"RR 0[.,]85")
+        for lang, question in (
+            ("en", "What were the risk ratios for cardiovascular events and kidney failure?"),
+            ("vi", "Tỉ số nguy cơ của biến cố tim mạch và suy thận là bao nhiêu?"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertRegex(answer, r"RR 0[.,]85")
+                self.assertRegex(answer, r"RR 0[.,]97")
 
     def test_local_chat_finds_total_enrollment_before_arm_counts(self):
         import fetch_daily_ebm as app

@@ -108,6 +108,16 @@ async function checkFocusedPastedQuestions() {
     assert.match(markdown, evidence);
     assert.doesNotMatch(markdown, /RR 0[.,]85/);
   }
+  for (const [lang, question] of [
+    ['en', 'What were the risk ratios for cardiovascular events and kidney failure?'],
+    ['vi', 'Tỉ số nguy cơ của biến cố tim mạch và suy thận là bao nhiêu?']
+  ]) {
+    const {markdown} = await chat.composeClientDeterministicAnswer(
+      `${question}\nA. First\nB. Second\nC. Third\nD. Fourth`, ckd, [], null, lang
+    );
+    assert.match(markdown, /RR 0[.,]85/);
+    assert.match(markdown, /RR 0[.,]97/);
+  }
   for (const [lang, question, rr, absolute] of [
     ['en', 'What was the absolute risk reduction and relative risk of cardiovascular events from intensive blood pressure lowering?', 'RR 0.85', '4.3 events per 1000 person-years'],
     ['vi', 'Mức giảm nguy cơ tuyệt đối và nguy cơ tương đối của biến cố tim mạch khi hạ huyết áp tích cực là bao nhiêu?', 'RR 0,85', '4,3 biến cố/1000 người-năm']
