@@ -26,6 +26,9 @@ assert.equal(arni.primary_source.pmid, "43012096");
 for (const lang of ["vi", "en"]) assert.ok(arni.teaching[lang].mechanism.length);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
+const afPci = bundle.focused_lessons["4"];
+assert.equal(afPci.primary_source.pmid, "42669062");
+for (const lang of ["vi", "en"]) assert.ok(afPci.teaching[lang].mechanism.length);
 const datedBproad = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-25-p10-focused");
 assert.ok(datedBproad.teaching.vi.mechanism.length);
 const poet = bundle.focused_lessons[7];
@@ -84,6 +87,11 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   if (lesson.primary_source.id === "attr-cm-gene-silencer-ma") {
     assert.ok(walkthrough.includes(isVi ? "<h3>Vì sao TTR lắng đọng làm tổn thương tim</h3>" : "<h3>How transthyretin damages the heart</h3>"), lesson.id);
     assert.doesNotMatch(walkthrough, /angiography|chụp mạch/i, lesson.id);
+  }
+  if (lesson === afPci) {
+    const heading = isVi ? "Vì sao cần cân bằng huyết khối và chảy máu" : "Why thrombosis and bleeding must be balanced";
+    assert.ok(walkthrough.includes(`<h3>${heading}</h3>`));
+    assert.doesNotMatch(walkthrough, /What angiography can miss|Vì sao chụp mạch có thể bỏ sót vấn đề/);
   }
   if (source.pmid === "43020520" || source.pmid === "42747372") {
     const headings = [

@@ -138,6 +138,29 @@ class RecentLessonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must have matching sections"):
             validate_lesson(lesson, pillar, day, recorded=True)
 
+    def test_af_pci_walkthrough_keeps_depth_in_block_a(self):
+        pillar, day = PILLARS[3], "2026-11-29"
+        lesson = build_recent_lesson(pillar, day)
+        self.assertEqual(lesson["primary_source"]["pmid"], "42669062")
+        validate_lesson(lesson, pillar, day)
+        for lang, field, minimum, mechanism in (
+            ("vi", "part1_vi_markdown", 1200, "Vì sao cần cân bằng huyết khối và chảy máu"),
+            ("en", "part2_en_markdown", 800, "Why thrombosis and bleeding must be balanced"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {mechanism}\n", block_a)
+                self.assertNotIn(recent_lessons.SECTION_LABELS[lang]["mechanism"], block_a)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                            for p in notes[key]), minimum)
+
     def test_arni_walkthrough_is_published_in_the_pillar_five_fallback(self):
         pillar, day = PILLARS[4], "2026-11-30"
         lesson = build_recent_lesson(pillar, day)
@@ -451,6 +474,31 @@ class RecentLessonTests(unittest.TestCase):
             with self.subTest(lang=lang):
                 answer, _ = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
                 self.assertIn(evidence, answer)
+
+    def test_local_chat_distinguishes_af_pci_major_bleeding_from_ischemic_composite(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[3], "2026-11-29")
+        options = "\nA. First\nB. Second\nC. Third\nD. Fourth"
+        for lang, question, expected in (
+            ("en", "What was the hazard ratio for major bleeding with DOAC plus P2Y12 compared with VKA plus DAPT?",
+             ("0.48",)),
+            ("vi", "HR của chảy máu nặng theo TIMI với DOAC cộng P2Y12 so với VKA cộng DAPT là bao nhiêu?",
+             ("0,48",)),
+            ("en", "What was the hazard ratio for TIMI major bleeding and what happened to early stent thrombosis?",
+             ("0.48", "stent thrombosis")),
+            ("vi", "Phân tích mốc 14 ngày ghi nhận gì về huyết khối stent sớm, và HR chảy máu nặng theo TIMI là bao nhiêu?",
+             ("0,48", "huyết khối stent")),
+            ("en", "Can the 14-day landmark analysis be used as an aspirin stop date?",
+             ("does not set an aspirin stop date",)),
+            ("vi", "Phân tích mốc 14 ngày về huyết khối stent có ấn định ngày ngừng aspirin không?",
+             ("không ấn định ngày ngừng aspirin",)),
+        ):
+            with self.subTest(lang=lang):
+                answer, sources = app._compose_deterministic_ebm_answer(question + options, [lesson], [], lang)
+                for evidence in expected:
+                    self.assertIn(evidence, answer)
+                self.assertNotRegex(answer, r"1[.,]16")
+                self.assertEqual(sources[0]["pmid"], "42669062")
 
     def test_local_chat_returns_conversion_requirements_and_reported_rr(self):
         import fetch_daily_ebm as app
