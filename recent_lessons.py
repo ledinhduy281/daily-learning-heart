@@ -222,6 +222,9 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
+    if source["id"] == "poet-ii-response-tailored-antibiotics":
+        mechanism = "Cơ sở sinh lý bệnh" if lang == "vi" else "Pathophysiology"
+        labels = {**labels, "mechanism": mechanism}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 

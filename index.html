@@ -6883,9 +6883,12 @@
     function renderTeachingSections(briefing, isVi, block) {
       const notes = briefing.teaching?.[isVi ? "vi" : "en"];
       if (!notes) return "";
+      const mechanism = briefing.primary_source?.id === "poet-ii-response-tailored-antibiotics"
+        ? ["Cơ sở sinh lý bệnh", "Pathophysiology"]
+        : ["Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"];
       const sections = block === "source_summary" ? [
         ["summary", "Nguồn này nói gì", "What this source says"],
-        ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
+        ["mechanism", ...mechanism],
         ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
         ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
         ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],
