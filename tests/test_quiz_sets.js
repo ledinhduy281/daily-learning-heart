@@ -216,17 +216,23 @@ const quiet = () => {};
   assert.equal(await main({root, env: {}, date, log: quiet}), 0, "no key: nothing to do");
   assert.ok(!fs.existsSync(setPath));
 
-  const pausedEnv = {...env, QUIZ_GENERATION_PAUSED_DATE: "2026-11-28"};
+  const pauseWorkflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/daily_refresh.yml"), "utf8");
+  const pauseConfig = pauseWorkflow.match(/^\s*QUIZ_GENERATION_PAUSED_DATE:\s*\$\{\{\s*vars\.QUIZ_GENERATION_PAUSED_DATE\s*\|\|\s*'([^']+)'\s*\}\}\s*$/m);
+  assert.ok(pauseConfig, "the daily refresh defaults the pause date when the repo variable is unset");
+  const defaultPauseDate = pauseConfig[1];
+  assert.equal(defaultPauseDate, "2026-11-28");
+  const effectivePauseDate = repoValue => repoValue || defaultPauseDate;
+  const pausedEnv = {...env, QUIZ_GENERATION_PAUSED_DATE: effectivePauseDate("")};
   const beforePause = fs.existsSync(setPath) ? fs.readFileSync(setPath, "utf8") : null;
   for (const regenerate of [false, true]) {
     const pauseLogs = [];
     const paused = {...pausedEnv};
     if (regenerate) paused.REGENERATE_QUIZ_SETS = "true";
     let pauseCalls = 0;
-    assert.equal(await main({root, env: paused, date: "2026-11-28", log: m => pauseLogs.push(m),
+    assert.equal(await main({root, env: paused, date: defaultPauseDate, log: m => pauseLogs.push(m),
       fetchImpl: async () => { pauseCalls++; throw new Error("paused generation must not call Groq"); }}), 0);
     assert.equal(pauseCalls, 0);
-    assert.match(pauseLogs.join("\n"), /Quiz generation paused for Vietnam date 2026-11-28/);
+    assert.match(pauseLogs.join("\n"), new RegExp(`Quiz generation paused for Vietnam date ${defaultPauseDate}`));
     assert.equal(fs.existsSync(setPath) ? fs.readFileSync(setPath, "utf8") : null, beforePause);
   }
 
