@@ -2093,12 +2093,20 @@ def _focused_question_excerpt(question, primary, lang, level):
             else:
                 preferred = ("findings",) if risk_estimate else ()
             sections = [notes[key] for key in preferred if notes.get(key)]
-            sections = sections or notes.values()
+            sections = sections or list(notes.values())
+            excerpts = [item["text"] for item in primary.get("source_excerpts", ())] if language == "en" else []
+            if excerpts and not preferred:
+                sections.append(excerpts)
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
-            is_source_reading = single_source and not preferred and any(section is notes.get(key) for key in BLOCK_B_SECTIONS)
+            source_priority = 0
+            if single_source and not preferred:
+                if any(section is notes.get(key) for key in BLOCK_B_SECTIONS):
+                    source_priority = 2
+                elif section is excerpts:
+                    source_priority = 1
             for paragraph in section:
                 if enrollment_pattern and single_source:
                     if not enrollment_pattern.search(normalize(paragraph)):
@@ -2118,7 +2126,7 @@ def _focused_question_excerpt(question, primary, lang, level):
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
                     }
                     if hits or (scoped_count and not arm_enrollment):
-                        passages.append((hits, sentence, paragraph, section, priority, is_source_reading))
+                        passages.append((hits, sentence, paragraph, section, priority, source_priority))
 
     if not passages:
         return ""
@@ -2286,9 +2294,10 @@ def _compose_deterministic_ebm_answer(
                 mcq_parts.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 340)}")
         return _ensure_complete_sentence("\n".join(mcq_parts)), sources
 
+    single_source = primary.get("lesson_format") == "single_source"
     focused_excerpt = (
         _focused_question_excerpt(question, primary, lang, eff_level)
-        if primary.get("lesson_format") == "single_source" and primary.get("teaching") else ""
+        if single_source and primary.get("teaching") else ""
     )
     # Match relevant sentences inside markdown body + structured evidence
     raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
@@ -2308,6 +2317,7 @@ def _compose_deterministic_ebm_answer(
         ln.strip() for ln in raw_md.splitlines()
         if ln.strip()
         and not ln.strip().startswith("#")
+        and not (single_source and not is_en and ln.lstrip().startswith(">"))
         and not ln.strip().startswith("⚠️")
         and not ln.strip().startswith("*Nguồn")
         and not ln.strip().startswith("*Traceable")

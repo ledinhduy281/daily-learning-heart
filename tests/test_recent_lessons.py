@@ -294,6 +294,18 @@ class RecentLessonTests(unittest.TestCase):
                     self.assertIn("n=605", answer)
                     self.assertNotRegex(answer, r"12[ ,](?:434|821)")
 
+    def test_chat_prefers_primary_excerpts_over_comparison_study_context(self):
+        import fetch_daily_ebm as app
+        lesson = {
+            "lesson_format": "single_source",
+            "teaching": {"en": {"evidence_shift": ["The prior study reported safety outcomes."]}},
+            "source_excerpts": [{"text": "The primary study measured safety outcomes."}],
+        }
+        self.assertEqual(
+            app._focused_question_excerpt("What were the safety outcomes?", lesson, "en", "short"),
+            "The primary study measured safety outcomes.",
+        )
+
     def test_chat_matches_alternate_qualifier_wording_and_keeps_study_arm_counts(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
