@@ -10,7 +10,7 @@ Nguồn chính là tổng quan hệ thống và phân tích gộp của Iatridi 
 
 Vấn đề cần hiểu không chỉ là “hạ thấp hơn thì tốt hơn”. Người học cần phân biệt ba điều: ước tính tương đối chuẩn hóa theo mỗi 10 mm Hg khác với một mục tiêu điều trị cụ thể; giảm eGFR do thay đổi huyết động khác với mất nephron tiến triển đến suy thận; và lợi ích tuyệt đối phụ thuộc vào nguy cơ nền của từng quần thể.
 
-## mechanism: Vì sao huyết áp thấp hơn bảo vệ tim nhưng làm eGFR giảm
+## mechanism
 
 Phần mở đầu của bài báo nhắc lại nền tảng: ở người lớn khỏe mạnh, mỗi 20 mm Hg huyết áp tâm thu thường ngày cao hơn đi kèm nguy cơ tử vong tim mạch tăng khoảng gấp đôi, và các thử nghiệm hạ áp cho thấy mức giảm nguy cơ tương ứng, ủng hộ quan hệ nhân quả. Quan hệ này có dạng log-tuyến tính: trên thang logarit của nguy cơ, mỗi mức giảm huyết áp như nhau đi kèm mức giảm nguy cơ tương đối gần như như nhau. Đó là lý do tác giả quy đổi mọi thử nghiệm về “mỗi 10 mm Hg thấp hơn”.
 
@@ -28,7 +28,7 @@ Trước đây: từ năm 2021, KDIGO đã khuyến nghị mục tiêu huyết �
 
 Bây giờ: ở người CKD, RR mỗi 10 mm Hg là 0,89 (KTC 95% 0,81–0,99), tương đương với 0,84 (0,80–0,88) ở người không CKD; kiểm định dị biệt P = 0,26. Mức giảm tuyệt đối ước tính trong abstract là 4,3 biến cố/1000 người-năm ở CKD và 2,7 ở người không CKD. Tác giả kết luận hạ áp tích cực nên được khuyến nghị cho cả hai nhóm. Cần nhớ: đây là đề xuất của tác giả một phân tích gộp, không phải một khuyến cáo mới có Class và Level của một hội chuyên ngành.
 
-## application: Áp dụng qua một ca giả định
+## application
 
 Ca giảng dạy: bệnh nhân 68 tuổi, tăng huyết áp, CKD với eGFR khoảng 45 mL/phút/1,73 m², không đái tháo đường, đang dùng hai thuốc hạ áp, huyết áp tâm thu đo tại phòng khám khoảng 140 mm Hg. Câu hỏi đặt ra trong buổi giao ban: có nên tăng cường điều trị để hạ thêm khoảng 10–15 mm Hg không? Đây là ca minh họa cho cách đọc bằng chứng, không phải người tham gia thử nghiệm và không phải hướng dẫn liều.
 
@@ -83,7 +83,7 @@ The primary source is the systematic review and meta-analysis by Iatridi and col
 
 The point is not simply “lower is better.” Learners need to separate three things: a relative estimate standardized per 10 mm Hg is not a specific treatment target; a hemodynamic eGFR decline is not nephron loss progressing to kidney failure; and absolute benefit depends on each population’s baseline risk.
 
-## mechanism: Why lower pressure protects the heart yet lowers eGFR
+## mechanism
 
 The paper’s introduction restates the foundation: in apparently healthy adults, each 20-mm Hg higher usual systolic blood pressure is associated with roughly a doubling of cardiovascular death, and blood pressure-lowering trials show a corresponding risk reduction, supporting causality. The relationship is log-linear: on a logarithmic risk scale, each equal step down in blood pressure carries about the same relative risk reduction. That is why the authors convert every trial to “per 10 mm Hg lower.”
 
@@ -101,7 +101,7 @@ The shift: three large new trials, ESPRIT (11,255 participants), BPROAD (12,821)
 
 Now: in CKD the RR per 10 mm Hg was 0.89 (95% CI 0.81–0.99), comparable to 0.84 (0.80–0.88) without CKD; heterogeneity P = .26. The abstract estimates absolute reductions of 4.3 events per 1000 person-years with CKD and 2.7 without CKD. The authors conclude that intensive lowering should be recommended for both groups. Remember that this is the authors’ proposal from a meta-analysis, not a new society recommendation with a Class and Level.
 
-## application: Applying the evidence to a teaching case
+## application
 
 Teaching case: a 68-year-old with hypertension and CKD, eGFR about 45 mL/min/1.73 m², no diabetes, on two antihypertensives, with clinic systolic blood pressure around 140 mm Hg. The question at rounds: should treatment be intensified to lower it by another 10–15 mm Hg? This case illustrates how to read the evidence; it is not a trial participant and not dosing guidance.
 

@@ -8,7 +8,7 @@ Câu hỏi của trụ cột Rối loạn nhịp: ở người rung nhĩ có ngu
 
 Nguồn chính là phân tích gộp dữ liệu từng người tham gia của Skurk và cộng sự trên JACC, dựa trên hai thử nghiệm ngẫu nhiên CLOSURE-AF và PRAGUE-17. Các tác giả không phát hiện khác biệt có ý nghĩa thống kê về kết cục hiệu quả gộp hoặc chảy máu nặng khi xét chung thời gian theo dõi. Tuy nhiên, nguy cơ chảy máu tại từng thời điểm cao hơn sớm và thấp hơn về sau với LAAC; đến 3 năm chưa chứng minh được lợi ích cộng dồn về chảy máu. Đọc kết quả cần trả lời cả hai câu hỏi: biến cố nào được tính và điều gì thay đổi theo thời gian?
 
-## mechanism: Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ
+## mechanism
 
 Khi rung nhĩ, tiểu nhĩ trái co bóp kém, tạo điều kiện cho máu ứ đọng và hình thành huyết khối. Huyết khối từ tiểu nhĩ có thể đi vào tuần hoàn và gây đột quỵ thiếu máu não hoặc thuyên tắc hệ thống. Thuốc chống đông làm giảm khả năng hình thành huyết khối nhưng tác động toàn thân nên cũng làm tăng nguy cơ chảy máu. LAAC dùng dụng cụ để cách ly tiểu nhĩ khỏi dòng máu, nhắm vào một nguồn huyết khối thay vì ức chế đông máu toàn thân lâu dài. Đóng tiểu nhĩ không làm hết rung nhĩ và không loại bỏ mọi cơ chế gây đột quỵ.
 
@@ -68,7 +68,7 @@ The arrhythmia pillar asks: in people with atrial fibrillation (AF) at high risk
 
 The primary source is Skurk and colleagues’ individual participant data meta-analysis in JACC, drawing on two randomized trials, CLOSURE-AF and PRAGUE-17. Across follow-up, the authors detected no statistically significant difference in the composite efficacy outcome or major bleeding. With LAAC, however, the estimated bleeding hazard was higher early and lower later; no cumulative bleeding benefit was demonstrated by 3 years. To interpret this result, ask both what counts as an event and how the balance changes over time.
 
-## mechanism: How appendage closure changes risk
+## mechanism
 
 In AF, impaired left atrial appendage contraction promotes blood stasis and thrombus formation. An appendage thrombus can embolize to the brain or systemic circulation. Oral anticoagulation reduces clot formation but acts systemically and increases bleeding risk. LAAC uses a device to exclude the appendage from the circulation, targeting one source of thrombi rather than suppressing coagulation throughout the body over the long term. It does not resolve AF or remove every mechanism of stroke.
 
