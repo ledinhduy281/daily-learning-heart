@@ -86,12 +86,14 @@ App.todayPillarId = 9;
 App.todayDate = "2026-11-14";
 App.briefings = bundle.briefings.filter(b => b.id !== fallback.id);
 assert.equal(context.getTodaySingleBriefing().date, "2026-11-14");
-Dom.trialsGridDeck = {};
+Object.assign(Dom, { trialsSection: {}, trialsSectionHeading: {}, trialsGridDeck: {} });
 vm.runInContext(html.slice(html.indexOf("    function renderGuidelineRefBox("),
     html.indexOf("    function renderEvolutionPipeline(")), context);
 vm.runInContext(html.slice(html.indexOf("    function renderFocusedBlockB("),
     html.indexOf("    function renderPearls(")), context);
 context.renderTrialsMatrix(fallback, false);
+assert.equal(Dom.trialsSection.className, "trials-section summary-card-feature");
+assert.equal(Dom.trialsSectionHeading.className, "summary-title-line");
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("AMBITION"));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes(fallback.teaching.en.interpretation[0]));
 assert.ok(Dom.trialsGridDeck.innerHTML.includes("/26308684/"));
@@ -126,6 +128,11 @@ for (const [isVi, curated, licensed] of [
 }
 context.renderTrialsMatrix({ ...fallback, supporting_evidence: bundle.focused_lessons[8].supporting_evidence }, false);
 assert.equal(Dom.trialsGridDeck.textContent, "No matched study is available.");
+assert.equal(Dom.trialsSection.className, "trials-section summary-card-feature");
+context.renderTrialsMatrix(legacy, false);
+assert.equal(Dom.trialsSection.className, "trials-section");
+assert.equal(Dom.trialsSectionHeading.className, "section-block-heading");
+assert.match(Dom.trialsGridDeck.innerHTML, /class="trial-box-card"/);
 Dom.pearlsStackDeck = {};
 context.t = key => key;
 context.formatInlineRich = text => text;

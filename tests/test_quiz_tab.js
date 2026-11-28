@@ -6,7 +6,7 @@ const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 assert.match(html, /id="tabReviewQuiz" role="tab" aria-controls="quizTabPanel"[^>]*>Trắc Nghiệm Ôn Tập</);
 assert.match(html, /setTxt\("#tabReviewQuiz", isVi \? "Trắc Nghiệm Ôn Tập" : "Review Quiz"\)/);
 assert.match(html, /id="quizTabPanel" role="tabpanel"[^>]* hidden>\s*<p[^>]*>[^<]*<\/p>\s*<section[^>]*id="socraticTutorSection"/);
-assert.match(html, /id="trialsGridDeck">\s*<!-- Rendered by JS -->\s*<\/div>\s*<button type="button"[^>]*id="btnGoToReviewQuiz">Đến phần trắc nghiệm<\/button>/);
+assert.match(html, /id="trialsGridDeck">\s*<!-- Rendered by JS -->\s*<\/div>\s*<\/div>\s*<button type="button"[^>]*id="btnGoToReviewQuiz">Đến phần trắc nghiệm<\/button>/);
 assert.match(html, /goToReviewQuiz: "Đến phần trắc nghiệm"/);
 assert.match(html, /goToReviewQuiz: "Go to the review quiz"/);
 assert.match(html, /setTxt\("#btnGoToReviewQuiz", t\("goToReviewQuiz"\)\)/);
