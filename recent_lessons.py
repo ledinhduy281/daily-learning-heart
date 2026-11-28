@@ -45,6 +45,7 @@ SECTION_LABELS = {
 
 MECHANISM_LABELS = {
     "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
+    "af-pci-antithrombotic-ipd-nma": ("Vì sao cần cân bằng huyết khối và chảy máu", "Why thrombosis and bleeding must be balanced"),
     "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
     "bproad-intensive-bp-cognition": ("Huyết áp và não: cơ chế", "Blood pressure and the brain"),
     "poet-ii-response-tailored-antibiotics": ("Cơ sở sinh lý bệnh", "Pathophysiology"),
