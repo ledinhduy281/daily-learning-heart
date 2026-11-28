@@ -1951,7 +1951,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     relative_risk = re.search(risk_pattern, stem)
     conversion = re.search(r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b", stem) or (
         re.search(r"\b(?:calculat(?:e|ed|ing)|tinh)\b", stem)
-        and re.search(r"\b(?:from|based on|tu|dua vao) (?:the |a )?" + risk_pattern, stem)
+        and re.search(r"\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?" + risk_pattern, stem)
     )
     absolute_benefit = absolute_risk and relative_risk and conversion
     risk_estimate = relative_risk and not re.search(

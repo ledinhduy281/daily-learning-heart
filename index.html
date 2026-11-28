@@ -8755,7 +8755,7 @@
           const relativeRisk = Boolean(stem.match(riskTerms));
           const conversion = /\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b/.test(stem)
             || (/\b(?:calculat(?:e|ed|ing)|tinh)\b/.test(stem)
-              && new RegExp(/\b(?:from|based on|tu|dua vao) (?:the |a )?/.source + riskTerms.source).test(stem));
+              && new RegExp(/\b(?:from|based on|using|given|tu|dua vao|dung|voi) (?:the |a )?/.source + riskTerms.source).test(stem));
           const absoluteBenefit = absoluteRisk && relativeRisk && conversion;
           const riskEstimate = relativeRisk
             && !/\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b/.test(stem);
