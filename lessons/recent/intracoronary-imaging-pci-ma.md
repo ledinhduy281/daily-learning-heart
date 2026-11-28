@@ -6,7 +6,7 @@
 
 Câu hỏi của trụ cột bệnh mạch vành hôm nay: ở người đã có chỉ định can thiệp động mạch vành qua da (PCI), quyết định dựa thêm vào hình ảnh trong lòng mạch có cải thiện kết cục so với chỉ dựa vào chụp mạch không? Đây là câu hỏi về cách thực hiện PCI, không phải về việc có nên đặt stent, chọn phẫu thuật bắc cầu hay điều trị nội khoa. Nhầm hai câu hỏi sẽ dẫn đến việc dùng kết quả nghiên cứu để biện minh cho một chỉ định mà nghiên cứu không đánh giá.
 
-Nguồn chính là phân tích gộp RCT của Bangalore và cộng sự trên JACC. Trung bình giữa các thử nghiệm, chiến lược hướng dẫn bằng hình ảnh nội mạch cho kết cục tốt hơn, nhưng mức lợi ích không nhất thiết giống nhau ở mọi tổn thương hay quy trình. Vấn đề cần hiểu là hình ảnh đã thay đổi quyết định nào, quyết định đó sửa được vấn đề gì, và dữ liệu có đủ sát với tình huống đang bàn hay không.
+Nguồn chính là phân tích gộp của Bangalore và cộng sự trên JACC: 28 thử nghiệm ngẫu nhiên với 24.634 người bệnh. Trung bình giữa các thử nghiệm, chiến lược hướng dẫn bằng hình ảnh nội mạch cho kết cục tốt hơn, nhưng mức lợi ích không nhất thiết giống nhau ở mọi tổn thương hay quy trình. Vấn đề cần hiểu là hình ảnh đã thay đổi quyết định nào, quyết định đó sửa được vấn đề gì, và dữ liệu có đủ sát với tình huống đang bàn hay không.
 
 ## mechanism
 
@@ -72,7 +72,7 @@ Bản tóm tắt dựa trên abstract PubMed, chưa được bác sĩ đối chi
 
 Today’s coronary-disease question is whether adding intracoronary imaging improves outcomes compared with angiography alone in patients already undergoing percutaneous coronary intervention (PCI). This is a question about how to perform PCI, not a comparison of stenting with bypass surgery or medical management. Applying this evidence to the initial indication for PCI confuses two decisions the trials did not study together.
 
-Bangalore and colleagues’ updated meta-analysis of RCTs in JACC is the primary source. Imaging guidance improved pooled outcomes, but that does not mean every lesion or procedural protocol yields the same benefit. The practical questions are which decision the image changes, which mechanical problem that decision addresses, and how closely the evidence matches the case under discussion.
+Bangalore and colleagues’ updated meta-analysis in JACC is the primary source: 28 randomized trials with 24,634 patients. Imaging guidance improved pooled outcomes, but that does not mean every lesion or procedural protocol yields the same benefit. The practical questions are which decision the image changes, which mechanical problem that decision addresses, and how closely the evidence matches the case under discussion.
 
 ## mechanism
 
