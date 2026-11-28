@@ -120,6 +120,7 @@ async function checkFocusedPastedQuestions() {
   }
   for (const [lang, question, rr, absolute] of [
     ['en', 'What was the absolute risk reduction and relative risk of cardiovascular events from intensive blood pressure lowering?', 'RR 0.85', '4.3 events per 1000 person-years'],
+    ['en', 'What absolute risk reduction and relative risk of cardiovascular events did the authors calculate?', 'RR 0.85', '4.3 events per 1000 person-years'],
     ['vi', 'Mức giảm nguy cơ tuyệt đối và nguy cơ tương đối của biến cố tim mạch khi hạ huyết áp tích cực là bao nhiêu?', 'RR 0,85', '4,3 biến cố/1000 người-năm']
   ]) {
     const {markdown} = await chat.composeClientDeterministicAnswer(

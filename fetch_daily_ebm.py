@@ -1945,14 +1945,16 @@ def _focused_question_excerpt(question, primary, lang, level):
     )
     risk_pattern = r"\b(?:relative risks?|risk ratios?|rr|nguy co tuong doi|ti so nguy co)\b"
     relative_risk = re.search(risk_pattern, stem)
-    absolute_benefit = absolute_risk and relative_risk and re.search(
-        r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|calculat(?:e|ed|ing)|suy ra|tinh tu|quy doi)\b", stem
+    conversion = re.search(r"\b(?:deriv(?:e|ed|ing)|convert(?:ed|ing)?|infer(?:red|ring)?|suy ra|quy doi)\b", stem) or (
+        re.search(r"\b(?:calculat(?:e|ed|ing)|tinh)\b", stem)
+        and re.search(r"\b(?:from|based on|tu|dua vao) (?:the |a )?" + risk_pattern, stem)
     )
+    absolute_benefit = absolute_risk and relative_risk and conversion
     risk_estimate = relative_risk and not re.search(
         r"\b(?:interpret|mean|means|differ|y nghia|dien giai|hieu the nao)\b", stem
     )
     endpoint_match = re.search(risk_pattern + r" (?:of|for|cua) (?:the )?([^?.!;]+)", stem)
-    endpoint_text = re.split(r"\b(?:in|with|from|after|among|under|reported|khi|sau|o|voi|la|bao nhieu)\b", endpoint_match[1], maxsplit=1)[0] if endpoint_match else ""
+    endpoint_text = re.split(r"\b(?:in|with|from|after|among|under|reported|did|was|were|khi|sau|o|voi|la|bao nhieu)\b", endpoint_match[1], maxsplit=1)[0] if endpoint_match else ""
     endpoints = [p.strip() for p in re.split(r",|\b(?:and|or|va|hoac)\b", endpoint_text) if p.strip()]
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
