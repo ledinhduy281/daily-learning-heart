@@ -47,6 +47,10 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   const blockAKeys = ["summary", "mechanism", "evidence_shift", "application", "pitfalls"];
   const hasDepth = Boolean(notes.mechanism);
   assert.equal((walkthrough.match(/<h3>/g) || []).length, hasDepth ? blockAKeys.length : 1, lesson.id);
+  for (const heading of Object.values(lesson.teaching.headings?.[isVi ? "vi" : "en"] || {})) {
+    assert.ok(walkthrough.includes(`<h3>${context.escapeHtml(heading)}</h3>`), `${lesson.id} heading`);
+  }
+  if (lesson.pillar_id !== 3) assert.doesNotMatch(walkthrough, /angiography|chụp mạch/i, lesson.id);
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
     assert.ok(notes[key].every(p => !blockB.includes(context.escapeHtml(p))), `${lesson.id} ${key} stays in Block A`);

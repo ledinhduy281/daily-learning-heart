@@ -10,6 +10,8 @@ Nguồn chính là phân tích gộp của Bangalore và cộng sự trên JACC:
 
 ## mechanism
 
+### Vì sao chụp mạch có thể bỏ sót vấn đề
+
 Chụp mạch cho thấy hình bóng của cột thuốc cản quang trong lòng mạch, rất hữu ích để định vị chỗ hẹp và theo dõi dòng chảy. Nhưng hình chiếu có thể bị chồng nhánh, thu ngắn đoạn mạch hoặc che khuất mức độ tổn thương lệch tâm; đoạn trông như “mạch tham chiếu bình thường” cũng có thể mang mảng xơ vữa lan tỏa. Biết lòng mạch còn thông trên ảnh cuối không đồng nghĩa với biết stent đã nở đủ, hai đầu đã nằm ở vị trí thích hợp, hay có tổn thương ở mép stent.
 
 Siêu âm nội mạch (IVUS) và chụp cắt lớp quang học nội mạch (OCT) cho lát cắt ngang, bổ sung thông tin mà ảnh chụp mạch ít cho thấy. Trước can thiệp, thông tin đó giúp đặt câu hỏi về kích thước mạch, chiều dài tổn thương và vôi hóa cản trở stent nở. Sau can thiệp, nó giúp phân biệt vấn đề trong thân stent với vấn đề ở mép. Giá trị không nằm ở ảnh đẹp hơn, mà ở khả năng phát hiện sai sót cơ học có ý nghĩa và điều chỉnh được; stent nở không đủ là một cơ chế có thể góp phần dẫn đến tái hẹp hoặc huyết khối stent.
@@ -75,6 +77,8 @@ Today’s coronary-disease question is whether adding intracoronary imaging impr
 Bangalore and colleagues’ updated meta-analysis in JACC is the primary source: 28 randomized trials with 24,634 patients. Imaging guidance improved pooled outcomes, but that does not mean every lesion or procedural protocol yields the same benefit. The practical questions are which decision the image changes, which mechanical problem that decision addresses, and how closely the evidence matches the case under discussion.
 
 ## mechanism
+
+### What angiography can miss
 
 Angiography depicts the silhouette of contrast inside the lumen. It localizes stenoses and shows flow, but overlapping branches, foreshortening and eccentric disease can obscure anatomy. An apparently normal reference segment may itself have diffuse plaque. A patent lumen on the final angiogram does not by itself establish adequate stent expansion, appropriate landing zones or the absence of an edge problem.
 

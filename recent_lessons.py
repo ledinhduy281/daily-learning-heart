@@ -31,12 +31,12 @@ SOURCE_LABELS = {
 }
 SECTION_LABELS = {
     "vi": {"summary": "Nguồn này hỏi gì và kết luận gì", "design": "Thiết kế và cách đọc",
-           "mechanism": "Vì sao chụp mạch có thể bỏ sót vấn đề",
+           "mechanism": "Cơ chế và vì sao điều đó quan trọng",
            "evidence_shift": "Bằng chứng đã thay đổi cách nghĩ ra sao",
            "application": "Áp dụng qua một ca giả định", "pitfalls": "Những bẫy khi áp dụng",
            "findings": "Kết quả chính", "limits": "Giới hạn áp dụng", "pearls": "Điểm cần nhớ khi đi buồng"},
     "en": {"summary": "What this source asks and concludes", "design": "Design and how to read it",
-           "mechanism": "What angiography can miss",
+           "mechanism": "Mechanism and why it matters",
            "evidence_shift": "How evidence changed the question",
            "application": "Applying the evidence to a teaching case", "pitfalls": "Pitfalls in application",
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
@@ -158,21 +158,28 @@ def is_recent(source, edition_date=RECENT_EDITION_DATE, window_days=SOURCE_WINDO
 def load_recent_teaching(slug):
     path = DIRECTORY / f"{slug}.md"
     header, *languages = re.split(r"^# (vi|en)\s*\n", path.read_text(encoding="utf-8"), flags=re.M)
-    notes = {"pmid": header.strip()}
+    notes, headings = {"pmid": header.strip()}, {}
     for index in range(0, len(languages), 2):
         lang, body = languages[index:index + 2]
         preamble, *parts = re.split(r"^## ([a-z_]+)\s*\n", body, flags=re.M)
         if preamble.strip() or tuple(parts[::2]) not in (SECTIONS, DEPTH_SECTIONS) or lang in notes:
             raise ValueError(f"Invalid editorial sections in {path.name} ({lang})")
-        notes[lang] = {
-            key: text.strip().splitlines() if key == "pearls"
-            else [paragraph.strip() for paragraph in text.strip().split("\n\n")]
-            for key, text in zip(parts[::2], parts[1::2])
-        }
+        notes[lang], headings[lang] = {}, {}
+        for key, text in zip(parts[::2], parts[1::2]):
+            text = text.strip()
+            if text.startswith("### "):
+                heading, _, text = text.partition("\n")
+                headings[lang][key] = heading[4:].strip()
+            notes[lang][key] = (text.strip().splitlines() if key == "pearls"
+                                else [paragraph.strip() for paragraph in text.strip().split("\n\n")])
     if set(notes) != {"pmid", "vi", "en"}:
         raise ValueError(f"{path.name} must have Vietnamese and English sections")
     if notes["vi"].keys() != notes["en"].keys():
         raise ValueError(f"{path.name} must have matching Vietnamese and English sections")
+    if headings["vi"].keys() != headings["en"].keys():
+        raise ValueError(f"{path.name} must have matching Vietnamese and English headings")
+    if headings["vi"]:
+        notes["headings"] = headings
     return notes
 
 
@@ -221,7 +228,7 @@ def excerpt_markdown(excerpt, lang):
 
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
-    labels = SECTION_LABELS[lang]
+    labels = {**SECTION_LABELS[lang], **lesson["teaching"].get("headings", {}).get(lang, {})}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
