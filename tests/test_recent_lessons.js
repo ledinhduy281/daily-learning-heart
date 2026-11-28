@@ -26,6 +26,15 @@ assert.equal(arni.primary_source.pmid, "43012096");
 for (const lang of ["vi", "en"]) assert.ok(arni.teaching[lang].mechanism.length);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
+const poet = bundle.focused_lessons[7];
+assert.equal(poet.primary_source.pmid, "42663314");
+for (const [lang, heading] of [["vi", "Cơ sở sinh lý bệnh"], ["en", "Pathophysiology"]]) {
+  const walkthrough = context.renderTeachingSections(poet, lang === "vi", "source_summary");
+  assert.ok(walkthrough.includes(`<h3>${heading}</h3>`), poet.id);
+  for (const key of ["summary", "mechanism", "evidence_shift", "application", "pitfalls"]) {
+    assert.ok(poet.teaching[lang][key].length >= 2, `${poet.id} ${lang} ${key}`);
+  }
+}
 const laac = bundle.focused_lessons["6"];
 assert.equal(laac.primary_source.pmid, "43018508");
 assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
