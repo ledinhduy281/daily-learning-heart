@@ -167,6 +167,43 @@ class RecentLessonTests(unittest.TestCase):
                     self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
         self.assertTrue(lesson["quiz_items"])
 
+    def test_staree_walkthrough_keeps_trial_results_distinct(self):
+        lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
+        self.assertEqual(lesson["primary_source"]["pmid"], "42670961")
+        self.assertEqual(lesson["primary_source"]["kind"], "landmark_rct")
+        for lang, field, mechanism, rates, survival in (
+            ("vi", "part1_vi_markdown", "Vì sao hạ LDL-C có thể giảm biến cố tim mạch", "15,5 xuống 10,9", "HR 0,94"),
+            ("en", "part2_en_markdown", "Why lowering LDL-C can reduce cardiovascular events", "15.5 to 10.9", "HR was 0.94"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertEqual(tuple(notes), recent_lessons.DEPTH_SECTIONS)
+                self.assertIn(f"### {mechanism}", block_a)
+                self.assertIn(rates, " ".join(notes["evidence_shift"]))
+                self.assertIn(survival, " ".join(notes["evidence_shift"]))
+                for key in recent_lessons.BLOCK_A_SECTIONS:
+                    self.assertGreaterEqual(len(notes[key]), 2)
+                    for paragraph in notes[key]:
+                        self.assertIn(paragraph, block_a)
+                        self.assertNotIn(paragraph, block_b)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertEqual(excerpt["kind"], "pubmed_abstract")
+                    rendered = block_b.replace(r"\[", "[").replace(r"\]", "]").replace(r"\<", "<")
+                    self.assertIn("> " + excerpt["text"], rendered)
+
+    def test_staree_short_answer_reports_cardiovascular_hazard_ratio(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
+        for lang, question, estimate, interval in (
+            ("en", "What was the hazard ratio for major cardiovascular events in STAREE?", "0.70", "0.61 to 0.82"),
+            ("vi", "STAREE tỉ số nguy cơ biến cố tim mạch", "0,70", "0,61–0,82"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question, [lesson], [], lang, verbosity="short")
+                self.assertIn(estimate, answer)
+                self.assertIn(interval, answer)
+
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:
             lesson = build_recent_lesson(pillar, "2026-11-26")
