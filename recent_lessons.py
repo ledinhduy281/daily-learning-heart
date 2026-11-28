@@ -42,6 +42,8 @@ SECTION_LABELS = {
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
 }
 
+GENERIC_MECHANISM_LABEL = {"vi": "Cơ chế và bối cảnh lâm sàng", "en": "Mechanism and clinical context"}
+
 
 # Verbatim guideline recommendation lines entered by a physician from the original PDF, keyed by source id.
 # Each line is {"text": "... [[number]] ...", "class": "I", "level": "A", "locator": "Table 5, p. 12"};
@@ -222,6 +224,8 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
+    if source["id"] != "intracoronary-imaging-pci-ma":
+        labels = {**labels, "mechanism": GENERIC_MECHANISM_LABEL[lang]}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
