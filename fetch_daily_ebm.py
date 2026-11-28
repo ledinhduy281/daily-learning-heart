@@ -2033,14 +2033,19 @@ def _focused_question_excerpt(question, primary, lang, level):
             query = stem
         elif qualifier:
             query += f" {qualifier}"
-        enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
+        enrollment_unit = r"(?:randomi[sz]ed (?:controlled )?)?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
         arm_context = (
             r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom"
             r"|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)"
         ) if arm_enrollment else ""
-        enrollment_count = rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_context}"
+        number = (
+            r"(?:\d+(?:[., ]\d{3})*|one|two|three|four|five|six|seven|eight|nine|ten|"
+            r"eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|"
+            r"mot|hai|ba|bon|nam|sau|bay|tam|chin|muoi)"
+        )
+        enrollment_count = rf"\b{number}\s+{enrollment_unit}\b{arm_context}"
         if qualifier:
             enrollment_count += r"|\bn\s*=\s*\d+"
         enrollment_pattern = re.compile(enrollment_count)

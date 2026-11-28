@@ -329,6 +329,17 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question, [lesson], [], lang)
                 self.assertIn(expected, answer)
 
+    def test_trial_counts_accept_numbers_written_as_words(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[3], "2026-11-25")
+        for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+            answer, _ = app._compose_deterministic_ebm_answer(
+                "How many trials were included in the AF-PCI meta-analysis?" + suffix,
+                [lesson], [], "en", verbosity="short",
+            )
+            self.assertIn("Six trials with 10,634 patients were pooled", answer)
+            self.assertNotIn("Gộp 6 thử nghiệm", answer)
+
     def test_local_chat_can_find_reported_absolute_event_rates(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[1], "2026-11-27")
