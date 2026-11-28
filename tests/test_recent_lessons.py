@@ -296,6 +296,23 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [poet], [], lang)
                 self.assertIn(expected, answer)
 
+    def test_local_chat_answers_poet_ii_antibiotic_free_days(self):
+        import fetch_daily_ebm as app
+
+        lesson = build_recent_lesson(PILLARS[6], "2026-12-02")
+        for lang, question, expected in (
+            ("en", "How many antibiotic-free days did POET II find?", "13 additional days alive without antibiotics"),
+            ("en", "How many days alive without antibiotics did POET II report?", "13 additional days alive without antibiotics"),
+            ("vi", "POET II ghi nhận thêm bao nhiêu ngày sống không kháng sinh?", "thêm 13 ngày sống không dùng kháng sinh"),
+        ):
+            for verbosity in ("short", "medium"):
+                with self.subTest(lang=lang, verbosity=verbosity):
+                    answer, sources = app._compose_deterministic_ebm_answer(
+                        question, [lesson], [], lang, verbosity=verbosity,
+                    )
+                    self.assertIn(expected, answer)
+                    self.assertEqual(sources[0]["pmid"], "42663314")
+
     def test_local_chat_keeps_reported_absolute_and_relative_risk_together(self):
         import fetch_daily_ebm as app
         lesson = next(b for b in build_recent_templates(PILLARS).values() if b["primary_source"]["pmid"] == "42842238")

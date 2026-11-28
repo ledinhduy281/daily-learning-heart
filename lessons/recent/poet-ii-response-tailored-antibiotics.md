@@ -6,13 +6,17 @@
 
 Khi mới chẩn đoán viêm nội tâm mạc nhiễm khuẩn bên trái, câu hỏi là làm sao kiểm soát nhiễm trùng và nhận diện biến chứng. POET II đặt câu hỏi muộn hơn: ở người trưởng thành đã điều trị ban đầu và đáp ứng đủ tiêu chí ổn định, có thể ngừng kháng sinh sớm theo đáp ứng thay vì tiếp tục đủ liệu trình chuẩn hay không? Đây là thử nghiệm ngẫu nhiên về thời điểm ngừng thuốc, không phải hướng dẫn thực hành hay nghiên cứu chọn kháng sinh lúc nhập viện.
 
-Tóm tắt bài báo cho biết khuyến cáo dùng kháng sinh đến sáu tuần chủ yếu dựa trên đồng thuận chuyên gia. Thử nghiệm cho thấy ngừng theo đáp ứng mang lại nhiều ngày sống không cần kháng sinh điều trị viêm nội tâm mạc hoặc nhiễm khuẩn huyết hơn. Chiến lược này đạt tiêu chí không kém hơn đối với kết cục an toàn chính đã định trước, nhưng ghi nhận nhiều trường hợp tái phát hơn. Cần đọc cả hai kết quả trước khi diễn giải chữ “an toàn”.
+Tóm tắt bài báo cho biết khuyến cáo dùng kháng sinh đến sáu tuần chủ yếu dựa trên đồng thuận chuyên gia.
+
+Trong sáu tháng, POET II ghi nhận chênh lệch ước tính là thêm 13 ngày sống không dùng kháng sinh điều trị viêm nội tâm mạc hoặc nhiễm khuẩn huyết khi ngừng theo đáp ứng so với điều trị đủ thời gian chuẩn.
+
+Chiến lược này đạt tiêu chí không kém hơn đối với kết cục an toàn chính đã định trước, nhưng ghi nhận nhiều trường hợp tái phát hơn. Cần đọc cả hai kết quả trước khi diễn giải chữ “an toàn”.
 
 ## mechanism
 
 Sùi van là tập hợp fibrin, tiểu cầu và vi sinh vật. Nhiễm trùng ở van không đồng nghĩa với vi khuẩn chỉ lưu hành trong máu: đáp ứng toàn thân có thể cải thiện trước khi ổ nhiễm tại van được kiểm soát bền vững. Vì vậy, hết sốt hay một kết quả cấy máu âm tính không tự nó chứng minh đã tiệt trừ nhiễm trùng hoặc đủ điều kiện ngừng thuốc. Đây là cơ sở để phân biệt đáp ứng ban đầu với khỏi bệnh bền vững, không phải cơ chế tái phát mà POET II đã chứng minh.
 
-Liệu trình dài hơn cho thêm thời gian điều trị ổ nhiễm còn sót, nhưng cũng kéo dài phơi nhiễm với thuốc. POET II không đo mức độ tiệt trừ vi khuẩn trong sùi; thử nghiệm kiểm định một cách ra quyết định dựa trên đáp ứng, bằng cách theo dõi các kết cục ở người bệnh sau phân nhóm. Số ngày sống không dùng kháng sinh đo gánh nặng điều trị theo thời gian. Nó không trực tiếp đo độc tính, thời gian nằm viện hay chất lượng sống, dù đó có thể là những lý do người bệnh muốn tránh điều trị kéo dài.
+Liệu trình dài hơn cho thêm thời gian điều trị ổ nhiễm còn sót, nhưng cũng kéo dài phơi nhiễm với thuốc. Thử nghiệm không đo mức độ tiệt trừ vi khuẩn trong sùi; thay vào đó, nhóm nghiên cứu đánh giá chiến lược dựa trên đáp ứng bằng cách theo dõi các kết cục sau phân nhóm. Chỉ số hiệu quả chính phản ánh một phần gánh nặng điều trị; nó không trực tiếp đo độc tính, thời gian nằm viện hay chất lượng sống, dù đó có thể là những lý do người bệnh muốn tránh điều trị kéo dài.
 
 ## evidence_shift
 
@@ -68,13 +72,17 @@ Tái phát cao hơn với chiến lược rút ngắn (5,1% so với 1,6%).
 
 At diagnosis of left-sided infective endocarditis, the immediate questions are how to control the infection and detect complications. POET II asks a later question: in adults who have already received initial therapy and met stabilization criteria, can antibiotics be stopped according to their response instead of continued for the standard duration? This randomized trial tested when to stop antibiotics. It is not a practice guideline or a study of which antibiotic to start on admission.
 
-The abstract notes that the recommendation for up to six weeks of antibiotics largely rests on expert consensus. In the trial, response-guided stopping provided more days alive without antibiotic treatment for infective endocarditis or bacteremia. The strategy met the prespecified noninferiority criterion for the primary safety endpoint, but there were more relapses. Both findings matter when interpreting the word “safety.”
+The abstract notes that the recommendation for up to six weeks of antibiotics largely rests on expert consensus.
+
+POET II found an estimated 13 additional days alive without antibiotics (antibiotic-free days) for endocarditis or bacteremia over six months with response-guided stopping versus standard-duration therapy.
+
+The strategy met the prespecified noninferiority criterion for the primary safety endpoint, but there were more relapses. Both findings matter when interpreting the word “safety.”
 
 ## mechanism
 
 A valve vegetation is a collection of fibrin, platelets, and microorganisms. Infection on a valve is not simply bacteria circulating in the blood: systemic signs may improve before the infection at the valve has been durably controlled. Being afebrile or having a single negative blood culture does not by itself show that the infection has cleared or that it is time to stop antibiotics. This is the rationale for separating early response from durable cure, not a relapse mechanism proven by POET II.
 
-A longer course allows more time to treat residual infection, but it also prolongs drug exposure. POET II did not measure bacterial eradication within vegetations. It tested a response-based decision strategy by following clinical outcomes after randomization. Days alive without antibiotics measure one aspect of treatment burden over time. They do not directly measure toxicity, time in hospital, or quality of life, even if those issues matter to patients who want to avoid prolonged therapy.
+A longer course allows more time to treat residual infection, but it also prolongs drug exposure. The trial did not measure bacterial eradication within vegetations; it tested a response-based decision strategy by following clinical outcomes after randomization. The primary efficacy measure captures one aspect of treatment burden. It does not directly measure toxicity, time in hospital, or quality of life, even if those issues matter to patients who want to avoid prolonged therapy.
 
 ## evidence_shift
 
