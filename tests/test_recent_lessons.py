@@ -73,6 +73,26 @@ class RecentLessonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must have matching sections"):
             validate_lesson(lesson, pillar, day, recorded=True)
 
+    def test_af_pci_walkthrough_keeps_depth_in_block_a(self):
+        pillar, day = PILLARS[3], "2026-11-29"
+        lesson = build_recent_lesson(pillar, day)
+        self.assertEqual(lesson["primary_source"]["pmid"], "42669062")
+        validate_lesson(lesson, pillar, day)
+        for lang, field, minimum in (("vi", "part1_vi_markdown", 1200), ("en", "part2_en_markdown", 800)):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {recent_lessons.AF_PCI_MECHANISM_LABELS[lang]}\n", block_a)
+                self.assertNotIn(recent_lessons.SECTION_LABELS[lang]["mechanism"], block_a)
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                            for p in notes[key]), minimum)
+
     def test_quizzes_quote_the_pubmed_abstract_and_guidelines_wait_for_physician_lines(self):
         for pillar in PILLARS:
             lesson = build_recent_lesson(pillar, "2026-11-26")

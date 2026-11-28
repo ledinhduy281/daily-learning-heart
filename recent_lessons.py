@@ -41,6 +41,8 @@ SECTION_LABELS = {
            "application": "Applying the evidence to a teaching case", "pitfalls": "Pitfalls in application",
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
 }
+AF_PCI_MECHANISM_LABELS = {"vi": "Vì sao cần cân bằng huyết khối và chảy máu",
+                           "en": "Why thrombosis and bleeding must be balanced"}
 
 
 # Verbatim guideline recommendation lines entered by a physician from the original PDF, keyed by source id.
@@ -222,6 +224,8 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
+    if source["id"] == "af-pci-antithrombotic-ipd-nma":
+        labels = {**labels, "mechanism": AF_PCI_MECHANISM_LABELS[lang]}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
