@@ -1894,6 +1894,11 @@
       gap: 16px;
     }
 
+    .trials-section:not(.summary-card-feature),
+    .trials-section.summary-card-feature > .trials-grid-deck {
+      display: contents;
+    }
+
     .block-b-quiz-button {
       align-self: flex-start;
     }
@@ -4363,11 +4368,13 @@
       </div>
 
       <!-- 2. LANDMARK TRIALS COMPOSITED CARDS -->
-      <div class="section-block-heading">
-        <span id="trialsSectionTitle">Các Thử Nghiệm Lâm Sàng Bản Lề</span>
-      </div>
-      <div class="trials-grid-deck" id="trialsGridDeck">
-        <!-- Rendered by JS -->
+      <div class="trials-section" id="trialsSection">
+        <div class="section-block-heading" id="trialsSectionHeading">
+          <span id="trialsSectionTitle">Các Thử Nghiệm Lâm Sàng Bản Lề</span>
+        </div>
+        <div class="trials-grid-deck" id="trialsGridDeck">
+          <!-- Rendered by JS -->
+        </div>
       </div>
       <button type="button" class="btn btn-primary-green block-b-quiz-button" id="btnGoToReviewQuiz">Đến phần trắc nghiệm</button>
 
@@ -5040,6 +5047,8 @@
       guidelineComparisonBanner: document.getElementById("guidelineComparisonBanner"),
       guidelinePipelineSociety: document.getElementById("guidelinePipelineSociety"),
       evolutionPipelineRow: document.getElementById("evolutionPipelineRow"),
+      trialsSection: document.getElementById("trialsSection"),
+      trialsSectionHeading: document.getElementById("trialsSectionHeading"),
       trialsGridDeck: document.getElementById("trialsGridDeck"),
       pearlsStackDeck: document.getElementById("pearlsStackDeck"),
       articleRenderedBody: document.getElementById("articleRenderedBody"),
@@ -6898,13 +6907,14 @@
     }
 
     function renderFocusedBlockB(refHtml, notesHtml) {
-      return `<div class="summary-card-feature focused-block-b">
-        <div class="guideline-comparison-banner" style="display:block">${refHtml}</div>
-        <div class="focused-recommendation"><div class="focused-lesson-notes">${notesHtml}</div></div>
-      </div>`;
+      return `<div class="guideline-comparison-banner" style="display:block">${refHtml}</div>
+        <div class="focused-recommendation"><div class="focused-lesson-notes">${notesHtml}</div></div>`;
     }
 
     function renderTrialsMatrix(b, isVi) {
+      const focused = isFocusedLesson(b);
+      Dom.trialsSection.className = focused ? "trials-section summary-card-feature" : "trials-section";
+      Dom.trialsSectionHeading.className = focused ? "summary-title-line" : "section-block-heading";
       if (b.lesson_format === "single_source") {
         const awaiting = b.quiz_status === "awaiting_physician_excerpts";
         Dom.trialsGridDeck.innerHTML = renderFocusedBlockB(renderPrimarySourceRefBox(b, isVi), `

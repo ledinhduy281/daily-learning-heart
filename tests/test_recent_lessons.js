@@ -9,7 +9,7 @@ const window = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, "data/briefings.js"), "utf8"), { window });
 const bundle = window.EBM_BRIEFINGS_DATA;
 const Dom = { guidelineComparisonBanner: { style: {} }, guidelinePipelineSociety: {}, evolutionPipelineRow: {},
-  trialsGridDeck: {}, pearlsStackDeck: {} };
+  trialsSection: {}, trialsSectionHeading: {}, trialsGridDeck: {}, pearlsStackDeck: {} };
 const context = vm.createContext({ window, Dom, App: { currentLang: "vi" }, t: key => key, formatInlineRich: s => s });
 const slice = (start, end) => vm.runInContext(html.slice(html.indexOf(`    function ${start}(`),
   html.indexOf(`    function ${end}(`)), context);
@@ -24,6 +24,7 @@ assert.equal(templates.length, 10);
 const datedPci = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-28-p3-focused");
 assert.ok(datedPci.teaching.vi.mechanism.length);
 const lessons = [...templates, datedPci];
+assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
 for (const lesson of lessons) for (const isVi of [true, false]) {
   const source = lesson.primary_source;
@@ -31,6 +32,8 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   context.renderEvolutionPipeline(lesson, isVi);
   context.renderTrialsMatrix(lesson, isVi);
   const blockA = Dom.guidelineComparisonBanner.innerHTML, blockB = Dom.trialsGridDeck.innerHTML;
+  assert.equal(Dom.trialsSection.className, "trials-section summary-card-feature");
+  assert.equal(Dom.trialsSectionHeading.className, "summary-title-line");
   assert.match(blockA, refBox, lesson.id);
   assert.equal(blockB.match(refBox)[0], blockA.match(refBox)[0], `${lesson.id}: Block B citation must match Block A`);
   assert.doesNotMatch(blockB, /trial-box-header|trial-journal-tag/);
