@@ -35,7 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
-from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
+from recent_lessons import BLOCK_B_SECTIONS, RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1932,9 +1932,23 @@ def _focused_question_excerpt(question, primary, lang, level):
     enrolled = not explicit_nnt and re.search(
         r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
         r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)"
-        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
-        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|people|trials?|studies|rcts?) "
+        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|joined|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
+    cohort_pattern = re.compile(
+        r"\b(\w+) (?:substudy|subgroup|ancillary study)\b"
+        r"|\b(?:nghien cuu phu|phan nhom) (?:ve )?(nhan thuc|\w+)\b"
+    )
+
+    def cohort_qualifier(match):
+        word = match[1] or match[2]
+        if word in {"the", "a", "this", "that", "cua", "nay"}:
+            return ""
+        return re.sub(r"(?<=\w{4})(?:ions?|ive)$", "", word)
+
+    scope = cohort_pattern.search(stem) if enrolled else None
+    qualifier = cohort_qualifier(scope) if scope else ""
+    qualifier_pattern = re.compile(rf"\b{re.escape(qualifier)}(?:ions?|ive)?\b") if qualifier else None
     arm_enrollment = (
         enrolled
         and not re.search(r"\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b", stem)
@@ -1968,7 +1982,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     endpoint_text = re.split(
         r"\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
         r"|in (?:the|this) (?:study|trial|paper|analysis|meta-analysis)"
-        r"|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
+        r"|khi|sau|o|voi|trong|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
         endpoint_match[1], maxsplit=1,
     )[0] if endpoint_match else ""
     if not re.match(r"\d", endpoint_text):
@@ -1993,9 +2007,13 @@ def _focused_question_excerpt(question, primary, lang, level):
         )
     follow_up = re.search(r"\b(?:mean follow[ -]up|average follow[ -]up|theo doi trung binh)\b", stem)
     enrollment_pattern = None
+    single_source = primary.get("lesson_format") == "single_source"
+    other_language = "en" if lang == "vi" else "vi"
+    requested_notes = primary["teaching"].get(lang)
+    languages = ((lang,) if requested_notes else (other_language,)) if single_source else (lang, other_language)
     if (absolute_benefit or (endpoints and risk_estimate)) and not (enrolled or nnt or follow_up):
-        if primary.get("lesson_format") == "single_source":
-            notes = primary["teaching"][lang]
+        if single_source:
+            notes = primary["teaching"].get(languages[0]) or {}
             excerpts = [p for p in notes.get("findings", []) if any(matches_endpoint(p, endpoint) for endpoint in endpoints)]
             if absolute_benefit:
                 requirement = (
@@ -2012,21 +2030,30 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
         " ", stem,
     )
+    trials = False
     if enrolled:
-        trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
-        query = ("trials studies rct rcts" if lang == "en" else "thu nghiem nghien cuu rct") if trials else (
+        trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies|rcts?)|bao nhieu (?:thu nghiem|nghien cuu|rcts?))\b", stem)
+        query = "" if trials else (
             "patients participants adults individuals people enrolled included" if lang == "en" else "benh nhan nguoi tuyen dua vao"
         )
         if arm_enrollment:
             query = stem
-        enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
+        enrollment_unit = r"(?:randomi[sz]ed (?:controlled )?)?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
         arm_context = (
             r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom"
             r"|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)"
         ) if arm_enrollment else ""
-        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_context}")
+        number = (
+            r"(?:\d+(?:[., ]\d{3})*|one|two|three|four|five|six|seven|eight|nine|ten|"
+            r"eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|"
+            r"mot|hai|ba|bon|nam|sau|bay|tam|chin|muoi)"
+        )
+        enrollment_count = rf"\b{number}\s+{enrollment_unit}\b{arm_context}"
+        if qualifier and not arm_enrollment:
+            enrollment_count += r"|\bn\s*=\s*\d+"
+        enrollment_pattern = re.compile(enrollment_count)
     else:
         if nnt:
             query = "nnt"
@@ -2037,6 +2064,8 @@ def _focused_question_excerpt(question, primary, lang, level):
         elif risk_estimate:
             query = re.sub(risk_pattern, "rr", query)
     groups = search_terms(query)
+    if trials and not arm_enrollment:
+        groups.append(("trials", "studies", "rcts", "thu nghiem", "nghien cuu"))
     if not groups:
         return ""
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
@@ -2044,9 +2073,17 @@ def _focused_question_excerpt(question, primary, lang, level):
         groups.append(contraindications)
 
     passages = []
-    for language in (lang, "en" if lang == "vi" else "vi"):
-        notes = primary["teaching"][language]
-        if primary.get("lesson_format") == "single_source":
+    for language in languages:
+        notes = primary["teaching"].get(language)
+        if not notes:
+            continue
+        arm_scope_in_design = arm_enrollment and qualifier and any(
+            cohort_qualifier(match) == qualifier
+            for paragraph in notes.get("design", ())
+            for match in cohort_pattern.finditer(normalize(paragraph))
+            if re.search(r"\b(?:included in this|duoc dua vao)\b", normalize(paragraph)[:match.start()])
+        )
+        if single_source:
             if enrolled:
                 preferred = ("findings",) if arm_enrollment else ("design", "findings")
             elif nnt or absolute_benefit:
@@ -2056,33 +2093,57 @@ def _focused_question_excerpt(question, primary, lang, level):
             else:
                 preferred = ("findings",) if risk_estimate else ()
             sections = [notes[key] for key in preferred if notes.get(key)]
-            sections = sections or notes.values()
+            sections = sections or list(notes.values())
+            excerpts = [item["text"] for item in primary.get("source_excerpts", ())] if language == "en" else []
+            if excerpts and not preferred:
+                sections.append(excerpts)
         else:
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
+            source_priority = 0
+            if single_source and not preferred:
+                if any(section is notes.get(key) for key in BLOCK_B_SECTIONS):
+                    source_priority = 2
+                elif section is excerpts:
+                    source_priority = 1
             for paragraph in section:
-                if enrollment_pattern and primary.get("lesson_format") == "single_source":
+                if enrollment_pattern and single_source:
                     if not enrollment_pattern.search(normalize(paragraph)):
                         continue
                 priority = int(bool(enrolled and section is notes.get("design")))
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
                     clean = normalize(sentence)
+                    if single_source and trials and not enrollment_pattern.search(clean):
+                        continue
+                    scoped_count = single_source and qualifier_pattern and (
+                        qualifier_pattern.search(clean) or arm_scope_in_design
+                    ) and enrollment_pattern.search(clean)
+                    if single_source and qualifier_pattern and not scoped_count:
+                        continue
                     hits = {
                         i for i, aliases in enumerate(groups)
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
                     }
-                    if hits:
-                        passages.append((hits, sentence, paragraph, section, priority))
+                    if hits or (scoped_count and not arm_enrollment):
+                        passages.append((hits, sentence, paragraph, section, priority, source_priority))
 
     if not passages:
         return ""
+    if single_source:
+        source_hits = {hit for hits, *_, source_priority in passages if source_priority == 2 for hit in hits}
+        passages = [
+            row for row in passages
+            if row[-1] != 1 or not row[0].issubset(source_hits)
+        ]
     frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
     weights = [1 / frequency if frequency else 0 for frequency in frequencies]
-    _, sentence, paragraph, section, _ = max(
-        passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])))
+    _, sentence, paragraph, section, *_ = max(
+        passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])), row[5])
     )
     if level == "short":
+        if single_source and qualifier:
+            return sentence
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
         start = max(0, sentences.index(sentence) - 1)
         return " ".join(sentences[start:start + 2])
@@ -2239,6 +2300,11 @@ def _compose_deterministic_ebm_answer(
                 mcq_parts.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 340)}")
         return _ensure_complete_sentence("\n".join(mcq_parts)), sources
 
+    single_source = primary.get("lesson_format") == "single_source"
+    focused_excerpt = (
+        _focused_question_excerpt(question, primary, lang, eff_level)
+        if single_source and primary.get("teaching") else ""
+    )
     # Match relevant sentences inside markdown body + structured evidence
     raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
     _q_stop = {
@@ -2253,10 +2319,11 @@ def _compose_deterministic_ebm_answer(
         if k in q_low:
             query_terms.update(syns)
 
-    lines = [
+    lines = [] if focused_excerpt else [
         ln.strip() for ln in raw_md.splitlines()
         if ln.strip()
         and not ln.strip().startswith("#")
+        and not (single_source and not is_en and ln.lstrip().startswith(">"))
         and not ln.strip().startswith("⚠️")
         and not ln.strip().startswith("*Nguồn")
         and not ln.strip().startswith("*Traceable")
@@ -2275,7 +2342,9 @@ def _compose_deterministic_ebm_answer(
     # 2) Short mode -> crisp 1-2 direct clinical sentences (~45-85 words)
     if eff_level == "short":
         short_segs: list[str] = []
-        if scored_lines:
+        if focused_excerpt:
+            short_segs.append(focused_excerpt)
+        elif scored_lines:
             short_segs.append(_first_clean_sentence(scored_lines[0][1], 240))
         elif steps:
             s_last = steps[-1]
@@ -2304,7 +2373,9 @@ def _compose_deterministic_ebm_answer(
     # 3) Medium / balanced direct answer (~130-210 words)
     if eff_level == "medium":
         sections: list[str] = []
-        if scored_lines:
+        if focused_excerpt:
+            sections.append(focused_excerpt)
+        elif scored_lines:
             sections.append(" ".join(_first_clean_sentence(ln, 420) for _, ln in scored_lines[:2]))
         elif steps:
             s_last = steps[-1]
@@ -2336,7 +2407,9 @@ def _compose_deterministic_ebm_answer(
     parts: list[str] = [
         f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}** *({'Prior' if is_en else 'Tiền nhiệm'}: {prior_g.get('name', '—')})*"
     ]
-    if scored_lines:
+    if focused_excerpt:
+        parts.append(focused_excerpt)
+    elif scored_lines:
         for _, ln in scored_lines[:3]:
             parts.append(f"- {_first_clean_sentence(ln, 420)}")
     else:
