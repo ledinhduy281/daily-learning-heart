@@ -288,6 +288,101 @@ const quiet = () => {};
     {en: "The outcome was not measured", vi: "Kết cục không được đo lường"},
   ]};
   assert.equal(CaseQuiz.rejectReason({...qualitative, quote: pciQuote}, pciGround), "");
+  const pciCase = {...qualitative, quote: pciQuote};
+  const verdict = q => CaseQuiz.rejectReason(q, pciGround);
+  const vessel = {
+    ...pciCase,
+    stem_en: "A 72-year-old woman with diabetes is scheduled for PCI. What effect did imaging guidance have on target vessel revascularization compared with angiography guidance?",
+    stem_vi: "Bệnh nhân nữ 72 tuổi có đái tháo đường sẽ được PCI. Hướng dẫn bằng hình ảnh nội mạch ảnh hưởng thế nào đến tái thông mạch đích so với hướng dẫn bằng chụp mạch?",
+    explanation_en: "Imaging-guided PCI reduced target vessel revascularization (RR: 0.69) compared with angiography-guided PCI.",
+    explanation_vi: "PCI có hướng dẫn bằng hình ảnh nội mạch giảm tái thông mạch đích (RR 0,69) so với PCI hướng dẫn bằng chụp mạch.",
+    options: [{en: "Reduces target vessel revascularization", vi: "Giảm tái thông mạch đích"}, ...qualitative.options.slice(1)],
+  };
+  assert.equal(verdict(vessel), "", "the exact endpoint, estimate, and comparator pass");
+  assert.equal(verdict({...vessel,
+    stem_en: vessel.stem_en.replace("target vessel", "target lesion"),
+    explanation_en: vessel.explanation_en.replace("target vessel", "target lesion"),
+    options: [{...vessel.options[0], en: "Reduces target lesion revascularization"}, ...vessel.options.slice(1)],
+  }), "endpoint", "the live case used target lesion revascularization for the target vessel result");
+  assert.equal(verdict({...vessel, stem_vi: vessel.stem_vi.replace("tái thông mạch đích", "tái thông tổn thương đích")}), "endpoint");
+  assert.equal(verdict({...pciCase, options: [{en: "Target lesion failure", vi: "Tái can thiệp mạch mục tiêu"}, ...pciCase.options.slice(1)]}),
+    "endpoint", "the live key translated target lesion failure as target vessel revascularization");
+  assert.equal(verdict({...vessel, explanation_en: vessel.explanation_en.replace("0.69", "0.72"),
+    explanation_vi: vessel.explanation_vi.replace("0,69", "0,72")}), "endpoint",
+  "a figure appearing in the same quote must still belong to the named endpoint");
+  assert.equal(verdict({...vessel, explanation_vi: vessel.explanation_vi.replace("chụp mạch", "nhiễu ảnh")}), "comparator");
+  assert.equal(verdict({...vessel, stem_vi: vessel.stem_vi.replace("Hướng dẫn bằng hình ảnh nội mạch", "Chỉ định nội mạch")}), "comparator");
+  assert.equal(verdict({...vessel, quote: pci.quiz_source_texts["42747372"][0]}), "endpoint", "a population-only citation does not support the named endpoint");
+
+  const cardiacMortality = {
+    ...pciCase,
+    stem_en: "A patient with a history of myocardial infarction asks how imaging-guided PCI affects cardiac mortality compared with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân có tiền sử nhồi máu cơ tim hỏi PCI hướng dẫn bằng hình ảnh nội mạch ảnh hưởng thế nào đến tử vong tim so với PCI hướng dẫn bằng chụp mạch.",
+    explanation_en: "Imaging-guided PCI reduced cardiac mortality (RR 0.73) compared with angiography-guided PCI.",
+    explanation_vi: "PCI hướng dẫn bằng hình ảnh nội mạch giảm tử vong tim (RR 0,73) so với PCI hướng dẫn bằng chụp mạch.",
+    options: [{en: "Reduces cardiac mortality", vi: "Giảm tử vong tim"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(cardiacMortality), "", "a prior MI is vignette background, even in the same sentence as the question");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("affects cardiac mortality", "affects myocardial infarction"),
+    stem_vi: cardiacMortality.stem_vi.replace("đến tử vong tim", "đến nhồi máu cơ tim"),
+  }), "endpoint", "MI in the question still has to match the keyed result");
+  assert.equal(verdict({...cardiacMortality,
+    explanation_en: "The meta-analysis reported fewer cardiac deaths with imaging-guided PCI (RR 0.73) than with angiography-guided PCI.",
+  }), "", "cardiac deaths and cardiac mortality identify the same cited endpoint");
+  assert.equal(verdict({...vessel,
+    options: [{...vessel.options[0], en: "Fewer target vessel revascularizations"}, ...vessel.options.slice(1)],
+  }), "", "plural revascularizations match the singular endpoint in the excerpt");
+  assert.equal(verdict({...vessel,
+    options: [{...vessel.options[0], en: "Fewer target lesion revascularizations"}, ...vessel.options.slice(1)],
+  }), "endpoint", "pluralizing an unsupported endpoint does not make it equivalent");
+  const infarctions = {
+    ...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("affects cardiac mortality", "affects myocardial infarctions"),
+    stem_vi: cardiacMortality.stem_vi.replace("đến tử vong tim", "đến nhồi máu cơ tim"),
+    explanation_en: cardiacMortality.explanation_en.replace("cardiac mortality (RR 0.73)", "myocardial infarctions (RR 0.86)"),
+    explanation_vi: cardiacMortality.explanation_vi.replace("tử vong tim (RR 0,73)", "nhồi máu cơ tim (RR 0,86)"),
+    options: [{en: "Fewer myocardial infarctions", vi: "Giảm nhồi máu cơ tim"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(infarctions), "", "plural infarctions in the stem, key and explanation match cited myocardial infarction");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: "A patient asks how imaging-guided PCI affects recurrence of prior MI compared with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân hỏi PCI hướng dẫn bằng hình ảnh nội mạch ảnh hưởng thế nào đến tái phát nhồi máu cơ tim từng mắc so với PCI hướng dẫn bằng chụp mạch.",
+  }), "endpoint", "a recurrence question still names the endpoint");
+  assert.equal(verdict({...infarctions,
+    stem_en: infarctions.stem_en.replace("affects myocardial infarctions", "affects recurrence of a prior MI"),
+    stem_vi: infarctions.stem_vi.replace("đến nhồi máu cơ tim", "đến tái phát nhồi máu cơ tim"),
+  }), "effects", "the pooled MI result does not establish the effect on recurrence");
+  assert.equal(verdict({...infarctions,
+    stem_en: infarctions.stem_en.replace("compared with", "specifically in prior MI patients compared with"),
+  }), "effects", "the pooled MI estimate does not support a prior-MI subgroup");
+  assert.equal(verdict({...infarctions,
+    stem_vi: infarctions.stem_vi.replace("so với", "ở những bệnh nhân có tiền sử nhồi máu cơ tim so với"),
+  }), "effects", "the same unsupported subgroup must also fail in Vietnamese");
+  assert.equal(verdict({...cardiacMortality,
+    stem_en: "A patient with prior MI, and stroke as the outcome, asks how imaging-guided PCI compares with angiography-guided PCI.",
+    stem_vi: "Một bệnh nhân có tiền sử nhồi máu cơ tim, với đột quỵ là kết cục, hỏi PCI hướng dẫn bằng hình ảnh nội mạch so với PCI hướng dẫn bằng chụp mạch.",
+  }), "endpoint", "a history filter cannot cross the comma into the outcome");
+
+  const mortality = {...pciCase,
+    stem_en: "A 66-year-old patient is scheduled for PCI. What is the relative risk for all-cause mortality with imaging guidance compared with angiography?",
+    stem_vi: "Bệnh nhân 66 tuổi được lên kế hoạch PCI. Nguy cơ tương đối về tử vong toàn nguyên khi hướng dẫn bằng hình ảnh nội mạch so với chụp mạch là bao nhiêu?",
+    explanation_en: "The meta-analysis reports a relative risk of 0.82 for all-cause mortality with imaging guidance.",
+    explanation_vi: "Phân tích gộp báo cáo nguy cơ tương đối 0,82 cho tử vong toàn nguyên khi hướng dẫn bằng hình ảnh nội mạch.",
+    options: [
+      {en: "RR 0.82", vi: "RR 0.82"}, {en: "RR 0.95", vi: "RR 0.95"},
+      {en: "RR 1.00", vi: "RR 1.00"}, {en: "No difference", vi: "Không có sự khác biệt"},
+    ],
+  };
+  assert.equal(verdict(mortality), "duplicate-options", "the live case presented the null effect twice");
+  assert.equal(verdict({...mortality, options: [...mortality.options.slice(0, 3),
+    {en: "No significant difference", vi: "Không khác biệt có ý nghĩa thống kê"}]}), "",
+  "no statistical significance is not identical to a point estimate of exactly one");
+  for (const duplicate of [{en: "Null", vi: "No data"}, {en: "No data", vi: "Không khác biệt"}]) {
+    assert.equal(verdict({...mortality, options: [...mortality.options.slice(0, 2),
+      {en: "HR 1.0", vi: "HR = 1,0 (không thay đổi)"}, duplicate]}), "duplicate-options",
+    "a semantic duplicate in only one language still rejects the case");
+  }
   publishLessons([pci]);
   const pciLogs = [];
   let pciCalls = 0;
@@ -298,6 +393,9 @@ const quiet = () => {};
       assert.match(system.content, /root JSON object must have exactly one key, "questions"/);
       assert.match(system.content, /Do not offer its CI bounds 0\.61 or 0\.85 as distractors/);
       assert.match(system.content, /Do not use another endpoint’s effect size/);
+      assert.match(system.content, /target lesion failure .*target lesion revascularization .*target vessel revascularization/);
+      assert.match(system.content, /Translate angiography guidance as hướng dẫn bằng chụp mạch/);
+      assert.match(system.content, /Do not offer both RR\/HR = 1\.00 and “no difference”/);
       if (++pciCalls === 1) return reply({questions: [pciItem]});
       virtualTime++;
       return reply({items: [pciItem]});
