@@ -6883,11 +6883,17 @@
     function renderTeachingSections(briefing, isVi, block) {
       const notes = briefing.teaching?.[isVi ? "vi" : "en"];
       if (!notes) return "";
+      const mechanismLabels = {
+        "intracoronary-imaging-pci-ma": ["Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
+        "laac-high-risk-af-ipd-ma": ["Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"],
+      };
+      const [mechVi, mechEn] = mechanismLabels[briefing.primary_source?.id] || [
+        "Cơ chế và bối cảnh lâm sàng",
+        "Mechanism and clinical rationale",
+      ];
       const sections = block === "source_summary" ? [
         ["summary", "Nguồn này nói gì", "What this source says"],
-        briefing.primary_source?.id === "laac-high-risk-af-ipd-ma"
-          ? ["mechanism", "Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"]
-          : ["mechanism", "Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"],
+        ["mechanism", mechVi, mechEn],
         ["evidence_shift", "Bằng chứng đã thay đổi cách nghĩ ra sao", "How evidence changed the question"],
         ["application", "Áp dụng qua một ca giả định", "Applying the evidence to a teaching case"],
         ["pitfalls", "Những bẫy khi áp dụng", "Pitfalls in application"],

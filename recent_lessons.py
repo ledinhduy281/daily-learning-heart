@@ -43,6 +43,21 @@ SECTION_LABELS = {
 }
 
 
+MECHANISM_LABELS = {
+    "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
+    "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
+}
+
+
+def section_label(lang, key, source=None):
+    if key == "mechanism" and source:
+        pair = MECHANISM_LABELS.get(source.get("id"))
+        if pair:
+            return pair[0 if lang == "vi" else 1]
+        return "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical rationale"
+    return SECTION_LABELS[lang][key]
+
+
 # Verbatim guideline recommendation lines entered by a physician from the original PDF, keyed by source id.
 # Each line is {"text": "... [[number]] ...", "class": "I", "level": "A", "locator": "Table 5, p. 12"};
 # mark one number per line with [[ ]] so the quiz can blank it. Guidelines without lines have no quiz.
@@ -222,14 +237,11 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
-    if source["id"] == "laac-high-risk-af-ipd-ma":
-        labels = {**labels, "mechanism": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"
-                                         if lang == "vi" else "How appendage closure changes risk")}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
     def sections(keys):
-        return "".join(f"\n\n### {labels[key]}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
+        return "".join(f"\n\n### {section_label(lang, key, source)}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
 
     a = "Nguồn chính" if lang == "vi" else "Primary source"
     b = "Đọc kỹ cùng nguồn" if lang == "vi" else "Close reading of the same source"
