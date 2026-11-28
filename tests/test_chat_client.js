@@ -230,6 +230,17 @@ async function checkFocusedPastedQuestions() {
   const staree = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42670961');
   const poet = Object.values(bundle.focused_lessons).find(b => b.primary_source?.pmid === '42663314');
   for (const [lang, question, evidence] of [
+    ['en', 'How many antibiotic-free days did POET II find?', /13 additional days alive without antibiotics/],
+    ['en', 'How many days alive without antibiotics did POET II report?', /13 additional days alive without antibiotics/],
+    ['vi', 'POET II ghi nhận thêm bao nhiêu ngày sống không kháng sinh?', /thêm 13 ngày sống không dùng kháng sinh/]
+  ]) {
+    for (const verbosity of ['short', 'medium']) {
+      const {markdown, sources} = await chat.composeClientDeterministicAnswer(question, poet, [], null, lang, verbosity);
+      assert.match(markdown, evidence);
+      assert.equal(sources[0].pmid, '42663314');
+    }
+  }
+  for (const [lang, question, evidence] of [
     ['en', 'How many patients were assigned to the tailored arm in POET II?', /255 tailored/],
     ['vi', 'POET II có bao nhiêu người được phân vào nhóm điều chỉnh?', /255 điều chỉnh/]
   ]) {

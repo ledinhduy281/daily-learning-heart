@@ -47,6 +47,9 @@ MECHANISM_LABELS = {
     "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
     "af-pci-antithrombotic-ipd-nma": ("Vì sao cần cân bằng huyết khối và chảy máu", "Why thrombosis and bleeding must be balanced"),
     "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
+    "poet-ii-response-tailored-antibiotics": ("Cơ sở sinh lý bệnh", "Pathophysiology"),
+    "staree-atorvastatin-older-adults": ("Vì sao hạ LDL-C có thể giảm biến cố tim mạch",
+                                        "Why lowering LDL-C can reduce cardiovascular events"),
 }
 
 

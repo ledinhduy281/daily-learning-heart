@@ -29,13 +29,27 @@ assert.ok(datedPci.teaching.vi.mechanism.length);
 const afPci = bundle.focused_lessons["4"];
 assert.equal(afPci.primary_source.pmid, "42669062");
 for (const lang of ["vi", "en"]) assert.ok(afPci.teaching[lang].mechanism.length);
+const poet = bundle.focused_lessons[7];
+assert.equal(poet.primary_source.pmid, "42663314");
+for (const [lang, heading] of [["vi", "Cơ sở sinh lý bệnh"], ["en", "Pathophysiology"]]) {
+  const walkthrough = context.renderTeachingSections(poet, lang === "vi", "source_summary");
+  assert.ok(walkthrough.includes(`<h3>${heading}</h3>`), poet.id);
+  for (const key of ["summary", "mechanism", "evidence_shift", "application", "pitfalls"]) {
+    assert.ok(poet.teaching[lang][key].length >= 2, `${poet.id} ${lang} ${key}`);
+  }
+}
 const laac = bundle.focused_lessons["6"];
 assert.equal(laac.primary_source.pmid, "43018508");
 assert.equal(laac.primary_source.doi, "10.1016/j.jacc.2026.09.033");
 const pillar9 = bundle.focused_lessons["9"];
 assert.equal(pillar9.primary_source.pmid, "42910416");
 assert.ok(pillar9.teaching.vi.mechanism.length);
-const lessons = [...templates, datedPci];
+const datedStaree = bundle.briefings.find(lesson => lesson.id === "ebm-2026-11-27-p2-focused");
+for (const staree of [bundle.focused_lessons["2"], datedStaree]) {
+  assert.equal(staree.primary_source.pmid, "42670961");
+  for (const lang of ["vi", "en"]) assert.ok(staree.teaching[lang].mechanism.length);
+}
+const lessons = [...templates, datedPci, datedStaree];
 assert.match(html, /id="trialsSection">\s*<div[^>]*id="trialsSectionHeading">\s*<span id="trialsSectionTitle">[^<]*<\/span>\s*<\/div>\s*<div[^>]*id="trialsGridDeck">/);
 const refBox = /<div class="guideline-ref-box current">[\s\S]*?\n\s+<\/div>/;
 for (const lesson of lessons) for (const isVi of [true, false]) {
@@ -76,6 +90,11 @@ for (const lesson of lessons) for (const isVi of [true, false]) {
   if (lesson === pillar9) {
     assert.ok(walkthrough.includes(isVi ? "<h3>Cơ chế và bối cảnh lâm sàng</h3>" : "<h3>Mechanism and clinical rationale</h3>"), lesson.id);
     assert.ok(!walkthrough.includes("What angiography can miss") && !walkthrough.includes("Vì sao chụp mạch"), lesson.id);
+  }
+  if (source.pmid === "42670961") {
+    assert.ok(walkthrough.includes(isVi ? "Vì sao hạ LDL-C có thể giảm biến cố tim mạch"
+      : "Why lowering LDL-C can reduce cardiovascular events"), lesson.id);
+    assert.doesNotMatch(walkthrough, /What angiography can miss|Vì sao chụp mạch có thể bỏ sót vấn đề/);
   }
   for (const key of hasDepth ? blockAKeys : ["summary"]) {
     assert.ok(notes[key].every(p => walkthrough.includes(context.escapeHtml(p))), `${lesson.id} ${key}`);
