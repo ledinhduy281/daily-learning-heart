@@ -425,6 +425,13 @@ const quiet = () => {};
     options: [{en: "Reduces cardiovascular mortality", vi: "Giảm tử vong tim mạch"}, ...pciCase.options.slice(1)],
   };
   assert.equal(verdict(cardiovascularMortality), "endpoint", "bilingual agreement does not ground a different endpoint");
+  for (const term of ["mortality from cardiovascular causes", "death from cardiovascular causes"]) {
+    const item = {...cardiacMortality,
+      stem_en: cardiacMortality.stem_en.replace("cardiac mortality", term),
+      stem_vi: cardiacMortality.stem_vi.replace("tử vong tim", "tử vong do nguyên nhân tim mạch"),
+    };
+    assert.equal(verdict(item), "endpoint", term + " is not cardiac mortality");
+  }
   const cardiovascularQuote = pciQuote.replace("cardiac mortality", "cardiovascular mortality");
   assert.equal(CaseQuiz.rejectReason({...cardiovascularMortality, quote: cardiovascularQuote}, {...pciGround, excerpts: [cardiovascularQuote]}),
     "", "cardiovascular mortality passes when the cited excerpt actually names it");

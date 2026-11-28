@@ -42,7 +42,7 @@ const CaseQuiz = (() => {
   }
   const wholeWords = (terms, flags) => new RegExp('(?:^| )(' + terms + ')(?= |$)', flags);
   const CARDIAC_DEATH = ['cardiac (?:mortality|deaths?)|deaths? (?:from|due to) cardiac causes?', 'tu vong (?:do )?tim(?! mach\\b)'];
-  const CARDIOVASCULAR_DEATH = ['(?:cardiovascular|cv) (?:mortality|deaths?)|deaths? (?:from|due to) cardiovascular causes?', 'tu vong (?:do )?tim mach'];
+  const CARDIOVASCULAR_DEATH = ['(?:cardiovascular|cv) (?:mortality|deaths?)|(?:mortality|deaths?) (?:from|due to) cardiovascular causes?', 'tu vong (?:do )?(?:nguyen nhan )?tim mach'];
   const CLAIMS = Object.entries({
     mortality: ['deaths?|died|mortality|fatal', 'tu vong|chet'],
     cardiac_mortality: CARDIAC_DEATH,
