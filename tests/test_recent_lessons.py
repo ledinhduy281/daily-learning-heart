@@ -208,6 +208,40 @@ class RecentLessonTests(unittest.TestCase):
                 self.assertRegex(answer, evidence)
                 self.assertNotRegex(answer, r"\*\*[A-D]\*\*")
 
+    def test_direct_chat_prefers_matching_primary_study_findings(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for lang, question, estimate in (
+            ("en", "BPROAD white matter lesions?", "−0.09"),
+            ("vi", "BPROAD tổn thương chất trắng?", "−0,09"),
+        ):
+            for level in ("short", "medium"):
+                with self.subTest(lang=lang, level=level):
+                    answer, sources = app._compose_deterministic_ebm_answer(
+                        question, [lesson], [], lang, verbosity=level,
+                    )
+                    self.assertIn(estimate, answer)
+                    self.assertNotIn("SPRINT MIND", answer)
+                    self.assertEqual([source["pmid"] for source in sources], ["43020520"])
+        answer, _ = app._compose_deterministic_ebm_answer(
+            "What did SPRINT MIND find for probable dementia?", [lesson], [], "en",
+        )
+        self.assertIn("did not significantly reduce probable dementia", answer)
+        answer, _ = app._compose_deterministic_ebm_answer("zzzxxyy", [lesson], [], "en")
+        self.assertEqual(answer, "")
+
+    def test_direct_chat_keeps_pci_effect_and_mechanism_answers(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, expected in (
+            ("en", "What was the relative risk of target lesion failure in imaging-guided PCI?", "RR 0.72"),
+            ("vi", "Nguy cơ tương đối của thất bại tổn thương đích trong PCI là bao nhiêu?", "RR 0,72"),
+            ("en", "What is the difference between stent underexpansion and malapposition?", "Underexpansion is not malapposition"),
+        ):
+            with self.subTest(question=question):
+                answer, _ = app._compose_deterministic_ebm_answer(question, [lesson], [], lang)
+                self.assertIn(expected, answer)
+
     def test_local_chat_can_find_reported_absolute_event_rates(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[1], "2026-11-27")

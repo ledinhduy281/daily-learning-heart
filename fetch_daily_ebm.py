@@ -35,7 +35,7 @@ from pathlib import Path
 
 from clinical_mcq import build_mcq, validated_source_items
 from focused_lessons import FOCUSED_EDITION_VERSION, GATE_START_DATE, build_focused_lesson
-from recent_lessons import RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
+from recent_lessons import BLOCK_B_SECTIONS, RECENT_LESSON_VERSION, RECENT_START_DATE, build_recent_lesson, build_recent_templates
 from focused_teaching import EVIDENCE_SECTIONS, GUIDELINE_SECTIONS
 from socratic_quiz import turn as quiz_turn
 
@@ -1968,7 +1968,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     endpoint_text = re.split(
         r"\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
         r"|in (?:the|this) (?:study|trial|paper|analysis|meta-analysis)"
-        r"|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
+        r"|khi|sau|o|voi|trong|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
         endpoint_match[1], maxsplit=1,
     )[0] if endpoint_match else ""
     if not re.match(r"\d", endpoint_text):
@@ -2044,9 +2044,10 @@ def _focused_question_excerpt(question, primary, lang, level):
         groups.append(contraindications)
 
     passages = []
+    single_source = primary.get("lesson_format") == "single_source"
     for language in (lang, "en" if lang == "vi" else "vi"):
         notes = primary["teaching"][language]
-        if primary.get("lesson_format") == "single_source":
+        if single_source:
             if enrolled:
                 preferred = ("findings",) if arm_enrollment else ("design", "findings")
             elif nnt or absolute_benefit:
@@ -2061,8 +2062,9 @@ def _focused_question_excerpt(question, primary, lang, level):
             sections = [[primary["guideline_evolution"][f"recommendation_{language}"]]]
             sections.extend(notes[key] for key in (*GUIDELINE_SECTIONS, *EVIDENCE_SECTIONS))
         for section in sections:
+            is_source_reading = single_source and not preferred and any(section is notes.get(key) for key in BLOCK_B_SECTIONS)
             for paragraph in section:
-                if enrollment_pattern and primary.get("lesson_format") == "single_source":
+                if enrollment_pattern and single_source:
                     if not enrollment_pattern.search(normalize(paragraph)):
                         continue
                 priority = int(bool(enrolled and section is notes.get("design")))
@@ -2073,14 +2075,14 @@ def _focused_question_excerpt(question, primary, lang, level):
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
                     }
                     if hits:
-                        passages.append((hits, sentence, paragraph, section, priority))
+                        passages.append((hits, sentence, paragraph, section, priority, is_source_reading))
 
     if not passages:
         return ""
     frequencies = [sum(i in hits for hits, *_ in passages) for i in range(len(groups))]
     weights = [1 / frequency if frequency else 0 for frequency in frequencies]
-    _, sentence, paragraph, section, _ = max(
-        passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])))
+    _, sentence, paragraph, section, *_ = max(
+        passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])), row[5])
     )
     if level == "short":
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
@@ -2239,6 +2241,10 @@ def _compose_deterministic_ebm_answer(
                 mcq_parts.append(f"- **{'Clinical Pearl' if is_en else 'Điểm nhấn lâm sàng'}:** {_first_clean_sentence(p0, 340)}")
         return _ensure_complete_sentence("\n".join(mcq_parts)), sources
 
+    focused_excerpt = (
+        _focused_question_excerpt(question, primary, lang, eff_level)
+        if primary.get("lesson_format") == "single_source" and primary.get("teaching") else ""
+    )
     # Match relevant sentences inside markdown body + structured evidence
     raw_md = primary.get("part2_en_markdown" if is_en else "part1_vi_markdown", "") or primary.get("part1_vi_markdown", "")
     _q_stop = {
@@ -2253,7 +2259,7 @@ def _compose_deterministic_ebm_answer(
         if k in q_low:
             query_terms.update(syns)
 
-    lines = [
+    lines = [] if focused_excerpt else [
         ln.strip() for ln in raw_md.splitlines()
         if ln.strip()
         and not ln.strip().startswith("#")
@@ -2275,7 +2281,9 @@ def _compose_deterministic_ebm_answer(
     # 2) Short mode -> crisp 1-2 direct clinical sentences (~45-85 words)
     if eff_level == "short":
         short_segs: list[str] = []
-        if scored_lines:
+        if focused_excerpt:
+            short_segs.append(focused_excerpt)
+        elif scored_lines:
             short_segs.append(_first_clean_sentence(scored_lines[0][1], 240))
         elif steps:
             s_last = steps[-1]
@@ -2304,7 +2312,9 @@ def _compose_deterministic_ebm_answer(
     # 3) Medium / balanced direct answer (~130-210 words)
     if eff_level == "medium":
         sections: list[str] = []
-        if scored_lines:
+        if focused_excerpt:
+            sections.append(focused_excerpt)
+        elif scored_lines:
             sections.append(" ".join(_first_clean_sentence(ln, 420) for _, ln in scored_lines[:2]))
         elif steps:
             s_last = steps[-1]
@@ -2336,7 +2346,9 @@ def _compose_deterministic_ebm_answer(
     parts: list[str] = [
         f"**{cur_g.get('name', primary.get('title_en' if is_en else 'title_vi', ''))}** *({'Prior' if is_en else 'Tiền nhiệm'}: {prior_g.get('name', '—')})*"
     ]
-    if scored_lines:
+    if focused_excerpt:
+        parts.append(focused_excerpt)
+    elif scored_lines:
         for _, ln in scored_lines[:3]:
             parts.append(f"- {_first_clean_sentence(ln, 420)}")
     else:
