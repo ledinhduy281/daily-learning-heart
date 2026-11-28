@@ -1932,9 +1932,16 @@ def _focused_question_excerpt(question, primary, lang, level):
     enrolled = not explicit_nnt and re.search(
         r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
         r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)"
-        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
-        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|people|trials?|studies) "
+        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|joined|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
+    cohort_scope = re.search(
+        r"\b(\w+) (?:substudy|subgroup|ancillary study)\b|\b(?:nghien cuu phu|phan nhom) (?:ve )?(\w+)\b",
+        stem,
+    ) if enrolled else None
+    qualifier = next((word for word in cohort_scope.groups() if word), "") if cohort_scope else ""
+    if qualifier in {"the", "a", "this", "that", "cua", "nay"}:
+        qualifier = ""
     arm_enrollment = (
         enrolled
         and not re.search(r"\b(?:both (?:arms|groups)|across (?:the )?(?:arms|groups)|ca hai nhom|tat ca cac nhom)\b", stem)
@@ -2019,6 +2026,8 @@ def _focused_question_excerpt(question, primary, lang, level):
         )
         if arm_enrollment:
             query = stem
+        elif qualifier:
+            query += f" {qualifier}"
         enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
@@ -2026,7 +2035,10 @@ def _focused_question_excerpt(question, primary, lang, level):
             r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom"
             r"|\s+(?:were (?:randomi[sz]ed|assigned)|duoc phan nhom)\s*\(\s*\d)"
         ) if arm_enrollment else ""
-        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_context}")
+        enrollment_count = rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_context}"
+        if qualifier:
+            enrollment_count += r"|\bn\s*=\s*\d+"
+        enrollment_pattern = re.compile(enrollment_count)
     else:
         if nnt:
             query = "nnt"
@@ -2070,6 +2082,10 @@ def _focused_question_excerpt(question, primary, lang, level):
                 priority = int(bool(enrolled and section is notes.get("design")))
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
                     clean = normalize(sentence)
+                    if single_source and qualifier and not (
+                        contains(clean, qualifier) and enrollment_pattern.search(clean)
+                    ):
+                        continue
                     hits = {
                         i for i, aliases in enumerate(groups)
                         if any(contains(clean, a) or (a.endswith("s") and contains(clean, a[:-1])) for a in aliases)
@@ -2085,6 +2101,8 @@ def _focused_question_excerpt(question, primary, lang, level):
         passages, key=lambda row: (row[4], sum(weights[i] for i in sorted(row[0])), row[5])
     )
     if level == "short":
+        if single_source and qualifier:
+            return sentence
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
         start = max(0, sentences.index(sentence) - 1)
         return " ".join(sentences[start:start + 2])

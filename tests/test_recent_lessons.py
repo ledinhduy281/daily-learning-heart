@@ -230,6 +230,23 @@ class RecentLessonTests(unittest.TestCase):
         answer, _ = app._compose_deterministic_ebm_answer("zzzxxyy", [lesson], [], "en")
         self.assertEqual(answer, "")
 
+    def test_chat_keeps_substudy_qualifier_in_enrollment_questions(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[9], "2026-11-25")
+        for lang, question in (
+            ("en", "How many people joined BPROAD's MRI substudy?"),
+            ("en", "How many patients were included in the BPROAD MRI substudy?"),
+            ("vi", "Nghiên cứu phụ MRI của BPROAD gồm bao nhiêu người tham gia?"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(lang=lang, question=question, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], lang, verbosity="short",
+                    )
+                    self.assertIn("n=862", answer)
+                    self.assertIn("n=605", answer)
+                    self.assertNotRegex(answer, r"12[ ,](?:434|821)")
+
     def test_direct_chat_keeps_pci_effect_and_mechanism_answers(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
