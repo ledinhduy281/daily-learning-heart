@@ -62,6 +62,32 @@ class RecentLessonTests(unittest.TestCase):
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
 
+    def test_pillar_9_aortic_surgery_walkthrough_keeps_depth_and_generic_heading(self):
+        lesson = build_recent_lesson(PILLARS[8], RECENT_EDITION_DATE)
+        self.assertEqual(lesson["primary_source"]["pmid"], "42910416")
+        for lang, field, expected_heading in (
+            ("vi", "part1_vi_markdown", "Cơ chế và bối cảnh lâm sàng"),
+            ("en", "part2_en_markdown", "Mechanism and clinical rationale"),
+        ):
+            with self.subTest(lang=lang):
+                notes = lesson["teaching"][lang]
+                block_a, block_b = lesson[field].split("## Block B")
+                self.assertIn(f"### {expected_heading}\n", block_a)
+                self.assertNotIn("chụp mạch", block_a.lower())
+                self.assertNotIn("angiography", block_a.lower())
+                for keys, block, other in ((recent_lessons.BLOCK_A_SECTIONS, block_a, block_b),
+                                           (recent_lessons.BLOCK_B_SECTIONS, block_b, block_a)):
+                    for key in keys:
+                        label = recent_lessons.section_label(lang, key, lesson["primary_source"])
+                        self.assertIn(f"### {label}\n", block)
+                        for paragraph in notes[key]:
+                            self.assertIn(paragraph, block)
+                            self.assertNotIn(paragraph, other)
+                for excerpt in lesson["source_excerpts"]:
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
+        self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
+                                    for p in lesson["teaching"]["vi"][key]), 1200)
+
     def test_recorded_walkthrough_rejects_partial_and_mismatched_depth(self):
         pillar, day = PILLARS[2], "2026-11-28"
         lesson = build_recent_lesson(pillar, day)
@@ -87,7 +113,7 @@ class RecentLessonTests(unittest.TestCase):
             with self.subTest(lang=lang):
                 block_a, block_b = lesson[field].split("## Block B")
                 labels = {**recent_lessons.SECTION_LABELS[lang], "mechanism":
-                          "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical context"}
+                          "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical rationale"}
                 for key in recent_lessons.BLOCK_A_SECTIONS:
                     self.assertIn(f"### {labels[key]}\n", block_a)
                     for paragraph in lesson["teaching"][lang][key]:

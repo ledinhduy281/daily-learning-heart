@@ -42,7 +42,20 @@ SECTION_LABELS = {
            "findings": "Main results", "limits": "Limits of application", "pearls": "Take-home points for rounds"},
 }
 
-GENERIC_MECHANISM_LABEL = {"vi": "Cơ chế và bối cảnh lâm sàng", "en": "Mechanism and clinical context"}
+
+MECHANISM_LABELS = {
+    "intracoronary-imaging-pci-ma": ("Vì sao chụp mạch có thể bỏ sót vấn đề", "What angiography can miss"),
+    "laac-high-risk-af-ipd-ma": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ", "How appendage closure changes risk"),
+}
+
+
+def section_label(lang, key, source=None):
+    if key == "mechanism" and source:
+        pair = MECHANISM_LABELS.get(source.get("id"))
+        if pair:
+            return pair[0 if lang == "vi" else 1]
+        return "Cơ chế và bối cảnh lâm sàng" if lang == "vi" else "Mechanism and clinical rationale"
+    return SECTION_LABELS[lang][key]
 
 
 # Verbatim guideline recommendation lines entered by a physician from the original PDF, keyed by source id.
@@ -224,16 +237,11 @@ def excerpt_markdown(excerpt, lang):
 def recent_markdown(lesson, lang):
     source, notes = lesson["primary_source"], lesson["teaching"][lang]
     labels = SECTION_LABELS[lang]
-    if source["id"] == "laac-high-risk-af-ipd-ma":
-        labels = {**labels, "mechanism": ("Vì sao đóng tiểu nhĩ làm thay đổi nguy cơ"
-                                         if lang == "vi" else "How appendage closure changes risk")}
-    elif source["id"] != "intracoronary-imaging-pci-ma":
-        labels = {**labels, "mechanism": GENERIC_MECHANISM_LABEL[lang]}
     curated = ("Biên soạn từ nguồn trích dẫn — chưa được bác sĩ duyệt" if lang == "vi"
                else "Curated from the cited source — not yet physician-reviewed")
 
     def sections(keys):
-        return "".join(f"\n\n### {labels[key]}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
+        return "".join(f"\n\n### {section_label(lang, key, source)}\n\n" + "\n\n".join(notes[key]) for key in keys if key in notes)
 
     a = "Nguồn chính" if lang == "vi" else "Primary source"
     b = "Đọc kỹ cùng nguồn" if lang == "vi" else "Close reading of the same source"
