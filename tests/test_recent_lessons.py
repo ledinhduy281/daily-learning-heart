@@ -56,7 +56,7 @@ class RecentLessonTests(unittest.TestCase):
                             self.assertIn(paragraph, block)
                             self.assertNotIn(paragraph, other)
                 for excerpt in lesson["source_excerpts"]:
-                    self.assertIn(excerpt["text"], block_b)
+                    self.assertIn("> " + excerpt["text"], block_b.replace(r"\[", "[").replace(r"\]", "]"))
         self.assertGreaterEqual(sum(len(p.split()) for key in recent_lessons.BLOCK_A_SECTIONS
                                     for p in lesson["teaching"]["vi"][key]), 1200)
 
