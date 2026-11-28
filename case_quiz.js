@@ -183,17 +183,17 @@ const CaseQuiz = (() => {
   }
 
   const PCI_ENDPOINT_TERMS = Object.entries({
-    lesion_failure: ['target lesion failure|tlf', 'that bai ton thuong (?:dich|muc tieu)|tlf'],
-    vessel_failure: ['target vessel failure|tvf', 'that bai mach (?:dich|muc tieu)|tvf'],
-    lesion_revascularization: ['target lesion revasculari[sz]ation|tlr', 'tai (?:thong|tuoi mau|can thiep) ton thuong (?:dich|muc tieu)|tlr'],
-    vessel_revascularization: ['target vessel revasculari[sz]ation|tvr', 'tai (?:thong|tuoi mau|can thiep) mach (?:dich|muc tieu)|tvr'],
-    cardiac_death: ['cardiac (?:mortality|death)|death from cardiac causes', 'tu vong (?:do )?tim(?: mach)?'],
-    infarction: ['myocardial infarction|mi', 'nhoi mau co tim|nmct|mi'],
-    stent_thrombosis: ['stent thrombosis', 'huyet khoi (?:trong )?(?:stent|gia do)'],
-    all_cause_death: ['all cause (?:mortality|death)|death from any cause', 'tu vong (?:do )?(?:moi nguyen nhan|tat ca cac nguyen nhan|toan nguyen)'],
-    stroke: ['stroke', 'dot quy|tai bien mach mau nao'],
-    sudden_death: ['sudden cardiac death', 'dot tu tim|tu vong tim dot ngot'],
-    non_st_infarction: ['non st elevation myocardial infarction|nstemi', 'nhoi mau co tim khong st chenh len|nstemi'],
+    lesion_failure: ['target lesion failures?|tlf', 'that bai ton thuong (?:dich|muc tieu)|tlf'],
+    vessel_failure: ['target vessel failures?|tvf', 'that bai mach (?:dich|muc tieu)|tvf'],
+    lesion_revascularization: ['target lesion revasculari[sz]ations?|tlr', 'tai (?:thong|tuoi mau|can thiep) ton thuong (?:dich|muc tieu)|tlr'],
+    vessel_revascularization: ['target vessel revasculari[sz]ations?|tvr', 'tai (?:thong|tuoi mau|can thiep) mach (?:dich|muc tieu)|tvr'],
+    cardiac_death: ['cardiac (?:mortality|deaths?)|deaths? from cardiac causes?', 'tu vong (?:do )?tim(?: mach)?'],
+    infarction: ['myocardial infarctions?|mis?', 'nhoi mau co tim|nmct|mi'],
+    stent_thrombosis: ['stent thrombos(?:is|es)', 'huyet khoi (?:trong )?(?:stent|gia do)'],
+    all_cause_death: ['all cause (?:mortality|deaths?)|deaths? from any cause', 'tu vong (?:do )?(?:moi nguyen nhan|tat ca cac nguyen nhan|toan nguyen)'],
+    stroke: ['strokes?', 'dot quy|tai bien mach mau nao'],
+    sudden_death: ['sudden cardiac deaths?', 'dot tu tim|tu vong tim dot ngot'],
+    non_st_infarction: ['non st elevation myocardial infarctions?|nstemis?', 'nhoi mau co tim khong st chenh len|nstemi'],
   });
   const PCI_ENDPOINTS = PCI_ENDPOINT_TERMS.map(([name, [en, vi]]) => [name, {en: wholeWords(en), vi: wholeWords(vi)}]);
   const PCI_HISTORY = Object.fromEntries([

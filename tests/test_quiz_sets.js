@@ -327,6 +327,24 @@ const quiet = () => {};
     stem_en: cardiacMortality.stem_en.replace("affects cardiac mortality", "affects myocardial infarction"),
     stem_vi: cardiacMortality.stem_vi.replace("đến tử vong tim", "đến nhồi máu cơ tim"),
   }), "endpoint", "MI in the question still has to match the keyed result");
+  assert.equal(verdict({...cardiacMortality,
+    explanation_en: "The meta-analysis reported fewer cardiac deaths with imaging-guided PCI (RR 0.73) than with angiography-guided PCI.",
+  }), "", "cardiac deaths and cardiac mortality identify the same cited endpoint");
+  assert.equal(verdict({...vessel,
+    options: [{...vessel.options[0], en: "Fewer target vessel revascularizations"}, ...vessel.options.slice(1)],
+  }), "", "plural revascularizations match the singular endpoint in the excerpt");
+  assert.equal(verdict({...vessel,
+    options: [{...vessel.options[0], en: "Fewer target lesion revascularizations"}, ...vessel.options.slice(1)],
+  }), "endpoint", "pluralizing an unsupported endpoint does not make it equivalent");
+  const infarctions = {
+    ...cardiacMortality,
+    stem_en: cardiacMortality.stem_en.replace("affects cardiac mortality", "affects myocardial infarctions"),
+    stem_vi: cardiacMortality.stem_vi.replace("đến tử vong tim", "đến nhồi máu cơ tim"),
+    explanation_en: cardiacMortality.explanation_en.replace("cardiac mortality (RR 0.73)", "myocardial infarctions (RR 0.86)"),
+    explanation_vi: cardiacMortality.explanation_vi.replace("tử vong tim (RR 0,73)", "nhồi máu cơ tim (RR 0,86)"),
+    options: [{en: "Fewer myocardial infarctions", vi: "Giảm nhồi máu cơ tim"}, ...pciCase.options.slice(1)],
+  };
+  assert.equal(verdict(infarctions), "", "plural infarctions in the stem, key and explanation match cited myocardial infarction");
 
   const mortality = {...pciCase,
     stem_en: "A 66-year-old patient is scheduled for PCI. What is the relative risk for all-cause mortality with imaging guidance compared with angiography?",
