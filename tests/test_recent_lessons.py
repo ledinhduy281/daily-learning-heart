@@ -172,6 +172,13 @@ class RecentLessonTests(unittest.TestCase):
                 answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
                 self.assertIn("12 434", answer)
                 self.assertNotIn("6219", answer)
+        for lang, question, expected in (
+            ("en", "How many BPROAD participants received intensive treatment?", "6219 participants in the intensive group"),
+            ("vi", "BPROAD có bao nhiêu người được phân vào nhóm điều trị tích cực?", "6219 người ở nhóm tích cực"),
+        ):
+            with self.subTest(lang=lang):
+                answer, _ = app._compose_deterministic_ebm_answer(question + "\nA. First\nB. Second\nC. Third\nD. Fourth", [lesson], [], lang)
+                self.assertIn(expected, answer)
 
     def test_local_chat_keeps_reported_absolute_and_relative_risk_together(self):
         import fetch_daily_ebm as app

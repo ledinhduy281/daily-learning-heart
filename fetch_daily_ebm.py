@@ -1931,10 +1931,11 @@ def _focused_question_excerpt(question, primary, lang, level):
     explicit_nnt = re.search(r"\b(?:nnt|number needed to treat)\b", stem)
     enrolled = not explicit_nnt and re.search(
         r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
-        r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|tham gia)"
+        r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)"
         r"|how many (?:\w+ ){0,3}(?:patients?|participants?|trials?|studies) "
-        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed)|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
+        r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
+    arm_enrollment = enrolled and re.search(r"\b(?:arm|group|received|assigned to|randomi[sz]ed to|nhom|duoc phan vao|duoc dieu tri)\b", stem)
     nnt = explicit_nnt or re.search(
         r"\b(?:how many .+\b(?:to prevent|need(?:ed)? (?:to be )?treat(?:ed|ment))"
         r"|(?:dieu tri bao nhieu|bao nhieu .+can (?:duoc )?dieu tri) .+\b(?:de ngan|de phong|de tranh))\b", stem
@@ -1969,10 +1970,13 @@ def _focused_question_excerpt(question, primary, lang, level):
         query = ("trials studies rct rcts" if lang == "en" else "thu nghiem nghien cuu rct") if trials else (
             "patients participants adults individuals people enrolled included" if lang == "en" else "benh nhan nguoi tuyen dua vao"
         )
+        if arm_enrollment:
+            query = stem
         enrollment_unit = r"(?:(?:randomi[sz]ed) )?(?:rcts?|trials?|studies|thu nghiem|nghien cuu)" if trials else (
             r"(?:patients?|participants?|adults?|individuals?|people|benh nhan|nguoi)"
         )
-        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b")
+        arm_suffix = r"(?:\s+in (?:the )?(?:[\w-]+ ){0,3}(?:arm|group)|\s+(?:o|thuoc) nhom)" if arm_enrollment else ""
+        enrollment_pattern = re.compile(rf"\b\d+(?:[., ]\d{{3}})*\s+{enrollment_unit}\b{arm_suffix}")
     else:
         if nnt:
             query = "nnt"
@@ -1994,7 +1998,7 @@ def _focused_question_excerpt(question, primary, lang, level):
         notes = primary["teaching"][language]
         if primary.get("lesson_format") == "single_source":
             if enrolled:
-                preferred = ("design", "findings")
+                preferred = ("findings",) if arm_enrollment else ("design", "findings")
             elif nnt or absolute_benefit:
                 preferred = ("pitfalls", "limits")
             elif follow_up:
