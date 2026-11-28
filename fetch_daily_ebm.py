@@ -1967,6 +1967,7 @@ def _focused_question_excerpt(question, primary, lang, level):
         endpoint_match = re.search(absolute_pattern + endpoint_pattern, stem)
     endpoint_text = re.split(
         r"\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)"
+        r"|in (?:the|this) (?:study|trial|paper|analysis|meta-analysis)"
         r"|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) (?=" + risk_pattern + ")",
         endpoint_match[1], maxsplit=1,
     )[0] if endpoint_match else ""

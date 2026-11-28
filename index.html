@@ -8763,7 +8763,7 @@
           const endpointPattern = / (?:of|for|cua|cho) (?:the |a |an |cac )?((?:\d+(?:[.,]\d+)?%|[a-z])[^?.!;]*)/.source;
           const endpointMatch = stem.match(new RegExp(riskTerms.source + /(?: (?:of )?\d+(?:[.,]\d+)?)?/.source + endpointPattern))
             || (absoluteBenefit && stem.match(new RegExp(absoluteTerms.source + endpointPattern)));
-          const endpointEnd = new RegExp(/\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) /.source + "(?=" + riskTerms.source + ")");
+          const endpointEnd = new RegExp(/\b(?:with|from|after|among|under|reported|did|was|were|using|based on|given|be (?:calculated|estimated|derived)|in (?:the|this) (?:study|trial|paper|analysis|meta-analysis)|khi|sau|o|voi|la|bao nhieu)\b|\b(?:tu|dua vao|dung) /.source + "(?=" + riskTerms.source + ")");
           let endpointText = endpointMatch?.[1]?.split(endpointEnd)[0] || "";
           if (!/^\d/.test(endpointText)) endpointText = endpointText.split(/\bin\b/)[0];
           const endpoints = endpointText
