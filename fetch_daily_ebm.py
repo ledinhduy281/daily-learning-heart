@@ -1932,7 +1932,7 @@ def _focused_question_excerpt(question, primary, lang, level):
     enrolled = not explicit_nnt and re.search(
         r"\b(?:sample size|co mau|(?:gom|tuyen|thu nhan) bao nhieu (?:benh nhan|nguoi|thu nghiem|nghien cuu)"
         r"|bao nhieu (?:benh nhan|nguoi) (?:duoc dua vao|duoc phan vao|duoc dieu tri|tham gia)"
-        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|people|trials?|studies) "
+        r"|how many (?:\w+ ){0,3}(?:patients?|participants?|people|trials?|studies|rcts?) "
         r"(?:(?:was|were) (?:included|enrolled|recruited|randomi[sz]ed|assigned)|joined|received|did\b.*\b(?:include|enroll|recruit|randomi[sz]e)))\b", stem
     )
     cohort_scope = re.search(
@@ -2019,9 +2019,10 @@ def _focused_question_excerpt(question, primary, lang, level):
         r"nao|dung|sai|nhan dinh|phat bieu|phuong an|sau day|trong bai hom nay)\b",
         " ", stem,
     )
+    trials = False
     if enrolled:
-        trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies)|bao nhieu (?:thu nghiem|nghien cuu))\b", stem)
-        query = ("trials studies rct rcts" if lang == "en" else "thu nghiem nghien cuu rct") if trials else (
+        trials = re.search(r"\b(?:how many (?:\w+ ){0,3}(?:trials?|studies|rcts?)|bao nhieu (?:thu nghiem|nghien cuu|rcts?))\b", stem)
+        query = "" if trials else (
             "patients participants adults individuals people enrolled included" if lang == "en" else "benh nhan nguoi tuyen dua vao"
         )
         if arm_enrollment:
@@ -2049,6 +2050,8 @@ def _focused_question_excerpt(question, primary, lang, level):
         elif risk_estimate:
             query = re.sub(risk_pattern, "rr", query)
     groups = search_terms(query)
+    if trials and not arm_enrollment:
+        groups.append(("trials", "studies", "rcts", "thu nghiem", "nghien cuu"))
     if not groups:
         return ""
     contraindications = ("contraindicated", "contraindications", "chong chi dinh", "do not combine", "khong dung cung")
@@ -2058,7 +2061,9 @@ def _focused_question_excerpt(question, primary, lang, level):
     passages = []
     single_source = primary.get("lesson_format") == "single_source"
     for language in (lang, "en" if lang == "vi" else "vi"):
-        notes = primary["teaching"][language]
+        notes = primary["teaching"].get(language)
+        if not notes:
+            continue
         if single_source:
             if enrolled:
                 preferred = ("findings",) if arm_enrollment else ("design", "findings")
@@ -2082,6 +2087,8 @@ def _focused_question_excerpt(question, primary, lang, level):
                 priority = int(bool(enrolled and section is notes.get("design")))
                 for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
                     clean = normalize(sentence)
+                    if single_source and trials and not enrollment_pattern.search(clean):
+                        continue
                     if single_source and qualifier and not (
                         contains(clean, qualifier) and enrollment_pattern.search(clean)
                     ):
@@ -2092,6 +2099,8 @@ def _focused_question_excerpt(question, primary, lang, level):
                     }
                     if hits:
                         passages.append((hits, sentence, paragraph, section, priority, is_source_reading))
+        if passages and single_source:
+            break
 
     if not passages:
         return ""

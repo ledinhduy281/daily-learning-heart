@@ -247,6 +247,26 @@ class RecentLessonTests(unittest.TestCase):
                     self.assertIn("n=605", answer)
                     self.assertNotRegex(answer, r"12[ ,](?:434|821)")
 
+    def test_chat_returns_trial_counts_in_the_requested_language(self):
+        import fetch_daily_ebm as app
+        lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
+        for lang, question, estimate in (
+            ("en", "How many trials were included in the PCI meta-analysis?", r"\b28 trials\b"),
+            ("en", "How many RCTs were included in the PCI meta-analysis?", r"\b28 trials\b"),
+            ("vi", "Phân tích gộp PCI gồm bao nhiêu thử nghiệm?", r"\b28 thử nghiệm\b"),
+        ):
+            for suffix in ("", "\nA. First\nB. Second\nC. Third\nD. Fourth"):
+                with self.subTest(lang=lang, pasted=bool(suffix)):
+                    answer, _ = app._compose_deterministic_ebm_answer(
+                        question + suffix, [lesson], [], lang, verbosity="short",
+                    )
+                    self.assertRegex(answer, estimate)
+        del lesson["teaching"]["en"]
+        answer, _ = app._compose_deterministic_ebm_answer(
+            "How many trials were included in the PCI meta-analysis?", [lesson], [], "en", verbosity="short",
+        )
+        self.assertRegex(answer, r"\b28 thử nghiệm\b")
+
     def test_direct_chat_keeps_pci_effect_and_mechanism_answers(self):
         import fetch_daily_ebm as app
         lesson = build_recent_lesson(PILLARS[2], "2026-11-28")
