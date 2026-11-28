@@ -41,9 +41,12 @@ const CaseQuiz = (() => {
     return {en, vi, original};
   }
   const wholeWords = (terms, flags) => new RegExp('(?:^| )(' + terms + ')(?= |$)', flags);
+  const CARDIAC_DEATH = ['cardiac (?:mortality|deaths?)|deaths? (?:from|due to) cardiac causes?', 'tu vong (?:do )?tim(?! mach\\b)'];
+  const CARDIOVASCULAR_DEATH = ['(?:cardiovascular|cv) (?:mortality|deaths?)|(?:mortality|deaths?) (?:from|due to) cardiovascular causes?', 'tu vong (?:do )?(?:nguyen nhan )?tim mach'];
   const CLAIMS = Object.entries({
     mortality: ['deaths?|died|mortality|fatal', 'tu vong|chet'],
-    cardiovascular_mortality: ['(?:cardiovascular|cardiac|cv) (?:deaths?|mortality)|deaths? (?:from|due to) cardiovascular causes?', 'tu vong (?:do )?tim mach'],
+    cardiac_mortality: CARDIAC_DEATH,
+    cardiovascular_mortality: CARDIOVASCULAR_DEATH,
     all_cause_mortality: ['all cause (?:deaths?|mortality)|death from any cause', 'tu vong (?:do )?(?:moi|tat ca cac) nguyen nhan'],
     myocardial_infarction: ['myocardial infarctions?|heart attacks?|mi', 'nhoi mau co tim|nmct', 'MI'],
     stroke: ['strokes?|cerebrovascular accidents?', 'dot quy|tai bien mach mau nao'],
@@ -100,7 +103,8 @@ const CaseQuiz = (() => {
   const CLAIM_LANGUAGES = ['vi', 'en'];
   const qualifierClaims = (value, lang) => QUALIFIERS[lang].flatMap(([kind, re]) =>
     [...value[lang].matchAll(re)].map(([, , match]) => kind + ' ' + match));
-  const matchesClaim = (re, value, lang) => re[lang].test(value[lang]) || (lang === 'vi' && re.acronym?.test(value.original));
+  const matchesClaim = (re, value, lang) => re[lang].test(value[lang]) || (lang === 'vi' && !!re.acronym?.test(value.original));
+  const MORTALITY_SUBTYPES = CLAIMS.filter(([kind]) => ['cardiac_mortality', 'cardiovascular_mortality'].includes(kind));
 
   function unsupportedClaims(item) {
     const correct = item.options[KEYS.indexOf(item.answer)];
@@ -117,6 +121,12 @@ const CaseQuiz = (() => {
           found.add(kind);
         }
         for (const qualifier of qualifierClaims(claim, lang)) if (!cited.has(qualifier)) found.add(qualifier);
+      }
+    }
+    for (const [en, vi] of [[correct.en, correct.vi], [item.explanation_en, item.explanation_vi]]) {
+      const english = claimText(en), vietnamese = claimText(vi);
+      for (const [kind, pattern] of MORTALITY_SUBTYPES) {
+        if (matchesClaim(pattern, english, 'en') !== matchesClaim(pattern, vietnamese, 'vi')) found.add(kind);
       }
     }
     return [...found];
@@ -187,7 +197,8 @@ const CaseQuiz = (() => {
     vessel_failure: ['target vessel failures?|tvf', 'that bai mach (?:dich|muc tieu)|tvf'],
     lesion_revascularization: ['target lesion revasculari[sz]ations?|tlr', 'tai (?:thong|tuoi mau|can thiep) ton thuong (?:dich|muc tieu)|tlr'],
     vessel_revascularization: ['target vessel revasculari[sz]ations?|tvr', 'tai (?:thong|tuoi mau|can thiep) mach (?:dich|muc tieu)|tvr'],
-    cardiac_death: ['cardiac (?:mortality|deaths?)|deaths? from cardiac causes?', 'tu vong (?:do )?tim(?: mach)?'],
+    cardiac_death: CARDIAC_DEATH,
+    cardiovascular_death: CARDIOVASCULAR_DEATH,
     infarction: ['myocardial infarctions?|mis?', 'nhoi mau co tim|nmct|mi'],
     stent_thrombosis: ['stent thrombos(?:is|es)', 'huyet khoi (?:trong )?(?:stent|gia do)'],
     all_cause_death: ['all cause (?:mortality|deaths?)|deaths? from any cause', 'tu vong (?:do )?(?:moi nguyen nhan|tat ca cac nguyen nhan|toan nguyen)'],
@@ -232,11 +243,23 @@ const CaseQuiz = (() => {
       return PCI_VIGNETTE[lang].test(words) ? words.replace(PCI_HISTORY[lang], '') : words;
     });
   }
+  const PCI_IMAGING_TERMS = {
+    en: '(?:(?:intracoronary |intravascular )?imaging|ici|ivus|oct)',
+    vi: '(?:hinh anh(?: noi mach)?|ici|ivus|oct)',
+  };
   const PCI_GUIDANCE = [
     {en: wholeWords('angiograph(?:y|ic)'), vi: wholeWords('chup (?:dong )?mach(?: vanh)?')},
-    {en: wholeWords('(?:intracoronary )?imaging|ici|ivus|oct'), vi: wholeWords('hinh anh(?: noi mach)?|ici|ivus|oct')},
+    {en: wholeWords(PCI_IMAGING_TERMS.en), vi: wholeWords(PCI_IMAGING_TERMS.vi)},
   ];
   const PCI_BAD_TRANSLATION = wholeWords('nhieu anh|angiograph(?:y|ic)|chi dinh noi mach|chi dan noi mach');
+  const PCI_WITH_OR_WITHOUT_IMAGING = {
+    en: wholeWords('with or without ' + PCI_IMAGING_TERMS.en),
+    vi: wholeWords('co (?:hoac|hay|va) khong(?: co)? (?:huong dan bang )?' + PCI_IMAGING_TERMS.vi),
+  };
+  const PCI_NO_IMAGING = {
+    en: wholeWords('(?:no|without) (?:intracoronary |intravascular )?imaging|(?:not |non )imaging guided'),
+    vi: wholeWords('khong(?: co| dung| su dung)? (?:huong dan bang )?hinh anh'),
+  };
   const PCI = wholeWords('pci|percutaneous coronary intervention');
   const sameSet = (a, b) => a.size === b.size && [...a].every(n => b.has(n));
 
@@ -262,6 +285,10 @@ const CaseQuiz = (() => {
     const endpoints = (field, lang, isStem) => new Set(fragments(field, lang, isStem).flatMap(words => [...pciEndpointNames(words, lang)]));
     const claims = patterns => fields.some(field => CLAIM_LANGUAGES.some(lang =>
       fragments(field[lang], lang, field.isStem).some(words => patterns[lang].test(words))));
+    if (citedExcerpts(item).some(quote => comparesImagingPci(quote)) && fields.some(field =>
+      CLAIM_LANGUAGES.some(lang => projectionClauses(field[lang], lang).some(clause =>
+        PCI_WITH_OR_WITHOUT_IMAGING[lang].test(clause) ||
+        PCI_NO_IMAGING[lang].test(clause) && !PCI_GUIDANCE[0][lang].test(clause))))) return 'comparator';
     if (claims(PCI_HISTORY_SCOPE)) return 'effects';
     const named = fields.map(({en, vi, isStem}) => [endpoints(en, 'en', isStem), endpoints(vi, 'vi', isStem)]);
     const expected = new Set(named.flatMap(([en]) => [...en]));
@@ -405,11 +432,38 @@ const CaseQuiz = (() => {
     vi: /\b(?:gia dinh|gia su|neu)\b.*\bbao nhieu\b/,
   };
   const PROJECTION_LIMIT = {
-    en: /\b(?:(?:cannot|can t|(?:does|do|did|could) not|is unable to) (?:\w+ ){0,8}(?:predict|estimate|project|determine|tell|establish)|not (?:an? )?(?:individual|personal|patient specific) (?:risk|prediction|estimate))\b/,
-    vi: /\b(?:(?:khong the|khong du de|khong dung de) (?:\w+ ){0,8}(?:du doan|uoc tinh|ngoai suy|xac dinh)|khong phai (?:la )?(?:nguy co|du doan|uoc tinh) ca nhan)\b/,
+    en: /\b(?:(?:cannot|can t|(?:does|do|did|could) not|is unable to) (?:\w+ ){0,8}(?:predict|estimate|project|determine|tell|establish|apply)|not (?:an? )?(?:individual|personal|patient specific) (?:risk|prediction|estimate))\b/,
+    vi: /\b(?:(?:khong the|khong du de|khong dung de) (?:\w+ ){0,8}(?:du doan|uoc tinh|ngoai suy|xac dinh|ap dung)|khong ap dung|khong phai (?:la )?(?:nguy co|du doan|uoc tinh) ca nhan)\b/,
   };
+  const VIGNETTE_APPLICATION = {
+    en: /\b(?:for|in|to|among) (?:(?:a )?patients? like (?:him|her|this|that|these|them)|this patient)\b/,
+    vi: /\b(?:doi voi|o|cho|ap dung cho) (?:(?:mot )?benh nhan nhu (?:anh ay|ong ay|ba ay|co ay|nguoi nay|the nay|vay)|benh nhan nay)\b/,
+  };
+  const APPLICATION_CONTRAST = {
+    en: /\b(?:but|however|nevertheless|yet|although|even though|though)\b/,
+    vi: /\b(?:the nhung|nhung|tuy nhien|du vay|mac du|tuy rang)\b/,
+  };
+  const LEADING_CONCESSION = {
+    en: /^(?:although|even though|though)\b/,
+    vi: /^(?:mac du|tuy rang)\b/,
+  };
+  const APPLICATION_RESULT = {
+    en: /\b(?:reported|found|result|estimate|pooled|apply|applies|applied|lower|higher|fewer|reduc\w*|increas\w*|what|how|whether)\b/,
+    vi: /\b(?:bao cao|ghi nhan|ket qua|uoc tinh|phan tich gop|ap dung|thap hon|cao hon|giam|tang|bao nhieu|the nao|lieu)\b/,
+  };
+  const PROJECTION_SENTENCE_BREAK = /[!?;\r\n\u2028\u2029]|\.(?!\d)/;
   function projectionClauses(value, lang) {
-    return value.split(/[!?;\r\n\u2028\u2029]|\.(?!\d)/).map(clause => claimText(clause)[lang]);
+    return value.split(PROJECTION_SENTENCE_BREAK).map(clause => claimText(clause)[lang]);
+  }
+
+  function applicationClauses(value, lang) {
+    return value.split(PROJECTION_SENTENCE_BREAK).flatMap(sentence => {
+      const words = claimText(sentence)[lang];
+      const comma = sentence.search(/,(?!\d)/);
+      if (comma < 0 || !LEADING_CONCESSION[lang].test(words)) return words.split(APPLICATION_CONTRAST[lang]);
+      return [sentence.slice(0, comma), sentence.slice(comma + 1)]
+        .flatMap(clause => claimText(clause)[lang].split(APPLICATION_CONTRAST[lang]));
+    });
   }
 
   function projectsGroupResult(item) {
@@ -422,8 +476,13 @@ const CaseQuiz = (() => {
       const key = keyClauses.filter(c => !limit(c)).join(' ');
       if (stemClauses.some(limit) && !keyClauses.some(limit) &&
           stemClauses.some(c => limit(c) && isProjection(c, lang))) return true;
-      const result = ENDPOINT_CONTEXT[lang].test(stem + ' ' + key) || EFFECT_CONTEXT[lang].test(stem + ' ' + key) ||
-        /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(stem + ' ' + key);
+      const resultContext = clause => ENDPOINT_CONTEXT[lang].test(clause) || EFFECT_CONTEXT[lang].test(clause) ||
+        /\b(?:hazard ratio|hr|rr|or|ti so nguy co|ty so nguy co)\b/.test(clause);
+      const applies = (value, keyed = false) => applicationClauses(value, lang)
+        .some(clause => !limit(clause) && VIGNETTE_APPLICATION[lang].test(clause) &&
+          (keyed || resultContext(clause) || APPLICATION_RESULT[lang].test(clause)));
+      if (applies(item['stem_' + lang]) || applies(correct[lang], true) || applies(item['explanation_' + lang])) return true;
+      const result = resultContext(stem + ' ' + key);
       return result && (PERSONAL_RISK[lang].test(key) ||
         COHORT[lang].test(stem) && (isProjection(stem, lang) || HYPOTHETICAL_COUNT[lang].test(stem)) ||
         isProjection(stem, lang) && PERSONAL[lang].test(stem) ||
